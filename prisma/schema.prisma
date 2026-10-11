@@ -1,0 +1,727 @@
+// VIP Özel Ders veri modeli.
+// Para alanları kuruş cinsinden tam sayıdır (1250 TL = 125000).
+// Zaman alanları UTC saklanır; gösterimde Europe/Istanbul kullanılır.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Kullanıcılar ve oturumlar
+// ---------------------------------------------------------------------------
+
+enum Role {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum AccountType {
+  PARENT
+  STUDENT
+}
+
+enum Gender {
+  FEMALE
+  MALE
+  UNSPECIFIED
+}
+
+model User {
+  id                 String     @id @default(cuid())
+  role               Role
+  status             UserStatus @default(ACTIVE)
+  email              String?    @unique
+  username           String?    @unique
+  passwordHash       String
+  mustChangePassword Boolean    @default(false)
+  firstName          String
+  lastName           String
+  phone              String?
+  emailVerifiedAt    DateTime?
+  lastLoginAt        DateTime?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  sessions           Session[]
+  tokens             UserToken[]
+  teacherProfile     TeacherProfile?
+  studentProfile     StudentProfile?
+  notifications      Notification[]
+  bookingsAsStudent  Booking[]      @relation("StudentBookings")
+  reviews            Review[]
+  favorites          Favorite[]
+  auditLogs          AuditLog[]
+  bookingEvents      BookingEvent[]
+  attendance         LessonAttendance[]
+  emails             EmailMessage[]
+  payoutsCreated     Payout[]       @relation("PayoutCreatedBy")
+}
+
+model Session {
+  // Çerezdeki rastgele anahtarın SHA-256 özeti; anahtarın kendisi saklanmaz.
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+enum UserTokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+model UserToken {
+  // Bağlantıdaki anahtarın SHA-256 özeti.
+  id        String        @id
+  userId    String
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      UserTokenType
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime      @default(now())
+
+  @@index([userId, type])
+}
+
+model LoginAttempt {
+  id         String   @id @default(cuid())
+  identifier String
+  ipAddress  String?
+  success    Boolean
+  createdAt  DateTime @default(now())
+
+  @@index([identifier, createdAt])
+  @@index([ipAddress, createdAt])
+}
+
+model StudentProfile {
+  userId           String      @id
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountType      AccountType @default(PARENT)
+  cityId           Int?
+  city             City?       @relation(fields: [cityId], references: [id])
+  kvkkConsentAt    DateTime
+  marketingConsent Boolean     @default(false)
+  learners         Learner[]
+}
+
+// Dersin kimin için alındığı (veli hesabındaki çocuklar ya da öğrencinin kendisi).
+model Learner {
+  id        String         @id @default(cuid())
+  studentId String
+  student   StudentProfile @relation(fields: [studentId], references: [userId], onDelete: Cascade)
+  name      String
+  gradeName String?
+  createdAt DateTime       @default(now())
+  bookings  Booking[]
+
+  @@unique([studentId, name])
+}
+
+// ---------------------------------------------------------------------------
+// Katalog: kademe, sınıf, ders, hizmet türü, il/ilçe
+// ---------------------------------------------------------------------------
+
+enum LevelGroup {
+  SCHOOL
+  EXAM
+  OTHER
+}
+
+model Level {
+  id        Int             @id @default(autoincrement())
+  name      String
+  slug      String          @unique
+  group     LevelGroup      @default(SCHOOL)
+  sortOrder Int             @default(0)
+  isActive  Boolean         @default(true)
+  grades    Grade[]
+  subjects  LevelSubject[]
+  offerings TeacherOffering[]
+  bookings  Booking[]
+}
+
+model Grade {
+  id        Int    @id @default(autoincrement())
+  levelId   Int
+  level     Level  @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  name      String
+  sortOrder Int    @default(0)
+
+  @@unique([levelId, name])
+}
+
+model Subject {
+  id        Int               @id @default(autoincrement())
+  name      String
+  slug      String            @unique
+  sortOrder Int               @default(0)
+  isActive  Boolean           @default(true)
+  levels    LevelSubject[]
+  offerings TeacherOffering[]
+  bookings  Booking[]
+}
+
+model LevelSubject {
+  levelId   Int
+  level     Level   @relation(fields: [levelId], references: [id], onDelete: Cascade)
+  subjectId Int
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+
+  @@id([levelId, subjectId])
+}
+
+model ServiceType {
+  id          Int               @id @default(autoincrement())
+  name        String
+  slug        String            @unique
+  description String?
+  sortOrder   Int               @default(0)
+  isActive    Boolean           @default(true)
+  offerings   TeacherOffering[]
+  bookings    Booking[]
+}
+
+model City {
+  id              Int              @id
+  name            String
+  slug            String           @unique
+  districts       District[]
+  teachers        TeacherProfile[]
+  studentProfiles StudentProfile[]
+  bookings        Booking[]
+}
+
+model District {
+  id               Int                      @id @default(autoincrement())
+  cityId           Int
+  city             City                     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  name             String
+  slug             String
+  teachers         TeacherProfile[]
+  serviceTeachers  TeacherServiceDistrict[]
+  bookings         Booking[]
+
+  @@unique([cityId, slug])
+}
+
+// ---------------------------------------------------------------------------
+// Öğretmen
+// ---------------------------------------------------------------------------
+
+enum TeacherStatus {
+  DRAFT
+  PUBLISHED
+  SUSPENDED
+}
+
+enum VerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+model TeacherProfile {
+  userId                 String             @id
+  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slug                   String             @unique
+  headline               String?
+  bio                    String?
+  photoKey               String?
+  videoUrl               String?
+  education              String?
+  experienceYears        Int                @default(0)
+  gender                 Gender             @default(UNSPECIFIED)
+  cityId                 Int?
+  city                   City?              @relation(fields: [cityId], references: [id])
+  districtId             Int?
+  district               District?          @relation(fields: [districtId], references: [id])
+  offersOnline           Boolean            @default(true)
+  offersInPerson         Boolean            @default(false)
+  inPersonAtStudentHome  Boolean            @default(true)
+  inPersonAtTeacherPlace Boolean            @default(false)
+  status                 TeacherStatus      @default(DRAFT)
+  verificationStatus     VerificationStatus @default(UNVERIFIED)
+  isFeatured             Boolean            @default(false)
+  // Öğretmene özel komisyon (baz puan: 1500 = %15). Boşsa site ayarı geçerli.
+  commissionRateBps      Int?
+  bufferMinutes          Int                @default(0)
+  // Kadrolu (devlet okulu) öğretmen olmadığına dair beyanın tarihi.
+  statusDeclarationAt    DateTime?
+  // Hakediş bilgileri
+  payoutLegalName        String?
+  payoutIban             String?
+  payoutIdentityNumberEnc String?
+  subMerchantKey         String?
+  // Özet istatistikler (yorum ve ders işlemlerinde güncellenir)
+  ratingAvg              Float              @default(0)
+  ratingCount            Int                @default(0)
+  completedLessons       Int                @default(0)
+  avgResponseMinutes     Int?
+  responseCount          Int                @default(0)
+  cancellationCount      Int                @default(0)
+  searchText             String             @default("")
+  publishedAt            DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  serviceDistricts       TeacherServiceDistrict[]
+  offerings              TeacherOffering[]
+  availabilityRules      AvailabilityRule[]
+  availabilityExceptions AvailabilityException[]
+  bookings               Booking[]
+  reviews                Review[]
+  favorites              Favorite[]
+  documents              TeacherDocument[]
+  ledgerEntries          LedgerEntry[]
+  payouts                Payout[]
+
+  @@index([status])
+}
+
+model TeacherServiceDistrict {
+  teacherId  String
+  teacher    TeacherProfile @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+  districtId Int
+  district   District       @relation(fields: [districtId], references: [id], onDelete: Cascade)
+
+  @@id([teacherId, districtId])
+}
+
+model TeacherOffering {
+  id            String         @id @default(cuid())
+  teacherId     String
+  teacher       TeacherProfile @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+  serviceTypeId Int
+  serviceType   ServiceType    @relation(fields: [serviceTypeId], references: [id])
+  levelId       Int
+  level         Level          @relation(fields: [levelId], references: [id])
+  subjectId     Int
+  subject       Subject        @relation(fields: [subjectId], references: [id])
+  // Öğrencinin ödeyeceği 60 dakikalık ücret (KDV dahil, kuruş).
+  hourlyPrice   Int
+  durations     Int[]
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  bookings      Booking[]
+
+  @@unique([teacherId, serviceTypeId, levelId, subjectId])
+  @@index([levelId, subjectId])
+}
+
+enum AvailabilityExceptionType {
+  BLOCKED
+  EXTRA
+}
+
+model AvailabilityRule {
+  id          String         @id @default(cuid())
+  teacherId   String
+  teacher     TeacherProfile @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+  // ISO hafta günü: 1 = Pazartesi ... 7 = Pazar
+  weekday     Int
+  startMinute Int
+  endMinute   Int
+
+  @@index([teacherId])
+}
+
+model AvailabilityException {
+  id          String                    @id @default(cuid())
+  teacherId   String
+  teacher     TeacherProfile            @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+  date        DateTime                  @db.Date
+  type        AvailabilityExceptionType
+  // İkisi de boşsa bütün gün
+  startMinute Int?
+  endMinute   Int?
+  note        String?
+  createdAt   DateTime                  @default(now())
+
+  @@index([teacherId, date])
+}
+
+enum DocumentType {
+  DIPLOMA
+  IDENTITY
+  CRIMINAL_RECORD
+  CERTIFICATE
+  OTHER
+}
+
+enum DocumentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model TeacherDocument {
+  id         String         @id @default(cuid())
+  teacherId  String
+  teacher    TeacherProfile @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+  type       DocumentType
+  fileKey    String
+  fileName   String
+  status     DocumentStatus @default(PENDING)
+  note       String?
+  createdAt  DateTime       @default(now())
+  reviewedAt DateTime?
+}
+
+// ---------------------------------------------------------------------------
+// Randevu, ödeme ve hakediş
+// ---------------------------------------------------------------------------
+
+enum LessonMode {
+  ONLINE
+  IN_PERSON
+}
+
+enum InPersonPlace {
+  STUDENT_HOME
+  TEACHER_PLACE
+}
+
+enum BookingStatus {
+  PENDING_PAYMENT
+  PAYMENT_FAILED
+  PENDING_APPROVAL
+  CONFIRMED
+  COMPLETED
+  REJECTED
+  EXPIRED
+  CANCELLED_BY_STUDENT
+  CANCELLED_BY_TEACHER
+  CANCELLED_BY_ADMIN
+  NO_SHOW_STUDENT
+  NO_SHOW_TEACHER
+  DISPUTED
+}
+
+model Booking {
+  id                String         @id @default(cuid())
+  code              String         @unique
+  studentId         String
+  student           User           @relation("StudentBookings", fields: [studentId], references: [id])
+  teacherId         String
+  teacher           TeacherProfile @relation(fields: [teacherId], references: [userId])
+  offeringId        String?
+  offering          TeacherOffering? @relation(fields: [offeringId], references: [id], onDelete: SetNull)
+  learnerId         String?
+  learner           Learner?       @relation(fields: [learnerId], references: [id], onDelete: SetNull)
+  serviceTypeId     Int
+  serviceType       ServiceType    @relation(fields: [serviceTypeId], references: [id])
+  levelId           Int
+  level             Level          @relation(fields: [levelId], references: [id])
+  subjectId         Int
+  subject           Subject        @relation(fields: [subjectId], references: [id])
+  // Randevu anındaki adların kopyası (katalog sonradan değişse de kayıt bozulmaz)
+  serviceName       String
+  levelName         String
+  subjectName       String
+  learnerName       String
+  learnerGrade      String?
+  mode              LessonMode
+  inPersonPlace     InPersonPlace?
+  cityId            Int?
+  city              City?          @relation(fields: [cityId], references: [id])
+  districtId        Int?
+  district          District?      @relation(fields: [districtId], references: [id])
+  address           String?
+  studentNote       String?
+  startAt           DateTime
+  endAt             DateTime
+  // Dersin bitişi + öğretmenin tampon süresi; çakışma kontrolü bu aralıkla yapılır.
+  blockEndAt        DateTime
+  durationMinutes   Int
+  price             Int
+  commissionRateBps Int
+  commissionAmount  Int
+  teacherAmount     Int
+  refundedAmount    Int            @default(0)
+  status            BookingStatus  @default(PENDING_PAYMENT)
+  holdExpiresAt     DateTime?
+  paidAt            DateTime?
+  approvalDeadline  DateTime?
+  confirmedAt       DateTime?
+  respondedAt       DateTime?
+  completedAt       DateTime?
+  cancelledAt       DateTime?
+  cancelReason      String?
+  rejectionReason   String?
+  disputeReason     String?
+  disputedAt        DateTime?
+  reminder24hSentAt DateTime?
+  reminder1hSentAt  DateTime?
+  earningsReleaseAt DateTime?
+  earningsReleasedAt DateTime?
+  videoRoomName     String?        @unique
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  events            BookingEvent[]
+  payments          Payment[]
+  attendance        LessonAttendance[]
+  review            Review?
+  ledgerEntries     LedgerEntry[]
+
+  @@index([teacherId, startAt])
+  @@index([studentId, startAt])
+  @@index([status])
+}
+
+model BookingEvent {
+  id         String         @id @default(cuid())
+  bookingId  String
+  booking    Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  fromStatus BookingStatus?
+  toStatus   BookingStatus
+  actorId    String?
+  actor      User?          @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  note       String?
+  createdAt  DateTime       @default(now())
+
+  @@index([bookingId])
+}
+
+enum PaymentStatus {
+  INITIATED
+  SUCCEEDED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+model Payment {
+  id                String        @id @default(cuid())
+  bookingId         String
+  booking           Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  provider          String
+  providerToken     String?       @unique
+  providerPaymentId String?
+  providerItemId    String?
+  amount            Int
+  refundedAmount    Int           @default(0)
+  status            PaymentStatus @default(INITIATED)
+  failureReason     String?
+  raw               Json?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  refunds           Refund[]
+
+  @@index([bookingId])
+}
+
+enum RefundStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+// İade önce PENDING kaydedilir, sonra sağlayıcıya iletilir; başarısız olursa yeniden denenir.
+model Refund {
+  id               String       @id @default(cuid())
+  paymentId        String
+  payment          Payment      @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  amount           Int
+  reason           String
+  status           RefundStatus @default(PENDING)
+  attempts         Int          @default(0)
+  providerRefundId String?
+  error            String?
+  createdAt        DateTime     @default(now())
+  processedAt      DateTime?
+
+  @@index([status])
+}
+
+enum LedgerBucket {
+  PENDING
+  AVAILABLE
+  PAID
+}
+
+// Öğretmen hakediş defteri. Bir kovanın bakiyesi = o kovadaki tutarların toplamı.
+model LedgerEntry {
+  id          String         @id @default(cuid())
+  teacherId   String
+  teacher     TeacherProfile @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+  bookingId   String?
+  booking     Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  payoutId    String?
+  payout      Payout?        @relation(fields: [payoutId], references: [id], onDelete: SetNull)
+  bucket      LedgerBucket
+  amount      Int
+  description String
+  createdAt   DateTime       @default(now())
+
+  @@index([teacherId, bucket])
+}
+
+enum PayoutMethod {
+  MANUAL_TRANSFER
+  PAYMENT_PROVIDER
+}
+
+model Payout {
+  id          String         @id @default(cuid())
+  teacherId   String
+  teacher     TeacherProfile @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+  amount      Int
+  method      PayoutMethod
+  reference   String?
+  createdById String?
+  createdBy   User?          @relation("PayoutCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt   DateTime       @default(now())
+  entries     LedgerEntry[]
+}
+
+model LessonAttendance {
+  id        String    @id @default(cuid())
+  bookingId String
+  booking   Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt  DateTime
+  leftAt    DateTime?
+
+  @@index([bookingId])
+}
+
+// ---------------------------------------------------------------------------
+// Yorumlar, favoriler, bildirimler
+// ---------------------------------------------------------------------------
+
+enum ReviewStatus {
+  PUBLISHED
+  HIDDEN
+}
+
+model Review {
+  id               String         @id @default(cuid())
+  bookingId        String         @unique
+  booking          Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  teacherId        String
+  teacher          TeacherProfile @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+  studentId        String
+  student          User           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  rating           Int
+  comment          String?
+  teacherReply     String?
+  teacherRepliedAt DateTime?
+  status           ReviewStatus   @default(PUBLISHED)
+  hiddenReason     String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@unique([teacherId, studentId])
+  @@index([teacherId, status])
+}
+
+model Favorite {
+  studentId String
+  student   User           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacherId String
+  teacher   TeacherProfile @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+  createdAt DateTime       @default(now())
+
+  @@id([studentId, teacherId])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  body      String
+  link      String?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, readAt])
+}
+
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model EmailMessage {
+  id        String      @id @default(cuid())
+  userId    String?
+  user      User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  to        String
+  subject   String
+  text      String
+  html      String
+  status    EmailStatus @default(PENDING)
+  attempts  Int         @default(0)
+  error     String?
+  createdAt DateTime    @default(now())
+  sentAt    DateTime?
+
+  @@index([status, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Site yönetimi
+// ---------------------------------------------------------------------------
+
+model SiteSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model Page {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  content     String
+  showInFooter Boolean @default(true)
+  isPublished Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  updatedAt   DateTime @updatedAt
+}
+
+// Arka plan görevlerinin aynı anda tek yerde çalışmasını sağlayan kira kaydı.
+model JobLock {
+  name        String   @id
+  holder      String
+  lockedUntil DateTime
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action     String
+  entityType String
+  entityId   String?
+  details    Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}

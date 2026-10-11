@@ -1,0 +1,69 @@
+import { randomUUID } from "node:crypto";
+import { hostname } from "node:os";
+import {
+  completeFinishedLessons,
+  expireOverdueApprovals,
+  expireStaleHolds,
+  releaseDueEarnings,
+  sendLessonReminders,
+} from "./bookings";
+import { db } from "./db";
+import { sendPendingEmails } from "./email";
+import { processPendingRefunds } from "./payments/service";
+
+const HOLDER = `${hostname()}-${process.pid}-${randomUUID().slice(0, 8)}`;
+
+/** Görevin aynı anda tek bir süreçte çalışması için veritabanında kısa süreli kira alır. */
+async function acquireLease(name: string, ttlMs: number, now: Date): Promise<boolean> {
+  const lockedUntil = new Date(now.getTime() + ttlMs);
+  try {
+    await db.jobLock.create({ data: { name, holder: HOLDER, lockedUntil } });
+    return true;
+  } catch {
+    const updated = await db.jobLock.updateMany({
+      where: { name, OR: [{ lockedUntil: { lt: now } }, { holder: HOLDER }] },
+      data: { holder: HOLDER, lockedUntil },
+    });
+    return updated.count === 1;
+  }
+}
+
+const TASKS = {
+  expiredHolds: expireStaleHolds,
+  expiredApprovals: expireOverdueApprovals,
+  completedLessons: completeFinishedLessons,
+  releasedEarnings: releaseDueEarnings,
+  reminders: sendLessonReminders,
+  refunds: () => processPendingRefunds(),
+  emails: () => sendPendingEmails(),
+} satisfies Record<string, (now: Date) => Promise<number>>;
+
+export type SchedulerSummary = Partial<Record<keyof typeof TASKS, number | string>>;
+
+/** Süresi dolan ödemeler/onaylar, biten dersler, hakedişler, hatırlatmalar, iadeler, e-postalar. */
+export async function runScheduledTasks(now = new Date()): Promise<SchedulerSummary | null> {
+  if (!(await acquireLease("scheduler", 55_000, now))) return null;
+  const summary: SchedulerSummary = {};
+  for (const [name, task] of Object.entries(TASKS) as [keyof typeof TASKS, (now: Date) => Promise<number>][]) {
+    try {
+      summary[name] = await task(now);
+    } catch (error) {
+      summary[name] = `hata: ${String(error).slice(0, 200)}`;
+      console.error(`[zamanlayıcı] ${name}:`, error);
+    }
+  }
+  await db.jobLock.updateMany({ where: { name: "scheduler", holder: HOLDER }, data: { lockedUntil: new Date(0) } });
+  return summary;
+}
+
+const globalScheduler = globalThis as unknown as { __vdScheduler?: ReturnType<typeof setInterval> };
+
+/** Dakikada bir görevleri çalıştırır (Next sunucusu içinde veya `npm run worker` ile). */
+export function startScheduler(intervalMs = 60_000) {
+  if (globalScheduler.__vdScheduler) return;
+  const tick = () => {
+    runScheduledTasks().catch((error) => console.error("[zamanlayıcı]", error));
+  };
+  globalScheduler.__vdScheduler = setInterval(tick, intervalMs);
+  setTimeout(tick, 5_000);
+}
