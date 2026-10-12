@@ -69,7 +69,7 @@ export async function childDetailJson(userId: string, guardianId: string) {
       }),
     })),
     trend: trend.map((t) => ({ name: t.name, date: dbDateToString(t.date), net: t.net, average: t.average })),
-    weakTopics: weakTopics.map((t) => ({ topic: t.topic, section: t.sectionName, rate: t.rate, questions: t.questions, teachersUrl: appUrl(marketplaceLink(t.kind, t.subjectSlug)) })),
+    weakTopics: weakTopics.map((t) => ({ topic: t.topic, section: t.sectionName, rate: t.rate, questions: t.questions, teachersUrl: student.center.showTeacherSuggestions ? appUrl(marketplaceLink(t.kind, t.subjectSlug)) : null })),
     installments: installments.map((i) => ({
       title: i.plan.title,
       order: i.order,
@@ -107,7 +107,7 @@ export async function reportCardJson(userId: string, guardianId: string, examId:
       averageNet: s.average.net,
       topics: s.topics.map((t) => ({ topic: t.topic, questions: t.questions, correct: t.correct, rate: t.rate })),
     })),
-    weakTopics: weakTopics.map((t) => ({ topic: t.topic, section: t.sectionName, rate: t.rate, teachersUrl: appUrl(marketplaceLink(analysis.exam.kind, t.subjectSlug)) })),
+    weakTopics: weakTopics.map((t) => ({ topic: t.topic, section: t.sectionName, rate: t.rate, teachersUrl: data.student.center.showTeacherSuggestions ? appUrl(marketplaceLink(analysis.exam.kind, t.subjectSlug)) : null })),
     trend: trend.map((t) => ({ name: t.name, date: dbDateToString(t.date), net: t.net, average: t.average })),
   };
 }

@@ -8,12 +8,25 @@ import { marketplaceLink, type studentExamReport } from "@/server/center/exams";
 type Report = NonNullable<Awaited<ReturnType<typeof studentExamReport>>>;
 
 /** Öğrenci deneme karnesi: kurum panelinde ve veli portalında aynı görünüm (yazdırılabilir). */
-export function ReportCard({ report, centerName, studentName, studentMeta }: { report: Report; centerName: string; studentName: string; studentMeta: string }) {
+export function ReportCard({
+  report,
+  centerName,
+  studentName,
+  studentMeta,
+  showSuggestions = true,
+}: {
+  report: Report;
+  centerName: string;
+  studentName: string;
+  studentMeta: string;
+  /** Kurum kapattıysa Pi Kampüs özel ders öğretmeni önerisi gösterilmez */
+  showSuggestions?: boolean;
+}) {
   const { analysis, result, sections, weakTopics, trend } = report;
   const { exam } = analysis;
   if (!result) return <p className="text-sm text-slate-500">Bu öğrencinin bu denemede sonucu yok.</p>;
   const totalQuestions = exam.sections.reduce((t, s) => t + s.questionCount, 0);
-  const weakSections = sections.filter((s) => s.own && s.own.net < s.average.net && successRate(s.own.net, s.section.questionCount) < 0.6);
+  const weakSections = !showSuggestions ? [] : sections.filter((s) => s.own && s.own.net < s.average.net && successRate(s.own.net, s.section.questionCount) < 0.6);
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-slate-200 bg-white p-5">

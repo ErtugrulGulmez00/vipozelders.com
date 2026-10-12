@@ -12,7 +12,7 @@ export function CredentialsBox({ who = "Personel" }: { who?: string }) {
   const state = useActionResult();
   if (!state.ok || !state.data?.password) return null;
   const { username, password, emailSent } = state.data as { username: string; password: string; emailSent?: boolean };
-  const message = `Kurum paneli girişiniz:\nAdres: ${typeof window === "undefined" ? "" : window.location.origin}/giris\nKullanıcı adı: ${username}\nGeçici şifre: ${password}\nİlk girişte kendi şifrenizi belirleyeceksiniz.`;
+  const message = `Kurum paneli girişiniz:\nAdres: ${typeof window === "undefined" ? "" : window.location.origin}/kurum-giris\nKullanıcı adı: ${username}\nGeçici şifre: ${password}\nİlk girişte kendi şifrenizi belirleyeceksiniz.`;
   return (
     <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
       <p className="flex items-center gap-2 font-semibold text-emerald-900">

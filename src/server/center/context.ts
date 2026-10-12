@@ -32,6 +32,7 @@ const centerSelect = {
   remindPayments: true,
   reminderDaysBefore: true,
   isPublic: true,
+  showTeacherSuggestions: true,
 } as const;
 
 export type CenterSummary = {
@@ -53,6 +54,7 @@ export type CenterSummary = {
   remindPayments: boolean;
   reminderDaysBefore: number;
   isPublic: boolean;
+  showTeacherSuggestions: boolean;
 };
 
 export type CenterContext = {
@@ -107,7 +109,7 @@ export const resolveCenter = cache(async (): Promise<Resolution> => {
 /** Kurum paneli sayfaları için: giriş, üyelik ve (verildiyse) yetki kontrolü. */
 export async function requireCenter(permission?: CenterPermission): Promise<CenterContext> {
   const resolved = await resolveCenter();
-  if (resolved.kind === "anonymous") redirect("/giris?next=/kurum");
+  if (resolved.kind === "anonymous") redirect("/kurum-giris");
   if (resolved.kind === "password") redirect("/sifre-degistir");
   if (resolved.kind !== "ok") redirect("/kurum-erisim");
   const { ctx } = resolved;

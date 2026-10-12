@@ -6,8 +6,9 @@ import { loginAction } from "@/actions/auth";
 import { ActionForm, SubmitButton } from "@/components/forms/action-form";
 import { Field, Input } from "@/components/ui/form";
 
-export function LoginForm() {
-  const next = useSearchParams().get("next") ?? "";
+/** defaultNext: girişten sonra gidilecek sayfa (ör. kurum girişinde /kurum); adresteki ?next= önceliklidir. */
+export function LoginForm({ defaultNext = "" }: { defaultNext?: string }) {
+  const next = useSearchParams().get("next") ?? defaultNext;
   return (
     <ActionForm action={loginAction} className="space-y-4">
       <input type="hidden" name="next" value={next} />

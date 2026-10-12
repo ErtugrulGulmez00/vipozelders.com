@@ -14,7 +14,7 @@ export default async function GuardianReportCardPage({ params }: PageProps<"/hes
   const { id, examId } = await params;
   const link = await db.centerGuardian.findFirst({
     where: { id, userId: user.id, student: { center: { status: { not: "SUSPENDED" } } } },
-    include: { student: { select: { id: true, centerId: true, firstName: true, lastName: true, studentNumber: true, gradeName: true, center: { select: { name: true } } } } },
+    include: { student: { select: { id: true, centerId: true, firstName: true, lastName: true, studentNumber: true, gradeName: true, center: { select: { name: true, showTeacherSuggestions: true } } } } },
   });
   if (!link) notFound();
   const exam = await db.centerExam.findFirst({ where: { id: examId, centerId: link.student.centerId, isPublished: true }, select: { id: true } });
@@ -32,6 +32,7 @@ export default async function GuardianReportCardPage({ params }: PageProps<"/hes
       <ReportCard
         report={report}
         centerName={link.student.center.name}
+        showSuggestions={link.student.center.showTeacherSuggestions}
         studentName={`${link.student.firstName} ${link.student.lastName}`}
         studentMeta={[link.student.studentNumber ? `No ${link.student.studentNumber}` : null, link.student.gradeName].filter(Boolean).join(" · ")}
       />

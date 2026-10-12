@@ -33,6 +33,7 @@ export default async function ReportCardPage({ params }: PageProps<"/kurum/denem
       <ReportCard
         report={report}
         centerName={ctx.center.name}
+        showSuggestions={ctx.center.showTeacherSuggestions}
         studentName={`${student.firstName} ${student.lastName}`}
         studentMeta={[student.studentNumber ? `No ${student.studentNumber}` : null, student.gradeName, student.groups.map((g) => g.group.name).join(", ")].filter(Boolean).join(" · ")}
       />

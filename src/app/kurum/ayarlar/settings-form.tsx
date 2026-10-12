@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { updateCenterSettingsAction } from "@/actions/center/organization";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
+import { CopyButton } from "@/components/ui/copy-button";
 import { FileInput } from "@/components/ui/file-input";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
 import { CENTER_KIND_LABEL } from "@/lib/center/labels";
@@ -23,6 +24,8 @@ export type CenterSettingsValues = {
   notifyAbsence: boolean;
   remindPayments: boolean;
   reminderDaysBefore: number;
+  showTeacherSuggestions: boolean;
+  loginUrl: string;
   logoUrl: string | null;
   slug: string;
 };
@@ -128,6 +131,22 @@ export function CenterSettingsForm({ values, cities, initialDistricts }: { value
         <Field label="Tanıtım yazısı" className="sm:col-span-2">
           <Textarea name="description" rows={5} defaultValue={values.description ?? ""} placeholder="Kurumunuzu, programlarınızı, başarılarınızı anlatın." />
         </Field>
+      </Section>
+      <Section title="Veli portalı" description="Veliler devamsızlık, deneme sonucu, eksik konu, ödeme ve duyuruları sitedeki hesaplarından görür.">
+        <div className="sm:col-span-2">
+          <Checkbox
+            name="showTeacherSuggestions"
+            defaultChecked={values.showTeacherSuggestions}
+            label="Eksik konularda velilere Pi Kampüs’ün onaylı özel ders öğretmenlerini öner"
+          />
+          <p className="mt-1 pl-6.5 text-xs text-slate-500">Kapatırsanız veli portalında, karnede ve mobil uygulamada öğretmen önerisi görünmez; eksik konular yine listelenir.</p>
+        </div>
+      </Section>
+      <Section title="Personel girişi" description="Personelinize bu adresi verin; giriş sayfasında kurumunuzun adı ve logosu görünür.">
+        <div className="flex flex-wrap items-center gap-2 sm:col-span-2">
+          <code className="rounded-lg bg-slate-100 px-3 py-2 text-sm">{values.loginUrl}</code>
+          <CopyButton value={values.loginUrl} label="Adresi kopyala" />
+        </div>
       </Section>
       <Section title="Otomatik bildirimler">
         <div className="space-y-3 sm:col-span-2">

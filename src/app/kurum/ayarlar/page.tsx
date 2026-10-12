@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/ui/primitives";
 import { requireCenter } from "@/server/center/context";
 import { loadDistricts } from "@/server/catalog";
 import { db } from "@/server/db";
+import { appUrl } from "@/server/email";
 import { getCities } from "@/server/site";
 import { uploadUrl } from "@/server/storage";
 import { CenterSettingsForm } from "./settings-form";
@@ -35,6 +36,8 @@ export default async function CenterSettingsPage() {
           notifyAbsence: center.notifyAbsence,
           remindPayments: center.remindPayments,
           reminderDaysBefore: center.reminderDaysBefore,
+          showTeacherSuggestions: center.showTeacherSuggestions,
+          loginUrl: appUrl(`/kurum-giris?kurum=${center.slug}`),
           logoUrl: uploadUrl(center.logoKey),
           slug: center.slug,
         }}

@@ -255,9 +255,13 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
                         <span className="text-xs font-bold text-rose-600">{percent(t.rate)}</span>
                       </div>
                       <RateBar value={t.rate} tone={rateTone(t.rate)} className="mt-1" />
+                      {student.center.showTeacherSuggestions ? (
                       <Link href={marketplaceLink(t.kind, t.subjectSlug)} className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline">
                         {t.sectionName} için özel ders öğretmenleri <ExternalLink className="size-3" aria-hidden />
                       </Link>
+                      ) : (
+                        <p className="mt-1 text-xs text-slate-500">{t.sectionName}</p>
+                      )}
                     </li>
                   ))}
                 </ul>

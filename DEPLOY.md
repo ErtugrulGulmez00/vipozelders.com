@@ -158,7 +158,7 @@ Arka plan görevleri (ödeme süreleri, hatırlatmalar, iadeler, ders tamamlama)
 `/etc/caddy/Caddyfile`:
 
 ```caddy
-alanadiniz.com, www.alanadiniz.com {
+alanadiniz.com, www.alanadiniz.com, kurum.alanadiniz.com {
     encode zstd gzip
     reverse_proxy 127.0.0.1:3000
 }
@@ -169,6 +169,8 @@ sudo systemctl reload caddy
 ```
 
 Caddy SSL sertifikasını kendisi alır ve yeniler.
+
+**Kurum paneli alt adresi (isteğe bağlı):** DNS'te `kurum` için de sunucunun IP adresine `A` kaydı açın. `kurum.alanadiniz.com` aynı uygulamaya gider; ana sayfası kurum personeli girişidir (`/kurum-giris`), giriş yapmış personeli doğrudan panele alır. Ayrı sunucu gerekmez. Kuruma özel, logolu giriş bağlantısı her kurumun “Kurum ayarları → Personel girişi” bölümünde yazar (`/kurum-giris?kurum=<kurum>`).
 
 ### 6. Dış servis ayarları
 

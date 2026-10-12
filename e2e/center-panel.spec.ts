@@ -194,3 +194,18 @@ test("kurum başvurusu → kurum paneli → yoklama, deneme, makbuz → veli por
   await page.getByRole("link", { name: "Denemeler", exact: true }).click();
   await expect(page.getByText("Yayınlanmış deneme sonucu yok")).toBeVisible();
 });
+
+test("kurum personeli kendi giriş sayfasından panele girer", async ({ page }) => {
+  await page.context().clearCookies();
+  await page.goto("/kurum/ogrenciler");
+  await expect(page).toHaveURL(/\/kurum-giris\?next=/);
+  await page.goto("/kurum-giris?kurum=basari-etut-merkezi");
+  await expect(page.getByRole("heading", { name: "Başarı Etüt Merkezi" })).toBeVisible();
+  await page.getByLabel("E-posta veya kullanıcı adı").fill("kurum@demo.vipozelders.local");
+  await page.getByLabel("Şifre", { exact: true }).fill("Kurum12345");
+  await page.getByRole("button", { name: "Giriş yap" }).click();
+  await expect(page).toHaveURL(/\/kurum$/);
+  // Oturum açıkken giriş sayfası doğrudan panele geçirir
+  await page.goto("/kurum-giris");
+  await expect(page).toHaveURL(/\/kurum$/);
+});

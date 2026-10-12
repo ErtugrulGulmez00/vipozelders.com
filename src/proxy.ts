@@ -25,10 +25,17 @@ export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const sessionToken = request.cookies.get(SESSION_COOKIE)?.value;
 
+  // kurum.<alan adı> alt adresi aynı uygulamaya yönlenir; ana sayfası kurum girişi / kurum panelidir.
+  const host = request.headers.get("host") ?? "";
+  if (host.startsWith("kurum.") && pathname === "/") {
+    return NextResponse.redirect(new URL(sessionToken ? "/kurum" : "/kurum-giris", request.url));
+  }
+
   const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
   if (isProtected && !sessionToken) {
-    const url = new URL("/giris", request.url);
-    url.searchParams.set("next", `${pathname}${search}`);
+    const isCenterPanel = pathname === "/kurum" || pathname.startsWith("/kurum/");
+    const url = new URL(isCenterPanel ? "/kurum-giris" : "/giris", request.url);
+    if (!isCenterPanel || pathname !== "/kurum") url.searchParams.set("next", `${pathname}${search}`);
     return NextResponse.redirect(url);
   }
 

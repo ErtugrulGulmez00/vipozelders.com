@@ -78,6 +78,12 @@ export default async function ForCentersPage() {
                 Planlar ve fiyatlar
               </a>
             </div>
+            <p className="mt-4 text-sm text-brand-100">
+              Zaten müşterimiz misiniz?{" "}
+              <Link href="/kurum-giris" className="font-semibold text-white underline">
+                Kurum paneli girişi
+              </Link>
+            </p>
             <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-brand-100">
               {["Kurulum aynı gün", "Kredi kartı gerekmez", "Sınırsız personel"].map((t) => (
                 <li key={t} className="inline-flex items-center gap-1.5">

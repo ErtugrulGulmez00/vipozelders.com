@@ -3,7 +3,7 @@ import { generateUsername } from "../accounts";
 import { generateTemporaryPassword, hashPassword } from "../auth/password";
 import { issueUserToken } from "../auth/tokens";
 import { db } from "../db";
-import { renderEmail } from "../email";
+import { appUrl, renderEmail } from "../email";
 import { loadSettings } from "../settings";
 import type { CenterContext } from "./context";
 import { CenterError } from "./errors";
@@ -29,6 +29,7 @@ async function queueWelcomeEmail(userId: string, email: string, firstName: strin
     title: `${centerName} kurum paneline davet edildiniz`,
     lines: [
       `${centerName} sizi ${settings.siteName} kurum paneline “${CENTER_ROLE_LABEL[role]}” olarak ekledi.`,
+      `Giriş adresi: ${appUrl("/kurum-giris")}`,
       `Kullanıcı adınız: ${username}`,
       "Aşağıdaki bağlantıdan şifrenizi belirleyip giriş yapabilirsiniz (bağlantı 3 gün geçerlidir). Kurumunuz size geçici bir şifre de iletmiş olabilir.",
     ],

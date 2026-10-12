@@ -104,6 +104,7 @@ export async function updateCenterSettingsAction(_: ActionState, formData: FormD
         notifyAbsence: bool(formData, "notifyAbsence"),
         remindPayments: bool(formData, "remindPayments"),
         reminderDaysBefore: int(formData, "reminderDaysBefore", 3, 0, 14),
+        showTeacherSuggestions: bool(formData, "showTeacherSuggestions"),
         ...(logoKey !== undefined ? { logoKey } : {}),
       },
     });

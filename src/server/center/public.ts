@@ -86,3 +86,12 @@ export async function getPublicCenter(slug: string) {
   if (!center || !center.isPublic || !visible(center)) return null;
   return center;
 }
+
+/** Kurum giriş sayfasında gösterilecek ad ve logo (askıdaki kurum için gösterilmez). */
+export async function getCenterBranding(slug: string) {
+  "use cache";
+  cacheTag(CENTERS_CACHE_TAG);
+  cacheLife("minutes");
+  const center = await db.center.findUnique({ where: { slug }, select: { name: true, logoKey: true, status: true } });
+  return center && center.status !== "SUSPENDED" ? { name: center.name, logoKey: center.logoKey } : null;
+}

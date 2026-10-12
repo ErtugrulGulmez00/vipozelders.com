@@ -896,35 +896,37 @@ enum LeadStatus {
 }
 
 model Center {
-  id                 String       @id @default(cuid())
-  name               String
-  slug               String       @unique
-  kind               CenterKind   @default(ETUT)
-  status             CenterStatus @default(TRIAL)
-  plan               CenterPlan   @default(STARTER)
-  studentLimit       Int          @default(100)
-  trialEndsAt        DateTime?
-  paidUntil          DateTime?
-  phone              String?
-  email              String?
-  address            String?
-  cityId             Int?
-  city               City?        @relation(fields: [cityId], references: [id])
-  districtId         Int?
-  district           District?    @relation(fields: [districtId], references: [id])
-  taxOffice          String?
-  taxNumber          String?
-  logoKey            String?
-  description        String?
+  id                     String       @id @default(cuid())
+  name                   String
+  slug                   String       @unique
+  kind                   CenterKind   @default(ETUT)
+  status                 CenterStatus @default(TRIAL)
+  plan                   CenterPlan   @default(STARTER)
+  studentLimit           Int          @default(100)
+  trialEndsAt            DateTime?
+  paidUntil              DateTime?
+  phone                  String?
+  email                  String?
+  address                String?
+  cityId                 Int?
+  city                   City?        @relation(fields: [cityId], references: [id])
+  districtId             Int?
+  district               District?    @relation(fields: [districtId], references: [id])
+  taxOffice              String?
+  taxNumber              String?
+  logoKey                String?
+  description            String?
   // Herkese açık vitrin sayfası (/kurumlar/slug) ve ön kayıt formu
-  isPublic           Boolean      @default(false)
-  academicYear       String       @default("2026-2027")
-  notifyAbsence      Boolean      @default(true)
-  remindPayments     Boolean      @default(true)
-  reminderDaysBefore Int          @default(3)
-  nextReceiptNo      Int          @default(1)
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  isPublic               Boolean      @default(false)
+  academicYear           String       @default("2026-2027")
+  notifyAbsence          Boolean      @default(true)
+  remindPayments         Boolean      @default(true)
+  reminderDaysBefore     Int          @default(3)
+  // Veli portalında eksik konular için Pi Kampüs özel ders öğretmeni önerileri
+  showTeacherSuggestions Boolean      @default(true)
+  nextReceiptNo          Int          @default(1)
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
 
   members              CenterMember[]
   subscriptionPayments CenterSubscriptionPayment[]

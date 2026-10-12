@@ -13,7 +13,7 @@ export const instant = false;
 /** Kurum paneline girilemeyen durumlar: üyelik yok / pasif ya da kurum askıda. */
 export default async function CenterAccessPage() {
   const resolved = await resolveCenter();
-  if (resolved.kind === "anonymous") redirect("/giris?next=/kurum");
+  if (resolved.kind === "anonymous") redirect("/kurum-giris");
   if (resolved.kind === "password") redirect("/sifre-degistir");
   if (resolved.kind === "ok") redirect("/kurum");
   const settings = await getSiteSettings();

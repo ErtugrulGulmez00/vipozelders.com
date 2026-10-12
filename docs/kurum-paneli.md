@@ -8,6 +8,7 @@ Etüt merkezlerine, dershanelere ve kurslara aylık abonelikle satılan yönetim
 | --- | --- | --- |
 | `/kurumlar-icin` | Herkes | Tanıtım, planlar ve fiyatlar, SSS, ücretsiz deneme başvurusu |
 | `/kurumlar`, `/kurumlar/<kurum>` | Herkes | Kurum rehberi, kurum vitrin sayfası ve ön kayıt formu (kurum ayarlardan açarsa) |
+| `/kurum-giris` (`?kurum=<kurum>`), `kurum.<alan adı>` | Kurum personeli | Kuruma özel giriş sayfası (aynı hesaplar; kurum bağlantısında ad ve logo görünür) |
 | `/kurum` | Kurum personeli | Kurum paneli |
 | `/kurum-davet/<kod>` | Veli | Veli portalı davetini kabul etme |
 | `/hesabim/kurum` | Veli | Veli portalı |
@@ -23,6 +24,8 @@ Etüt merkezlerine, dershanelere ve kurslara aylık abonelikle satılan yönetim
 | Öğretmen | Öğrenciler (görüntüleme), sınıflar ve program, yoklama, etüt (yalnızca kendi etütleri), denemeler, rehberlik notları |
 | Muhasebe / sekreter | Öğrenci kaydı, ödeme planı, tahsilat, gider, duyuru ve mesaj, ön kayıt |
 | Veli | Sitedeki hesabından bağlandığı öğrencinin devam, etüt, yayınlanan deneme, eksik konu, ödeme, duyuru ve veliye açık notlarını görür |
+
+Personel kendi giriş sayfasından girer; veliler sitenin normal girişini ve tek hesaplarını kullanır. Eksik konular için Pi Kampüs öğretmeni önerisini kurum, ayarlarından kapatabilir (kapalıyken veli portalı, karne ve mobil uygulamada öneri görünmez).
 
 Sitede öğretmen hesabı olan biri aynı e-postayla personel olarak eklenirse kendi şifresiyle girer; öğretmen panelinde “Kurum paneli” bağlantısı çıkar. Birden çok kurumda görevli personel “Kurum değiştir” ile kurum seçer.
 
