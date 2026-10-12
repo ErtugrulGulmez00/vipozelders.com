@@ -13,6 +13,11 @@ export async function requestMeta(): Promise<{ ipAddress: string | null; userAge
   };
 }
 
+/** Canlıda çerezler yalnızca HTTPS ile gönderilir (APP_URL açıkça http:// ise yerel deneme sayılır). */
+export function secureCookies(): boolean {
+  return process.env.NODE_ENV === "production" && !(process.env.APP_URL ?? "").startsWith("http://");
+}
+
 /** Yeni oturum açar ve çerezi yazar. Yalnızca Server Action / Route Handler içinde çağrılır. */
 export async function createSession(userId: string): Promise<void> {
   const token = randomToken();
@@ -25,7 +30,7 @@ export async function createSession(userId: string): Promise<void> {
 
   (await cookies()).set(SESSION_COOKIE, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: secureCookies(),
     sameSite: "lax",
     path: "/",
     expires: expiresAt,

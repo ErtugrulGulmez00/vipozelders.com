@@ -16,7 +16,7 @@ import { SchedulerButton } from "./scheduler-button";
 export const metadata: Metadata = { title: "Yönetim" };
 
 export default async function AdminDashboard() {
-  await requireRole("ADMIN");
+  const admin = await requireRole("ADMIN");
   const now = new Date();
   const today = toLocalDateString(now);
   const monthStart = zonedDateTime(`${today.slice(0, 7)}-01`, 0);
@@ -42,11 +42,20 @@ export default async function AdminDashboard() {
     db.user.count({ where: { email: { endsWith: `@${DEMO_EMAIL_DOMAIN}` } } }),
   ]);
   const provider = getPaymentProvider();
+  const twoFactorOn = Boolean((await db.user.findUnique({ where: { id: admin.id }, select: { totpEnabledAt: true } }))?.totpEnabledAt);
 
   return (
     <>
       <PageHeader title="Özet" description="Bu ayın rakamları ve dikkat isteyen işler." actions={<SchedulerButton />} />
 
+      {!twoFactorOn ? (
+        <Alert tone="warning" title="İki adımlı doğrulama kapalı" className="mb-4">
+          Yönetici hesabınızı telefonunuzdaki tek kullanımlık kodla koruyun.{" "}
+          <Link href="/yonetim/guvenlik" className="font-semibold underline">
+            Şimdi aç
+          </Link>
+        </Alert>
+      ) : null}
       {demoUsers > 0 ? (
         <Alert tone="warning" title="Demo veriler yüklü" className="mb-4">
           Sistemde {demoUsers} demo hesap ve bunlara ait örnek ders/yorumlar var. Canlıya çıkmadan önce veritabanını demo veriler olmadan sıfırlayın (README → “Canlıya çıkış”).
@@ -60,7 +69,7 @@ export default async function AdminDashboard() {
         </Alert>
       ) : null}
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard label="Bu ay tahsilat" value={formatMoney(collected._sum.amount ?? 0)} hint={`İade: ${formatMoney(refunds._sum.amount ?? 0)}`} icon={<CircleDollarSign className="size-5" />} />
         <StatCard label="Bu ay komisyon" value={formatMoney(commission._sum.commissionAmount ?? 0)} hint={`${commission._count._all} tamamlanan ders`} icon={<Banknote className="size-5" />} />
         <StatCard label="Öğretmenlere ödenecek" value={formatMoney(available._sum.amount ?? 0)} hint={provider.automaticPayouts ? "Ödeme kuruluşu aktarır" : "Havale bekleyen serbest bakiye"} icon={<RotateCcw className="size-5" />} />

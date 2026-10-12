@@ -1,3 +1,4 @@
+import { cacheLife, cacheTag } from "next/cache";
 import type { Prisma } from "@/generated/prisma/client";
 import { normalizeSearch, shortName } from "@/lib/text";
 import { db } from "./db";
@@ -181,8 +182,10 @@ export async function featuredTeachers(limit = 6): Promise<TeacherCard[]> {
   return result.items.slice(0, limit);
 }
 
-/** Herkese açık öğretmen profili (yalnızca yayındaysa). */
-export async function getPublicTeacher(slug: string) {
+export const TEACHERS_CACHE_TAG = "teachers";
+
+/** Öğretmen profil verisi (yayın durumundan bağımsız; görünürlük kararı sayfada verilir). */
+export async function getTeacherProfileBySlug(slug: string) {
   const teacher = await db.teacherProfile.findUnique({
     where: { slug },
     include: {
@@ -203,11 +206,36 @@ export async function getPublicTeacher(slug: string) {
       },
     },
   });
-  if (!teacher || teacher.status !== "PUBLISHED" || teacher.user.status !== "ACTIVE") return null;
   return teacher;
 }
 
-export type PublicTeacher = NonNullable<Awaited<ReturnType<typeof getPublicTeacher>>>;
+export type PublicTeacher = NonNullable<Awaited<ReturnType<typeof getTeacherProfileBySlug>>>;
+
+export function isTeacherPublic(teacher: { status: string; user: { status: string } }): boolean {
+  return teacher.status === "PUBLISHED" && teacher.user.status === "ACTIVE";
+}
+
+/** Sayfa başlığı için önbellekli özet (profil güncellenince "teachers" etiketiyle yenilenir). */
+export async function getTeacherMeta(slug: string) {
+  "use cache";
+  cacheTag(TEACHERS_CACHE_TAG);
+  cacheLife("minutes");
+  const teacher = await db.teacherProfile.findUnique({
+    where: { slug },
+    select: {
+      status: true,
+      headline: true,
+      user: { select: { firstName: true, lastName: true, status: true } },
+      offerings: { where: { isActive: true }, select: { subject: { select: { name: true } } } },
+    },
+  });
+  if (!teacher || !isTeacherPublic(teacher)) return null;
+  return {
+    name: shortName(teacher.user),
+    headline: teacher.headline,
+    subjects: [...new Set(teacher.offerings.map((o) => o.subject.name))].slice(0, 3),
+  };
+}
 
 /** Profilin yayına alınabilmesi için eksikler. */
 export async function profileChecklist(teacherId: string) {

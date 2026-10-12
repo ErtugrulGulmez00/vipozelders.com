@@ -10,8 +10,10 @@ import { AccountError, createTeacherAccount, resetTeacherPassword } from "@/serv
 import { audit } from "@/server/audit";
 import { actionUser } from "@/server/auth/current-user";
 import { requestMeta } from "@/server/auth/session";
-import { BookingError, cancelByAdmin, resolveDispute } from "@/server/bookings";
+import { BookingError, cancelByAdmin, createTestLesson, resolveDispute } from "@/server/bookings";
+import { isDateString, timeToMinutes, zonedDateTime } from "@/lib/dates";
 import { db } from "@/server/db";
+import { resetMaintenanceCache } from "@/server/maintenance";
 import { recordManualPayout } from "@/server/ledger";
 import { notify } from "@/server/notifications";
 import { retryFailedRefund } from "@/server/payments/service";
@@ -19,7 +21,7 @@ import { setReviewStatus } from "@/server/reviews";
 import { runScheduledTasks } from "@/server/scheduler";
 import { saveSettings, settingsSchema, type SiteSettings } from "@/server/settings";
 import { CACHE_TAGS } from "@/server/site";
-import { profileChecklist } from "@/server/teachers";
+import { profileChecklist, TEACHERS_CACHE_TAG } from "@/server/teachers";
 
 const text = (formData: FormData, key: string) => String(formData.get(key) ?? "").trim();
 
@@ -89,6 +91,7 @@ export async function updateTeacherAccountAction(_: ActionState, formData: FormD
     data: { firstName: text(formData, "firstName"), lastName: text(formData, "lastName"), email, username, phone },
   });
   await log(user.id, "user.update", "User", userId);
+  updateTag(TEACHERS_CACHE_TAG);
   refresh();
   return success("Hesap bilgileri güncellendi.");
 }
@@ -113,6 +116,7 @@ export async function setTeacherStatusAction(_: ActionState, formData: FormData)
     await notify({ userId: teacherId, type: "teacher.published", title: "Profiliniz yayında!", body: "Artık veliler sizi öğretmen listesinde görebilir ve randevu talep edebilir.", link: "/ogretmen-paneli" });
   }
   await log(user.id, "teacher.status", "TeacherProfile", teacherId, { status });
+  updateTag(TEACHERS_CACHE_TAG);
   refresh();
   return success(status === "PUBLISHED" ? "Öğretmen yayına alındı." : status === "SUSPENDED" ? "Öğretmen askıya alındı (yeni randevu alamaz)." : "Öğretmen taslağa alındı.");
 }
@@ -202,6 +206,38 @@ export async function resolveDisputeAction(_: ActionState, formData: FormData): 
   }
   await log(user.id, "booking.dispute_resolve", "Booking", bookingId, { refund, note });
   redirect(`/yonetim/randevular/${bookingId}?durum=itiraz`);
+}
+
+/** Görüntülü görüşme denemesi için ödemesiz test dersi. */
+export async function createTestLessonAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await admin();
+  if (!user) return DENIED;
+  const student = await db.user.findUnique({ where: { email: text(formData, "studentEmail").toLowerCase() } });
+  if (!student) return failure("Bu e-postayla kayıtlı öğrenci/veli bulunamadı.", { studentEmail: "Bulunamadı." });
+  const startInput = text(formData, "startAt");
+  let startAt = new Date(Math.ceil((Date.now() + 2 * 60_000) / 60_000) * 60_000);
+  if (startInput) {
+    const [date, time = ""] = startInput.split("T");
+    const minutes = timeToMinutes(time);
+    if (!isDateString(date) || minutes === null) return failure("Başlangıç zamanı geçersiz.");
+    startAt = zonedDateTime(date, minutes);
+  }
+  let bookingId: string;
+  try {
+    const booking = await createTestLesson({
+      teacherId: text(formData, "teacherId"),
+      studentId: student.id,
+      startAt,
+      durationMinutes: Number(formData.get("duration") ?? 60),
+      adminId: user.id,
+    });
+    bookingId = booking.id;
+  } catch (error) {
+    if (error instanceof BookingError) return failure(error.message);
+    throw error;
+  }
+  await log(user.id, "booking.test_create", "Booking", bookingId);
+  redirect(`/yonetim/randevular/${bookingId}?durum=test`);
 }
 
 export async function retryRefundAction(_: ActionState, formData: FormData): Promise<ActionState> {
@@ -363,6 +399,7 @@ export async function saveSettingsAction(_: ActionState, formData: FormData): Pr
     return failure("Bazı değerler geçersiz.", Object.fromEntries(parsed.error.issues.map((i) => [String(i.path[0]), i.message])));
   }
   await saveSettings(parsed.data);
+  resetMaintenanceCache();
   await log(user.id, "settings.update", "SiteSetting", null, { keys: Object.keys(parsed.data).join(",") });
   updateTag(CACHE_TAGS.settings);
   refresh();

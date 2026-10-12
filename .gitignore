@@ -50,3 +50,6 @@ next-env.d.ts
 # testler
 /test-results
 /playwright-report
+
+# beyaz tahta yazı tipleri (npm install sırasında kopyalanır)
+/public/excalidraw

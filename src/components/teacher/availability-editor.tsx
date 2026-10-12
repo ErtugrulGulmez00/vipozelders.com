@@ -47,16 +47,16 @@ export function WeeklyAvailabilityEditor({
               {week[day].length === 0 ? <p className="pt-2 text-sm text-slate-400">Müsait değil</p> : null}
               {week[day].map((it, index) => (
                 <div key={index} className="flex items-center gap-2">
-                  <Input type="time" step={900} value={it.start} onChange={(e) => update(day, index, { start: e.target.value })} className="w-32" aria-label="Başlangıç" />
+                  <Input type="time" step={900} value={it.start} onChange={(e) => update(day, index, { start: e.target.value })} className="min-w-0 flex-1 sm:w-32 sm:flex-none" aria-label="Başlangıç" />
                   <span className="text-slate-400">–</span>
-                  <Input type="time" step={900} value={it.end} onChange={(e) => update(day, index, { end: e.target.value })} className="w-32" aria-label="Bitiş" />
+                  <Input type="time" step={900} value={it.end} onChange={(e) => update(day, index, { end: e.target.value })} className="min-w-0 flex-1 sm:w-32 sm:flex-none" aria-label="Bitiş" />
                   <button type="button" onClick={() => remove(day, index)} className="rounded-md p-2 text-slate-400 hover:bg-rose-50 hover:text-rose-600" aria-label="Aralığı sil">
                     <Trash2 className="size-4" aria-hidden />
                   </button>
                 </div>
               ))}
             </div>
-            <div className="flex gap-1">
+            <div className="flex shrink-0 flex-wrap gap-1">
               <Button size="sm" variant="ghost" onClick={() => add(day)}>
                 <Plus className="size-4" aria-hidden /> Aralık
               </Button>

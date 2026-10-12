@@ -87,12 +87,12 @@ export function EmptyState({ icon, title, description, action }: { icon?: ReactN
 
 export function StatCard({ label, value, hint, icon }: { label: string; value: ReactNode; hint?: ReactNode; icon?: ReactNode }) {
   return (
-    <Card className="p-5">
-      <div className="flex items-center justify-between gap-3">
+    <Card className="p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-2 sm:items-center sm:gap-3">
         <p className="text-sm font-medium text-slate-500">{label}</p>
-        {icon ? <span className="text-brand-500">{icon}</span> : null}
+        {icon ? <span className="hidden text-brand-500 sm:inline">{icon}</span> : null}
       </div>
-      <p className="mt-2 text-2xl font-bold tracking-tight text-slate-900">{value}</p>
+      <p className="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">{value}</p>
       {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
     </Card>
   );

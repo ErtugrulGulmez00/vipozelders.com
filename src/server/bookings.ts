@@ -15,7 +15,7 @@ import { generateSlots, isSlotAvailable, type BusyRange, type DayException, type
 import { db, type DbTransaction } from "./db";
 import { addLedgerEntry, pendingForBooking, resetPendingForBooking } from "./ledger";
 import { notify, notifyRole } from "./notifications";
-import { getPaymentProvider, processRefund, requestRefund } from "./payments/service";
+import { getPaymentProvider, getProviderById, PAYMENT_PROVIDERS, processRefund, requestRefund } from "./payments/service";
 import { approvalDeadline, lessonPrice, splitCommission, splitRetained, studentCancellationRefund } from "./pricing";
 import { appUrl } from "./email";
 import { loadSettings } from "./settings";
@@ -335,7 +335,7 @@ export async function startCheckout(bookingId: string, studentId: string, ipAddr
   }
 }
 
-export type CheckoutOutcome = "paid" | "failed" | "refunded" | "already";
+export type CheckoutOutcome = "paid" | "failed" | "refunded" | "already" | "pending";
 
 /** Ödeme kuruluşundan dönüşte (veya test ödeme sayfasından) ödemeyi sonuçlandırır. Tekrar çağrılabilir. */
 export async function completeCheckout(token: string, now = new Date()): Promise<{ bookingId: string; outcome: CheckoutOutcome }> {
@@ -343,7 +343,8 @@ export async function completeCheckout(token: string, now = new Date()): Promise
   if (!payment) throw new BookingError("Ödeme kaydı bulunamadı.");
   if (payment.status !== "INITIATED") return { bookingId: payment.bookingId, outcome: "already" };
 
-  const result = await getPaymentProvider().retrieveResult(token);
+  const result = await getProviderById(payment.provider).retrieveResult(token);
+  if (result.status === "pending") return { bookingId: payment.bookingId, outcome: "pending" };
   const raw = (result.raw ?? undefined) as Prisma.InputJsonValue | undefined;
 
   if (result.status === "failure") {
@@ -385,16 +386,23 @@ export async function completeCheckout(token: string, now = new Date()): Promise
     }
 
     if (!canProceed) {
+      // Randevu başka bir ödemeyle zaten ödenmişse bu ödeme mükerrerdir: tamamı iade edilir, randevu etkilenmez.
+      const duplicate = !recoverable && booking.paidAt !== null;
       if (booking.status === "PENDING_PAYMENT") {
         await transition(tx, booking, "EXPIRED", {}, null, "Ödeme geç tamamlandı; saat dolduğu için ücret iade edildi");
       }
-      refundId = await requestRefund(tx, booking.id, payment.amount, "Saat dolduğu için otomatik iade");
+      refundId = await requestRefund(tx, booking.id, payment.amount, duplicate ? "Mükerrer ödeme iadesi" : "Saat dolduğu için otomatik iade", {
+        paymentId: payment.id,
+        countTowardBooking: !duplicate,
+      });
       await notify(
         {
           userId: booking.studentId,
           type: "payment.refunded",
           title: "Ödemeniz iade ediliyor",
-          body: `${booking.code} numaralı randevunun saati ödeme tamamlanmadan doldu. ${formatMoney(payment.amount)} kartınıza iade ediliyor.`,
+          body: duplicate
+            ? `${booking.code} numaralı randevu için ikinci bir ödeme alındı. Fazladan çekilen ${formatMoney(payment.amount)} kartınıza iade ediliyor.`
+            : `${booking.code} numaralı randevunun saati ödeme tamamlanmadan doldu. ${formatMoney(payment.amount)} kartınıza iade ediliyor.`,
           link: `/hesabim/derslerim/${booking.id}`,
         },
         tx,
@@ -436,6 +444,74 @@ export async function completeCheckout(token: string, now = new Date()): Promise
 
   if (refundId) await processRefund(refundId);
   return { bookingId: payment.bookingId, outcome };
+}
+
+// ---------------------------------------------------------------------------
+// Test dersi (görüntülü görüşme denemesi)
+// ---------------------------------------------------------------------------
+
+/**
+ * Yöneticinin ödemesiz açtığı deneme dersi: hemen onaylı, online, ücretsiz.
+ * Yorum, puan, hakediş ve istatistiklere sayılmaz.
+ */
+export async function createTestLesson(input: { teacherId: string; studentId: string; startAt: Date; durationMinutes: number; adminId: string }) {
+  const [teacher, student] = await Promise.all([
+    db.teacherProfile.findUnique({ where: { userId: input.teacherId }, include: { user: true, offerings: { take: 1, include: { level: true, subject: true, serviceType: true } } } }),
+    db.user.findUnique({ where: { id: input.studentId }, include: { studentProfile: true } }),
+  ]);
+  if (!teacher || teacher.user.status !== "ACTIVE") throw new BookingError("Öğretmen bulunamadı veya hesabı kapalı.");
+  if (!student || student.role !== "STUDENT" || !student.studentProfile) throw new BookingError("Öğrenci/veli hesabı bulunamadı.");
+  if (![30, 45, 60, 90].includes(input.durationMinutes)) throw new BookingError("Geçersiz süre.");
+
+  const offering = teacher.offerings[0];
+  const [level, subject, service] = offering
+    ? [offering.level, offering.subject, offering.serviceType]
+    : await Promise.all([db.level.findFirstOrThrow({ orderBy: { sortOrder: "asc" } }), db.subject.findFirstOrThrow({ orderBy: { sortOrder: "asc" } }), db.serviceType.findFirstOrThrow({ orderBy: { sortOrder: "asc" } })]);
+  const endAt = new Date(input.startAt.getTime() + input.durationMinutes * 60_000);
+  const code = `TEST-${newBookingCode().slice(3)}`;
+
+  try {
+    return await db.$transaction(async (tx) => {
+      await lockTeacher(tx, teacher.userId);
+      const booking = await tx.booking.create({
+        data: {
+          code,
+          studentId: student.id,
+          teacherId: teacher.userId,
+          offeringId: offering?.id ?? null,
+          serviceTypeId: service.id,
+          levelId: level.id,
+          subjectId: subject.id,
+          serviceName: "Deneme dersi (test)",
+          levelName: level.name,
+          subjectName: subject.name,
+          learnerName: student.firstName,
+          mode: "ONLINE",
+          startAt: input.startAt,
+          endAt,
+          blockEndAt: endAt,
+          durationMinutes: input.durationMinutes,
+          price: 0,
+          commissionRateBps: 0,
+          commissionAmount: 0,
+          teacherAmount: 0,
+          status: "CONFIRMED",
+          confirmedAt: new Date(),
+          respondedAt: new Date(),
+          videoRoomName: `vd-test-${randomToken(9).toLowerCase()}`,
+          isTest: true,
+        },
+      });
+      await tx.bookingEvent.create({ data: { bookingId: booking.id, toStatus: "CONFIRMED", actorId: input.adminId, note: "Yönetici test dersi oluşturdu (ödemesiz)" } });
+      const body = `${formatLessonRange(booking.startAt, booking.endAt)}. Görüntülü görüşme ve beyaz tahta denemesi için ders sınıfı, ders saatinden 10 dakika önce açılır.`;
+      await notify({ userId: student.id, type: "booking.test", title: "Deneme dersi oluşturuldu", body, link: `/hesabim/derslerim/${booking.id}` }, tx);
+      await notify({ userId: teacher.userId, type: "booking.test", title: "Deneme dersi oluşturuldu", body: `${student.firstName} ile. ${body}`, link: `/ogretmen-paneli/dersler/${booking.id}` }, tx);
+      return booking;
+    });
+  } catch (error) {
+    if (isOverlapViolation(error)) throw new BookingError("Öğretmenin bu saatte başka bir dersi var.");
+    throw error;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -782,6 +858,10 @@ export async function completeFinishedLessons(now = new Date()): Promise<number>
   });
 
   for (const booking of due) {
+    if (booking.isTest) {
+      await db.$transaction((tx) => transition(tx, booking, "COMPLETED", { completedAt: now }, null, "Test dersi bitti")).catch(() => {});
+      continue;
+    }
     let outcome: "COMPLETED" | "NO_SHOW_STUDENT" | "NO_SHOW_TEACHER" = "COMPLETED";
     if (booking.mode === "ONLINE" && videoConfigured()) {
       const teacherJoined = booking.attendance.some((a) => a.userId === booking.teacherId);
@@ -847,16 +927,17 @@ export async function releaseDueEarnings(now = new Date()): Promise<number> {
     },
     take: 100,
   });
-  const provider = getPaymentProvider();
   let released = 0;
 
   for (const booking of due) {
     const pendingRefunds = await db.refund.count({ where: { payment: { bookingId: booking.id }, status: "PENDING" } });
     if (pendingRefunds > 0) continue;
 
+    // Hakediş, dersin ödemesinin alındığı sağlayıcıya göre işlenir.
+    const payment = booking.payments[0];
+    const provider = payment && payment.provider in PAYMENT_PROVIDERS ? getProviderById(payment.provider) : getPaymentProvider();
     const amount = await pendingForBooking(db, booking.id);
     if (amount > 0) {
-      const payment = booking.payments[0];
       const result = await provider
         .releaseToTeacher({ providerItemId: payment?.providerItemId ?? null, reference: booking.code })
         .catch((error: unknown) => ({ ok: false as const, error: String(error) }));

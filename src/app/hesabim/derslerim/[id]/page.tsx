@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BookingStatusBadge } from "@/components/panel/booking-ui";
+import { CalendarLinks } from "@/components/panel/calendar-links";
 import { FlashNotice } from "@/components/panel/flash-notice";
 import { LinkButton } from "@/components/ui/button";
 import { Alert, Avatar, Badge, Card, CardBody, CardHeader, DescriptionList } from "@/components/ui/primitives";
@@ -13,6 +14,7 @@ import { initials, shortName } from "@/lib/text";
 import { requireRole } from "@/server/auth/current-user";
 import { previewStudentCancellation } from "@/server/bookings";
 import { db } from "@/server/db";
+import { lessonCalendarEvent } from "@/server/lesson-calendar";
 import { reviewEligibility } from "@/server/reviews";
 import { loadSettings } from "@/server/settings";
 import { uploadUrl } from "@/server/storage";
@@ -43,6 +45,7 @@ export default async function StudentBookingPage({ params, searchParams }: PageP
   const eligibility = await reviewEligibility(user.id, booking.teacherId, now);
   const opensAt = new Date(booking.startAt.getTime() - settings.classroomOpensMinutesBefore * 60_000);
   const classroomOpen = booking.status === "CONFIRMED" && booking.mode === "ONLINE" && now >= opensAt && now <= new Date(booking.endAt.getTime() + 15 * 60_000);
+  const calendarEvent = booking.status === "CONFIRMED" && booking.endAt > now ? await lessonCalendarEvent(booking, "STUDENT", teacherName) : null;
   const canDispute = ["COMPLETED", "NO_SHOW_STUDENT"].includes(booking.status) && !booking.earningsReleasedAt && booking.earningsReleaseAt && booking.earningsReleaseAt > now;
 
   const refundText =
@@ -123,6 +126,11 @@ export default async function StudentBookingPage({ params, searchParams }: PageP
                   ...(booking.refundedAmount ? [{ label: "İade", value: formatMoney(booking.refundedAmount) }] : []),
                 ]}
               />
+              {calendarEvent ? (
+                <div className="mt-4 border-t border-slate-100 pt-4">
+                  <CalendarLinks bookingId={booking.id} event={calendarEvent} />
+                </div>
+              ) : null}
             </CardBody>
           </Card>
 

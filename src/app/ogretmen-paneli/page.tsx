@@ -72,7 +72,7 @@ export default async function TeacherDashboard() {
         </Card>
       ) : null}
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard label="Bekleyen talepler" value={pending.length} icon={<Inbox className="size-5" />} />
         <StatCard label="Yaklaşan dersler" value={upcoming.length} icon={<CalendarDays className="size-5" />} />
         <StatCard label="Ortalama puan" value={profile.ratingCount ? profile.ratingAvg.toLocaleString("tr-TR", { maximumFractionDigits: 1 }) : "—"} hint={`${profile.ratingCount} değerlendirme`} icon={<Star className="size-5" />} />

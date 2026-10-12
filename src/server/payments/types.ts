@@ -1,4 +1,4 @@
-// Ödeme sağlayıcısı soyutlaması. Geliştirmede "mock", canlıda "iyzico" kullanılır.
+// Ödeme sağlayıcısı soyutlaması. Geliştirmede "mock", canlıda "paytr" (veya "iyzico") kullanılır.
 
 export type CheckoutRequest = {
   paymentId: string;
@@ -24,12 +24,16 @@ export type CheckoutSession = { token: string; redirectUrl: string };
 
 export type CheckoutResult =
   | { status: "success"; paidAmount: number; providerPaymentId: string; providerItemId: string | null; raw: unknown }
-  | { status: "failure"; reason: string; raw: unknown };
+  | { status: "failure"; reason: string; raw: unknown }
+  /** Sonuç henüz belli değil (ör. PayTR bildirimi gelmedi); ödeme kaydı değiştirilmez. */
+  | { status: "pending" };
 
 export type ProviderCallResult = { ok: true; reference?: string } | { ok: false; error: string };
 
+export type PaymentProviderId = "mock" | "iyzico" | "paytr";
+
 export interface PaymentProvider {
-  readonly id: "mock" | "iyzico";
+  readonly id: PaymentProviderId;
   /** Hakediş ödeme kuruluşu tarafından otomatik ödeniyorsa true (pazaryeri). */
   readonly automaticPayouts: boolean;
   /** Öğretmenin alt üye işyeri kaydı zorunlu mu? */

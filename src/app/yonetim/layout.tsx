@@ -1,4 +1,4 @@
-import { CalendarDays, FileText, FolderTree, GraduationCap, History, LayoutDashboard, Mail, MessageSquareQuote, Settings, Users, Wallet } from "lucide-react";
+import { Bell, CalendarDays, FileText, FolderTree, GraduationCap, History, LayoutDashboard, Mail, MessageSquareQuote, Settings, ShieldCheck, Users, Wallet } from "lucide-react";
 import { PanelShell } from "@/components/panel/panel-shell";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
@@ -7,9 +7,10 @@ export const instant = false;
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await requireRole("ADMIN");
-  const [disputes, drafts] = await Promise.all([
+  const [disputes, drafts, unread] = await Promise.all([
     db.booking.count({ where: { status: "DISPUTED" } }),
     db.teacherProfile.count({ where: { status: "DRAFT" } }),
+    db.notification.count({ where: { userId: user.id, readAt: null } }),
   ]);
   return (
     <PanelShell
@@ -24,9 +25,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         { href: "/yonetim/yorumlar", label: "Yorumlar", icon: <MessageSquareQuote /> },
         { href: "/yonetim/kategoriler", label: "Kategoriler", icon: <FolderTree /> },
         { href: "/yonetim/sayfalar", label: "Sayfalar", icon: <FileText /> },
+        { href: "/yonetim/bildirimler", label: "Bildirimler", icon: <Bell />, badge: unread || undefined },
         { href: "/yonetim/e-postalar", label: "E-posta kutusu", icon: <Mail /> },
         { href: "/yonetim/islem-kayitlari", label: "İşlem kayıtları", icon: <History /> },
         { href: "/yonetim/ayarlar", label: "Site ayarları", icon: <Settings /> },
+        { href: "/yonetim/guvenlik", label: "Güvenlik", icon: <ShieldCheck /> },
       ]}
     >
       {children}

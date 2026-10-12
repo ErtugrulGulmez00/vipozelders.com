@@ -17,7 +17,7 @@ export default async function AvailabilityPage() {
         title="Müsaitlik takvimi"
         description={`Veliler yalnızca buradaki boş saatlerden randevu alabilir. Randevular en erken ${settings.minNoticeHours} saat sonrası, en geç ${settings.maxAdvanceDays} gün ilerisi için alınabilir.`}
       />
-      <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
+      <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_420px]">
         <Card>
           <CardHeader title="Haftalık şablon" description="Her hafta tekrarlanan ders verebileceğiniz saatler." />
           <CardBody>

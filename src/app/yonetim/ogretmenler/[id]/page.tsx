@@ -204,7 +204,7 @@ async function FinanceSection({ teacherId }: { teacherId: string }) {
                 { label: "Hesap sahibi", value: teacher.payoutLegalName ?? "—" },
                 { label: "IBAN", value: teacher.payoutIban ?? "Girilmedi" },
                 { label: "T.C. kimlik", value: identity },
-                { label: "iyzico alt üye", value: teacher.subMerchantKey ?? "—" },
+                ...(teacher.subMerchantKey ? [{ label: "iyzico alt üye", value: teacher.subMerchantKey }] : []),
               ]}
             />
             {balances.available > 0 ? <PayoutRecordForm teacherId={teacherId} available={String(balances.available / 100)} /> : <p className="text-sm text-slate-500">Ödenebilir bakiye yok.</p>}

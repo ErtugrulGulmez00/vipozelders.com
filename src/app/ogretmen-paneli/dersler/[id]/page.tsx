@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BookingStatusBadge } from "@/components/panel/booking-ui";
+import { CalendarLinks } from "@/components/panel/calendar-links";
 import { FlashNotice } from "@/components/panel/flash-notice";
 import { LinkButton } from "@/components/ui/button";
 import { Alert, Badge, Card, CardBody, CardHeader, DescriptionList } from "@/components/ui/primitives";
@@ -11,6 +12,7 @@ import { durationLabel, IN_PERSON_PLACE_LABEL, MODE_LABEL } from "@/lib/labels";
 import { formatMoney } from "@/lib/money";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
+import { lessonCalendarEvent } from "@/server/lesson-calendar";
 import { loadSettings } from "@/server/settings";
 import { TeacherCancelForm } from "./cancel-form";
 
@@ -31,6 +33,7 @@ export default async function TeacherLessonPage({ params, searchParams }: PagePr
   const opensAt = new Date(booking.startAt.getTime() - settings.classroomOpensMinutesBefore * 60_000);
   const classroomOpen = booking.status === "CONFIRMED" && booking.mode === "ONLINE" && now >= opensAt && now <= new Date(booking.endAt.getTime() + 15 * 60_000);
   const confirmedOrLater = ["CONFIRMED", "COMPLETED", "NO_SHOW_STUDENT", "DISPUTED"].includes(booking.status);
+  const calendarEvent = booking.status === "CONFIRMED" && booking.endAt > now ? await lessonCalendarEvent(booking, "TEACHER", booking.learnerName) : null;
 
   return (
     <>
@@ -97,6 +100,11 @@ export default async function TeacherLessonPage({ params, searchParams }: PagePr
                   { label: "Kazancınız", value: <strong>{formatMoney(booking.teacherAmount)}</strong> },
                 ]}
               />
+              {calendarEvent ? (
+                <div className="mt-4 border-t border-slate-100 pt-4">
+                  <CalendarLinks bookingId={booking.id} event={calendarEvent} />
+                </div>
+              ) : null}
             </CardBody>
           </Card>
           {booking.status === "DISPUTED" ? (

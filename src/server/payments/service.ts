@@ -1,10 +1,21 @@
 import { db, type DbTransaction } from "../db";
 import { iyzicoProvider } from "./iyzico";
 import { mockProvider } from "./mock";
+import { paytrProvider } from "./paytr";
 import type { PaymentProvider } from "./types";
 
+export const PAYMENT_PROVIDERS: Record<string, PaymentProvider> = { mock: mockProvider, iyzico: iyzicoProvider, paytr: paytrProvider };
+
+/** Yeni ödemeler için kullanılan sağlayıcı (.env → PAYMENT_PROVIDER=paytr | iyzico | mock). */
 export function getPaymentProvider(): PaymentProvider {
-  return process.env.PAYMENT_PROVIDER === "iyzico" ? iyzicoProvider : mockProvider;
+  return PAYMENT_PROVIDERS[process.env.PAYMENT_PROVIDER ?? ""] ?? mockProvider;
+}
+
+/** Var olan bir ödemenin sağlayıcısı: sağlayıcı sonradan değişse de eski ödemeler kendi sağlayıcısıyla sonuçlanır/iade edilir. */
+export function getProviderById(id: string): PaymentProvider {
+  const provider = PAYMENT_PROVIDERS[id];
+  if (!provider) throw new Error(`Bilinmeyen ödeme sağlayıcısı: ${id}`);
+  return provider;
 }
 
 type Tx = DbTransaction | typeof db;
@@ -12,22 +23,31 @@ type Tx = DbTransaction | typeof db;
 /**
  * İade talebi oluşturur (PENDING). Para hareketi transaction dışında processRefund ile
  * yapılır; sağlayıcı o an yanıt vermezse arka plan görevi yeniden dener.
+ * paymentId verilmezse iade edilebilir bakiyesi kalan en son ödeme seçilir.
+ * Mükerrer (fazladan alınmış) bir ödemenin iadesi randevunun iade tutarına sayılmaz (countTowardBooking: false).
  */
-export async function requestRefund(tx: Tx, bookingId: string, amount: number, reason: string): Promise<string | null> {
+export async function requestRefund(
+  tx: Tx,
+  bookingId: string,
+  amount: number,
+  reason: string,
+  options: { paymentId?: string; countTowardBooking?: boolean } = {},
+): Promise<string | null> {
   if (amount <= 0) return null;
-  const payment = await tx.payment.findFirst({
-    where: { bookingId, status: { in: ["SUCCEEDED", "PARTIALLY_REFUNDED"] } },
+  const payments = await tx.payment.findMany({
+    where: { bookingId, ...(options.paymentId ? { id: options.paymentId } : {}), status: { in: ["SUCCEEDED", "PARTIALLY_REFUNDED"] } },
     orderBy: { createdAt: "desc" },
     include: { refunds: { where: { status: { in: ["PENDING", "SUCCEEDED"] } } } },
   });
+  const remaining = (p: (typeof payments)[number]) => p.amount - p.refunds.reduce((sum, r) => sum + r.amount, 0);
+  const payment = payments.find((p) => remaining(p) > 0);
   if (!payment) return null;
 
-  const alreadyRequested = payment.refunds.reduce((sum, r) => sum + r.amount, 0);
-  const refundable = Math.min(amount, payment.amount - alreadyRequested);
-  if (refundable <= 0) return null;
-
+  const refundable = Math.min(amount, remaining(payment));
   const refund = await tx.refund.create({ data: { paymentId: payment.id, amount: refundable, reason } });
-  await tx.booking.update({ where: { id: bookingId }, data: { refundedAmount: { increment: refundable } } });
+  if (options.countTowardBooking !== false) {
+    await tx.booking.update({ where: { id: bookingId }, data: { refundedAmount: { increment: refundable } } });
+  }
   return refund.id;
 }
 
@@ -36,10 +56,9 @@ export async function processRefund(refundId: string): Promise<boolean> {
   const refund = await db.refund.findUnique({ where: { id: refundId }, include: { payment: true } });
   if (!refund || refund.status !== "PENDING") return refund?.status === "SUCCEEDED";
 
-  const provider = getPaymentProvider();
   let result: Awaited<ReturnType<PaymentProvider["refund"]>>;
   try {
-    result = await provider.refund({
+    result = await getProviderById(refund.payment.provider).refund({
       providerPaymentId: refund.payment.providerPaymentId ?? "",
       providerItemId: refund.payment.providerItemId,
       amount: refund.amount,

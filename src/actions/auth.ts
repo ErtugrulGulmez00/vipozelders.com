@@ -11,6 +11,7 @@ import { burnPasswordCheck, hashPassword, passwordProblem, verifyPassword } from
 import { countRecentAttempts, isLoginBlocked, recordLoginAttempt } from "@/server/auth/rate-limit";
 import { createSession, destroySession, requestMeta, revokeOtherSessions } from "@/server/auth/session";
 import { consumeUserToken } from "@/server/auth/tokens";
+import { checkUserTotp, endTwoFactorChallenge, pendingTwoFactor, startTwoFactorChallenge } from "@/server/auth/two-factor";
 import { db } from "@/server/db";
 
 const text = (formData: FormData, key: string) => String(formData.get(key) ?? "").trim();
@@ -33,9 +34,40 @@ export async function loginAction(_: ActionState, formData: FormData): Promise<A
   if (!user || !valid) return failure("Kullanıcı adı/e-posta veya şifre hatalı.");
   if (user.status !== "ACTIVE") return failure("Hesabınız askıya alınmış. Destek ekibimizle iletişime geçin.");
 
+  // İki adımlı doğrulama açıksa oturum, doğrulayıcı uygulamadaki kod girilince açılır.
+  if (user.totpEnabledAt && user.totpSecretEnc) {
+    await startTwoFactorChallenge(user.id);
+    redirect(`/giris/dogrulama${next ? `?next=${encodeURIComponent(next)}` : ""}`);
+  }
+
   await createSession(user.id);
   await db.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
 
+  if (user.mustChangePassword) redirect("/sifre-degistir");
+  redirect(next ?? roleHome(user.role));
+}
+
+export async function verifyTwoFactorAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const pending = await pendingTwoFactor();
+  if (!pending) redirect("/giris");
+  const { user, tokenId } = pending;
+  if (user.status !== "ACTIVE") return failure("Hesabınız askıya alınmış. Destek ekibimizle iletişime geçin.");
+
+  const identifier = `2fa:${user.id}`;
+  const { ipAddress } = await requestMeta();
+  if (await isLoginBlocked(identifier, ipAddress)) {
+    await endTwoFactorChallenge(tokenId);
+    return failure("Çok fazla hatalı kod girildi. 15 dakika sonra yeniden giriş yapın.");
+  }
+  const ok = await checkUserTotp(user.id, text(formData, "code"));
+  await recordLoginAttempt(identifier, ipAddress, ok);
+  if (!ok) return failure("Kod hatalı veya süresi geçmiş.", { code: "Uygulamadaki güncel 6 haneli kodu yazın." });
+
+  await endTwoFactorChallenge(tokenId);
+  await createSession(user.id);
+  await db.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+
+  const next = safeNextPath(text(formData, "next"));
   if (user.mustChangePassword) redirect("/sifre-degistir");
   redirect(next ?? roleHome(user.role));
 }

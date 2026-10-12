@@ -12,7 +12,7 @@ import { db } from "@/server/db";
 export const metadata: Metadata = { title: "Test ödeme" };
 export const instant = false;
 
-/** Geliştirme ortamı için sahte ödeme sayfası (iyzico bağlanınca kullanılmaz). */
+/** Geliştirme ortamı için sahte ödeme sayfası (PayTR bağlanınca kullanılmaz). */
 export default async function MockPaymentPage({ params }: PageProps<"/odeme/test/[paymentId]">) {
   const user = await requireUser();
   const { paymentId } = await params;
@@ -24,7 +24,7 @@ export default async function MockPaymentPage({ params }: PageProps<"/odeme/test
   return (
     <div className="mx-auto max-w-lg px-4 py-10">
       <Alert tone="warning" title="Test ödeme sayfası" className="mb-4">
-        Geliştirme ortamındasınız; gerçek kart bilgisi istenmez ve para çekilmez. iyzico anahtarları girildiğinde bu sayfanın yerine iyzico’nun 3D Secure ödeme formu açılır.
+        Geliştirme ortamındasınız; gerçek kart bilgisi istenmez ve para çekilmez. PayTR mağaza bilgileri girildiğinde bu sayfanın yerine PayTR’nin 3D Secure ödeme formu açılır.
       </Alert>
       <Card className="p-6">
         <div className="mb-5 flex items-center gap-3">

@@ -1,6 +1,6 @@
 "use server";
 
-import { refresh } from "next/cache";
+import { refresh, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { failure, success, type ActionState } from "@/lib/action-state";
 import { audit } from "@/server/audit";
@@ -21,7 +21,7 @@ import {
   updateTeacherPhoto,
   updateTeacherProfile,
 } from "@/server/teacher-profile";
-import { profileChecklist } from "@/server/teachers";
+import { profileChecklist, TEACHERS_CACHE_TAG } from "@/server/teachers";
 import { db } from "@/server/db";
 import { normalizePhone } from "@/lib/text";
 
@@ -57,6 +57,7 @@ export async function saveProfileAction(_: ActionState, formData: FormData): Pro
   } catch (error) {
     return handle(error);
   }
+  updateTag(TEACHERS_CACHE_TAG);
   refresh();
   return success("Profil kaydedildi.");
 }
@@ -76,6 +77,7 @@ export async function saveOfferingAction(_: ActionState, formData: FormData): Pr
   } catch (error) {
     return handle(error);
   }
+  updateTag(TEACHERS_CACHE_TAG);
   refresh();
   return success("Ders ve fiyat kaydedildi.");
 }
@@ -88,6 +90,7 @@ export async function removeOfferingAction(_: ActionState, formData: FormData): 
   } catch (error) {
     return handle(error);
   }
+  updateTag(TEACHERS_CACHE_TAG);
   refresh();
   return success("Ders kaldırıldı.");
 }

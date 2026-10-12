@@ -2,10 +2,11 @@ import { BadgeCheck, BookOpen, Clock, GraduationCap, Heart, Home, MapPin, Monito
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { connection } from "next/server";
 import { Suspense } from "react";
 import { toggleFavoriteAction } from "@/actions/student";
 import { BookingWidget } from "@/components/site/booking-widget";
-import { Avatar, Badge, Card, RatingSummary, Skeleton, Stars } from "@/components/ui/primitives";
+import { Alert, Avatar, Badge, Card, RatingSummary, Skeleton, Stars } from "@/components/ui/primitives";
 import { formatDate, toLocalDateString } from "@/lib/dates";
 import { durationLabel } from "@/lib/labels";
 import { formatMoney } from "@/lib/money";
@@ -13,16 +14,16 @@ import { initials, shortName } from "@/lib/text";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { uploadUrl } from "@/server/storage";
-import { getPublicTeacher, type PublicTeacher } from "@/server/teachers";
+import { getTeacherMeta, getTeacherProfileBySlug, isTeacherPublic, type PublicTeacher } from "@/server/teachers";
 
 export async function generateMetadata({ params }: PageProps<"/ogretmen/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const teacher = await getPublicTeacher(slug);
-  if (!teacher) return { title: "Öğretmen bulunamadı" };
-  const subjects = [...new Set(teacher.offerings.map((o) => o.subject.name))].slice(0, 3).join(", ");
+  const meta = await getTeacherMeta(slug);
+  if (!meta) return { title: "Öğretmen profili", robots: { index: false } };
+  const subjects = meta.subjects.join(", ");
   return {
-    title: `${shortName(teacher.user)} · ${subjects} öğretmeni`,
-    description: teacher.headline ?? `${subjects} özel ders`,
+    title: `${meta.name} · ${subjects} öğretmeni`,
+    description: meta.headline ?? `${subjects} özel ders`,
   };
 }
 
@@ -44,8 +45,16 @@ function youtubeId(url: string | null): string | null {
 
 async function TeacherProfile({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const teacher = await getPublicTeacher(slug);
+  // Profil her istekte güncel okunur (boş saatler, "bugün" tarihi).
+  await connection();
+  const teacher = await getTeacherProfileBySlug(slug);
   if (!teacher) notFound();
+  // Yayında olmayan profili yalnızca öğretmenin kendisi ve yöneticiler önizleyebilir.
+  const preview = !isTeacherPublic(teacher);
+  if (preview) {
+    const viewer = await getCurrentUser();
+    if (!viewer || (viewer.role !== "ADMIN" && viewer.id !== teacher.userId)) notFound();
+  }
 
   const name = shortName(teacher.user);
   const video = youtubeId(teacher.videoUrl);
@@ -57,6 +66,11 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
+      {preview ? (
+        <Alert tone="warning" title="Önizleme" className="lg:col-span-2">
+          Bu profil henüz yayında değil; şu an yalnızca siz ve yöneticiler görebilirsiniz. Yönetici yayına aldığında veliler bu sayfayı görüp randevu alabilecek.
+        </Alert>
+      ) : null}
       <div className="space-y-6">
         <Card className="p-6">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
@@ -162,6 +176,9 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
           <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-900">
             <BookOpen className="size-5 text-brand-600" aria-hidden /> Randevu al
           </h2>
+          {preview ? (
+            <p className="text-sm text-slate-500">Profil yayına alınınca boş saatleriniz burada görünecek ve veliler randevu alabilecek.</p>
+          ) : (
           <BookingWidget
             teacherId={teacher.userId}
             online={teacher.offersOnline}
@@ -176,6 +193,7 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
               durations: o.durations,
             }))}
           />
+          )}
         </Card>
       </aside>
     </div>

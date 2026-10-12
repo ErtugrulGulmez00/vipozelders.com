@@ -1,5 +1,17 @@
 import type { NextConfig } from "next";
 
+// Server Action'larda tarayıcının Origin başlığı sunucunun gördüğü adresle karşılaştırılır.
+// Tünel ya da kendi Host başlığını ileten bir proxy arkasında APP_URL'deki adres de kabul edilir.
+function allowedOrigins(): string[] {
+  const hosts = (process.env.SERVER_ACTIONS_ALLOWED_ORIGINS ?? "").split(",").map((h) => h.trim()).filter(Boolean);
+  try {
+    if (process.env.APP_URL) hosts.push(new URL(process.env.APP_URL).host);
+  } catch {
+    // Geçersiz APP_URL: yalnızca aynı adres kabul edilir.
+  }
+  return hosts;
+}
+
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
@@ -9,6 +21,7 @@ const nextConfig: NextConfig = {
     serverActions: {
       // Profil fotoğrafı ve belge yüklemeleri için (dosya sınırı uygulamada 5 MB).
       bodySizeLimit: "6mb",
+      allowedOrigins: allowedOrigins(),
     },
   },
   turbopack: {

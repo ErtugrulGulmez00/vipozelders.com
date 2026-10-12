@@ -48,6 +48,11 @@ export default async function AdminBookingPage({ params, searchParams }: PagePro
         <BookingStatusBadge status={booking.status} />
       </div>
       <FlashNotice code={durum} />
+      {booking.isTest ? (
+        <Alert tone="info" title="Test dersi" className="mb-6">
+          Ödemesiz deneme dersi. Puan, yorum ve ciroya sayılmaz. Öğretmen ve öğrenci kendi ders sayfalarından sınıfa girebilir.
+        </Alert>
+      ) : null}
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
         <div className="space-y-6">
           {booking.status === "DISPUTED" ? (

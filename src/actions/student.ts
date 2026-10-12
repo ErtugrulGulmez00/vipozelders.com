@@ -16,6 +16,7 @@ import {
   startCheckout,
 } from "@/server/bookings";
 import { db } from "@/server/db";
+import { getPaymentProvider } from "@/server/payments/service";
 import { ReviewError, upsertReview } from "@/server/reviews";
 
 const text = (formData: FormData, key: string) => String(formData.get(key) ?? "").trim();
@@ -86,7 +87,8 @@ export async function retryPaymentAction(_: ActionState, formData: FormData): Pr
 /** Geliştirme ortamındaki test ödeme sayfasının sonucu. */
 export async function mockPaymentAction(formData: FormData) {
   const user = await actionUser("STUDENT");
-  if (!user || process.env.PAYMENT_PROVIDER === "iyzico") redirect("/");
+  // Sahte ödeme yalnızca test sağlayıcısı etkinken çalışır.
+  if (!user || getPaymentProvider().id !== "mock") redirect("/");
   const paymentId = text(formData, "paymentId");
   const outcome = text(formData, "outcome") === "success" ? "success" : "failure";
   const payment = await db.payment.findUnique({ where: { id: paymentId }, include: { booking: true } });

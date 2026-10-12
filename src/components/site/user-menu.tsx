@@ -13,9 +13,10 @@ export async function UserMenu() {
   const user = await getCurrentUser();
   if (!user) {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2">
         <Link href="/giris" className={buttonClasses("ghost", "sm")}>
-          Giriş yap
+          <span className="sm:hidden">Giriş</span>
+          <span className="hidden sm:inline">Giriş yap</span>
         </Link>
         <Link href="/kayit" className={buttonClasses("primary", "sm")}>
           Kayıt ol
@@ -26,7 +27,7 @@ export async function UserMenu() {
 
   const unread = await db.notification.count({ where: { userId: user.id, readAt: null } });
   const home = roleHome(user.role);
-  const notificationsHref = user.role === "ADMIN" ? "/yonetim" : `${home}/bildirimler`;
+  const notificationsHref = `${home}/bildirimler`;
 
   return (
     <div className="flex items-center gap-1">

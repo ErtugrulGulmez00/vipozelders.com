@@ -1,4 +1,5 @@
 import { Wrench } from "lucide-react";
+import Link from "next/link";
 import { CookieNotice } from "@/components/site/cookie-notice";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
@@ -8,18 +9,17 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
   const settings = await getSiteSettings();
   return (
     <div className="flex min-h-dvh flex-col">
+      {settings.maintenanceMode ? (
+        // Bakım modunda ziyaretçiler proxy'de bakım sayfasına alınır; siteyi yalnızca yöneticiler görür.
+        <div className="flex flex-wrap items-center justify-center gap-2 bg-amber-400 px-4 py-2 text-center text-sm font-semibold text-amber-950">
+          <Wrench className="size-4" aria-hidden /> Site bakım modunda: ziyaretçiler bakım sayfasını görüyor.
+          <Link href="/yonetim/ayarlar" className="underline">
+            Bakım modunu kapat
+          </Link>
+        </div>
+      ) : null}
       <SiteHeader />
-      <main className="flex-1">
-        {settings.maintenanceMode ? (
-          <div className="mx-auto flex max-w-xl flex-col items-center px-4 py-24 text-center">
-            <Wrench className="mb-4 size-10 text-brand-500" aria-hidden />
-            <h1 className="text-2xl font-bold text-slate-900">Bakımdayız</h1>
-            <p className="mt-2 text-slate-600">{settings.maintenanceMessage}</p>
-          </div>
-        ) : (
-          children
-        )}
-      </main>
+      <main className="flex-1">{children}</main>
       <SiteFooter />
       <CookieNotice />
     </div>

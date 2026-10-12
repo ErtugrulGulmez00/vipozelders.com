@@ -10,7 +10,7 @@ export async function Logo({ className, light = false }: { className?: string; l
       <span className="inline-flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-600 to-brand-800 text-gold-300 shadow-sm">
         <GraduationCap className="size-5" aria-hidden />
       </span>
-      <span className="text-lg">{settings.siteName}</span>
+      <span className="whitespace-nowrap text-base sm:text-lg">{settings.siteName}</span>
     </Link>
   );
 }

@@ -20,7 +20,7 @@ export async function SiteHeader() {
         <div className="bg-brand-900 px-4 py-2 text-center text-sm font-medium text-gold-100">{settings.announcement}</div>
       ) : null}
       <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-4 sm:gap-4">
           <div className="flex items-center gap-8">
             <Logo />
             <nav className="hidden items-center gap-1 md:flex" aria-label="Ana menü">
@@ -31,7 +31,7 @@ export async function SiteHeader() {
               ))}
             </nav>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <Suspense fallback={<UserMenuFallback />}>
               <UserMenu />
             </Suspense>

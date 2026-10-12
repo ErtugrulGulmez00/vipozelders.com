@@ -46,7 +46,7 @@ export function BookingRow({ booking, href }: { booking: BookingRowData; href: s
           </span>
         </p>
         <p className="mt-1 text-xs text-slate-400">
-          {booking.counterpart} · {booking.serviceName} · {booking.learnerName} · {booking.code}
+          {[booking.counterpart, booking.serviceName, booking.learnerName !== booking.counterpart && booking.learnerName, booking.code].filter(Boolean).join(" · ")}
         </p>
       </div>
       <p className="font-semibold text-slate-900">{formatMoney(booking.price)}</p>

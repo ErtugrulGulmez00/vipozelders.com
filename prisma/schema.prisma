@@ -50,6 +50,11 @@ model User {
   phone              String?
   emailVerifiedAt    DateTime?
   lastLoginAt        DateTime?
+  // İki adımlı doğrulama (TOTP). Gizli anahtar AES-256-GCM ile şifreli; totpEnabledAt boşsa kurulum yarım.
+  totpSecretEnc      String?
+  totpEnabledAt      DateTime?
+  // Aynı kodun ikinci kez kullanılmaması için son kabul edilen 30 sn'lik adım.
+  totpLastStep       Int?
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 
@@ -84,6 +89,7 @@ model Session {
 enum UserTokenType {
   EMAIL_VERIFICATION
   PASSWORD_RESET
+  TWO_FACTOR_LOGIN
 }
 
 model UserToken {
@@ -474,6 +480,8 @@ model Booking {
   earningsReleaseAt DateTime?
   earningsReleasedAt DateTime?
   videoRoomName     String?        @unique
+  // Yönetici tarafından ödemesiz açılan deneme dersi (görüntülü görüşme testi); yorum, puan ve ciroya sayılmaz.
+  isTest            Boolean        @default(false)
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
 

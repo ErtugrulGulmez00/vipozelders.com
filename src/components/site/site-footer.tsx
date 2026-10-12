@@ -69,7 +69,7 @@ export async function SiteFooter() {
               <ShieldCheck className="size-3.5" aria-hidden /> 3D Secure
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-md bg-white/5 px-2.5 py-1">
-              <CreditCard className="size-3.5" aria-hidden /> iyzico ile güvenli ödeme · Visa · Mastercard · Troy
+              <CreditCard className="size-3.5" aria-hidden /> Visa · Mastercard · Troy
             </span>
           </div>
         </div>

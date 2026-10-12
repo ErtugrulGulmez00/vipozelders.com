@@ -3,11 +3,12 @@
 Üç panelli özel ders pazaryeri:
 
 - **Vitrin (herkese açık):** öğretmen arama ve filtreleme, öğretmen profilleri, boş/dolu saat takvimi, kategori (SEO) sayfaları, yasal sayfalar
-- **Öğrenci/Veli hesabı** (`/hesabim`): randevu, ödeme, sanal sınıfa katılma, iptal, sorun bildirme, değerlendirme, favoriler
+- **Öğrenci/Veli hesabı** (`/hesabim`): randevu, ödeme, sanal sınıfa katılma, takvime ekleme (.ics / Google Takvim), iptal, sorun bildirme, değerlendirme, favoriler
 - **Öğretmen paneli** (`/ogretmen-paneli`): talepleri onaylama/reddetme, profil, dersler ve fiyatlar, müsaitlik takvimi, kazançlar, yorumlara cevap
-- **Yönetim paneli** (`/yonetim`): hızlı öğretmen ekleme (otomatik kullanıcı adı ve geçici şifre), yayın ve doğrulama, randevu ve itiraz yönetimi, finans ve hakediş ödemeleri, yorum moderasyonu, kategoriler, sayfalar, site ayarları, e-posta kutusu, işlem kayıtları
+- **Yönetim paneli** (`/yonetim`): hızlı öğretmen ekleme (otomatik kullanıcı adı ve geçici şifre), yayın ve doğrulama, randevu ve itiraz yönetimi, ödemesiz **test dersi** (görüntülü görüşme denemesi), finans ve hakediş ödemeleri, Excel/CSV çıktıları, yorum moderasyonu, kategoriler, sayfalar, site ayarları ve bakım modu, bildirimler, e-posta kutusu, işlem kayıtları, iki adımlı doğrulama (Google Authenticator)
+- **Sanal sınıf** (`/ders/...`): kamera, mikrofon, ekran paylaşımı, sohbet ve ortak **beyaz tahta**; yoklama otomatik tutulur
 
-Teknoloji: Next.js 16 (App Router, Cache Components) · TypeScript · Tailwind CSS 4 · PostgreSQL 18 + Prisma 7 · LiveKit (sanal sınıf) · iyzico (ödeme).
+Teknoloji: Next.js 16 (App Router, Cache Components) · TypeScript · Tailwind CSS 4 · PostgreSQL 18 + Prisma 7 · LiveKit (sanal sınıf) · PayTR (ödeme; iyzico da hazır).
 
 ---
 
@@ -54,6 +55,8 @@ Demo veriler `@demo.vipozelders.local` uzantılı hesaplar ve bunlara bağlı ö
 | `npm run db:migrate` | Şema değişikliğinden yeni migration üretir |
 | `npm run db:reset` | Veritabanını sıfırlar ve yeniden yükler (**tüm veriler silinir**) |
 | `npm run worker` | Arka plan görevlerini ayrı süreçte çalıştırır |
+| `npm run admin:2fa-kapat -- <kullanıcı>` | Telefonunu kaybeden yöneticinin iki adımlı doğrulamasını kapatır |
+| `npm run test:e2e` | Uçtan uca tarayıcı testleri (`npm run db` ve `npm run dev` açıkken) |
 | `npm test` | Birim ve entegrasyon testleri (`npm run db` açıkken) |
 | `npm run typecheck` | TypeScript kontrolü |
 
@@ -73,9 +76,23 @@ Demo veriler `@demo.vipozelders.local` uzantılı hesaplar ve bunlara bağlı ö
 
 ---
 
-## Ödeme (iyzico)
+## Ödeme (PayTR)
 
 Geliştirmede `PAYMENT_PROVIDER=mock` ile site içindeki **test ödeme sayfası** kullanılır; para çekilmez.
+
+PayTR'ye geçiş (iFrame API):
+
+1. PayTR mağaza panelinde **Destek & Kurulum → Entegrasyon Bilgileri** sayfasından Mağaza No, Mağaza Parola (key) ve Mağaza Gizli Anahtar (salt) bilgilerini alın.
+2. `.env`: `PAYMENT_PROVIDER="paytr"`, `PAYTR_MERCHANT_ID`, `PAYTR_MERCHANT_KEY`, `PAYTR_MERCHANT_SALT`, denemeler için `PAYTR_TEST_MODE="1"` (canlıda `"0"`).
+3. PayTR panelinde **Destek & Kurulum → Ayarlar → Bildirim URL** alanına `https://ALAN-ADINIZ/api/odeme/paytr/bildirim` yazın. Ödemenin onayı yalnızca bu adrese gelen imzalı bildirimle yapılır; bu yüzden site internetten erişilebilir olmalı (localhost'a bildirim gelmez; dönüş sayfası bu durumda PayTR durum sorgusuyla kontrol eder).
+4. `APP_URL` sitenin gerçek adresi olmalı (ör. `https://vipozelders.com`); ödeme formundan dönüş `/api/odeme/paytr/donus` adresine yapılır.
+5. Test modunda PayTR panelindeki test kartlarıyla başarılı ve başarısız ödeme, öğretmen reddi sonrası tam iade ve geç iptalde kısmi iade senaryolarını deneyin.
+
+Nasıl çalışır: veli ödeme adımında sitenin içinde PayTR'nin 3D Secure formunu görür (`/odeme/paytr/...`), kart bilgisi bizim sunucumuza hiç gelmez. Taksit kapalıdır; tahsil edilen tutar ders ücretine eşittir. İadeler (red, süre aşımı, iptal) PayTR iade servisiyle otomatik yapılır, başarısız olursa arka plan görevi 5 kez yeniden dener. PayTR ile hakedişler öğretmenlere yönetim panelindeki **Finans** bölümünden havale kaydıyla ödenir.
+
+> PayTR bağlantısı resmi dokümana göre yazıldı ve imza/iade hesapları otomatik testlerle doğrulandı, ancak gerçek PayTR test hesabıyla henüz denenmedi. Canlıya geçmeden önce test modunda yukarıdaki senaryoları mutlaka deneyin.
+
+### iyzico (alternatif)
 
 iyzico'ya geçiş:
 
@@ -90,13 +107,15 @@ iyzico'ya geçiş:
 
 ## Sanal sınıf (LiveKit)
 
-Online dersler sitenin içinde açılır (kamera, mikrofon, ekran paylaşımı, sohbet). Sınıfa yalnızca o dersin öğretmeni ve öğrencisi, dersten 10 dakika önceden bitişten 15 dakika sonrasına kadar girebilir.
+Online dersler sitenin içinde açılır (kamera, mikrofon, ekran paylaşımı, sohbet ve iki tarafın da çizebildiği beyaz tahta). Sınıfa yalnızca o dersin öğretmeni ve öğrencisi, dersten 10 dakika önceden bitişten 15 dakika sonrasına kadar girebilir.
 
 1. [LiveKit Cloud](https://cloud.livekit.io)'da ücretsiz proje açın (veya kendi sunucunuzda `livekit-server` çalıştırın).
 2. `.env`: `LIVEKIT_URL="wss://...livekit.cloud"`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET`.
 3. Yoklama için LiveKit panelinde webhook adresini `https://ALAN-ADINIZ/api/livekit/webhook` yapın.
 
 Anahtarlar girilmezse ders sayfası “sanal sınıf yapılandırılmadı” mesajı gösterir, uygulamanın geri kalanı çalışmaya devam eder.
+
+**Görüntülü dersi denemek için:** Yönetim → Randevular → “Test dersi oluştur” ile bir öğretmen ve bir veli/öğrenci hesabı arasında ödemesiz, hemen başlayan bir ders açın; iki taraf da ders sayfasından “Derse katıl”a basar. Test dersleri yorum, puan, hakediş ve istatistiklere sayılmaz. Arkadaşınızla internet üzerinden denemek için [DEPLOY.md](DEPLOY.md) → “Hızlı deneme”.
 
 ---
 
@@ -118,6 +137,8 @@ Testler her çalıştırmada ayrı bir `vipozelders_test` veritabanı oluşturur
 - boş saat üretimi (şablon, izin, ek saat, tampon, en erken ve en geç sınırlar)
 - fiyat, komisyon, iptal ve kısmi iade hesapları
 - uçtan uca randevu: ödeme → onay → tamamlama → yorum → hakediş
+- PayTR: imza hesapları, bildirim doğrulama, tekrar gelen bildirim, durum sorgusu, iade ve mükerrer ödeme iadesi
+- iki adımlı doğrulama (RFC 6238 test vektörleri), takvim dosyası
 - aynı saate eşzamanlı üç talepten yalnızca birinin kabul edilmesi ve veritabanı kısıtı
 - red, süre aşımı, geç iptal, öğretmen iptali ve itiraz çözümü
 
@@ -125,9 +146,11 @@ Testler her çalıştırmada ayrı bir `vipozelders_test` veritabanı oluşturur
 
 ## Canlıya çıkış kontrol listesi
 
+Adım adım sunucu kurulumu (VPS, HTTPS, servis, yedekleme) ve sunucusuz hızlı deneme: **[DEPLOY.md](DEPLOY.md)**.
+
 **Kod dışı (sizin tarafınız):**
 
-- [ ] Şirket kuruluşu ve iyzico üye işyeri başvurusu (pazaryeri modeli)
+- [ ] Şirket kuruluşu ve PayTR üye işyeri başvurusu
 - [ ] Yasal metinler: `Yönetim → Sayfalar`'daki şablonları avukata kontrol ettirin, “TASLAK METİN” satırlarını silin
 - [ ] Site ayarlarına ticari unvan, adres, vergi/MERSİS bilgisi
 - [ ] ETBİS kaydı (gerekiyorsa VERBİS); fatura ve vergi modeli için mali müşavir
@@ -166,4 +189,4 @@ tests/               Vitest testleri
 
 ## Sonraki aşamalar (Faz 2–3)
 
-Mesajlaşma (iletişim bilgisi maskeleme), paketler ve deneme dersi, kupon, SMS bildirimleri, erteleme ve tekrarlayan ders, ders notu/ödev ve veli raporu, beyaz tahta, öğretmen başvuru formu ve belge yükleme, il/ilçe SEO sayfaları ve blog, asenkron soru çözüm, koçluk araçları, grup dersleri, mobil uygulama.
+Mesajlaşma (iletişim bilgisi maskeleme), paketler ve deneme dersi, kupon, SMS bildirimleri, erteleme ve tekrarlayan ders, ders notu/ödev ve veli raporu, öğretmen başvuru formu ve belge yükleme, il/ilçe SEO sayfaları ve blog, asenkron soru çözüm, koçluk araçları, grup dersleri, mobil uygulama.

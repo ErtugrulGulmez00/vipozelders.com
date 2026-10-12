@@ -1,13 +1,15 @@
-import { CheckCircle2, Clock, RotateCcw, XCircle } from "lucide-react";
+import { CheckCircle2, Clock, LoaderCircle, RotateCcw, XCircle } from "lucide-react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { retryPaymentAction } from "@/actions/student";
 import { ActionForm, SubmitButton } from "@/components/forms/action-form";
+import { AutoRefresh } from "@/components/ui/auto-refresh";
 import { LinkButton } from "@/components/ui/button";
 import { Card, DescriptionList } from "@/components/ui/primitives";
 import { formatDateTime, formatLessonRange } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { requireUser } from "@/server/auth/current-user";
+import { completeCheckout } from "@/server/bookings";
 import { db } from "@/server/db";
 
 export const metadata: Metadata = { title: "Ödeme sonucu" };
@@ -16,13 +18,24 @@ export const instant = false;
 export default async function PaymentResultPage({ params }: PageProps<"/odeme/sonuc/[bookingId]">) {
   const user = await requireUser();
   const { bookingId } = await params;
-  const booking = await db.booking.findUnique({
-    where: { id: bookingId },
-    include: { payments: { orderBy: { createdAt: "desc" }, take: 1 }, teacher: { select: { slug: true } } },
-  });
+  const load = () =>
+    db.booking.findUnique({
+      where: { id: bookingId },
+      include: { payments: { orderBy: { createdAt: "desc" }, take: 1 }, teacher: { select: { slug: true } } },
+    });
+  let booking = await load();
   if (!booking || booking.studentId !== user.id) redirect("/hesabim");
-  const payment = booking.payments[0];
-  const holdValid = booking.status === "PENDING_PAYMENT" && booking.holdExpiresAt && booking.holdExpiresAt > new Date();
+  let payment = booking.payments[0];
+
+  // PayTR sonucu sunucuya bildirimle gelir; henüz gelmediyse durum sorgusuyla kontrol edilir.
+  const awaitingProvider = payment?.status === "INITIATED" && payment.provider === "paytr" && payment.providerToken;
+  if (awaitingProvider) {
+    await completeCheckout(payment.providerToken!).catch((error: unknown) => console.error("[ödeme sonucu]", error));
+    booking = (await load())!;
+    payment = booking.payments[0];
+  }
+  const now = new Date();
+  const holdValid = booking.status === "PENDING_PAYMENT" && booking.holdExpiresAt && booking.holdExpiresAt > now;
 
   const details = (
     <DescriptionList
@@ -47,6 +60,26 @@ export default async function PaymentResultPage({ params }: PageProps<"/odeme/so
         <LinkButton href={`/hesabim/derslerim/${booking.id}`} size="lg" className="mt-6">
           Randevuma git
         </LinkButton>
+      </Result>
+    );
+  }
+
+  // Süresi dolan saat için de kısa bir süre geç gelen bildirim beklenir (PayTR formu 30 dk açık kalır).
+  const awaitingResult =
+    payment?.status === "INITIATED" &&
+    payment.provider === "paytr" &&
+    (booking.status === "PENDING_PAYMENT" || (booking.status === "EXPIRED" && payment.createdAt.getTime() > now.getTime() - 35 * 60_000));
+  if (awaitingResult) {
+    return (
+      <Result icon={<LoaderCircle className="size-12 animate-spin text-brand-500" />} title="Ödemeniz kontrol ediliyor">
+        <AutoRefresh />
+        <p className="text-slate-600">Bankanızdan gelen sonuç bekleniyor. Bu sayfa birkaç saniyede bir kendiliğinden yenilenir.</p>
+        <Card className="mt-6 p-5 text-left">{details}</Card>
+        {booking.status === "PENDING_PAYMENT" ? (
+          <LinkButton href={`/odeme/paytr/${payment!.id}`} variant="outline" className="mt-6">
+            Ödeme formuna dön
+          </LinkButton>
+        ) : null}
       </Result>
     );
   }

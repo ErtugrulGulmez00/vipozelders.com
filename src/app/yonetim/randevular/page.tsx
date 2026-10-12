@@ -1,15 +1,17 @@
+import { FileSpreadsheet } from "lucide-react";
 import type { Metadata } from "next";
 import Form from "next/form";
 import Link from "next/link";
-import type { BookingStatus, Prisma } from "@/generated/prisma/client";
 import { BookingStatusBadge } from "@/components/panel/booking-ui";
 import { Input, Select } from "@/components/ui/form";
 import { Card, PageHeader, Pagination, Table, Td, Th } from "@/components/ui/primitives";
 import { formatCompact } from "@/lib/dates";
 import { BOOKING_STATUS, MODE_LABEL } from "@/lib/labels";
 import { formatMoney } from "@/lib/money";
+import { adminBookingWhere } from "@/server/admin-bookings";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
+import { TestLessonForm } from "./test-lesson-form";
 
 export const metadata: Metadata = { title: "Randevular" };
 
@@ -21,22 +23,9 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/yo
   const status = String(params.durum ?? "");
   const q = String(params.q ?? "").trim();
   const page = Math.max(1, Number(params.sayfa) || 1);
-  const where: Prisma.BookingWhereInput = {
-    ...(status && status in BOOKING_STATUS ? { status: status as BookingStatus } : {}),
-    ...(q
-      ? {
-          OR: [
-            { code: { contains: q.toUpperCase() } },
-            { learnerName: { contains: q, mode: "insensitive" } },
-            { student: { email: { contains: q.toLowerCase() } } },
-            { student: { lastName: { contains: q, mode: "insensitive" } } },
-            { teacher: { user: { lastName: { contains: q, mode: "insensitive" } } } },
-            { teacher: { user: { firstName: { contains: q, mode: "insensitive" } } } },
-          ],
-        }
-      : {}),
-  };
-  const [total, bookings] = await Promise.all([
+  const where = adminBookingWhere(q, status);
+  const exportQuery = new URLSearchParams({ ...(q ? { q } : {}), ...(status ? { durum: status } : {}) });
+  const [total, bookings, teacherOptions, studentOptions] = await Promise.all([
     db.booking.count({ where }),
     db.booking.findMany({
       where,
@@ -45,11 +34,17 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/yo
       take: PAGE_SIZE,
       include: { teacher: { select: { user: { select: { firstName: true, lastName: true } } } }, student: { select: { firstName: true, lastName: true } } },
     }),
+    db.user.findMany({ where: { role: "TEACHER", status: "ACTIVE" }, orderBy: { firstName: "asc" }, select: { id: true, firstName: true, lastName: true } }),
+    db.user.findMany({ where: { role: "STUDENT", status: "ACTIVE", email: { not: null } }, orderBy: { createdAt: "desc" }, take: 200, select: { email: true, firstName: true, lastName: true } }),
   ]);
 
   return (
     <>
       <PageHeader title="Randevular" description={`${total} kayıt`} />
+      <TestLessonForm
+        teachers={teacherOptions.map((t) => ({ id: t.id, name: `${t.firstName} ${t.lastName}` }))}
+        students={studentOptions.map((s) => ({ email: s.email!, name: `${s.firstName} ${s.lastName}` }))}
+      />
       <Form action="/yonetim/randevular" className="mb-4 flex flex-wrap gap-2">
         <Input name="q" defaultValue={q} placeholder="Kod, öğrenci, veli e-postası, öğretmen" className="w-80" />
         <Select name="durum" defaultValue={status} className="w-56">
@@ -63,6 +58,9 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/yo
         <button type="submit" className="h-10 rounded-lg bg-slate-800 px-4 text-sm font-semibold text-white">
           Filtrele
         </button>
+        <a href={`/api/yonetim/disa-aktar/randevular?${exportQuery}`} className="inline-flex h-10 items-center gap-1.5 rounded-lg px-4 text-sm font-semibold text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50" download>
+          <FileSpreadsheet className="size-4" aria-hidden /> Excel’e aktar
+        </a>
       </Form>
       <Card>
         <Table>

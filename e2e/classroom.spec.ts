@@ -21,8 +21,11 @@ async function sql<T = Record<string, unknown>>(text: string, values: unknown[] 
   }
 }
 
-async function loggedInPage(browser: Browser, identifier: string, password: string): Promise<Page> {
+const PHONE = { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true };
+
+async function loggedInPage(browser: Browser, identifier: string, password: string, device: Partial<typeof PHONE> = {}): Promise<Page> {
   const context = await browser.newContext({
+    ...device,
     permissions: ["camera", "microphone"],
     locale: "tr-TR",
     timezoneId: "Europe/Istanbul",
@@ -38,37 +41,43 @@ async function loggedInPage(browser: Browser, identifier: string, password: stri
 
 test.use({ launchOptions: { args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] } });
 
-let bookingId: string | undefined;
+const created: string[] = [];
 
-test.afterAll(async () => {
-  if (bookingId) await sql(`DELETE FROM "Booking" WHERE id = $1`, [bookingId]);
-});
+/** Aynı öğretmenle yeni test dersi açabilmek için önceki test derslerini siler. */
+async function removeTestLessons() {
+  while (created.length) await sql(`DELETE FROM "Booking" WHERE id = $1`, [created.pop()]);
+}
 
-test("öğretmen ve veli sanal sınıfta buluşur", async ({ browser }) => {
+test.afterAll(removeTestLessons);
+
+/** Yönetici panelden ödemesiz test dersi oluşturur ve kimliğini döndürür. */
+async function createTestLesson(browser: Browser): Promise<string> {
+  await removeTestLessons();
+  const adminPage = await loggedInPage(browser, "admin", "Yonetici123");
+  await adminPage.goto("/yonetim/randevular");
+  await adminPage.getByText("Test dersi oluştur (görüntülü görüşme ve beyaz tahta denemesi)").click();
   const [teacher] = await sql<{ id: string }>(`SELECT id FROM "User" WHERE username = 'ayse.yilmaz'`);
-  const [parent] = await sql<{ id: string }>(`SELECT id FROM "User" WHERE email = 'veli@demo.vipozelders.local'`);
-  const [offering] = await sql<{ id: string; serviceTypeId: number; levelId: number; subjectId: number }>(
-    `SELECT id, "serviceTypeId", "levelId", "subjectId" FROM "TeacherOffering" WHERE "teacherId" = $1 LIMIT 1`,
-    [teacher.id],
-  );
-  const stamp = Date.now().toString(36).toUpperCase();
-  const [row] = await sql<{ id: string }>(
-    `INSERT INTO "Booking" (id, code, "studentId", "teacherId", "offeringId", "serviceTypeId", "levelId", "subjectId",
-       "serviceName", "levelName", "subjectName", "learnerName", mode, "startAt", "endAt", "blockEndAt", "durationMinutes",
-       price, "commissionRateBps", "commissionAmount", "teacherAmount", status, "videoRoomName", "updatedAt")
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'Özel Ders', 'Lise', 'Matematik', 'Ali', 'ONLINE',
-       (now() at time zone 'utc') + interval '5 minutes', (now() at time zone 'utc') + interval '65 minutes', (now() at time zone 'utc') + interval '65 minutes',
-       60, 90000, 1500, 13500, 76500, 'CONFIRMED', $9, now() at time zone 'utc')
-     RETURNING id`,
-    [`e2e_lk_${stamp}`, `VD-LK${stamp}`, parent.id, teacher.id, offering.id, offering.serviceTypeId, offering.levelId, offering.subjectId, `vd-e2e-${stamp.toLowerCase()}`],
-  );
-  bookingId = row.id;
+  await adminPage.locator('select[name="teacherId"]').selectOption(teacher.id);
+  await adminPage.locator('input[name="studentEmail"]').fill("veli@demo.vipozelders.local");
+  await adminPage.getByRole("button", { name: "Test dersini oluştur" }).click();
+  await expect(adminPage).toHaveURL(/\/yonetim\/randevular\/[^/?]+\?durum=test/);
+  await expect(adminPage.getByText("Test dersi oluşturuldu.", { exact: false })).toBeVisible();
+  const id = new URL(adminPage.url()).pathname.split("/").pop()!;
+  created.push(id);
+  await adminPage.context().close();
+  return id;
+}
 
+test("yönetici test dersi açar, öğretmen ve veli sanal sınıfta buluşur", async ({ browser }) => {
+  const bookingId = await createTestLesson(browser);
+
+  // Öğretmen ve veli kendi ders sayfalarından "Derse katıl" ile girer
   const teacherPage = await loggedInPage(browser, "ayse.yilmaz", "Ogretmen123");
   const parentPage = await loggedInPage(browser, "veli@demo.vipozelders.local", "Veli12345");
-
-  await teacherPage.goto(`/ders/${bookingId}`);
-  await parentPage.goto(`/ders/${bookingId}`);
+  await teacherPage.goto(`/ogretmen-paneli/dersler/${bookingId}`);
+  await teacherPage.getByRole("link", { name: "Derse katıl" }).click();
+  await parentPage.goto(`/hesabim/derslerim/${bookingId}`);
+  await parentPage.getByRole("link", { name: "Derse katıl" }).click();
 
   for (const page of [teacherPage, parentPage]) {
     await expect(page.getByText(/Dersin bitmesine \d+ dakika/)).toBeVisible({ timeout: 30_000 });
@@ -85,6 +94,32 @@ test("öğretmen ve veli sanal sınıfta buluşur", async ({ browser }) => {
   await parentPage.getByRole("button", { name: "Sohbet" }).click();
   await expect(parentPage.getByText("Merhaba Ali, hazır mısın?")).toBeVisible({ timeout: 15_000 });
 
+  // Beyaz tahta: öğretmen açar, velide kendiliğinden açılır; iki tarafın çizimi karşıya geçer
+  await teacherPage.getByRole("button", { name: "Beyaz tahta" }).click();
+  const teacherBoard = teacherPage.getByTestId("whiteboard");
+  const parentBoard = parentPage.getByTestId("whiteboard");
+  await expect(teacherBoard.locator(".excalidraw")).toBeVisible({ timeout: 60_000 });
+  await expect(parentBoard.locator(".excalidraw")).toBeVisible({ timeout: 60_000 });
+
+  async function drawRectangle(page: Page, offset: number) {
+    await page.getByTitle(/^Dikdörtgen/).click();
+    // Sol taraftaki özellik panelinin üstüne değil, tahtanın ortasına çiz.
+    const box = (await page.locator("canvas.interactive").boundingBox())!;
+    const x = box.x + box.width / 2 - 60 + offset;
+    const y = box.y + box.height / 2 - 80 + offset / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + 120, y + 80, { steps: 6 });
+    await page.mouse.up();
+  }
+  await drawRectangle(teacherPage, 0);
+  await expect(teacherBoard).toHaveAttribute("data-elements", "1");
+  await expect(parentBoard).toHaveAttribute("data-elements", "1", { timeout: 15_000 });
+  await drawRectangle(parentPage, 140);
+  await expect(teacherBoard).toHaveAttribute("data-elements", "2", { timeout: 15_000 });
+  await expect(parentBoard).toHaveAttribute("data-elements", "2");
+  await teacherPage.screenshot({ path: "test-results/tahta-ogretmen.png" });
+
   // Yoklama: iki taraf da kaydedildi
   await expect
     .poll(async () => (await sql<{ userId: string }>(`SELECT DISTINCT "userId" FROM "LessonAttendance" WHERE "bookingId" = $1`, [bookingId])).length)
@@ -93,4 +128,35 @@ test("öğretmen ve veli sanal sınıfta buluşur", async ({ browser }) => {
   // Dersten çıkış ders sayfasına döndürür
   await parentPage.getByRole("button", { name: /Dersten çık/ }).click();
   await expect(parentPage).toHaveURL(new RegExp(`/hesabim/derslerim/${bookingId}`));
+});
+
+test("telefonda sınıf: tahta, kameralar ve düğmeler ekrana sığar", async ({ browser }) => {
+  const bookingId = await createTestLesson(browser);
+  const teacherPage = await loggedInPage(browser, "ayse.yilmaz", "Ogretmen123", PHONE);
+  const parentPage = await loggedInPage(browser, "veli@demo.vipozelders.local", "Veli12345", PHONE);
+  await teacherPage.goto(`/ders/${bookingId}`);
+  await parentPage.goto(`/ders/${bookingId}`);
+  for (const page of [teacherPage, parentPage]) {
+    await expect(page.locator(".lk-participant-tile")).toHaveCount(2, { timeout: 30_000 });
+  }
+
+  // Telefonda sohbet açıkken tahta açılırsa sohbet kapanır (ikisi aynı alanı kullanır)
+  await teacherPage.getByRole("button", { name: "Sohbet", exact: true }).click();
+  await expect(teacherPage.getByPlaceholder("Mesaj yazın…")).toBeVisible();
+  await teacherPage.getByRole("button", { name: "Beyaz tahta", exact: true }).click();
+  await expect(teacherPage.getByPlaceholder("Mesaj yazın…")).toHaveCount(0);
+
+  for (const page of [teacherPage, parentPage]) {
+    await expect(page.getByTestId("whiteboard").locator(".excalidraw")).toBeVisible({ timeout: 60_000 });
+    // Kameralar tahtanın altında yan yana; tüm düğmeler ekranda, yatay kaydırma yok
+    const tiles = page.locator("aside[aria-label='Katılımcılar'] .lk-participant-tile");
+    await expect(tiles).toHaveCount(2);
+    const [first, second] = [(await tiles.nth(0).boundingBox())!, (await tiles.nth(1).boundingBox())!];
+    expect(Math.abs(first.y - second.y)).toBeLessThan(2);
+    const leave = (await page.getByRole("button", { name: /Dersten çık/ }).boundingBox())!;
+    expect(leave.y + leave.height).toBeLessThanOrEqual(PHONE.viewport.height);
+    expect(first.y + first.height).toBeLessThanOrEqual(leave.y);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+  }
+  await parentPage.screenshot({ path: "test-results/tahta-telefon.png" });
 });

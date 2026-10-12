@@ -1,5 +1,7 @@
+import { FileSpreadsheet } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { buttonClasses } from "@/components/ui/button";
 import { Alert, Badge, Card, CardBody, CardHeader, PageHeader, StatCard, Table, Td, Th } from "@/components/ui/primitives";
 import { formatCompact } from "@/lib/dates";
 import { PAYMENT_STATUS, REFUND_STATUS } from "@/lib/labels";
@@ -32,8 +34,21 @@ export default async function FinancePage() {
 
   return (
     <>
-      <PageHeader title="Finans" description="Tahsilatlar, iadeler ve öğretmen hakedişleri." />
-      <div className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <PageHeader
+        title="Finans"
+        description="Tahsilatlar, iadeler ve öğretmen hakedişleri."
+        actions={
+          <>
+            <a href="/api/yonetim/disa-aktar/odemeler" className={buttonClasses("outline", "sm")} download>
+              <FileSpreadsheet className="size-4" aria-hidden /> Ödemeler (Excel)
+            </a>
+            <a href="/api/yonetim/disa-aktar/hakedisler" className={buttonClasses("outline", "sm")} download>
+              <FileSpreadsheet className="size-4" aria-hidden /> Hakediş ödemeleri (Excel)
+            </a>
+          </>
+        }
+      />
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard label="Toplam tahsilat" value={formatMoney(totals._sum.amount ?? 0)} />
         <StatCard label="Toplam iade" value={formatMoney(refunds._sum.amount ?? 0)} />
         <StatCard label="Komisyon (tamamlanan dersler)" value={formatMoney(commission._sum.commissionAmount ?? 0)} />
@@ -75,7 +90,7 @@ export default async function FinancePage() {
       ) : null}
 
       <Card className="mb-6">
-        <CardHeader title="Ödenecek hakedişler" description={provider.automaticPayouts ? "Pazaryeri modunda iyzico öğretmenlere otomatik öder." : "Havaleyi yaptıktan sonra buraya kaydedin; öğretmene bildirim gider."} />
+        <CardHeader title="Ödenecek hakedişler" description={provider.automaticPayouts ? "Pazaryeri modunda ödeme kuruluşu öğretmenlere otomatik öder." : "Havaleyi yaptıktan sonra buraya kaydedin; öğretmene bildirim gider."} />
         <CardBody>
           {withBalance.length === 0 ? <p className="text-sm text-slate-500">Ödenecek serbest bakiye yok.</p> : null}
           <div className="divide-y divide-slate-100">
@@ -136,7 +151,7 @@ export default async function FinancePage() {
       </Card>
       {provider.id === "mock" ? (
         <Alert tone="info" className="mt-6">
-          Ödemeler test sağlayıcısıyla alınıyor. Canlıya geçerken .env dosyasında PAYMENT_PROVIDER=iyzico ve iyzico anahtarlarını girin.
+          Ödemeler test sağlayıcısıyla alınıyor. Canlıya geçerken .env dosyasında PAYMENT_PROVIDER=paytr ve PayTR mağaza bilgilerini (PAYTR_MERCHANT_ID, PAYTR_MERCHANT_KEY, PAYTR_MERCHANT_SALT) girin.
         </Alert>
       ) : null}
     </>
