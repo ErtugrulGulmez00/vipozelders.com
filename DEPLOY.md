@@ -173,6 +173,7 @@ Caddy SSL sertifikasını kendisi alır ve yeniler.
 
 - **PayTR paneli → Ayarlar → Bildirim URL:** `https://alanadiniz.com/api/odeme/paytr/bildirim`
 - **LiveKit Cloud → Settings → Webhooks:** `https://alanadiniz.com/api/livekit/webhook` (yoklama kaydı için)
+- **Mobil uygulama push bildirimleri (uygulama yayına girince):** Firebase konsolu → Proje ayarları → Hizmet hesapları → “Yeni özel anahtar oluştur” ile JSON dosyasını indirin, sunucuya kopyalayın (ör. `/home/vipozelders/firebase.json`, yalnızca uygulama kullanıcısı okuyabilsin: `chmod 600`) ve `.env` içine `FCM_SERVICE_ACCOUNT_FILE=/home/vipozelders/firebase.json` yazıp servisi yeniden başlatın.
 - **Yönetim → Site ayarları:** site adı, iletişim bilgileri, ticari unvan, komisyon ve kurallar
 - **Yönetim → Sayfalar:** yasal metinleri avukatınıza kontrol ettirip “TASLAK” satırlarını silin
 

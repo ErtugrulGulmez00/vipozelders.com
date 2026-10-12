@@ -43,9 +43,13 @@ test.use({ launchOptions: { args: ["--use-fake-ui-for-media-stream", "--use-fake
 
 const created: string[] = [];
 
-/** Aynı öğretmenle yeni test dersi açabilmek için önceki test derslerini siler. */
+/** Aynı öğretmenle yeni test dersi açabilmek için önceki test derslerini ve bildirimlerini siler. */
 async function removeTestLessons() {
-  while (created.length) await sql(`DELETE FROM "Booking" WHERE id = $1`, [created.pop()]);
+  while (created.length) {
+    const id = created.pop()!;
+    await sql(`DELETE FROM "Notification" WHERE link LIKE $1`, [`%/${id}%`]);
+    await sql(`DELETE FROM "Booking" WHERE id = $1`, [id]);
+  }
 }
 
 test.afterAll(removeTestLessons);

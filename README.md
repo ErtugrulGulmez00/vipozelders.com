@@ -7,6 +7,7 @@
 - **Öğretmen paneli** (`/ogretmen-paneli`): talepleri onaylama/reddetme, profil, dersler ve fiyatlar, müsaitlik takvimi, kazançlar, yorumlara cevap
 - **Yönetim paneli** (`/yonetim`): hızlı öğretmen ekleme (otomatik kullanıcı adı ve geçici şifre), yayın ve doğrulama, randevu ve itiraz yönetimi, ödemesiz **test dersi** (görüntülü görüşme denemesi), finans ve hakediş ödemeleri, Excel/CSV çıktıları, yorum moderasyonu, kategoriler, sayfalar, site ayarları ve bakım modu, bildirimler, e-posta kutusu, işlem kayıtları, iki adımlı doğrulama (Google Authenticator)
 - **Sanal sınıf** (`/ders/...`): kamera, mikrofon, ekran paylaşımı, sohbet ve ortak **beyaz tahta**; yoklama otomatik tutulur
+- **Mobil API** (`/api/mobil/v1`): Flutter uygulaması için JSON uç noktaları (Bearer oturum, randevu, ödeme ve sınıf için WebView bağlantısı, push bildirimi). Sözleşme ve uygulama promptu: [docs/flutter-uygulama-promptu.md](docs/flutter-uygulama-promptu.md)
 
 Teknoloji: Next.js 16 (App Router, Cache Components) · TypeScript · Tailwind CSS 4 · PostgreSQL 18 + Prisma 7 · LiveKit (sanal sınıf) · PayTR (ödeme; iyzico da hazır).
 
@@ -139,6 +140,7 @@ Testler her çalıştırmada ayrı bir `vipozelders_test` veritabanı oluşturur
 - uçtan uca randevu: ödeme → onay → tamamlama → yorum → hakediş
 - PayTR: imza hesapları, bildirim doğrulama, tekrar gelen bildirim, durum sorgusu, iade ve mükerrer ödeme iadesi
 - iki adımlı doğrulama (RFC 6238 test vektörleri), takvim dosyası
+- mobil API: Bearer oturumu, tek kullanımlık WebView girişi, push (imzalı JWT, ölü cihaz temizliği) ve uçtan uca kayıt → randevu → ödeme → onay → iptal akışı (`e2e/mobile-api.spec.ts`)
 - aynı saate eşzamanlı üç talepten yalnızca birinin kabul edilmesi ve veritabanı kısıtı
 - red, süre aşımı, geç iptal, öğretmen iptali ve itiraz çözümü
 

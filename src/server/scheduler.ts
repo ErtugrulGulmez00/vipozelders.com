@@ -10,6 +10,7 @@ import {
 import { db } from "./db";
 import { sendPendingEmails } from "./email";
 import { processPendingRefunds } from "./payments/service";
+import { sendPendingPushes } from "./push";
 
 const HOLDER = `${hostname()}-${process.pid}-${randomUUID().slice(0, 8)}`;
 
@@ -36,11 +37,12 @@ const TASKS = {
   reminders: sendLessonReminders,
   refunds: () => processPendingRefunds(),
   emails: () => sendPendingEmails(),
+  pushes: sendPendingPushes,
 } satisfies Record<string, (now: Date) => Promise<number>>;
 
 export type SchedulerSummary = Partial<Record<keyof typeof TASKS, number | string>>;
 
-/** Süresi dolan ödemeler/onaylar, biten dersler, hakedişler, hatırlatmalar, iadeler, e-postalar. */
+/** Süresi dolan ödemeler/onaylar, biten dersler, hakedişler, hatırlatmalar, iadeler, e-postalar, push bildirimleri. */
 export async function runScheduledTasks(now = new Date()): Promise<SchedulerSummary | null> {
   if (!(await acquireLease("scheduler", 55_000, now))) return null;
   const summary: SchedulerSummary = {};

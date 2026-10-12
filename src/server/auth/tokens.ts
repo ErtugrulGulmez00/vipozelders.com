@@ -6,6 +6,7 @@ const TTL_MS: Record<UserTokenType, number> = {
   EMAIL_VERIFICATION: 3 * 24 * 60 * 60 * 1000,
   PASSWORD_RESET: 60 * 60 * 1000,
   TWO_FACTOR_LOGIN: 10 * 60 * 1000,
+  MOBILE_WEB_LOGIN: 5 * 60 * 1000,
 };
 
 /** Tek kullanımlık bağlantı anahtarı üretir; veritabanında yalnızca özeti tutulur. */

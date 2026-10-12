@@ -71,6 +71,20 @@ model User {
   attendance         LessonAttendance[]
   emails             EmailMessage[]
   payoutsCreated     Payout[]       @relation("PayoutCreatedBy")
+  devices            Device[]
+}
+
+// Mobil uygulama push bildirim kayıtları (Firebase Cloud Messaging).
+model Device {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token      String   @unique
+  platform   String
+  createdAt  DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Session {
@@ -90,6 +104,8 @@ enum UserTokenType {
   EMAIL_VERIFICATION
   PASSWORD_RESET
   TWO_FACTOR_LOGIN
+  // Mobil uygulamanın WebView'da (ödeme, sanal sınıf) web oturumu açması için tek kullanımlık anahtar.
+  MOBILE_WEB_LOGIN
 }
 
 model UserToken {
@@ -663,6 +679,8 @@ model Notification {
   body      String
   link      String?
   readAt    DateTime?
+  // Mobil cihazlara push gönderildiği an (gönderim kuyruğu).
+  pushedAt  DateTime?
   createdAt DateTime  @default(now())
 
   @@index([userId, readAt])
