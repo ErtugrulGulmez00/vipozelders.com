@@ -7,7 +7,7 @@ const event: CalendarEvent = {
   end: new Date("2026-10-13T16:00:00Z"),
   title: "Lise Matematik dersi - Ayşe Y.",
   description: "Özel Ders; 1 saat, online\nDerse katılım: https://vipozelders.com/ders/abc123 ".repeat(2),
-  location: "Online - VIP Özel Ders sanal sınıf",
+  location: "Online - Pi Kampüs sanal sınıf",
   url: "https://vipozelders.com/hesabim/derslerim/abc123",
 };
 

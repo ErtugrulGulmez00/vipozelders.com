@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   // iyzipay modüllerini dosya sisteminden dinamik yüklediği için paketlenmeden çalıştırılmalı.
-  serverExternalPackages: ["iyzipay", "pg", "nodemailer"],
+  serverExternalPackages: ["iyzipay", "pg", "nodemailer", "exceljs"],
   experimental: {
     serverActions: {
       // Profil fotoğrafı ve belge yüklemeleri için (dosya sınırı uygulamada 5 MB).

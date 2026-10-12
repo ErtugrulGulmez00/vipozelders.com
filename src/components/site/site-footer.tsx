@@ -41,6 +41,16 @@ export async function SiteFooter() {
                 Öğretmen olarak katılın
               </Link>
             </li>
+            <li>
+              <Link href="/kurumlar-icin" className="hover:text-white">
+                Etüt merkezi / dershane paneli
+              </Link>
+            </li>
+            <li>
+              <Link href="/kurumlar" className="hover:text-white">
+                Kurum rehberi
+              </Link>
+            </li>
           </ul>
         </div>
         <div>

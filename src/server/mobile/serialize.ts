@@ -96,6 +96,10 @@ export function notificationTarget(link: string | null): { screen: string; id?: 
   if (link.startsWith("/ogretmen-paneli/kazanclar")) return { screen: "earnings" };
   const teacher = /^\/ogretmen\/([a-z0-9-]+)/i.exec(link);
   if (teacher) return { screen: "teacher", id: teacher[1] };
+  // Kurum (veli portalı) bildirimleri: devamsızlık, deneme sonucu, ödeme, duyuru
+  const center = /^\/hesabim\/kurum\/([a-z0-9]+)/i.exec(link);
+  if (center) return { screen: "centerStudent", id: center[1] };
+  if (link.startsWith("/hesabim/kurum")) return { screen: "center" };
   return null;
 }
 

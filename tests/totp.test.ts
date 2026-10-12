@@ -42,11 +42,11 @@ describe("TOTP (iki adımlı doğrulama)", () => {
   });
 
   it("doğrulayıcı uygulama adresi", () => {
-    const uri = new URL(totpUri(RFC_SECRET, "admin", "VIP Özel Ders"));
+    const uri = new URL(totpUri(RFC_SECRET, "admin", "Pi Kampüs"));
     expect(uri.protocol).toBe("otpauth:");
     expect(uri.host).toBe("totp");
-    expect(decodeURIComponent(uri.pathname)).toBe("/VIP Özel Ders:admin");
+    expect(decodeURIComponent(uri.pathname)).toBe("/Pi Kampüs:admin");
     expect(uri.searchParams.get("secret")).toBe(RFC_SECRET);
-    expect(uri.searchParams.get("issuer")).toBe("VIP Özel Ders");
+    expect(uri.searchParams.get("issuer")).toBe("Pi Kampüs");
   });
 });

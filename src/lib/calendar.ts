@@ -42,7 +42,7 @@ export function icsFile(event: CalendarEvent, now = new Date()): string {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//VIP Ozel Ders//Ders Takvimi//TR",
+    "PRODID:-//Pi Kampus//Ders Takvimi//TR",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",

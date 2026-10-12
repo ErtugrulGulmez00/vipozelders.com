@@ -10,6 +10,7 @@ const NAV = [
   { href: "/ogretmenler?service=soru-cozum", label: "Soru çözüm" },
   { href: "/ogretmenler?service=kocluk", label: "Koçluk" },
   { href: "/sayfa/nasil-calisir", label: "Nasıl çalışır?" },
+  { href: "/kurumlar-icin", label: "Kurumlar için" },
 ];
 
 export async function SiteHeader() {

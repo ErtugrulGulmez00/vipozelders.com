@@ -54,7 +54,7 @@ export const GENDER_LABEL: Record<string, string> = { FEMALE: "Kadın", MALE: "E
 
 export const ACCOUNT_TYPE_LABEL: Record<string, string> = { PARENT: "Veli", STUDENT: "Öğrenci (18+)" };
 
-export const ROLE_LABEL: Record<string, string> = { ADMIN: "Yönetici", TEACHER: "Öğretmen", STUDENT: "Öğrenci/Veli" };
+export const ROLE_LABEL: Record<string, string> = { ADMIN: "Yönetici", TEACHER: "Öğretmen", STUDENT: "Öğrenci/Veli", CENTER: "Kurum personeli" };
 
 export const DOCUMENT_STATUS: Record<string, { label: string; tone: Tone }> = {
   PENDING: { label: "İnceleniyor", tone: "amber" },

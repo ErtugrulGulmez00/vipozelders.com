@@ -1,4 +1,4 @@
-// VIP Özel Ders veri modeli.
+// Pi Kampüs veri modeli.
 // Para alanları kuruş cinsinden tam sayıdır (1250 TL = 125000).
 // Zaman alanları UTC saklanır; gösterimde Europe/Istanbul kullanılır.
 
@@ -19,6 +19,8 @@ enum Role {
   ADMIN
   TEACHER
   STUDENT
+  // Kurum paneli personeli (etüt merkezi / dershane)
+  CENTER
 }
 
 enum UserStatus {
@@ -58,20 +60,22 @@ model User {
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 
-  sessions           Session[]
-  tokens             UserToken[]
-  teacherProfile     TeacherProfile?
-  studentProfile     StudentProfile?
-  notifications      Notification[]
-  bookingsAsStudent  Booking[]      @relation("StudentBookings")
-  reviews            Review[]
-  favorites          Favorite[]
-  auditLogs          AuditLog[]
-  bookingEvents      BookingEvent[]
-  attendance         LessonAttendance[]
-  emails             EmailMessage[]
-  payoutsCreated     Payout[]       @relation("PayoutCreatedBy")
-  devices            Device[]
+  sessions          Session[]
+  tokens            UserToken[]
+  teacherProfile    TeacherProfile?
+  studentProfile    StudentProfile?
+  notifications     Notification[]
+  bookingsAsStudent Booking[]          @relation("StudentBookings")
+  reviews           Review[]
+  favorites         Favorite[]
+  auditLogs         AuditLog[]
+  bookingEvents     BookingEvent[]
+  attendance        LessonAttendance[]
+  emails            EmailMessage[]
+  payoutsCreated    Payout[]           @relation("PayoutCreatedBy")
+  devices           Device[]
+  centerMemberships CenterMember[]
+  guardianLinks     CenterGuardian[]   @relation("GuardianAccounts")
 }
 
 // Mobil uygulama push bildirim kayıtları (Firebase Cloud Messaging).
@@ -167,12 +171,12 @@ enum LevelGroup {
 }
 
 model Level {
-  id        Int             @id @default(autoincrement())
+  id        Int               @id @default(autoincrement())
   name      String
-  slug      String          @unique
-  group     LevelGroup      @default(SCHOOL)
-  sortOrder Int             @default(0)
-  isActive  Boolean         @default(true)
+  slug      String            @unique
+  group     LevelGroup        @default(SCHOOL)
+  sortOrder Int               @default(0)
+  isActive  Boolean           @default(true)
   grades    Grade[]
   subjects  LevelSubject[]
   offerings TeacherOffering[]
@@ -221,25 +225,28 @@ model ServiceType {
 }
 
 model City {
-  id              Int              @id
-  name            String
-  slug            String           @unique
-  districts       District[]
-  teachers        TeacherProfile[]
-  studentProfiles StudentProfile[]
-  bookings        Booking[]
-  applications    TeacherApplication[]
+  id                 Int                  @id
+  name               String
+  slug               String               @unique
+  districts          District[]
+  teachers           TeacherProfile[]
+  studentProfiles    StudentProfile[]
+  bookings           Booking[]
+  applications       TeacherApplication[]
+  centers            Center[]
+  centerApplications CenterApplication[]
 }
 
 model District {
-  id               Int                      @id @default(autoincrement())
-  cityId           Int
-  city             City                     @relation(fields: [cityId], references: [id], onDelete: Cascade)
-  name             String
-  slug             String
-  teachers         TeacherProfile[]
-  serviceTeachers  TeacherServiceDistrict[]
-  bookings         Booking[]
+  id              Int                      @id @default(autoincrement())
+  cityId          Int
+  city            City                     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  name            String
+  slug            String
+  teachers        TeacherProfile[]
+  serviceTeachers TeacherServiceDistrict[]
+  bookings        Booking[]
+  centers         Center[]
 
   @@unique([cityId, slug])
 }
@@ -262,48 +269,48 @@ enum VerificationStatus {
 }
 
 model TeacherProfile {
-  userId                 String             @id
-  user                   User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  slug                   String             @unique
-  headline               String?
-  bio                    String?
-  photoKey               String?
-  videoUrl               String?
-  education              String?
-  experienceYears        Int                @default(0)
-  gender                 Gender             @default(UNSPECIFIED)
-  cityId                 Int?
-  city                   City?              @relation(fields: [cityId], references: [id])
-  districtId             Int?
-  district               District?          @relation(fields: [districtId], references: [id])
-  offersOnline           Boolean            @default(true)
-  offersInPerson         Boolean            @default(false)
-  inPersonAtStudentHome  Boolean            @default(true)
-  inPersonAtTeacherPlace Boolean            @default(false)
-  status                 TeacherStatus      @default(DRAFT)
-  verificationStatus     VerificationStatus @default(UNVERIFIED)
-  isFeatured             Boolean            @default(false)
+  userId                  String             @id
+  user                    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slug                    String             @unique
+  headline                String?
+  bio                     String?
+  photoKey                String?
+  videoUrl                String?
+  education               String?
+  experienceYears         Int                @default(0)
+  gender                  Gender             @default(UNSPECIFIED)
+  cityId                  Int?
+  city                    City?              @relation(fields: [cityId], references: [id])
+  districtId              Int?
+  district                District?          @relation(fields: [districtId], references: [id])
+  offersOnline            Boolean            @default(true)
+  offersInPerson          Boolean            @default(false)
+  inPersonAtStudentHome   Boolean            @default(true)
+  inPersonAtTeacherPlace  Boolean            @default(false)
+  status                  TeacherStatus      @default(DRAFT)
+  verificationStatus      VerificationStatus @default(UNVERIFIED)
+  isFeatured              Boolean            @default(false)
   // Öğretmene özel komisyon (baz puan: 1500 = %15). Boşsa site ayarı geçerli.
-  commissionRateBps      Int?
-  bufferMinutes          Int                @default(0)
+  commissionRateBps       Int?
+  bufferMinutes           Int                @default(0)
   // Kadrolu (devlet okulu) öğretmen olmadığına dair beyanın tarihi.
-  statusDeclarationAt    DateTime?
+  statusDeclarationAt     DateTime?
   // Hakediş bilgileri
-  payoutLegalName        String?
-  payoutIban             String?
+  payoutLegalName         String?
+  payoutIban              String?
   payoutIdentityNumberEnc String?
-  subMerchantKey         String?
+  subMerchantKey          String?
   // Özet istatistikler (yorum ve ders işlemlerinde güncellenir)
-  ratingAvg              Float              @default(0)
-  ratingCount            Int                @default(0)
-  completedLessons       Int                @default(0)
-  avgResponseMinutes     Int?
-  responseCount          Int                @default(0)
-  cancellationCount      Int                @default(0)
-  searchText             String             @default("")
-  publishedAt            DateTime?
-  createdAt              DateTime           @default(now())
-  updatedAt              DateTime           @updatedAt
+  ratingAvg               Float              @default(0)
+  ratingCount             Int                @default(0)
+  completedLessons        Int                @default(0)
+  avgResponseMinutes      Int?
+  responseCount           Int                @default(0)
+  cancellationCount       Int                @default(0)
+  searchText              String             @default("")
+  publishedAt             DateTime?
+  createdAt               DateTime           @default(now())
+  updatedAt               DateTime           @updatedAt
 
   serviceDistricts       TeacherServiceDistrict[]
   offerings              TeacherOffering[]
@@ -472,73 +479,73 @@ enum BookingStatus {
 }
 
 model Booking {
-  id                String         @id @default(cuid())
-  code              String         @unique
-  studentId         String
-  student           User           @relation("StudentBookings", fields: [studentId], references: [id])
-  teacherId         String
-  teacher           TeacherProfile @relation(fields: [teacherId], references: [userId])
-  offeringId        String?
-  offering          TeacherOffering? @relation(fields: [offeringId], references: [id], onDelete: SetNull)
-  learnerId         String?
-  learner           Learner?       @relation(fields: [learnerId], references: [id], onDelete: SetNull)
-  serviceTypeId     Int
-  serviceType       ServiceType    @relation(fields: [serviceTypeId], references: [id])
-  levelId           Int
-  level             Level          @relation(fields: [levelId], references: [id])
-  subjectId         Int
-  subject           Subject        @relation(fields: [subjectId], references: [id])
+  id                 String           @id @default(cuid())
+  code               String           @unique
+  studentId          String
+  student            User             @relation("StudentBookings", fields: [studentId], references: [id])
+  teacherId          String
+  teacher            TeacherProfile   @relation(fields: [teacherId], references: [userId])
+  offeringId         String?
+  offering           TeacherOffering? @relation(fields: [offeringId], references: [id], onDelete: SetNull)
+  learnerId          String?
+  learner            Learner?         @relation(fields: [learnerId], references: [id], onDelete: SetNull)
+  serviceTypeId      Int
+  serviceType        ServiceType      @relation(fields: [serviceTypeId], references: [id])
+  levelId            Int
+  level              Level            @relation(fields: [levelId], references: [id])
+  subjectId          Int
+  subject            Subject          @relation(fields: [subjectId], references: [id])
   // Randevu anındaki adların kopyası (katalog sonradan değişse de kayıt bozulmaz)
-  serviceName       String
-  levelName         String
-  subjectName       String
-  learnerName       String
-  learnerGrade      String?
-  mode              LessonMode
-  inPersonPlace     InPersonPlace?
-  cityId            Int?
-  city              City?          @relation(fields: [cityId], references: [id])
-  districtId        Int?
-  district          District?      @relation(fields: [districtId], references: [id])
-  address           String?
-  studentNote       String?
-  startAt           DateTime
-  endAt             DateTime
+  serviceName        String
+  levelName          String
+  subjectName        String
+  learnerName        String
+  learnerGrade       String?
+  mode               LessonMode
+  inPersonPlace      InPersonPlace?
+  cityId             Int?
+  city               City?            @relation(fields: [cityId], references: [id])
+  districtId         Int?
+  district           District?        @relation(fields: [districtId], references: [id])
+  address            String?
+  studentNote        String?
+  startAt            DateTime
+  endAt              DateTime
   // Dersin bitişi + öğretmenin tampon süresi; çakışma kontrolü bu aralıkla yapılır.
-  blockEndAt        DateTime
-  durationMinutes   Int
-  price             Int
-  commissionRateBps Int
-  commissionAmount  Int
-  teacherAmount     Int
-  refundedAmount    Int            @default(0)
-  status            BookingStatus  @default(PENDING_PAYMENT)
-  holdExpiresAt     DateTime?
-  paidAt            DateTime?
-  approvalDeadline  DateTime?
-  confirmedAt       DateTime?
-  respondedAt       DateTime?
-  completedAt       DateTime?
-  cancelledAt       DateTime?
-  cancelReason      String?
-  rejectionReason   String?
-  disputeReason     String?
-  disputedAt        DateTime?
-  reminder24hSentAt DateTime?
-  reminder1hSentAt  DateTime?
-  earningsReleaseAt DateTime?
+  blockEndAt         DateTime
+  durationMinutes    Int
+  price              Int
+  commissionRateBps  Int
+  commissionAmount   Int
+  teacherAmount      Int
+  refundedAmount     Int              @default(0)
+  status             BookingStatus    @default(PENDING_PAYMENT)
+  holdExpiresAt      DateTime?
+  paidAt             DateTime?
+  approvalDeadline   DateTime?
+  confirmedAt        DateTime?
+  respondedAt        DateTime?
+  completedAt        DateTime?
+  cancelledAt        DateTime?
+  cancelReason       String?
+  rejectionReason    String?
+  disputeReason      String?
+  disputedAt         DateTime?
+  reminder24hSentAt  DateTime?
+  reminder1hSentAt   DateTime?
+  earningsReleaseAt  DateTime?
   earningsReleasedAt DateTime?
-  videoRoomName     String?        @unique
+  videoRoomName      String?          @unique
   // Yönetici tarafından ödemesiz açılan deneme dersi (görüntülü görüşme testi); yorum, puan ve ciroya sayılmaz.
-  isTest            Boolean        @default(false)
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  isTest             Boolean          @default(false)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
-  events            BookingEvent[]
-  payments          Payment[]
-  attendance        LessonAttendance[]
-  review            Review?
-  ledgerEntries     LedgerEntry[]
+  events        BookingEvent[]
+  payments      Payment[]
+  attendance    LessonAttendance[]
+  review        Review?
+  ledgerEntries LedgerEntry[]
 
   @@index([teacherId, startAt])
   @@index([studentId, startAt])
@@ -753,14 +760,14 @@ model SiteSetting {
 }
 
 model Page {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  title       String
-  content     String
-  showInFooter Boolean @default(true)
-  isPublished Boolean  @default(true)
-  sortOrder   Int      @default(0)
-  updatedAt   DateTime @updatedAt
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  title        String
+  content      String
+  showInFooter Boolean  @default(true)
+  isPublished  Boolean  @default(true)
+  sortOrder    Int      @default(0)
+  updatedAt    DateTime @updatedAt
 }
 
 // Arka plan görevlerinin aynı anda tek yerde çalışmasını sağlayan kira kaydı.
@@ -783,4 +790,638 @@ model AuditLog {
 
   @@index([entityType, entityId])
   @@index([createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Kurum paneli: etüt merkezi / dershane aboneliği
+// Kurumun tüm kayıtları centerId ile ayrılır; her sorgu üyenin kurumuyla sınırlandırılır.
+// ---------------------------------------------------------------------------
+
+enum CenterKind {
+  ETUT
+  DERSHANE
+  KURS
+  OTHER
+}
+
+enum CenterStatus {
+  TRIAL
+  ACTIVE
+  SUSPENDED
+}
+
+enum CenterPlan {
+  STARTER
+  PRO
+  ENTERPRISE
+}
+
+enum CenterRole {
+  OWNER
+  MANAGER
+  TEACHER
+  ACCOUNTANT
+}
+
+enum CenterStudentStatus {
+  ACTIVE
+  PASSIVE
+  LEFT
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+enum EtudStatus {
+  PLANNED
+  DONE
+  CANCELLED
+}
+
+enum ExamKind {
+  LGS
+  TYT
+  AYT_SAY
+  AYT_EA
+  AYT_SOZ
+  YDT
+  CUSTOM
+}
+
+enum CenterNoteKind {
+  GENERAL
+  GUIDANCE
+  PARENT_MEETING
+  BEHAVIOR
+}
+
+enum CenterPaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+  OTHER
+}
+
+enum ExpenseCategory {
+  RENT
+  SALARY
+  UTILITY
+  SUPPLIES
+  MARKETING
+  TAX
+  OTHER
+}
+
+enum MessageChannel {
+  SMS
+  EMAIL
+}
+
+enum MessageStatus {
+  QUEUED
+  SENT
+  FAILED
+  SKIPPED
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  ENROLLED
+  LOST
+}
+
+model Center {
+  id                 String       @id @default(cuid())
+  name               String
+  slug               String       @unique
+  kind               CenterKind   @default(ETUT)
+  status             CenterStatus @default(TRIAL)
+  plan               CenterPlan   @default(STARTER)
+  studentLimit       Int          @default(100)
+  trialEndsAt        DateTime?
+  paidUntil          DateTime?
+  phone              String?
+  email              String?
+  address            String?
+  cityId             Int?
+  city               City?        @relation(fields: [cityId], references: [id])
+  districtId         Int?
+  district           District?    @relation(fields: [districtId], references: [id])
+  taxOffice          String?
+  taxNumber          String?
+  logoKey            String?
+  description        String?
+  // Herkese açık vitrin sayfası (/kurumlar/slug) ve ön kayıt formu
+  isPublic           Boolean      @default(false)
+  academicYear       String       @default("2026-2027")
+  notifyAbsence      Boolean      @default(true)
+  remindPayments     Boolean      @default(true)
+  reminderDaysBefore Int          @default(3)
+  nextReceiptNo      Int          @default(1)
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  members              CenterMember[]
+  subscriptionPayments CenterSubscriptionPayment[]
+  students             CenterStudent[]
+  groups               CenterGroup[]
+  etuds                CenterEtud[]
+  exams                CenterExam[]
+  feePlans             CenterFeePlan[]
+  payments             CenterPayment[]
+  expenses             CenterExpense[]
+  announcements        CenterAnnouncement[]
+  messages             CenterMessage[]
+  leads                CenterLead[]
+
+  @@index([status])
+}
+
+model CenterMember {
+  id        String     @id @default(cuid())
+  centerId  String
+  center    Center     @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      CenterRole
+  // Görev ve branş: "Müdür yardımcısı", "Matematik"
+  title     String?
+  branch    String?
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+
+  groups   CenterGroup[]        @relation("GroupTeacher")
+  slots    CenterScheduleSlot[] @relation("SlotTeacher")
+  etuds    CenterEtud[]         @relation("EtudTeacher")
+  notes    CenterNote[]         @relation("NoteAuthor")
+  expenses CenterExpense[]      @relation("ExpenseMember")
+
+  @@unique([centerId, userId])
+  @@index([userId])
+}
+
+// Pi Kampüs'ün kuruma kestiği abonelik ödemeleri (yönetici kaydeder)
+model CenterSubscriptionPayment {
+  id          String   @id @default(cuid())
+  centerId    String
+  center      Center   @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  amount      Int
+  months      Int
+  periodStart DateTime
+  periodEnd   DateTime
+  method      String
+  reference   String?
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  @@index([centerId])
+}
+
+model CenterStudent {
+  id                String              @id @default(cuid())
+  centerId          String
+  center            Center              @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  studentNumber     String?
+  firstName         String
+  lastName          String
+  gender            Gender              @default(UNSPECIFIED)
+  birthDate         DateTime?           @db.Date
+  identityNumberEnc String?
+  schoolName        String?
+  gradeName         String?
+  targetExam        String?
+  phone             String?
+  email             String?
+  address           String?
+  notes             String?
+  status            CenterStudentStatus @default(ACTIVE)
+  enrolledAt        DateTime            @default(now())
+  leftAt            DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  guardians    CenterGuardian[]
+  groups       CenterGroupStudent[]
+  attendance   CenterAttendance[]
+  etuds        CenterEtudStudent[]
+  examResults  CenterExamResult[]
+  noteEntries  CenterNote[]
+  feePlans     CenterFeePlan[]
+  installments CenterInstallment[]
+  payments     CenterPayment[]
+
+  @@unique([centerId, studentNumber])
+  @@index([centerId, status])
+}
+
+model CenterGuardian {
+  id              String        @id @default(cuid())
+  centerId        String
+  studentId       String
+  student         CenterStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  fullName        String
+  relation        String
+  phone           String?
+  email           String?
+  isPrimary       Boolean       @default(false)
+  notifySms       Boolean       @default(true)
+  notifyEmail     Boolean       @default(true)
+  // Veli portalı: davetle sitedeki veli hesabına bağlanır
+  userId          String?
+  user            User?         @relation("GuardianAccounts", fields: [userId], references: [id], onDelete: SetNull)
+  inviteTokenHash String?       @unique
+  inviteExpiresAt DateTime?
+  linkedAt        DateTime?
+  createdAt       DateTime      @default(now())
+
+  @@index([centerId])
+  @@index([studentId])
+  @@index([userId])
+}
+
+model CenterGroup {
+  id         String        @id @default(cuid())
+  centerId   String
+  center     Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  name       String
+  gradeName  String?
+  targetExam String?
+  teacherId  String?
+  teacher    CenterMember? @relation("GroupTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
+  room       String?
+  capacity   Int?
+  isActive   Boolean       @default(true)
+  createdAt  DateTime      @default(now())
+
+  students      CenterGroupStudent[]
+  slots         CenterScheduleSlot[]
+  sessions      CenterAttendanceSession[]
+  announcements CenterAnnouncement[]
+
+  @@unique([centerId, name])
+}
+
+model CenterGroupStudent {
+  groupId   String
+  group     CenterGroup   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  studentId String
+  student   CenterStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  joinedAt  DateTime      @default(now())
+
+  @@id([groupId, studentId])
+  @@index([studentId])
+}
+
+// Haftalık ders programı
+model CenterScheduleSlot {
+  id          String        @id @default(cuid())
+  centerId    String
+  groupId     String
+  group       CenterGroup   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  weekday     Int
+  startMinute Int
+  endMinute   Int
+  subject     String
+  teacherId   String?
+  teacher     CenterMember? @relation("SlotTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
+  room        String?
+
+  @@index([centerId, weekday])
+  @@index([groupId])
+}
+
+// Bir grubun belirli bir gündeki dersi için alınan yoklama
+model CenterAttendanceSession {
+  id          String      @id @default(cuid())
+  centerId    String
+  groupId     String
+  group       CenterGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  slotId      String?
+  date        DateTime    @db.Date
+  startMinute Int
+  endMinute   Int
+  subject     String
+  teacherId   String?
+  takenById   String?
+  takenAt     DateTime?
+  createdAt   DateTime    @default(now())
+
+  records CenterAttendance[]
+
+  @@unique([groupId, date, startMinute])
+  @@index([centerId, date])
+}
+
+model CenterAttendance {
+  id         String                  @id @default(cuid())
+  sessionId  String
+  session    CenterAttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  studentId  String
+  student    CenterStudent           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status     AttendanceStatus
+  note       String?
+  notifiedAt DateTime?
+
+  @@unique([sessionId, studentId])
+  @@index([studentId])
+}
+
+// Birebir veya küçük grup etüt
+model CenterEtud {
+  id          String        @id @default(cuid())
+  centerId    String
+  center      Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  teacherId   String?
+  teacher     CenterMember? @relation("EtudTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
+  date        DateTime      @db.Date
+  startMinute Int
+  endMinute   Int
+  subject     String
+  topic       String?
+  room        String?
+  status      EtudStatus    @default(PLANNED)
+  notes       String?
+  createdAt   DateTime      @default(now())
+
+  students CenterEtudStudent[]
+
+  @@index([centerId, date])
+}
+
+model CenterEtudStudent {
+  etudId     String
+  etud       CenterEtud        @relation(fields: [etudId], references: [id], onDelete: Cascade)
+  studentId  String
+  student    CenterStudent     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  attendance AttendanceStatus?
+
+  @@id([etudId, studentId])
+  @@index([studentId])
+}
+
+model CenterExam {
+  id           String   @id @default(cuid())
+  centerId     String
+  center       Center   @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  name         String
+  kind         ExamKind
+  date         DateTime @db.Date
+  publisher    String?
+  // Yanlış başına götürülen doğru: LGS 1/3, YKS 1/4, 0 = götürmez
+  wrongPenalty Float
+  // Veliler sonucu portalda görebilir
+  isPublished  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  sections CenterExamSection[]
+  results  CenterExamResult[]
+
+  @@index([centerId, date])
+}
+
+model CenterExamSection {
+  id            String     @id @default(cuid())
+  examId        String
+  exam          CenterExam @relation(fields: [examId], references: [id], onDelete: Cascade)
+  name          String
+  questionCount Int
+  order         Int
+  // Pazaryerindeki ders (eksik konuya özel ders önerisi için)
+  subjectSlug   String?
+  // Cevap anahtarı: A-E, iptal edilen soru X
+  answerKey     String?
+  // Soru başına konu / kazanım
+  topics        String[]
+
+  results CenterExamSectionResult[]
+}
+
+model CenterExamResult {
+  id        String        @id @default(cuid())
+  examId    String
+  exam      CenterExam    @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId String
+  student   CenterStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  correct   Int
+  wrong     Int
+  blank     Int
+  net       Float
+  // Yayınevinin bildirdiği puan (varsa)
+  score     Float?
+  rank      Int?
+  createdAt DateTime      @default(now())
+
+  sections CenterExamSectionResult[]
+
+  @@unique([examId, studentId])
+  @@index([studentId])
+}
+
+model CenterExamSectionResult {
+  id        String            @id @default(cuid())
+  resultId  String
+  result    CenterExamResult  @relation(fields: [resultId], references: [id], onDelete: Cascade)
+  sectionId String
+  section   CenterExamSection @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  correct   Int
+  wrong     Int
+  blank     Int
+  net       Float
+  answers   String?
+
+  @@unique([resultId, sectionId])
+  @@index([sectionId])
+}
+
+// Rehberlik, veli görüşmesi ve genel notlar
+model CenterNote {
+  id              String         @id @default(cuid())
+  centerId        String
+  studentId       String
+  student         CenterStudent  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  authorId        String?
+  author          CenterMember?  @relation("NoteAuthor", fields: [authorId], references: [id], onDelete: SetNull)
+  kind            CenterNoteKind @default(GENERAL)
+  text            String
+  visibleToParent Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+
+  @@index([studentId])
+}
+
+// Öğrenci ödeme planı (sözleşme) ve taksitleri
+model CenterFeePlan {
+  id             String        @id @default(cuid())
+  centerId       String
+  center         Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  studentId      String
+  student        CenterStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  title          String
+  totalAmount    Int
+  discountAmount Int           @default(0)
+  netAmount      Int
+  note           String?
+  isCancelled    Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+
+  installments CenterInstallment[]
+
+  @@index([centerId])
+  @@index([studentId])
+}
+
+model CenterInstallment {
+  id         String        @id @default(cuid())
+  planId     String
+  plan       CenterFeePlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  centerId   String
+  studentId  String
+  student    CenterStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  order      Int
+  dueDate    DateTime      @db.Date
+  amount     Int
+  paidAmount Int           @default(0)
+  remindedAt DateTime?
+
+  allocations CenterPaymentAllocation[]
+
+  @@index([centerId, dueDate])
+  @@index([studentId])
+}
+
+// Tahsilat (makbuz numarası kurum içinde sıralıdır)
+model CenterPayment {
+  id           String              @id @default(cuid())
+  centerId     String
+  center       Center              @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  studentId    String
+  student      CenterStudent       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  receiptNo    Int
+  amount       Int
+  method       CenterPaymentMethod
+  paidAt       DateTime
+  payerName    String?
+  note         String?
+  createdById  String?
+  cancelledAt  DateTime?
+  cancelReason String?
+  createdAt    DateTime            @default(now())
+
+  allocations CenterPaymentAllocation[]
+
+  @@unique([centerId, receiptNo])
+  @@index([centerId, paidAt])
+  @@index([studentId])
+}
+
+model CenterPaymentAllocation {
+  paymentId     String
+  payment       CenterPayment     @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  installmentId String
+  installment   CenterInstallment @relation(fields: [installmentId], references: [id], onDelete: Cascade)
+  amount        Int
+
+  @@id([paymentId, installmentId])
+}
+
+model CenterExpense {
+  id          String          @id @default(cuid())
+  centerId    String
+  center      Center          @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  category    ExpenseCategory
+  amount      Int
+  date        DateTime        @db.Date
+  description String?
+  paidTo      String?
+  // Personel ödemesi
+  memberId    String?
+  member      CenterMember?   @relation("ExpenseMember", fields: [memberId], references: [id], onDelete: SetNull)
+  createdById String?
+  createdAt   DateTime        @default(now())
+
+  @@index([centerId, date])
+}
+
+model CenterAnnouncement {
+  id          String       @id @default(cuid())
+  centerId    String
+  center      Center       @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  title       String
+  body        String
+  // Boşsa tüm kurum
+  groupId     String?
+  group       CenterGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  sendEmail   Boolean      @default(false)
+  sendSms     Boolean      @default(false)
+  createdById String?
+  createdAt   DateTime     @default(now())
+
+  @@index([centerId, createdAt])
+}
+
+// Velilere giden SMS ve e-postaların kaydı (SMS gönderim kuyruğu)
+model CenterMessage {
+  id         String         @id @default(cuid())
+  centerId   String
+  center     Center         @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  channel    MessageChannel
+  to         String
+  subject    String?
+  body       String
+  kind       String
+  studentId  String?
+  status     MessageStatus  @default(QUEUED)
+  error      String?
+  providerId String?
+  createdAt  DateTime       @default(now())
+  sentAt     DateTime?
+
+  @@index([centerId, createdAt])
+  @@index([status, createdAt])
+}
+
+// Ön kayıt / aday öğrenci
+model CenterLead {
+  id          String     @id @default(cuid())
+  centerId    String
+  center      Center     @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  studentName String
+  parentName  String?
+  phone       String
+  email       String?
+  gradeName   String?
+  message     String?
+  source      String     @default("web")
+  status      LeadStatus @default(NEW)
+  note        String?
+  createdAt   DateTime   @default(now())
+
+  @@index([centerId, status])
+}
+
+// "Kurumlar için" sayfasındaki demo / abonelik başvurusu
+model CenterApplication {
+  id           String            @id @default(cuid())
+  centerName   String
+  kind         CenterKind        @default(ETUT)
+  contactName  String
+  phone        String
+  email        String
+  cityId       Int?
+  city         City?             @relation(fields: [cityId], references: [id])
+  studentCount String?
+  message      String?
+  status       ApplicationStatus @default(NEW)
+  centerId     String?
+  note         String?
+  reviewedById String?
+  reviewedAt   DateTime?
+  createdAt    DateTime          @default(now())
+
+  @@index([status, createdAt])
 }

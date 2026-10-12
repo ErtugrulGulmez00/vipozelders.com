@@ -1,7 +1,10 @@
 import {
   BadgeCheck,
+  BellRing,
   BookOpenCheck,
+  Building2,
   CalendarCheck,
+  ClipboardCheck,
   CircleHelp,
   CreditCard,
   GraduationCap,
@@ -9,6 +12,7 @@ import {
   MonitorPlay,
   ShieldCheck,
   Target,
+  Wallet,
 } from "lucide-react";
 import Link from "next/link";
 import { connection } from "next/server";
@@ -153,6 +157,42 @@ export default async function HomePage() {
               <p className="mt-1 text-sm text-slate-600">{item.text}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 pb-16">
+        <div className="grid items-center gap-8 overflow-hidden rounded-3xl border border-slate-200 bg-white p-8 sm:p-10 lg:grid-cols-[1.1fr_1fr]">
+          <div>
+            <p className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
+              <Building2 className="size-3.5" aria-hidden /> Kurumlar için
+            </p>
+            <h2 className="mt-3 text-2xl font-bold text-slate-900 sm:text-3xl">Etüt merkezi ya da dershane mi yönetiyorsunuz?</h2>
+            <p className="mt-2 text-slate-600">
+              Öğrenci ve veli takibi, yoklama ve devamsızlık SMS&apos;i, deneme analizi ve eksik konular, ödeme planı ve makbuz: hepsi tek panelde. {settings.centerTrialDays} gün ücretsiz deneyin.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <LinkButton href="/kurumlar-icin" size="lg">
+                Kurum panelini inceleyin
+              </LinkButton>
+              <LinkButton href="/kurumlar" size="lg" variant="outline">
+                Kurum rehberi
+              </LinkButton>
+            </div>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[
+              { icon: ClipboardCheck, title: "Yoklama", text: "Gelmeyen öğrencinin velisine anında SMS" },
+              { icon: BookOpenCheck, title: "Deneme analizi", text: "Net, sıralama ve konu bazında eksikler" },
+              { icon: Wallet, title: "Muhasebe", text: "Taksit, tahsilat, makbuz ve giderler" },
+              { icon: BellRing, title: "Veli portalı", text: "Veli her şeyi telefonundan takip eder" },
+            ].map((item) => (
+              <div key={item.title} className="rounded-2xl bg-slate-50 p-4">
+                <item.icon className="size-5 text-brand-600" aria-hidden />
+                <p className="mt-2 font-semibold text-slate-900">{item.title}</p>
+                <p className="text-sm text-slate-600">{item.text}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

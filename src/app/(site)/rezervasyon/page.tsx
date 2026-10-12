@@ -29,7 +29,7 @@ export default async function BookingPage({ searchParams }: PageProps<"/rezervas
     return (
       <Shell>
         <Alert tone="warning" title="Randevu yalnızca veli/öğrenci hesabıyla alınabilir">
-          Şu an {user.role === "TEACHER" ? "öğretmen" : "yönetici"} hesabıyla giriş yaptınız. Randevu almak için çıkış yapıp veli/öğrenci hesabıyla giriş yapın.
+          Şu an {user.role === "TEACHER" ? "öğretmen" : user.role === "CENTER" ? "kurum" : "yönetici"} hesabıyla giriş yaptınız. Randevu almak için çıkış yapıp veli/öğrenci hesabıyla giriş yapın.
         </Alert>
       </Shell>
     );

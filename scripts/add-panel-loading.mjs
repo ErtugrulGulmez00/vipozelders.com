@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-const roots = ["src/app/hesabim", "src/app/ogretmen-paneli", "src/app/yonetim"];
+const roots = ["src/app/hesabim", "src/app/ogretmen-paneli", "src/app/yonetim", "src/app/kurum"];
 const content = 'import { PanelLoading } from "@/components/panel/panel-loading";\n\nexport default function Loading() {\n  return <PanelLoading />;\n}\n';
 let added = 0;
 function walk(dir) {

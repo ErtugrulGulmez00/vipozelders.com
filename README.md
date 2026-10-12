@@ -1,4 +1,4 @@
-# VIP Özel Ders · Sanal Dershane Platformu
+# Pi Kampüs · Sanal Dershane Platformu
 
 Üç panelli özel ders pazaryeri:
 
@@ -6,6 +6,9 @@
 - **Öğrenci/Veli hesabı** (`/hesabim`): randevu, ödeme, sanal sınıfa katılma, takvime ekleme (.ics / Google Takvim), iptal, sorun bildirme, değerlendirme, favoriler, hesap silme talebi
 - **Öğretmen paneli** (`/ogretmen-paneli`): talepleri onaylama/reddetme, profil, dersler ve fiyatlar, müsaitlik takvimi, belge yükleme (kimlik, diploma, adli sicil; yalnızca yöneticiler görür), kazançlar, yorumlara cevap
 - **Yönetim paneli** (`/yonetim`): hızlı öğretmen ekleme (otomatik kullanıcı adı ve geçici şifre), öğretmen başvurularından tek tıkla hesap açma, belge inceleme, yayın ve doğrulama, randevu ve itiraz yönetimi, ödemesiz **test dersi** (görüntülü görüşme denemesi), finans ve hakediş ödemeleri, Excel/CSV çıktıları, yorum moderasyonu, kategoriler, sayfalar, site ayarları ve bakım modu, bildirimler, e-posta kutusu, işlem kayıtları, iki adımlı doğrulama (Google Authenticator)
+- **Kurum paneli** (`/kurum`): etüt merkezi, dershane ve kurslara aylık abonelikle satılan yönetim paneli: öğrenci ve veli kayıtları (Excel’den aktarım), sınıflar ve ders programı, yoklama ve velilere otomatik devamsızlık bildirimi (SMS / e-posta / site), etüt planı, deneme sınavları (LGS, TYT, AYT, YDT şablonları; cevap anahtarı, net, sıralama, ders/konu/soru analizi, karne, eksik konular), muhasebe (ödeme planı, tahsilat, makbuz, gecikenler, otomatik taksit hatırlatma, giderler, gelir-gider raporu), duyurular, ön kayıtlar, personel rolleri, abonelik. Ayrıntılar: [docs/kurum-paneli.md](docs/kurum-paneli.md)
+- **Kurumlar için** (`/kurumlar-icin`, `/kurumlar`, `/kurumlar/<kurum>`): tanıtım ve başvuru sayfası, kurum rehberi, kurum vitrin sayfası ve ön kayıt formu
+- **Veli portalı** (`/hesabim/kurum`): kurumun davet bağlantısıyla bağlanan veli; devamsızlık, etüt, deneme karnesi, eksik konular (pazaryeri öğretmenlerine yönlendirme), taksitler ve duyuruları görür
 - **Sanal sınıf** (`/ders/...`): kamera, mikrofon, ekran paylaşımı, sohbet ve ortak **beyaz tahta**; yoklama otomatik tutulur
 - **Mobil API** (`/api/mobil/v1`): Flutter uygulaması için JSON uç noktaları (Bearer oturum, randevu, ödeme ve sınıf için WebView bağlantısı, push bildirimi). Sözleşme ve uygulama promptu: [docs/flutter-uygulama-promptu.md](docs/flutter-uygulama-promptu.md)
 
@@ -38,6 +41,11 @@ npm run dev                   # http://localhost:3000
 | Öğretmen | `ayse.yilmaz` | `Ogretmen123` |
 | Veli | `veli@demo.vipozelders.local` | `Veli12345` |
 | Öğrenci | `ogrenci@demo.vipozelders.local` | `Ogrenci123` |
+| Kurum sahibi (Başarı Etüt Merkezi) | `kurum@demo.vipozelders.local` | `Kurum12345` |
+| Kurum öğretmeni | `etut.ogretmen@demo.vipozelders.local` | `Ogretmen123` |
+| Kurum muhasebe | `muhasebe@demo.vipozelders.local` | `Muhasebe123` |
+
+Demo veli hesabı, demo kurumdaki “Ali Demirtaş”a bağlıdır (Hesabım → Kurumum).
 
 Diğer demo öğretmenlerin şifreleri rastgeledir; yönetim panelinden “Geçici şifre üret” ile giriş bilgisi alabilirsiniz (ilk girişte şifre değiştirme ekranı açılır).
 
@@ -74,6 +82,18 @@ Demo veriler `@demo.vipozelders.local` uzantılı hesaplar ve bunlara bağlı ö
 **İptal kuralları** (admin panelinden değişir): dersten 24 saat önce tam iade, 2 saate kadar %50, daha geç veya katılmama halinde iade yok. Öğretmen iptal ederse veya gelmezse tam iade.
 
 **Arka plan görevleri** (dakikada bir): süresi dolan ödeme ve onaylar, biten derslerin tamamlanması (yoklamaya göre “öğrenci/öğretmen katılmadı” tespiti), hakediş serbest bırakma, 24 saat ve 1 saat önce hatırlatmalar, bekleyen iadeler, e-posta kuyruğu. Varsayılan olarak Next sunucusunun içinde çalışır (`src/instrumentation.ts`). Birden çok sunucu kullanacaksanız `DISABLE_INTERNAL_SCHEDULER=true` yapıp `npm run worker` çalıştırın. Yönetim panelinde “Zamanlanmış görevleri şimdi çalıştır” butonu da vardır.
+
+---
+
+## Kurum paneli (etüt merkezi / dershane)
+
+Kurumu Pi Kampüs yöneticisi açar (**Yönetim → Kurumlar**; “Kurumlar için” sayfasından gelen başvurudan tek tıkla). Kurum sahibine kullanıcı adı ve geçici şifre verilir, deneme süresi başlar. Kurum sahibi personelini (müdür, öğretmen, muhasebe) kendisi ekler; her rol yalnızca yetkili olduğu bölümleri görür.
+
+- **Abonelik:** planların fiyatı, öğrenci sınırı ve deneme süresi site ayarlarından değişir. Havale/EFT ile gelen ödemeyi yönetici kurum sayfasına kaydeder, süre uzar. Süre dolunca 7 gün ek süre verilir, sonra panel salt okunur olur (veriler silinmez); askıya alınan kurumun personeli giriş yapamaz.
+- **Bildirimler:** devamsızlık, etüt devamsızlığı, taksit hatırlatma (vadeden N gün önce ve vade geçince bir kez, 10:00-20:00 arası), tahsilat bilgisi, deneme sonucu ve duyurular velilere SMS (Netgsm), e-posta ve veli portalı bildirimi olarak gider. Tümü kurumun “SMS / e-posta geçmişi” ekranında izlenir.
+- **Veli portalı:** öğrenci kartındaki “Veli portalı daveti” ile veliye SMS/e-posta ya da WhatsApp ile paylaşılan bağlantı gider; veli ücretsiz hesabıyla bağlanır.
+- **Excel:** öğrenci listesi ve deneme sonuçları .xlsx/.csv olarak içe aktarılır (şablonlar indirilebilir); öğrenci, tahsilat, borç, gider, devamsızlık ve deneme listeleri CSV olarak dışa aktarılır.
+- **Mobil API:** veli portalı `/api/mobil/v1/kurum` uç noktalarıyla Flutter uygulamasında da kullanılabilir.
 
 ---
 
@@ -142,6 +162,8 @@ Testler her çalıştırmada ayrı bir `vipozelders_test` veritabanı oluşturur
 - iki adımlı doğrulama (RFC 6238 test vektörleri), takvim dosyası
 - mobil API: Bearer oturumu, tek kullanımlık WebView girişi, push (imzalı JWT, ölü cihaz temizliği) ve uçtan uca kayıt → randevu → ödeme → onay → iptal akışı (`e2e/mobile-api.spec.ts`)
 - öğretmen başvurusu → hesap açma → belge yükleme ve onay, özel belgelerin yabancılara kapalı olması (`e2e/teacher-onboarding.spec.ts`)
+- kurum paneli: deneme şablonları ve net hesabı (LGS 1/3, YKS 1/4), cevap anahtarıyla okuma, konu dağılımı, sıralama, taksit planı, tahsilatın taksitlere dağıtılması, yazıyla tutar, yetki matrisi, abonelik durumu, Excel/CSV öğrenci aktarımı
+- kurum başvurusu → kurum açma → ilk girişte şifre → sınıf/program → öğrenci ve veli → yoklama ve veli bildirimi → deneme → ödeme planı ve makbuz → veli daveti ve portal (`e2e/center-panel.spec.ts`)
 - aynı saate eşzamanlı üç talepten yalnızca birinin kabul edilmesi ve veritabanı kısıtı
 - red, süre aşımı, geç iptal, öğretmen iptali ve itiraz çözümü
 
@@ -180,10 +202,12 @@ src/app/(auth)/      giriş, kayıt, şifre işlemleri
 src/app/hesabim/     öğrenci/veli paneli
 src/app/ogretmen-paneli/
 src/app/yonetim/     admin paneli
+src/app/kurum/       kurum paneli (etüt merkezi / dershane)
 src/app/ders/        sanal sınıf
 src/app/api/         saatler, ilçeler, dosyalar, ödeme dönüşü, LiveKit webhook
 src/actions/         Server Action'lar (her biri yetkiyi sunucuda yeniden kontrol eder)
 src/server/          iş mantığı: bookings, availability, pricing, ledger, payments, video, reviews, scheduler
+src/server/center/   kurum paneli: öğrenciler, sınıflar, yoklama, etüt, denemeler, muhasebe, mesajlar (SMS), personel, abonelik
 src/components/      arayüz bileşenleri
 tests/               Vitest testleri
 ```
@@ -192,4 +216,4 @@ tests/               Vitest testleri
 
 ## Sonraki aşamalar (Faz 2–3)
 
-Mesajlaşma (iletişim bilgisi maskeleme), paketler ve deneme dersi, kupon, SMS bildirimleri, erteleme ve tekrarlayan ders, ders notu/ödev ve veli raporu, il/ilçe SEO sayfaları ve blog, asenkron soru çözüm, koçluk araçları, grup dersleri, Flutter mobil uygulaması (sunucu tarafı API hazır).
+Mesajlaşma (iletişim bilgisi maskeleme), paketler ve deneme dersi, kupon, pazaryeri için SMS bildirimleri, erteleme ve tekrarlayan ders, ders notu/ödev ve veli raporu, il/ilçe SEO sayfaları ve blog, asenkron soru çözüm, koçluk araçları, grup dersleri, Flutter mobil uygulaması (sunucu tarafı API hazır). Kurum paneli için: online etüt (sanal sınıfla), optik okuyucu dosyası (TXT/DAT) aktarımı, ödev takibi, öğrenci girişi, kartla abonelik ödemesi, kuruma özel SMS başlığı.

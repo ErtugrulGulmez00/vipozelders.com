@@ -1,4 +1,4 @@
-# VIP Özel Ders mobil uygulaması (Flutter) için prompt
+# Pi Kampüs mobil uygulaması (Flutter) için prompt
 
 Aşağıdaki metnin tamamını Flutter uygulamasını yazacak yapay zekâya veya geliştiriciye verin. Bölüm 5'teki mobil API web projesinde hazırdır (`/api/mobil/v1`) ve uçtan uca testlerle doğrulanmıştır.
 
@@ -6,7 +6,7 @@ Aşağıdaki metnin tamamını Flutter uygulamasını yazacak yapay zekâya veya
 
 ## Görev
 
-“VIP Özel Ders” adlı Türk özel ders platformunun **Flutter** ile iOS ve Android mobil uygulamasını yaz. Web sitesi ve tüm iş kuralları hazır (Next.js + PostgreSQL); uygulama yalnızca aşağıdaki JSON API'yi kullanan bir istemcidir. Fiyat, komisyon, iade, uygunluk gibi hiçbir iş kuralı uygulamada hesaplanmaz; hepsi sunucudan gelir. Ekranlarda hangi düğmenin görüneceğine sunucunun döndürdüğü `actions` alanı karar verir.
+“Pi Kampüs” adlı Türk özel ders platformunun **Flutter** ile iOS ve Android mobil uygulamasını yaz. Web sitesi ve tüm iş kuralları hazır (Next.js + PostgreSQL); uygulama yalnızca aşağıdaki JSON API'yi kullanan bir istemcidir. Fiyat, komisyon, iade, uygunluk gibi hiçbir iş kuralı uygulamada hesaplanmaz; hepsi sunucudan gelir. Ekranlarda hangi düğmenin görüneceğine sunucunun döndürdüğü `actions` alanı karar verir.
 
 Arayüz tamamen **Türkçe**, saatler **Europe/Istanbul**, para birimi **TL**. Sunucu tutarları **kuruş** cinsinden tam sayı gönderir (`125050` → “₺1.250,50”), tarihleri ISO 8601 UTC gönderir.
 
@@ -44,6 +44,7 @@ Arayüz tamamen **Türkçe**, saatler **Europe/Istanbul**, para birimi **TL**. S
 6. **Derslerim:** sekmeler `yaklasan` · `gecmis` · `iptal`; kartta durum etiketi, tarih, öğretmen.
 7. **Ders ayrıntısı:** bilgiler, ödemeler ve iadeler, durum geçmişi (`events`), düğmeler `actions`'a göre: “Ödemeyi tamamla” (`canPay`), “Derse katıl” (`canJoin`), “İptal et” (`canCancel`; önce `cancelPreview.refundAmount` ile iade tutarını gösterip onay ister), “Değerlendir” (`canReview`; mevcut `review` varsa düzenleme), “Sorun bildir” (`canDispute`), “Takvime ekle”. Sınıf henüz açılmadıysa `classroom.opensAt` ile geri sayım.
 8. **Favoriler.**
+9. **Kurumum (veli portalı):** çocuğu Pi Kampüs kullanan bir etüt merkezine/dershaneye kayıtlıysa (`GET /kurum` boş değilse) Hesabım'da “Kurumum” girişi görünür. Öğrenci seçilince sekmeler: Özet (devam oranı, son deneme neti ve sırası, kalan/geciken ödeme, eksik konular), Devam ve etüt, Denemeler (net gelişim grafiği, deneme → karne ekranı: ders bazında D/Y/B/net, kurum ortalaması, konu analizi, eksikler ve “özel ders öğretmenleri” bağlantısı), Ödemeler (taksitler ve durumları, yapılan ödemeler), Ders programı, Duyurular ve öğretmen notları. Kurumun gönderdiği davet bağlantısı (`https://alanadi.com/kurum-davet/<kod>`) uygulamada açılırsa giriş sonrası `POST /kurum/davet` ile bağlanır.
 
 **Öğretmen (alt menü: Özet · Talepler · Derslerim · Takvim · Hesabım):**
 
@@ -205,7 +206,18 @@ Saatler:
 | `POST /cihazlar` | `{token, platform: "android"\|"ios"}` | 201 |
 | `DELETE /cihazlar/{token}` | — | 204 |
 
-`target` uygulamada açılacak ekrandır: `{screen: "booking", id}`, `{screen: "requests"}`, `{screen: "reviews"}`, `{screen: "earnings"}`, `{screen: "teacher", id: slug}` veya null.
+### Kurum (veli portalı)
+
+| İstek | Gövde | Yanıt |
+| --- | --- | --- |
+| `GET /kurum` (veli) | — | `{items: [{id, relation, student: {firstName, lastName, gradeName, groups}, center: {name, phone, logoUrl}}]}` (`id` bağlantı kimliğidir) |
+| `GET /kurum/{id}` | — | `{id, student, center, balance: {total, paid, remaining, overdue}, attendance: [{date, startMinute, subject, group, status}], etuds: [{id, date, startMinute, endMinute, subject, topic, teacher, status, attendance}], exams: [{examId, name, kind, date, net, correct, wrong, blank, rank, participants, sections: [{name, questionCount, net}]}], trend: [{name, date, net, average}], weakTopics: [{topic, section, rate, questions, teachersUrl}], installments: [{title, order, dueDate, amount, paidAmount, state}], payments: [{receiptNo, amount, method, paidAt}], announcements: [{id, title, body, group, createdAt}], notes: [{kind, text, author, createdAt}], schedule: [{weekday, startMinute, endMinute, subject, group, room, teacher}]}` |
+| `GET /kurum/{id}/deneme/{examId}` | — | `{exam, result: {net, correct, wrong, blank, score, rank, participants}, average, sections: [{name, questionCount, correct, wrong, blank, net, averageNet, topics: [{topic, questions, correct, rate}]}], weakTopics, trend}` |
+| `POST /kurum/davet` | `{token}` (davet bağlantısının son kısmı) | `{id}`; geçersiz/süresi dolmuş davette 422 `INVITE_INVALID` |
+
+Devam durumu `PRESENT` (Geldi), `ABSENT` (Gelmedi), `LATE` (Geç), `EXCUSED` (İzinli); taksit durumu `paid`, `partial`, `overdue`, `due`, `upcoming`; `rate` 0-1 arası doğru oranıdır. Yalnızca kurumun yayınladığı denemeler döner. Kurum bildirimleri (`type` `center.` ile başlar) `link` olarak `/hesabim/kurum/<id>` taşır; uygulama bunu Kurumum → öğrenci ekranına yönlendirmelidir.
+
+`target` uygulamada açılacak ekrandır: `{screen: "booking", id}`, `{screen: "requests"}`, `{screen: "reviews"}`, `{screen: "earnings"}`, `{screen: "teacher", id: slug}`, `{screen: "centerStudent", id}` (Kurumum → öğrenci), `{screen: "center"}` (Kurumum listesi) veya null.
 
 ### Öğretmen
 

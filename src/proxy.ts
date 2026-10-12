@@ -3,7 +3,7 @@ import { PROTECTED_PREFIXES, SESSION_COOKIE } from "@/lib/auth-constants";
 import { isAdminSession, maintenanceHtml, maintenanceState } from "@/server/maintenance";
 
 /** Bakım modunda kapanan vitrin sayfaları. Paneller, sanal sınıf, giriş ve ödeme dönüşleri açık kalır. */
-const MAINTENANCE_PREFIXES = ["/ogretmenler", "/ogretmen/", "/ogretmen-ol", "/ozel-ders", "/sayfa/", "/rezervasyon", "/odeme/test", "/kayit"];
+const MAINTENANCE_PREFIXES = ["/ogretmenler", "/ogretmen/", "/ogretmen-ol", "/ozel-ders", "/sayfa/", "/rezervasyon", "/odeme/test", "/kayit", "/kurumlar", "/kurumlar-icin"];
 
 function isMaintenanceGated(pathname: string): boolean {
   return pathname === "/" || MAINTENANCE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix.endsWith("/") ? prefix : `${prefix}/`));

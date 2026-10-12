@@ -6,7 +6,7 @@ import { db } from "./db";
  * Veritabanında anahtar-değer olarak tutulur; eksik/geçersiz alanlar varsayılana döner.
  */
 export const settingsSchema = z.object({
-  siteName: z.string().min(1).default("VIP Özel Ders"),
+  siteName: z.string().min(1).default("Pi Kampüs"),
   siteTagline: z.string().default("Okul öncesinden üniversite sınavına, doğru öğretmen bir tık uzağında."),
   contactEmail: z.string().default("destek@example.com"),
   contactPhone: z.string().default(""),
@@ -34,6 +34,15 @@ export const settingsSchema = z.object({
 
   // Yorumlar
   reviewWindowDays: z.number().int().min(1).max(365).default(30),
+
+  // Kurum paneli abonelik planları (aylık, KDV dahil, tam TL)
+  centerTrialDays: z.number().int().min(0).max(90).default(14),
+  centerStarterPriceTl: z.number().int().min(0).max(1_000_000).default(1490),
+  centerStarterStudents: z.number().int().min(1).max(100_000).default(100),
+  centerProPriceTl: z.number().int().min(0).max(1_000_000).default(2990),
+  centerProStudents: z.number().int().min(1).max(100_000).default(300),
+  // Havale/EFT ile abonelik ödemesi için banka bilgisi (kurumun abonelik sayfasında görünür)
+  centerBankInfo: z.string().default(""),
 
   maintenanceMode: z.boolean().default(false),
   maintenanceMessage: z.string().default("Kısa bir bakım çalışması yapıyoruz, birazdan buradayız."),

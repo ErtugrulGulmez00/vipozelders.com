@@ -7,6 +7,8 @@ import {
   releaseDueEarnings,
   sendLessonReminders,
 } from "./bookings";
+import { sendCenterPaymentReminders } from "./center/finance";
+import { processCenterMessages } from "./center/messages";
 import { db } from "./db";
 import { sendPendingEmails } from "./email";
 import { processPendingRefunds } from "./payments/service";
@@ -36,13 +38,16 @@ const TASKS = {
   releasedEarnings: releaseDueEarnings,
   reminders: sendLessonReminders,
   refunds: () => processPendingRefunds(),
+  // Kurum paneli: taksit hatırlatmaları önce kuyruğa girer, aynı turda SMS ve e-postayla gönderilir.
+  centerReminders: sendCenterPaymentReminders,
+  centerMessages: () => processCenterMessages(),
   emails: () => sendPendingEmails(),
   pushes: sendPendingPushes,
 } satisfies Record<string, (now: Date) => Promise<number>>;
 
 export type SchedulerSummary = Partial<Record<keyof typeof TASKS, number | string>>;
 
-/** Süresi dolan ödemeler/onaylar, biten dersler, hakedişler, hatırlatmalar, iadeler, e-postalar, push bildirimleri. */
+/** Süresi dolan ödemeler/onaylar, biten dersler, hakedişler, hatırlatmalar, iadeler, kurum SMS/hatırlatmaları, e-postalar, push bildirimleri. */
 export async function runScheduledTasks(now = new Date()): Promise<SchedulerSummary | null> {
   if (!(await acquireLease("scheduler", 55_000, now))) return null;
   const summary: SchedulerSummary = {};

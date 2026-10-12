@@ -4,9 +4,10 @@ export const SESSION_COOKIE = "vd_session";
 
 export const SESSION_TTL_DAYS = 30;
 
-export const PROTECTED_PREFIXES = ["/yonetim", "/ogretmen-paneli", "/hesabim", "/ders", "/rezervasyon"];
+export const PROTECTED_PREFIXES = ["/yonetim", "/ogretmen-paneli", "/hesabim", "/kurum", "/ders", "/rezervasyon"];
 
-export type AppRole = "ADMIN" | "TEACHER" | "STUDENT";
+/** CENTER: etüt merkezi / dershane personeli (kurum paneli) */
+export type AppRole = "ADMIN" | "TEACHER" | "STUDENT" | "CENTER";
 
 export function roleHome(role: AppRole): string {
   switch (role) {
@@ -14,6 +15,8 @@ export function roleHome(role: AppRole): string {
       return "/yonetim";
     case "TEACHER":
       return "/ogretmen-paneli";
+    case "CENTER":
+      return "/kurum";
     default:
       return "/hesabim";
   }

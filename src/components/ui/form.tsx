@@ -39,11 +39,24 @@ export function Field({
   children: ReactNode;
   className?: string;
 }) {
+  const message = error ? <p className="mt-1 text-xs font-medium text-rose-600">{error}</p> : hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null;
+  // htmlFor verilmediyse etiket alanı sarar; böylece etiket yine giriş alanına bağlı olur (ekran okuyucu, tıklama).
+  if (label && !htmlFor) {
+    return (
+      <div className={className}>
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-medium text-slate-700">{label}</span>
+          {children}
+        </label>
+        {message}
+      </div>
+    );
+  }
   return (
     <div className={className}>
       {label ? <Label htmlFor={htmlFor}>{label}</Label> : null}
       {children}
-      {error ? <p className="mt-1 text-xs font-medium text-rose-600">{error}</p> : hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
+      {message}
     </div>
   );
 }

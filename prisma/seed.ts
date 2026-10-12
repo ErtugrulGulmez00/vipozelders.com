@@ -13,6 +13,7 @@ import { db } from "../src/server/db";
 import { lessonPrice, splitCommission } from "../src/server/pricing";
 import { DEMO_EMAIL_DOMAIN } from "../src/lib/demo";
 import { LEGAL_PAGES } from "./legal-pages";
+import { seedDemoCenter } from "./seed-center";
 
 const isProduction = process.env.NODE_ENV === "production";
 const shouldSeedDemo = process.env.SEED_DEMO ? process.env.SEED_DEMO === "true" : !isProduction;
@@ -535,6 +536,7 @@ async function main() {
   await seedPages();
   const admin = await seedAdmin();
   const demo = shouldSeedDemo ? await seedDemo() : false;
+  const demoCenter = shouldSeedDemo ? await seedDemoCenter() : false;
 
   console.log("✓ İl/ilçe, kademe, ders, hizmet türü ve yasal sayfalar hazır.");
   if (admin) console.log(`✓ Yönetici oluşturuldu → kullanıcı adı: ${admin.username}  şifre: ${admin.password}`);
@@ -543,6 +545,13 @@ async function main() {
     console.log("    Öğretmen  → kullanıcı adı: ayse.yilmaz   şifre: Ogretmen123");
     console.log(`    Veli      → e-posta: veli@${DEMO_EMAIL_DOMAIN}   şifre: Veli12345`);
     console.log(`    Öğrenci   → e-posta: ogrenci@${DEMO_EMAIL_DOMAIN}   şifre: Ogrenci123`);
+  }
+  if (demoCenter) {
+    console.log("✓ Demo kurum eklendi: Başarı Etüt Merkezi (/kurum):");
+    console.log(`    Kurum sahibi → e-posta: kurum@${DEMO_EMAIL_DOMAIN}   şifre: Kurum12345`);
+    console.log(`    Öğretmen     → e-posta: etut.ogretmen@${DEMO_EMAIL_DOMAIN}   şifre: Ogretmen123`);
+    console.log(`    Muhasebe     → e-posta: muhasebe@${DEMO_EMAIL_DOMAIN}   şifre: Muhasebe123`);
+    console.log(`    Veli portalı → veli@${DEMO_EMAIL_DOMAIN} hesabı “Ali Demirtaş”a bağlı`);
   }
 }
 

@@ -75,6 +75,18 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
         <NumberField name="reviewWindowDays" label="Değerlendirme yapma süresi" value={settings.reviewWindowDays} suffix="gün" />
       </Section>
 
+      <Section title="Kurum paneli abonelikleri" description="Etüt merkezi ve dershanelere satılan paneller. Fiyatlar aylık, KDV dahil; “Kurumlar için” sayfasında görünür.">
+        <NumberField name="centerTrialDays" label="Ücretsiz deneme süresi" value={settings.centerTrialDays} suffix="gün" />
+        <div className="hidden sm:block" />
+        <NumberField name="centerStarterPriceTl" label="Başlangıç planı" value={settings.centerStarterPriceTl} suffix="TL / ay" />
+        <NumberField name="centerStarterStudents" label="Başlangıç planı öğrenci sınırı" value={settings.centerStarterStudents} suffix="öğrenci" />
+        <NumberField name="centerProPriceTl" label="Profesyonel plan" value={settings.centerProPriceTl} suffix="TL / ay" />
+        <NumberField name="centerProStudents" label="Profesyonel plan öğrenci sınırı" value={settings.centerProStudents} suffix="öğrenci" />
+        <Field label="Havale / EFT bilgileri" hint="Banka, alıcı adı ve IBAN. Kurumların abonelik sayfasında gösterilir." className="sm:col-span-2">
+          <Textarea name="centerBankInfo" rows={3} defaultValue={settings.centerBankInfo} placeholder={"Örn: X Bankası · Pi Kampüs Eğitim Teknolojileri Ltd. Şti.\nTR00 0000 0000 0000 0000 0000 00"} />
+        </Field>
+      </Section>
+
       <Section title="Bakım modu">
         <div className="sm:col-span-2">
           <Checkbox name="maintenanceMode" defaultChecked={settings.maintenanceMode} label="Vitrini bakım moduna al (paneller ve giriş çalışmaya devam eder)" />

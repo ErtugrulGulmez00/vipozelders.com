@@ -61,6 +61,7 @@ export async function authenticate(request: Request, options: { allowPasswordCha
   const { user } = session;
   if (user.status !== "ACTIVE") throw new ApiError(403, "ACCOUNT_SUSPENDED", "Hesabınız askıya alınmış. Destek ekibimizle iletişime geçin.");
   if (user.role === "ADMIN") throw new ApiError(403, "ADMIN_NOT_SUPPORTED", "Yönetici hesabı mobil uygulamada kullanılamaz; web panelini kullanın.");
+  if (user.role === "CENTER") throw new ApiError(403, "CENTER_NOT_SUPPORTED", "Kurum paneli hesabı mobil uygulamada henüz kullanılamıyor; web panelini kullanın.");
   if (user.mustChangePassword && !options.allowPasswordChange) {
     throw new ApiError(403, "PASSWORD_CHANGE_REQUIRED", "Devam etmeden önce size verilen geçici şifreyi değiştirmeniz gerekiyor.");
   }

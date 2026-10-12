@@ -1,4 +1,4 @@
-import { Bell, CalendarClock, CalendarDays, FileCheck2, Inbox, LayoutDashboard, ListChecks, MessageSquareQuote, Settings, UserRound, Wallet } from "lucide-react";
+import { Bell, Building2, CalendarClock, CalendarDays, FileCheck2, Inbox, LayoutDashboard, ListChecks, MessageSquareQuote, Settings, UserRound, Wallet } from "lucide-react";
 import { PanelShell } from "@/components/panel/panel-shell";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
@@ -7,9 +7,10 @@ export const instant = false;
 
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
   const user = await requireRole("TEACHER");
-  const [pending, unread] = await Promise.all([
+  const [pending, unread, centerMemberships] = await Promise.all([
     db.booking.count({ where: { teacherId: user.id, status: "PENDING_APPROVAL" } }),
     db.notification.count({ where: { userId: user.id, readAt: null } }),
+    db.centerMember.count({ where: { userId: user.id, isActive: true } }),
   ]);
   return (
     <PanelShell
@@ -27,6 +28,8 @@ export default async function TeacherLayout({ children }: { children: React.Reac
         { href: "/ogretmen-paneli/yorumlar", label: "Yorumlar", icon: <MessageSquareQuote /> },
         { href: "/ogretmen-paneli/bildirimler", label: "Bildirimler", icon: <Bell />, badge: unread || undefined },
         { href: "/ogretmen-paneli/ayarlar", label: "Hesap ayarları", icon: <Settings /> },
+        // Bir etüt merkezinde/dershanede de görevli öğretmenler için
+        ...(centerMemberships ? [{ href: "/kurum", label: "Kurum paneli", icon: <Building2 /> }] : []),
       ]}
     >
       {children}

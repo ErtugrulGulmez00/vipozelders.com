@@ -8,8 +8,24 @@ import { initials } from "@/lib/text";
 import type { SessionUser } from "@/server/auth/current-user";
 import { MobileNav, SideNav, type PanelNavItem } from "./nav-links";
 
-/** Admin, öğretmen ve öğrenci panellerinin ortak iskeleti. */
-export function PanelShell({ user, title, nav, children }: { user: SessionUser; title: string; nav: PanelNavItem[]; children: ReactNode }) {
+/** Admin, öğretmen, öğrenci ve kurum panellerinin ortak iskeleti. */
+export function PanelShell({
+  user,
+  title,
+  nav,
+  children,
+  roleLabel,
+  banner,
+}: {
+  user: SessionUser;
+  title: string;
+  nav: PanelNavItem[];
+  children: ReactNode;
+  /** Kullanıcının rol adı yerine gösterilecek metin (ör. kurumdaki görevi) */
+  roleLabel?: string;
+  /** Sayfa içeriğinin üstünde gösterilen uyarı (ör. abonelik bitiyor) */
+  banner?: ReactNode;
+}) {
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[260px_1fr]">
       <aside className="hidden bg-brand-950 lg:flex lg:flex-col">
@@ -27,7 +43,7 @@ export function PanelShell({ user, title, nav, children }: { user: SessionUser; 
               <p className="truncate text-sm font-semibold text-white">
                 {user.firstName} {user.lastName}
               </p>
-              <p className="text-xs text-slate-400">{ROLE_LABEL[user.role]}</p>
+              <p className="text-xs text-slate-400">{roleLabel ?? ROLE_LABEL[user.role]}</p>
             </div>
           </div>
         </div>
@@ -53,7 +69,10 @@ export function PanelShell({ user, title, nav, children }: { user: SessionUser; 
         <div className="px-4">
           <MobileNav items={nav} />
         </div>
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-8">{children}</main>
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-8">
+          {banner}
+          {children}
+        </main>
       </div>
     </div>
   );
