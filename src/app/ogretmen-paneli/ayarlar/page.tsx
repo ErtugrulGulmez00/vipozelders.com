@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { updateTeacherContactAction } from "@/actions/teacher";
 import { ActionForm, SubmitButton } from "@/components/forms/action-form";
+import { AccountDeletionForm } from "@/components/panel/account-deletion-form";
 import { PasswordForm } from "@/components/panel/password-form";
 import { Field, Input } from "@/components/ui/form";
 import { Card, CardBody, CardHeader, DescriptionList, PageHeader } from "@/components/ui/primitives";
@@ -13,7 +14,7 @@ export default async function TeacherSettingsPage() {
   return (
     <>
       <PageHeader title="Hesap ayarları" />
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         <Card>
           <CardHeader title="Hesap" description="Ad, kullanıcı adı ve e-posta değişiklikleri için yöneticiye başvurun." />
           <CardBody className="space-y-5">
@@ -36,6 +37,12 @@ export default async function TeacherSettingsPage() {
           <CardHeader title="Şifre değiştir" />
           <CardBody>
             <PasswordForm />
+          </CardBody>
+        </Card>
+        <Card>
+          <CardHeader title="Hesabı sil" />
+          <CardBody>
+            <AccountDeletionForm />
           </CardBody>
         </Card>
       </div>

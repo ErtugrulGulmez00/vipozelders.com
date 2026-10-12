@@ -1,4 +1,4 @@
-import { Bell, CalendarClock, CalendarDays, Inbox, LayoutDashboard, ListChecks, MessageSquareQuote, Settings, UserRound, Wallet } from "lucide-react";
+import { Bell, CalendarClock, CalendarDays, FileCheck2, Inbox, LayoutDashboard, ListChecks, MessageSquareQuote, Settings, UserRound, Wallet } from "lucide-react";
 import { PanelShell } from "@/components/panel/panel-shell";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
@@ -22,6 +22,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
         { href: "/ogretmen-paneli/profil", label: "Profilim", icon: <UserRound /> },
         { href: "/ogretmen-paneli/dersler-ve-fiyatlar", label: "Dersler ve fiyatlar", icon: <ListChecks /> },
         { href: "/ogretmen-paneli/takvim", label: "Müsaitlik takvimi", icon: <CalendarClock /> },
+        { href: "/ogretmen-paneli/belgeler", label: "Belgelerim", icon: <FileCheck2 /> },
         { href: "/ogretmen-paneli/kazanclar", label: "Kazançlarım", icon: <Wallet /> },
         { href: "/ogretmen-paneli/yorumlar", label: "Yorumlar", icon: <MessageSquareQuote /> },
         { href: "/ogretmen-paneli/bildirimler", label: "Bildirimler", icon: <Bell />, badge: unread || undefined },

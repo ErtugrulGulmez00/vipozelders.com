@@ -1,4 +1,4 @@
-import { AlertTriangle, Banknote, CalendarCheck, CircleDollarSign, GraduationCap, RotateCcw, Users } from "lucide-react";
+import { AlertTriangle, Banknote, CalendarCheck, CircleDollarSign, FileCheck2, GraduationCap, RotateCcw, UserPlus, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BookingStatusBadge } from "@/components/panel/booking-ui";
@@ -40,6 +40,10 @@ export default async function AdminDashboard() {
       include: { teacher: { select: { user: { select: { firstName: true, lastName: true } } } }, student: { select: { firstName: true, lastName: true } } },
     }),
     db.user.count({ where: { email: { endsWith: `@${DEMO_EMAIL_DOMAIN}` } } }),
+  ]);
+  const [applications, pendingDocuments] = await Promise.all([
+    db.teacherApplication.count({ where: { status: "NEW" } }),
+    db.teacherDocument.findMany({ where: { status: "PENDING" }, orderBy: { createdAt: "asc" }, take: 5, include: { teacher: { select: { user: { select: { firstName: true, lastName: true } } } } } }),
   ]);
   const provider = getPaymentProvider();
   const twoFactorOn = Boolean((await db.user.findUnique({ where: { id: admin.id }, select: { totpEnabledAt: true } }))?.totpEnabledAt);
@@ -103,14 +107,24 @@ export default async function AdminDashboard() {
           </CardBody>
         </Card>
         <Card>
-          <CardHeader title="Yayın bekleyen öğretmenler" />
+          <CardHeader title="Öğretmen tarafında bekleyenler" />
           <CardBody className="space-y-2 text-sm">
-            {drafts.length === 0 ? <p className="text-slate-500">Taslak öğretmen yok.</p> : null}
-            {drafts.map((t) => (
-              <Link key={t.userId} href={`/yonetim/ogretmenler/${t.userId}`} className="flex items-center gap-2 rounded-lg p-2 hover:bg-slate-50">
-                <GraduationCap className="size-4 text-brand-600" aria-hidden /> {t.user.firstName} {t.user.lastName}
+            {applications > 0 ? (
+              <Link href="/yonetim/basvurular" className="flex items-center gap-2 rounded-lg bg-amber-50 p-2 font-medium text-amber-900 hover:bg-amber-100">
+                <UserPlus className="size-4" aria-hidden /> {applications} yeni öğretmen başvurusu
+              </Link>
+            ) : null}
+            {pendingDocuments.map((d) => (
+              <Link key={d.id} href={`/yonetim/ogretmenler/${d.teacherId}?bolum=belgeler`} className="flex items-center gap-2 rounded-lg p-2 hover:bg-slate-50">
+                <FileCheck2 className="size-4 text-amber-600" aria-hidden /> {d.teacher.user.firstName} {d.teacher.user.lastName}: belge incelemesi
               </Link>
             ))}
+            {drafts.map((t) => (
+              <Link key={t.userId} href={`/yonetim/ogretmenler/${t.userId}`} className="flex items-center gap-2 rounded-lg p-2 hover:bg-slate-50">
+                <GraduationCap className="size-4 text-brand-600" aria-hidden /> {t.user.firstName} {t.user.lastName}: yayın bekliyor
+              </Link>
+            ))}
+            {drafts.length === 0 && applications === 0 && pendingDocuments.length === 0 ? <p className="text-slate-500">Bekleyen başvuru, belge veya taslak profil yok.</p> : null}
           </CardBody>
         </Card>
       </div>

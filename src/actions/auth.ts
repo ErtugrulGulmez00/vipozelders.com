@@ -6,6 +6,7 @@ import { failure, success, zodFieldErrors, type ActionState } from "@/lib/action
 import { roleHome, safeNextPath } from "@/lib/auth-constants";
 import { normalizePhone } from "@/lib/text";
 import { AccountError, registerStudent, sendPasswordResetEmail, sendVerificationEmail } from "@/server/accounts";
+import { DELETION_REQUEST_MESSAGE, requestAccountDeletion } from "@/server/account-deletion";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { burnPasswordCheck, hashPassword, passwordProblem, verifyPassword } from "@/server/auth/password";
 import { countRecentAttempts, isLoginBlocked, recordLoginAttempt } from "@/server/auth/rate-limit";
@@ -196,4 +197,14 @@ export async function resendVerificationAction(): Promise<ActionState> {
   await recordLoginAttempt(key, null, false);
   await sendVerificationEmail(user.id);
   return success("Doğrulama bağlantısı e-posta adresinize gönderildi.");
+}
+
+/** Web'den hesap silme talebi (veli/öğrenci ve öğretmen hesap ayarları). */
+export async function requestAccountDeletionAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await getCurrentUser();
+  if (!user || user.role === "ADMIN") return failure("Bu işlem için giriş yapmalısınız.");
+  if (formData.get("confirm") !== "on") return failure("Talebi göndermek için onay kutusunu işaretleyin.", { confirm: "Onay gerekli." });
+  const { ipAddress } = await requestMeta();
+  await requestAccountDeletion(user, text(formData, "reason"), { ipAddress, source: "web" });
+  return success(DELETION_REQUEST_MESSAGE);
 }

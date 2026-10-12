@@ -25,7 +25,7 @@ function CopyButton({ value }: { value: string }) {
   );
 }
 
-function Credentials() {
+export function Credentials() {
   const state = useActionResult();
   if (!state.ok || !state.data?.username) return null;
   const { username, password, teacherId, emailSent } = state.data as { username: string; password: string; teacherId: string; emailSent: boolean };

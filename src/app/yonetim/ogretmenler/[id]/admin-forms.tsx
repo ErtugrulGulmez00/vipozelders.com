@@ -4,6 +4,7 @@ import { KeyRound } from "lucide-react";
 import {
   recordPayoutAction,
   resetPasswordAction,
+  reviewDocumentAction,
   setTeacherFlagsAction,
   setTeacherStatusAction,
   setUserStatusAction,
@@ -137,6 +138,24 @@ export function PayoutRecordForm({ teacherId, available }: { teacherId: string; 
         </Field>
       </div>
       <SubmitButton variant="secondary">Ödemeyi kaydet</SubmitButton>
+    </ActionForm>
+  );
+}
+
+/** Belge incelemesi: onay veya gerekçeli ret (gerekçe öğretmene iletilir). */
+export function DocumentReviewForm({ documentId }: { documentId: string }) {
+  return (
+    <ActionForm action={reviewDocumentAction} className="flex flex-wrap items-end gap-2">
+      <input type="hidden" name="documentId" value={documentId} />
+      <Field label="Not (ret için zorunlu)" className="min-w-48 flex-1">
+        <Input name="note" placeholder="Örn: Belge okunmuyor, lütfen yeniden yükleyin" />
+      </Field>
+      <SubmitButton name="decision" value="APPROVED" size="sm" pendingText="…">
+        Onayla
+      </SubmitButton>
+      <SubmitButton name="decision" value="REJECTED" variant="outline" size="sm" pendingText="…">
+        Reddet
+      </SubmitButton>
     </ActionForm>
   );
 }

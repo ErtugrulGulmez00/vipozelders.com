@@ -37,7 +37,7 @@ export async function SiteFooter() {
               </li>
             ))}
             <li>
-              <Link href="/sayfa/iletisim" className="hover:text-white">
+              <Link href="/ogretmen-ol" className="hover:text-white">
                 Öğretmen olarak katılın
               </Link>
             </li>

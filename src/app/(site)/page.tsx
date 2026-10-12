@@ -13,6 +13,7 @@ import {
 import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
+import { ClassroomPreview } from "@/components/site/classroom-preview";
 import { SearchBox } from "@/components/site/search-box";
 import { TeacherCard } from "@/components/site/teacher-card";
 import { LinkButton } from "@/components/ui/button";
@@ -36,14 +37,19 @@ export default async function HomePage() {
       <section className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700">
         <div className="pointer-events-none absolute -right-24 -top-24 size-96 rounded-full bg-gold-400/20 blur-3xl" />
         <div className="relative mx-auto max-w-6xl px-4 pb-20 pt-16 sm:pt-24">
-          <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-gold-100 ring-1 ring-white/20">
-            <BadgeCheck className="size-3.5" aria-hidden /> Onaylı öğretmenler · Güvenli ödeme · Ders olmazsa iade
-          </p>
-          <h1 className="mt-5 max-w-3xl text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl">
-            Doğru öğretmen, <span className="text-gold-300">doğru saatte.</span>
-          </h1>
-          <p className="mt-4 max-w-2xl text-lg text-brand-100">{settings.siteTagline}</p>
-          <div className="mt-8 max-w-4xl">
+          <div className="grid items-center gap-10 lg:grid-cols-[1fr_380px]">
+            <div>
+              <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-gold-100 ring-1 ring-white/20">
+                <BadgeCheck className="size-3.5" aria-hidden /> Onaylı öğretmenler · Güvenli ödeme · Ders olmazsa iade
+              </p>
+              <h1 className="mt-5 max-w-3xl text-4xl font-extrabold leading-tight tracking-tight text-white sm:text-5xl">
+                Doğru öğretmen, <span className="text-gold-300">doğru saatte.</span>
+              </h1>
+              <p className="mt-4 max-w-2xl text-lg text-brand-100">{settings.siteTagline}</p>
+            </div>
+            <ClassroomPreview className="hidden lg:block" />
+          </div>
+          <div className="mt-10 max-w-4xl">
             <SearchBox catalog={catalog} />
           </div>
           <div className="mt-6 flex flex-wrap gap-2 text-sm">
@@ -156,7 +162,7 @@ export default async function HomePage() {
             <h2 className="text-2xl font-bold">Öğretmen misiniz?</h2>
             <p className="mt-1 text-brand-100">Kendi fiyatınızı ve takviminizi belirleyin, öğrencilere online veya yüz yüze ulaşın.</p>
           </div>
-          <LinkButton href="/sayfa/iletisim" variant="gold" size="lg">
+          <LinkButton href="/ogretmen-ol" variant="gold" size="lg">
             Bize katılın
           </LinkButton>
         </div>

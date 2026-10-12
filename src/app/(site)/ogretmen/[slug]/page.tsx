@@ -6,6 +6,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { toggleFavoriteAction } from "@/actions/student";
 import { BookingWidget } from "@/components/site/booking-widget";
+import { buttonClasses } from "@/components/ui/button";
 import { Alert, Avatar, Badge, Card, RatingSummary, Skeleton, Stars } from "@/components/ui/primitives";
 import { formatDate, toLocalDateString } from "@/lib/dates";
 import { durationLabel } from "@/lib/labels";
@@ -29,7 +30,7 @@ export async function generateMetadata({ params }: PageProps<"/ogretmen/[slug]">
 
 export default function TeacherPage({ params }: PageProps<"/ogretmen/[slug]">) {
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8">
+    <div className="mx-auto max-w-6xl px-4 pt-8 pb-24 lg:pb-8">
       <Suspense fallback={<ProfileSkeleton />}>
         <TeacherProfile params={params} />
       </Suspense>
@@ -171,7 +172,7 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
         <Reviews teacher={teacher} />
       </div>
 
-      <aside className="lg:sticky lg:top-20 lg:self-start">
+      <aside id="randevu" className="scroll-mt-20 lg:sticky lg:top-20 lg:self-start">
         <Card className="p-5">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-900">
             <BookOpen className="size-5 text-brand-600" aria-hidden /> Randevu al
@@ -196,6 +197,17 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
           )}
         </Card>
       </aside>
+      {/* Telefonda randevu kutusu sayfanın sonunda kalır; alttaki sabit çubuk oraya götürür. */}
+      {!preview && teacher.offerings.length ? (
+        <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-3 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
+          <p className="text-sm text-slate-600">
+            <span className="text-lg font-bold text-slate-900">{formatMoney(Math.min(...teacher.offerings.map((o) => o.hourlyPrice)))}</span> / saat’ten başlayan
+          </p>
+          <a href="#randevu" className={buttonClasses("primary", "md")}>
+            Randevu al
+          </a>
+        </div>
+      ) : null}
     </div>
   );
 }

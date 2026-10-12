@@ -56,6 +56,12 @@ export const ACCOUNT_TYPE_LABEL: Record<string, string> = { PARENT: "Veli", STUD
 
 export const ROLE_LABEL: Record<string, string> = { ADMIN: "Yönetici", TEACHER: "Öğretmen", STUDENT: "Öğrenci/Veli" };
 
+export const DOCUMENT_STATUS: Record<string, { label: string; tone: Tone }> = {
+  PENDING: { label: "İnceleniyor", tone: "amber" },
+  APPROVED: { label: "Onaylandı", tone: "green" },
+  REJECTED: { label: "Kabul edilmedi", tone: "rose" },
+};
+
 export const DOCUMENT_TYPE_LABEL: Record<string, string> = {
   DIPLOMA: "Diploma",
   IDENTITY: "Kimlik",

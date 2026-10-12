@@ -20,6 +20,7 @@ import { retryFailedRefund } from "@/server/payments/service";
 import { setReviewStatus } from "@/server/reviews";
 import { runScheduledTasks } from "@/server/scheduler";
 import { saveSettings, settingsSchema, type SiteSettings } from "@/server/settings";
+import { DocumentError, reviewTeacherDocument } from "@/server/teacher-documents";
 import { CACHE_TAGS } from "@/server/site";
 import { profileChecklist, TEACHERS_CACHE_TAG } from "@/server/teachers";
 
@@ -166,6 +167,21 @@ export async function setUserStatusAction(_: ActionState, formData: FormData): P
   await log(user.id, "user.status", "User", userId, { status });
   refresh();
   return success(status === "SUSPENDED" ? "Hesap askıya alındı; açık oturumları kapatıldı." : "Hesap yeniden etkinleştirildi.");
+}
+
+/** Öğretmen belgesini onaylar veya gerekçeyle reddeder; öğretmene bildirim gider. */
+export async function reviewDocumentAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await admin();
+  if (!user) return DENIED;
+  const decision = text(formData, "decision") === "APPROVED" ? "APPROVED" : "REJECTED";
+  try {
+    await reviewTeacherDocument(text(formData, "documentId"), user.id, decision, text(formData, "note"));
+  } catch (error) {
+    if (error instanceof DocumentError) return failure(error.message);
+    throw error;
+  }
+  refresh();
+  return success(decision === "APPROVED" ? "Belge onaylandı." : "Belge reddedildi; öğretmene gerekçe iletildi.");
 }
 
 // ---------------------------------------------------------------------------

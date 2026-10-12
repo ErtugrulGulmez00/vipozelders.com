@@ -1,4 +1,4 @@
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -9,7 +9,7 @@ import { ProfileForm } from "@/components/teacher/profile-form";
 import { Alert, Badge, Card, CardBody, CardHeader, DescriptionList, EmptyState, StatCard } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
 import { formatCompact, toLocalDateString } from "@/lib/dates";
-import { TEACHER_STATUS, VERIFICATION_STATUS } from "@/lib/labels";
+import { DOCUMENT_STATUS, DOCUMENT_TYPE_LABEL, TEACHER_STATUS, VERIFICATION_STATUS } from "@/lib/labels";
 import { formatMoney } from "@/lib/money";
 import { requireRole } from "@/server/auth/current-user";
 import { decryptText, maskIdentityNumber } from "@/server/crypto";
@@ -17,9 +17,10 @@ import { db } from "@/server/db";
 import { teacherBalances } from "@/server/ledger";
 import { loadSettings } from "@/server/settings";
 import { getCatalog, getCities } from "@/server/site";
+import { uploadUrl } from "@/server/storage";
 import { loadTeacherEditorData } from "@/server/teacher-editor-data";
 import { profileChecklist } from "@/server/teachers";
-import { AccountForm, FlagsForm, PayoutRecordForm, ResetPasswordForm, StatusButtons, UserStatusForm } from "./admin-forms";
+import { AccountForm, DocumentReviewForm, FlagsForm, PayoutRecordForm, ResetPasswordForm, StatusButtons, UserStatusForm } from "./admin-forms";
 
 export const metadata: Metadata = { title: "Öğretmen" };
 
@@ -29,6 +30,7 @@ const SECTIONS = [
   { key: "dersler", label: "Dersler ve fiyatlar" },
   { key: "takvim", label: "Takvim" },
   { key: "finans", label: "Finans" },
+  { key: "belgeler", label: "Belgeler" },
 ] as const;
 
 export default async function AdminTeacherPage({ params, searchParams }: PageProps<"/yonetim/ogretmenler/[id]">) {
@@ -38,7 +40,11 @@ export default async function AdminTeacherPage({ params, searchParams }: PagePro
   const user = await db.user.findUnique({ where: { id }, include: { teacherProfile: true } });
   if (!user?.teacherProfile) notFound();
   const teacher = user.teacherProfile;
-  const [checklist, settings] = await Promise.all([profileChecklist(id), loadSettings()]);
+  const [checklist, settings, pendingDocuments] = await Promise.all([
+    profileChecklist(id),
+    loadSettings(),
+    db.teacherDocument.count({ where: { teacherId: id, status: "PENDING" } }),
+  ]);
 
   return (
     <>
@@ -61,6 +67,7 @@ export default async function AdminTeacherPage({ params, searchParams }: PagePro
         {SECTIONS.map((s) => (
           <Link key={s.key} href={`/yonetim/ogretmenler/${id}?bolum=${s.key}`} className={cn("shrink-0 rounded-lg px-4 py-1.5", section === s.key ? "bg-white text-brand-700 shadow-xs" : "text-slate-600")}>
             {s.label}
+            {s.key === "belgeler" && pendingDocuments ? <span className="ml-1.5 rounded-full bg-amber-400 px-1.5 text-xs text-amber-950">{pendingDocuments}</span> : null}
           </Link>
         ))}
       </nav>
@@ -69,6 +76,7 @@ export default async function AdminTeacherPage({ params, searchParams }: PagePro
       {section === "dersler" ? <OfferingsSection teacherId={id} /> : null}
       {section === "takvim" ? <AvailabilitySection teacherId={id} /> : null}
       {section === "finans" ? <FinanceSection teacherId={id} /> : null}
+      {section === "belgeler" ? <DocumentsSection teacherId={id} /> : null}
       {section === "genel" ? (
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="space-y-6">
@@ -226,6 +234,41 @@ async function FinanceSection({ teacherId }: { teacherId: string }) {
         </Card>
       </div>
     </div>
+  );
+}
+
+async function DocumentsSection({ teacherId }: { teacherId: string }) {
+  const documents = await db.teacherDocument.findMany({ where: { teacherId }, orderBy: [{ status: "asc" }, { createdAt: "desc" }] });
+  return (
+    <Card>
+      <CardHeader title="Belgeler" description="Kimlik, diploma ve adli sicil kaydını kontrol ettikten sonra Genel sekmesinden “Onaylı öğretmen” yapın." />
+      <CardBody>
+        {documents.length === 0 ? (
+          <EmptyState icon={<FileText className="size-8" />} title="Öğretmen henüz belge yüklemedi" description="Öğretmen panelindeki “Belgelerim” sayfasından yükleyebilir." />
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {documents.map((doc) => (
+              <li key={doc.id} className="space-y-3 py-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="flex flex-wrap items-center gap-2 font-medium text-slate-900">
+                    {DOCUMENT_TYPE_LABEL[doc.type]} <Badge tone={DOCUMENT_STATUS[doc.status].tone}>{DOCUMENT_STATUS[doc.status].label}</Badge>
+                  </p>
+                  <a href={uploadUrl(doc.fileKey) ?? "#"} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline">
+                    {doc.fileName} <ExternalLink className="size-3.5" aria-hidden />
+                  </a>
+                </div>
+                <p className="text-xs text-slate-400">
+                  Yüklendi: {formatCompact(doc.createdAt)}
+                  {doc.reviewedAt ? ` · İncelendi: ${formatCompact(doc.reviewedAt)}` : ""}
+                  {doc.note ? ` · Not: ${doc.note}` : ""}
+                </p>
+                {doc.status === "PENDING" ? <DocumentReviewForm documentId={doc.id} /> : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardBody>
+    </Card>
   );
 }
 

@@ -45,6 +45,7 @@ export function BookingWidget({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  const [activeDate, setActiveDate] = useState<string | null>(null);
 
   useEffect(() => {
     if (!offering) return;
@@ -69,6 +70,9 @@ export function BookingWidget({
 
   const price = offering ? lessonPrice(offering.hourlyPrice, duration) : 0;
   const hasAnySlot = useMemo(() => days?.some((d) => d.slots.some((s) => s.available)) ?? false, [days]);
+  // Seçili gün bu haftada yoksa (hafta değişti) boş saati olan ilk gün açılır.
+  const activeDay = days?.find((d) => d.date === activeDate) ?? days?.find((d) => d.slots.some((s) => s.available)) ?? null;
+  const selectedSlot = selected ? days?.flatMap((d) => d.slots.map((s) => ({ ...s, day: d }))).find((s) => s.start === selected) : undefined;
 
   if (!offering) {
     return <p className="text-sm text-slate-500">Bu öğretmen henüz ders eklememiş.</p>;
@@ -166,16 +170,39 @@ export function BookingWidget({
           ) : null}
           {error ? <p className="text-sm text-rose-600">{error}</p> : null}
           {days ? (
-            <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-2">
-              {days.map((day) => (
-                <div key={day.date} className="w-[4.6rem] shrink-0">
-                  <div className="mb-1.5 rounded-lg bg-slate-50 py-1 text-center">
-                    <p className="text-xs font-semibold text-slate-900">{day.weekday}</p>
-                    <p className="text-[11px] text-slate-500">{day.day}</p>
-                  </div>
-                  <div className="space-y-1">
-                    {day.slots.length === 0 ? <p className="py-2 text-center text-[11px] text-slate-400">—</p> : null}
-                    {day.slots.map((slot) => (
+            <>
+              {/* Önce gün, sonra o günün saatleri: dar kutuda da hiçbir sütun kesilmez. */}
+              <div className="grid grid-cols-7 gap-1" aria-label="Gün seçin">
+                {days.map((day) => {
+                  const free = day.slots.filter((s) => s.available).length;
+                  const active = day.date === activeDay?.date;
+                  return (
+                    <button
+                      key={day.date}
+                      type="button"
+                      disabled={free === 0}
+                      aria-pressed={active}
+                      aria-label={`${day.day} ${day.weekday}${free ? `, ${free} boş saat` : ", boş saat yok"}`}
+                      onClick={() => setActiveDate(day.date)}
+                      className={cn(
+                        "flex flex-col items-center rounded-lg py-1.5 ring-1 transition",
+                        active ? "bg-brand-600 text-white ring-brand-600" : free ? "bg-white text-slate-800 ring-slate-200 hover:ring-brand-300" : "cursor-not-allowed bg-slate-50 text-slate-400 ring-slate-100",
+                      )}
+                    >
+                      <span className="text-[11px] font-medium">{day.weekday}</span>
+                      <span className="text-base font-bold leading-tight">{Number(day.date.slice(8))}</span>
+                      <span className={cn("mt-0.5 size-1.5 rounded-full", free ? (active ? "bg-white" : "bg-emerald-500") : "bg-transparent")} aria-hidden />
+                    </button>
+                  );
+                })}
+              </div>
+              {activeDay ? (
+                <div className="mt-3">
+                  <p className="mb-2 text-xs font-medium text-slate-500">
+                    {activeDay.day}, {activeDay.weekday} · {activeDay.slots.filter((s) => s.available).length} boş saat
+                  </p>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {activeDay.slots.map((slot) => (
                       <button
                         key={slot.start}
                         type="button"
@@ -183,7 +210,7 @@ export function BookingWidget({
                         onClick={() => setSelected(slot.start)}
                         title={slot.available ? undefined : "Dolu"}
                         className={cn(
-                          "w-full rounded-md py-1 text-xs font-semibold",
+                          "rounded-md py-1.5 text-xs font-semibold",
                           !slot.available && "cursor-not-allowed bg-slate-100 text-slate-400 line-through",
                           slot.available && selected !== slot.start && "bg-white text-brand-700 ring-1 ring-brand-200 hover:bg-brand-50",
                           selected === slot.start && "bg-brand-600 text-white",
@@ -194,8 +221,8 @@ export function BookingWidget({
                     ))}
                   </div>
                 </div>
-              ))}
-            </div>
+              ) : null}
+            </>
           ) : null}
           {days && !hasAnySlot && !loading ? <p className="mt-2 text-xs text-slate-500">Bu hafta boş saat yok; sonraki haftalara bakın.</p> : null}
         </div>
@@ -206,6 +233,11 @@ export function BookingWidget({
           <span className="text-sm text-slate-600">{durationLabel(duration)} ders ücreti</span>
           <span className="text-xl font-bold text-slate-900">{formatMoney(price)}</span>
         </div>
+        {selectedSlot ? (
+          <p className="mt-1 text-sm font-semibold text-brand-700">
+            {selectedSlot.day.day}, {selectedSlot.day.weekday} · {selectedSlot.time}
+          </p>
+        ) : null}
         <p className="mt-0.5 text-xs text-slate-500">KDV dahil · Öğretmen onaylamazsa tamamı iade edilir.</p>
       </div>
       <Button size="lg" className="w-full" disabled={!selected} onClick={proceed}>

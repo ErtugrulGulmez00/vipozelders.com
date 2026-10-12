@@ -7,6 +7,7 @@ import { Card, CardBody, CardHeader, PageHeader } from "@/components/ui/primitiv
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { getCities } from "@/server/site";
+import { AccountDeletionForm } from "@/components/panel/account-deletion-form";
 import { PasswordForm } from "@/components/panel/password-form";
 
 export const metadata: Metadata = { title: "Hesap ayarları" };
@@ -22,7 +23,7 @@ export default async function StudentProfilePage() {
   return (
     <>
       <PageHeader title="Hesap ayarları" />
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         <Card>
           <CardHeader title="Kişisel bilgiler" description={`E-posta: ${profile.email}`} />
           <CardBody>
@@ -98,6 +99,12 @@ export default async function StudentProfilePage() {
             <CardHeader title="Şifre değiştir" />
             <CardBody>
               <PasswordForm />
+            </CardBody>
+          </Card>
+          <Card>
+            <CardHeader title="Hesabı sil" />
+            <CardBody>
+              <AccountDeletionForm />
             </CardBody>
           </Card>
         </div>

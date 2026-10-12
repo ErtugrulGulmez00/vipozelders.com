@@ -228,6 +228,7 @@ model City {
   teachers        TeacherProfile[]
   studentProfiles StudentProfile[]
   bookings        Booking[]
+  applications    TeacherApplication[]
 }
 
 model District {
@@ -393,6 +394,38 @@ enum DocumentStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum ApplicationStatus {
+  NEW
+  APPROVED
+  REJECTED
+}
+
+// Sitedeki "Öğretmen olarak katılın" formundan gelen başvurular; yönetici tek tıkla hesap açar.
+model TeacherApplication {
+  id              String            @id @default(cuid())
+  firstName       String
+  lastName        String
+  email           String
+  phone           String
+  cityId          Int?
+  city            City?             @relation(fields: [cityId], references: [id])
+  subjects        String
+  experienceYears Int               @default(0)
+  education       String?
+  message         String?
+  offersOnline    Boolean           @default(true)
+  offersInPerson  Boolean           @default(false)
+  status          ApplicationStatus @default(NEW)
+  note            String?
+  teacherId       String?
+  reviewedById    String?
+  reviewedAt      DateTime?
+  createdAt       DateTime          @default(now())
+
+  @@index([status, createdAt])
+  @@index([email])
 }
 
 model TeacherDocument {

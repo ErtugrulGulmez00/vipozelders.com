@@ -2,10 +2,10 @@
 
 Üç panelli özel ders pazaryeri:
 
-- **Vitrin (herkese açık):** öğretmen arama ve filtreleme, öğretmen profilleri, boş/dolu saat takvimi, kategori (SEO) sayfaları, yasal sayfalar
-- **Öğrenci/Veli hesabı** (`/hesabim`): randevu, ödeme, sanal sınıfa katılma, takvime ekleme (.ics / Google Takvim), iptal, sorun bildirme, değerlendirme, favoriler
-- **Öğretmen paneli** (`/ogretmen-paneli`): talepleri onaylama/reddetme, profil, dersler ve fiyatlar, müsaitlik takvimi, kazançlar, yorumlara cevap
-- **Yönetim paneli** (`/yonetim`): hızlı öğretmen ekleme (otomatik kullanıcı adı ve geçici şifre), yayın ve doğrulama, randevu ve itiraz yönetimi, ödemesiz **test dersi** (görüntülü görüşme denemesi), finans ve hakediş ödemeleri, Excel/CSV çıktıları, yorum moderasyonu, kategoriler, sayfalar, site ayarları ve bakım modu, bildirimler, e-posta kutusu, işlem kayıtları, iki adımlı doğrulama (Google Authenticator)
+- **Vitrin (herkese açık):** öğretmen arama ve filtreleme, öğretmen profilleri, boş/dolu saat takvimi, kategori (SEO) sayfaları, öğretmen başvuru formu (`/ogretmen-ol`), yasal sayfalar
+- **Öğrenci/Veli hesabı** (`/hesabim`): randevu, ödeme, sanal sınıfa katılma, takvime ekleme (.ics / Google Takvim), iptal, sorun bildirme, değerlendirme, favoriler, hesap silme talebi
+- **Öğretmen paneli** (`/ogretmen-paneli`): talepleri onaylama/reddetme, profil, dersler ve fiyatlar, müsaitlik takvimi, belge yükleme (kimlik, diploma, adli sicil; yalnızca yöneticiler görür), kazançlar, yorumlara cevap
+- **Yönetim paneli** (`/yonetim`): hızlı öğretmen ekleme (otomatik kullanıcı adı ve geçici şifre), öğretmen başvurularından tek tıkla hesap açma, belge inceleme, yayın ve doğrulama, randevu ve itiraz yönetimi, ödemesiz **test dersi** (görüntülü görüşme denemesi), finans ve hakediş ödemeleri, Excel/CSV çıktıları, yorum moderasyonu, kategoriler, sayfalar, site ayarları ve bakım modu, bildirimler, e-posta kutusu, işlem kayıtları, iki adımlı doğrulama (Google Authenticator)
 - **Sanal sınıf** (`/ders/...`): kamera, mikrofon, ekran paylaşımı, sohbet ve ortak **beyaz tahta**; yoklama otomatik tutulur
 - **Mobil API** (`/api/mobil/v1`): Flutter uygulaması için JSON uç noktaları (Bearer oturum, randevu, ödeme ve sınıf için WebView bağlantısı, push bildirimi). Sözleşme ve uygulama promptu: [docs/flutter-uygulama-promptu.md](docs/flutter-uygulama-promptu.md)
 
@@ -141,6 +141,7 @@ Testler her çalıştırmada ayrı bir `vipozelders_test` veritabanı oluşturur
 - PayTR: imza hesapları, bildirim doğrulama, tekrar gelen bildirim, durum sorgusu, iade ve mükerrer ödeme iadesi
 - iki adımlı doğrulama (RFC 6238 test vektörleri), takvim dosyası
 - mobil API: Bearer oturumu, tek kullanımlık WebView girişi, push (imzalı JWT, ölü cihaz temizliği) ve uçtan uca kayıt → randevu → ödeme → onay → iptal akışı (`e2e/mobile-api.spec.ts`)
+- öğretmen başvurusu → hesap açma → belge yükleme ve onay, özel belgelerin yabancılara kapalı olması (`e2e/teacher-onboarding.spec.ts`)
 - aynı saate eşzamanlı üç talepten yalnızca birinin kabul edilmesi ve veritabanı kısıtı
 - red, süre aşımı, geç iptal, öğretmen iptali ve itiraz çözümü
 
@@ -191,4 +192,4 @@ tests/               Vitest testleri
 
 ## Sonraki aşamalar (Faz 2–3)
 
-Mesajlaşma (iletişim bilgisi maskeleme), paketler ve deneme dersi, kupon, SMS bildirimleri, erteleme ve tekrarlayan ders, ders notu/ödev ve veli raporu, öğretmen başvuru formu ve belge yükleme, il/ilçe SEO sayfaları ve blog, asenkron soru çözüm, koçluk araçları, grup dersleri, mobil uygulama.
+Mesajlaşma (iletişim bilgisi maskeleme), paketler ve deneme dersi, kupon, SMS bildirimleri, erteleme ve tekrarlayan ders, ders notu/ödev ve veli raporu, il/ilçe SEO sayfaları ve blog, asenkron soru çözüm, koçluk araçları, grup dersleri, Flutter mobil uygulaması (sunucu tarafı API hazır).

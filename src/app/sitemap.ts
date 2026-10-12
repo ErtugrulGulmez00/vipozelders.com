@@ -22,6 +22,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     { url: `${base}/`, changeFrequency: "daily", priority: 1 },
     { url: `${base}/ogretmenler`, changeFrequency: "daily", priority: 0.9 },
+    { url: `${base}/ogretmen-ol`, changeFrequency: "monthly", priority: 0.5 },
     ...catalog.levels.flatMap((level) => [
       { url: `${base}/ozel-ders/${level.slug}`, changeFrequency: "daily" as const, priority: 0.8 },
       ...level.subjectIds.map((id) => ({ url: `${base}/ozel-ders/${level.slug}/${subjectSlug.get(id)}`, changeFrequency: "daily" as const, priority: 0.7 })),

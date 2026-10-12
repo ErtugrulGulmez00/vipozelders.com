@@ -9,6 +9,7 @@ import { approveBooking, BookingError, cancelByTeacher, rejectBooking } from "@/
 import { notifyRole } from "@/server/notifications";
 import { ReviewError, replyToReview } from "@/server/reviews";
 import { UploadError } from "@/server/storage";
+import { deleteTeacherDocument, DocumentError, uploadTeacherDocument } from "@/server/teacher-documents";
 import {
   addAvailabilityException,
   ProfileError,
@@ -213,4 +214,31 @@ export async function updateTeacherContactAction(_: ActionState, formData: FormD
   await db.user.update({ where: { id: user.id }, data: { phone } });
   refresh();
   return success("İletişim bilgileriniz güncellendi.");
+}
+
+// ---------------------------------------------------------------------------
+// Belgeler (kimlik, diploma, adli sicil…)
+// ---------------------------------------------------------------------------
+
+export async function uploadDocumentAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await actionUser("TEACHER");
+  if (!user) return failure("Oturumunuz kapanmış.");
+  const file = formData.get("file");
+  try {
+    await uploadTeacherDocument(user.id, text(formData, "type"), file instanceof File ? file : null);
+  } catch (error) {
+    if (error instanceof DocumentError) return failure(error.message);
+    throw error;
+  }
+  refresh();
+  return success("Belgeniz yüklendi; yönetici inceledikten sonra size bildirim gelecek.");
+}
+
+export async function deleteDocumentAction(formData: FormData) {
+  const user = await actionUser("TEACHER");
+  if (!user) return;
+  await deleteTeacherDocument(user.id, text(formData, "documentId")).catch((error: unknown) => {
+    if (!(error instanceof DocumentError)) throw error;
+  });
+  refresh();
 }

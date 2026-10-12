@@ -1,10 +1,11 @@
 "use client";
 
-import { Trash2, Upload } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { removePhotoAction, saveProfileAction } from "@/actions/teacher";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
+import { FileInput } from "@/components/ui/file-input";
 import { Checkbox, Field, Input, Label, Select, Textarea } from "@/components/ui/form";
 import { Avatar } from "@/components/ui/primitives";
 
@@ -81,10 +82,7 @@ export function ProfileForm({
       <ActionForm action={saveProfileAction} className="space-y-5" encType="multipart/form-data">
         <input type="hidden" name="teacherId" value={values.teacherId} />
         <Field label="Yeni fotoğraf yükle" htmlFor="photo">
-          <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-slate-300 px-3 py-2.5 text-sm text-slate-600 hover:bg-slate-50">
-            <Upload className="size-4" aria-hidden />
-            <input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" className="text-sm file:hidden" />
-          </label>
+          <FileInput id="photo" name="photo" accept="image/jpeg,image/png,image/webp" placeholder="Fotoğraf seçin (JPG, PNG veya WEBP)" />
         </Field>
 
         <Field label="Kısa başlık" htmlFor="headline" hint="Örn: 12 yıllık deneyimli matematik öğretmeni · LGS ve YKS uzmanı">
