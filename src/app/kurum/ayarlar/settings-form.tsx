@@ -148,6 +148,13 @@ export function CenterSettingsForm({ values, cities, initialDistricts }: { value
           <CopyButton value={values.loginUrl} label="Adresi kopyala" />
         </div>
       </Section>
+      <Section title="Verileriniz" description="Kayıtlarınız size aittir. Öğrenci, veli, yoklama, deneme, ödev, muhasebe ve not kayıtlarının tamamını tek Excel dosyası olarak indirebilirsiniz (T.C. kimlik numaraları dahil edilmez).">
+        <div className="sm:col-span-2">
+          <a href="/api/kurum/disa-aktar/tum-veriler" download className="inline-flex h-10 items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-slate-50">
+            Tüm verileri indir (.xlsx)
+          </a>
+        </div>
+      </Section>
       <Section title="Otomatik bildirimler">
         <div className="space-y-3 sm:col-span-2">
           <Checkbox name="notifyAbsence" defaultChecked={values.notifyAbsence} label="Yoklamada “gelmedi” işaretlenen öğrencinin velisine bildirim gönder" />

@@ -11,6 +11,7 @@ import { EXAM_PRESETS, formatNet } from "@/lib/center/exams";
 import { installmentState } from "@/lib/center/finance";
 import { WEEKDAY_NAMES, dbDateToString, formatCompact, formatDate, minutesToTime } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
+import { HomeworkList } from "@/components/center/homework-list";
 import { requireRole } from "@/server/auth/current-user";
 import { marketplaceLink } from "@/server/center/exams";
 import { portalChildDetail } from "@/server/center/portal";
@@ -24,7 +25,7 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
   const tab = String(sp.sekme ?? "ozet");
   const data = await portalChildDetail(user.id, id);
   if (!data) notFound();
-  const { student, attendance, etuds, results, installments, payments, announcements, notes, weakTopics, balance, today, trend } = data;
+  const { student, attendance, etuds, results, installments, payments, announcements, notes, weakTopics, balance, today, trend, homeworks } = data;
   const counted = attendance.length;
   const absent = attendance.filter((a) => a.status === "ABSENT").length;
   const rate = counted ? attendance.filter((a) => a.status === "PRESENT" || a.status === "LATE").length / counted : 1;
@@ -52,6 +53,7 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
           { key: "devam", label: "Devam ve etüt", href: `${base}?sekme=devam` },
           { key: "denemeler", label: "Denemeler", href: `${base}?sekme=denemeler` },
           { key: "odemeler", label: "Ödemeler", href: `${base}?sekme=odemeler` },
+          { key: "odevler", label: "Ödevler", href: `${base}?sekme=odevler` },
           { key: "program", label: "Ders programı", href: `${base}?sekme=program` },
         ]}
       />
@@ -217,6 +219,8 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
             )}
           </Card>
         </div>
+      ) : tab === "odevler" ? (
+        <HomeworkList rows={homeworks.map((h) => ({ id: h.homeworkId, subject: h.homework.subject, title: h.homework.title, description: h.homework.description, dueDate: h.homework.dueDate, status: h.status, note: h.note }))} />
       ) : tab === "program" ? (
         <Card>
           <CardHeader title="Haftalık ders programı" />

@@ -444,6 +444,35 @@ export async function seedDemoCenter(): Promise<boolean> {
     await db.centerExpense.create({ data: { centerId: center.id, category, amount, date: dateStringToDbDate(date), description, memberId, createdById: accountant.id, paidTo: memberId ? null : category === "RENT" ? "Mal sahibi" : null } });
   }
 
+  // Ödevler: biri kontrol edilmiş (geçen hafta), biri bu hafta teslim
+  const homeworkPlan: [keyof typeof groups, string, string, number, number, boolean, string][] = [
+    ["a", "Matematik", "Üslü ifadeler testi 1-3 (soru bankası s. 42-47)", -9, -2, true, burak.id],
+    ["a", "Fen Bilimleri", "Basınç konu tekrarı ve 30 soru", -2, 3, false, ayseMember.id],
+    ["c", "Fizik", "Elektrik ve manyetizma deneme çözümü", -6, -1, true, ayseMember.id],
+  ];
+  for (const [key, subject, title, assignedOffset, dueOffset, checked, teacherId] of homeworkPlan) {
+    const members = students.filter((s) => s.groupKey === key);
+    await db.centerHomework.create({
+      data: {
+        centerId: center.id,
+        groupId: groups[key].id,
+        teacherId,
+        subject,
+        title,
+        assignedOn: dateStringToDbDate(addDaysToDateString(today, assignedOffset)),
+        dueDate: dateStringToDbDate(addDaysToDateString(today, dueOffset)),
+        checkedAt: checked ? new Date(now.getTime() + dueOffset * 86_400_000) : null,
+        students: {
+          create: members.map((s) => {
+            const r = rand();
+            const status = !checked ? "PENDING" : r < 0.75 ? "DONE" : r < 0.9 ? "PARTIAL" : "MISSING";
+            return { studentId: s.id, status: status as "PENDING" | "DONE" | "PARTIAL" | "MISSING", note: status === "PARTIAL" ? "Son test eksik" : null };
+          }),
+        },
+      },
+    });
+  }
+
   // Ön kayıtlar ve duyurular
   await db.centerLead.createMany({
     data: [

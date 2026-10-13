@@ -80,7 +80,9 @@ export type CenterAdminUpdate = {
 export async function adminUpdateCenter(adminId: string, centerId: string, input: CenterAdminUpdate) {
   const center = await db.center.findUnique({ where: { id: centerId } });
   if (!center) throw new CenterError("Kurum bulunamadı.");
-  await db.center.update({ where: { id: centerId }, data: input });
+  // Süre değiştiyse bitiş hatırlatmaları yeniden başlar.
+  const datesChanged = input.trialEndsAt?.getTime() !== center.trialEndsAt?.getTime() || input.paidUntil?.getTime() !== center.paidUntil?.getTime() || input.status !== center.status;
+  await db.center.update({ where: { id: centerId }, data: { ...input, ...(datesChanged ? { expiryNoticeDays: null } : {}) } });
   await audit({ actorId: adminId, action: "center.update", entityType: "Center", entityId: centerId, details: { plan: input.plan, status: input.status, studentLimit: input.studentLimit } });
 }
 
@@ -97,7 +99,7 @@ export async function adminRecordSubscriptionPayment(adminId: string, centerId: 
     db.centerSubscriptionPayment.create({ data: { centerId, amount: input.amount, months: input.months, periodStart, periodEnd, method: input.method, reference: input.reference, createdById: adminId } }),
     db.center.update({
       where: { id: centerId },
-      data: { status: "ACTIVE", paidUntil: periodEnd, plan, studentLimit: plan === center.plan ? center.studentLimit : planStudentLimit(plan, settings, center.studentLimit) },
+      data: { status: "ACTIVE", paidUntil: periodEnd, expiryNoticeDays: null, plan, studentLimit: plan === center.plan ? center.studentLimit : planStudentLimit(plan, settings, center.studentLimit) },
     }),
   ]);
   await notifyCenterManagers(centerId, { type: "center.subscription", title: "Aboneliğiniz uzatıldı", body: `${input.months} aylık ödemeniz kaydedildi. Yeni bitiş: ${periodEnd.toLocaleDateString("tr-TR")}`, link: "/kurum/abonelik" });

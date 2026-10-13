@@ -9,6 +9,7 @@ export const CENTER_PERMISSIONS = [
   "groups.manage",
   "attendance.take",
   "etud.manage",
+  "homework.manage",
   "exams.manage",
   "notes.write",
   "finance.view",
@@ -27,7 +28,7 @@ const MATRIX: Record<CenterRoleName, readonly CenterPermission[]> = {
   OWNER: CENTER_PERMISSIONS,
   // Müdür: abonelik dışında her şey (kurum sahibini düzenleyemez; staff modülünde ayrıca kontrol edilir)
   MANAGER: CENTER_PERMISSIONS.filter((p) => p !== "subscription.view"),
-  TEACHER: ["students.view", "attendance.take", "etud.manage", "exams.manage", "notes.write"],
+  TEACHER: ["students.view", "attendance.take", "etud.manage", "homework.manage", "exams.manage", "notes.write"],
   ACCOUNTANT: ["students.view", "students.edit", "finance.view", "finance.edit", "expenses.manage", "messages.send", "leads.manage"],
 };
 
@@ -45,6 +46,6 @@ export const CENTER_ROLE_LABEL: Record<CenterRoleName, string> = {
 export const CENTER_ROLE_HINT: Record<CenterRoleName, string> = {
   OWNER: "Her şey: personel, ayarlar ve abonelik dahil",
   MANAGER: "Abonelik dışında her şey",
-  TEACHER: "Öğrencileri görür; yoklama, etüt, deneme ve not girer",
+  TEACHER: "Öğrencileri görür; yoklama, etüt, ödev, deneme ve not girer",
   ACCOUNTANT: "Öğrenci kaydı, ödeme planı, tahsilat, gider, duyuru ve ön kayıt",
 };

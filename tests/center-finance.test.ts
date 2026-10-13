@@ -97,3 +97,24 @@ describe("abonelik durumu", () => {
     expect(extendSubscription(new Date("2026-01-01T00:00:00Z"), 1, now).periodStart).toEqual(now);
   });
 });
+
+describe("abonelik bitiş hatırlatması", () => {
+  it("kalan güne göre 7, 3, 1 ve 0 gün eşikleri", async () => {
+    const { expiryThreshold } = await import("@/server/center/expiry");
+    expect(expiryThreshold(10)).toBeNull();
+    expect(expiryThreshold(7)).toBe(7);
+    expect(expiryThreshold(5)).toBe(7);
+    expect(expiryThreshold(2)).toBe(3);
+    expect(expiryThreshold(1)).toBe(1);
+    expect(expiryThreshold(0)).toBe(0);
+    expect(expiryThreshold(-3)).toBe(0);
+  });
+});
+
+describe("ödev oranı", () => {
+  it("kontrol edilmeyenler sayılmaz, eksik yarım sayılır", async () => {
+    const { homeworkRate } = await import("@/server/center/homework");
+    expect(homeworkRate([{ status: "DONE" }, { status: "PARTIAL" }, { status: "MISSING" }, { status: "PENDING" }])).toEqual({ checked: 3, missing: 1, rate: 0.5 });
+    expect(homeworkRate([{ status: "PENDING" }]).rate).toBeNull();
+  });
+});

@@ -7,6 +7,7 @@ import {
   releaseDueEarnings,
   sendLessonReminders,
 } from "./bookings";
+import { sendCenterExpiryNotices } from "./center/expiry";
 import { sendCenterPaymentReminders } from "./center/finance";
 import { processCenterMessages } from "./center/messages";
 import { db } from "./db";
@@ -40,6 +41,7 @@ const TASKS = {
   refunds: () => processPendingRefunds(),
   // Kurum paneli: taksit hatırlatmaları önce kuyruğa girer, aynı turda SMS ve e-postayla gönderilir.
   centerReminders: sendCenterPaymentReminders,
+  centerExpiry: sendCenterExpiryNotices,
   centerMessages: () => processCenterMessages(),
   emails: () => sendPendingEmails(),
   pushes: sendPendingPushes,

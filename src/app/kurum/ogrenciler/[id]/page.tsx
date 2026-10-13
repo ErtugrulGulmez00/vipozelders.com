@@ -11,6 +11,7 @@ import { installmentState } from "@/lib/center/finance";
 import { dbDateToString, formatCompact, formatDate, minutesToTime, toLocalDateString } from "@/lib/dates";
 import { GENDER_LABEL } from "@/lib/labels";
 import { formatMoney } from "@/lib/money";
+import { HomeworkList } from "@/components/center/homework-list";
 import { requireCenter } from "@/server/center/context";
 import { marketplaceLink, studentNetTrend, studentWeakTopics } from "@/server/center/exams";
 import { studentBalance } from "@/server/center/finance";
@@ -50,7 +51,7 @@ export default async function StudentCardPage({ params, searchParams }: PageProp
   const canFinance = ctx.can("finance.view");
   const tabs = [
     { key: "genel", label: "Genel", href: `/kurum/ogrenciler/${id}` },
-    { key: "devam", label: "Devam", href: `/kurum/ogrenciler/${id}?sekme=devam` },
+    { key: "devam", label: "Devam ve ödev", href: `/kurum/ogrenciler/${id}?sekme=devam` },
     { key: "denemeler", label: "Denemeler ve eksikler", href: `/kurum/ogrenciler/${id}?sekme=denemeler` },
     ...(canFinance ? [{ key: "odemeler", label: "Ödemeler", href: `/kurum/ogrenciler/${id}?sekme=odemeler` }] : []),
   ];
@@ -237,7 +238,7 @@ async function GeneralTab({
 }
 
 async function AttendanceTab({ studentId }: { studentId: string }) {
-  const [records, etuds] = await Promise.all([
+  const [records, etuds, homeworks] = await Promise.all([
     db.centerAttendance.findMany({
       where: { studentId },
       include: { session: { select: { date: true, startMinute: true, subject: true, group: { select: { name: true } } } } },
@@ -250,6 +251,7 @@ async function AttendanceTab({ studentId }: { studentId: string }) {
       orderBy: { etud: { date: "desc" } },
       take: 50,
     }),
+    db.centerHomeworkStudent.findMany({ where: { studentId }, include: { homework: true }, orderBy: { homework: { dueDate: "desc" } }, take: 40 }),
   ]);
   return (
     <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
@@ -316,6 +318,9 @@ async function AttendanceTab({ studentId }: { studentId: string }) {
           </ul>
         )}
       </Card>
+      <div className="lg:col-span-2">
+        <HomeworkList linkBase="/kurum/odevler" rows={homeworks.map((h) => ({ id: h.homeworkId, subject: h.homework.subject, title: h.homework.title, description: h.homework.description, dueDate: h.homework.dueDate, status: h.status, note: h.note }))} />
+      </div>
     </div>
   );
 }

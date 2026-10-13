@@ -209,3 +209,36 @@ test("kurum personeli kendi giriş sayfasından panele girer", async ({ page }) 
   await page.goto("/kurum-giris");
   await expect(page).toHaveURL(/\/kurum$/);
 });
+
+test("ödev verilir, kontrol edilir; veli portalda görür; tüm veriler Excel olarak iner", async ({ page }) => {
+  const title = `E2e ödev ${stamp}`;
+  try {
+    await login(page, "kurum@demo.vipozelders.local", "Kurum12345");
+    await page.goto("/kurum/odevler");
+    await page.getByLabel("Kime").selectOption({ label: "8-A LGS (tüm sınıf)" });
+    await page.getByLabel("Ders", { exact: true }).fill("Matematik");
+    await page.getByLabel("Ödev", { exact: true }).fill(title);
+    await page.getByRole("button", { name: "Ödevi ver" }).click();
+    await expect(page.getByText("Ödev verildi", { exact: false })).toBeVisible();
+    // Ali Demirtaş (demo velinin çocuğu) ödevi yapmadı
+    const row = page.locator("li", { hasText: "Ali Demirtaş" });
+    await row.getByRole("radio", { name: "Yapmadı" }).click();
+    await page.getByRole("button", { name: "Kontrolü kaydet" }).click();
+    await expect(page.getByText("velisine bildirim gönderildi", { exact: false })).toBeVisible();
+
+    const backup = await page.request.get("/api/kurum/disa-aktar/tum-veriler");
+    expect(backup.status()).toBe(200);
+    expect(backup.headers()["content-type"]).toContain("spreadsheetml");
+
+    await login(page, "veli@demo.vipozelders.local", "Veli12345");
+    await page.goto("/hesabim/kurum");
+    await page.getByRole("link", { name: /Ali Demirtaş/ }).click();
+    await page.getByRole("link", { name: "Ödevler", exact: true }).click();
+    const item = page.locator("li", { hasText: title });
+    await expect(item.getByText("Yapmadı")).toBeVisible();
+  } finally {
+    await sql(`DELETE FROM "Notification" WHERE body LIKE $1 OR title LIKE $2`, [`%${title}%`, "%ödevini yapmadı%"]);
+    await sql(`DELETE FROM "CenterMessage" WHERE kind IN ('homework', 'homework_missing') AND (body LIKE $1 OR subject LIKE $2)`, [`%${title}%`, "%Matematik%"]);
+    await sql(`DELETE FROM "CenterHomework" WHERE title = $1`, [title]);
+  }
+});

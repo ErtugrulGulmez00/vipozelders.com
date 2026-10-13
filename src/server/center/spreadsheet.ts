@@ -48,7 +48,7 @@ export async function readSpreadsheet(file: File): Promise<string[][]> {
   return rows;
 }
 
-export type SheetSpec = { name: string; headers: string[]; rows: (string | number | null)[][]; widths?: number[]; note?: string };
+export type SheetSpec = { name: string; headers: string[]; rows: (string | number | null | undefined)[][]; widths?: number[]; note?: string };
 
 export async function buildWorkbook(sheets: SheetSpec[]): Promise<Buffer> {
   const workbook = new ExcelJS.Workbook();
@@ -59,7 +59,7 @@ export async function buildWorkbook(sheets: SheetSpec[]): Promise<Buffer> {
     const header = sheet.getRow(1);
     header.font = { bold: true, color: { argb: "FFFFFFFF" } };
     header.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF4F46E5" } };
-    for (const row of spec.rows) sheet.addRow(row);
+    for (const row of spec.rows) sheet.addRow(row.map((cell) => cell ?? null));
     spec.headers.forEach((h, i) => (sheet.getColumn(i + 1).width = spec.widths?.[i] ?? Math.max(12, h.length + 4)));
     sheet.views = [{ state: "frozen", ySplit: 1 }];
     if (spec.note) {

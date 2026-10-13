@@ -6,7 +6,8 @@ import { csvMoney, csvResponse, toCsv, type CsvCell } from "@/lib/csv";
 import { addDaysToDateString, dateStringToDbDate, dbDateToString, formatCompact, isDateString, minutesToTime, toLocalDateString } from "@/lib/dates";
 import { GENDER_LABEL } from "@/lib/labels";
 import { attendanceReport } from "@/server/center/attendance";
-import { resolveCenter } from "@/server/center/context";
+import { centerBackupWorkbook } from "@/server/center/backup";
+import { centerAudit, resolveCenter } from "@/server/center/context";
 import { buildWorkbook, xlsxResponse } from "@/server/center/spreadsheet";
 import { db } from "@/server/db";
 
@@ -19,6 +20,7 @@ const REQUIRED: Record<string, CenterPermission> = {
   borclar: "finance.view",
   giderler: "expenses.manage",
   yoklama: "attendance.take",
+  "tum-veriler": "settings.manage",
 };
 
 const d = (date: Date) => dbDateToString(date).split("-").reverse().join(".");
@@ -200,6 +202,11 @@ export async function GET(request: NextRequest, { params }: RouteContext<"/api/k
       expenses.map((e) => [d(e.date), EXPENSE_CATEGORY_LABEL[e.category], e.description, e.paidTo, e.member ? `${e.member.user.firstName} ${e.member.user.lastName}` : "", csvMoney(e.amount)]),
     );
     return csvResponse(`giderler-${from}-${to}.csv`, csv);
+  }
+
+  if (tur === "tum-veriler") {
+    await centerAudit(ctx, "backup.download", "Center", centerId);
+    return xlsxResponse(`${ctx.center.slug}-tum-veriler-${today}.xlsx`, await centerBackupWorkbook(centerId));
   }
 
   // yoklama

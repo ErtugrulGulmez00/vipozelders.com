@@ -888,6 +888,13 @@ enum MessageStatus {
   SKIPPED
 }
 
+enum HomeworkStatus {
+  PENDING
+  DONE
+  PARTIAL
+  MISSING
+}
+
 enum LeadStatus {
   NEW
   CONTACTED
@@ -924,6 +931,8 @@ model Center {
   reminderDaysBefore     Int          @default(3)
   // Veli portalında eksik konular için Pi Kampüs özel ders öğretmeni önerileri
   showTeacherSuggestions Boolean      @default(true)
+  // Abonelik bitiş hatırlatması: en son gönderilen eşik (7, 3, 1, 0 gün); süre uzayınca sıfırlanır
+  expiryNoticeDays       Int?
   nextReceiptNo          Int          @default(1)
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt
@@ -940,6 +949,7 @@ model Center {
   announcements        CenterAnnouncement[]
   messages             CenterMessage[]
   leads                CenterLead[]
+  homeworks            CenterHomework[]
 
   @@index([status])
 }
@@ -957,11 +967,12 @@ model CenterMember {
   isActive  Boolean    @default(true)
   createdAt DateTime   @default(now())
 
-  groups   CenterGroup[]        @relation("GroupTeacher")
-  slots    CenterScheduleSlot[] @relation("SlotTeacher")
-  etuds    CenterEtud[]         @relation("EtudTeacher")
-  notes    CenterNote[]         @relation("NoteAuthor")
-  expenses CenterExpense[]      @relation("ExpenseMember")
+  groups    CenterGroup[]        @relation("GroupTeacher")
+  slots     CenterScheduleSlot[] @relation("SlotTeacher")
+  etuds     CenterEtud[]         @relation("EtudTeacher")
+  homeworks CenterHomework[]     @relation("HomeworkTeacher")
+  notes     CenterNote[]         @relation("NoteAuthor")
+  expenses  CenterExpense[]      @relation("ExpenseMember")
 
   @@unique([centerId, userId])
   @@index([userId])
@@ -1016,6 +1027,7 @@ model CenterStudent {
   feePlans     CenterFeePlan[]
   installments CenterInstallment[]
   payments     CenterPayment[]
+  homeworks    CenterHomeworkStudent[]
 
   @@unique([centerId, studentNumber])
   @@index([centerId, status])
@@ -1064,6 +1076,7 @@ model CenterGroup {
   slots         CenterScheduleSlot[]
   sessions      CenterAttendanceSession[]
   announcements CenterAnnouncement[]
+  homeworks     CenterHomework[]
 
   @@unique([centerId, name])
 }
@@ -1426,4 +1439,39 @@ model CenterApplication {
   createdAt    DateTime          @default(now())
 
   @@index([status, createdAt])
+}
+
+// Ödev: sınıfa (ya da seçilen öğrencilere) verilir, teslimde öğrenci bazında kontrol edilir
+model CenterHomework {
+  id          String        @id @default(cuid())
+  centerId    String
+  center      Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  groupId     String?
+  group       CenterGroup?  @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  teacherId   String?
+  teacher     CenterMember? @relation("HomeworkTeacher", fields: [teacherId], references: [id], onDelete: SetNull)
+  subject     String
+  title       String
+  description String?
+  assignedOn  DateTime      @db.Date
+  dueDate     DateTime      @db.Date
+  checkedAt   DateTime?
+  createdAt   DateTime      @default(now())
+
+  students CenterHomeworkStudent[]
+
+  @@index([centerId, dueDate])
+}
+
+model CenterHomeworkStudent {
+  homeworkId String
+  homework   CenterHomework @relation(fields: [homeworkId], references: [id], onDelete: Cascade)
+  studentId  String
+  student    CenterStudent  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status     HomeworkStatus @default(PENDING)
+  note       String?
+  notifiedAt DateTime?
+
+  @@id([homeworkId, studentId])
+  @@index([studentId])
 }

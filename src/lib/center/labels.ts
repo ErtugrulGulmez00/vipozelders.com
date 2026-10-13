@@ -48,6 +48,13 @@ export const ETUD_STATUS: Record<string, { label: string; tone: Tone }> = {
   CANCELLED: { label: "İptal", tone: "slate" },
 };
 
+export const HOMEWORK_STATUS: Record<string, { label: string; tone: Tone }> = {
+  PENDING: { label: "Kontrol edilmedi", tone: "slate" },
+  DONE: { label: "Yaptı", tone: "green" },
+  PARTIAL: { label: "Eksik yaptı", tone: "amber" },
+  MISSING: { label: "Yapmadı", tone: "rose" },
+};
+
 export const NOTE_KIND_LABEL: Record<string, string> = {
   GENERAL: "Genel not",
   GUIDANCE: "Rehberlik görüşmesi",
@@ -88,6 +95,9 @@ export const MESSAGE_KIND_LABEL: Record<string, string> = {
   announcement: "Duyuru",
   exam_result: "Deneme sonucu",
   invite: "Veli portalı daveti",
+  homework: "Ödev",
+  homework_missing: "Yapılmayan ödev",
+  subscription: "Abonelik",
   custom: "Mesaj",
 };
 
