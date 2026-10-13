@@ -5,6 +5,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { LoginForm } from "@/app/(auth)/giris/login-form";
+import { LoginTabs } from "@/components/site/login-tabs";
 import { PiMark } from "@/components/site/pi-mark";
 import { Card, Skeleton } from "@/components/ui/primitives";
 import { resolveCenter } from "@/server/center/context";
@@ -42,7 +43,7 @@ export default function CenterLoginPage({ searchParams }: PageProps<"/kurum-giri
             ))}
           </ul>
         </div>
-        <p className="text-xs text-brand-200">Veliyseniz çocuğunuzu sitedeki veli hesabınızdan takip edersiniz.</p>
+        <p className="text-xs text-brand-200">Veliler ve öğrenciler “Kişisel giriş” sekmesinden girer.</p>
       </aside>
       <main className="flex items-center justify-center bg-slate-50 px-4 py-12">
         <div className="w-full max-w-md">
@@ -64,6 +65,7 @@ async function LoginCard({ searchParams }: { searchParams: Promise<Record<string
   const logo = branding ? uploadUrl(branding.logoKey) : null;
   return (
     <Card className="p-6 sm:p-8">
+      <LoginTabs active="center" />
       <div className="mb-6 flex items-center gap-3">
         {logo ? (
           <Image src={logo} alt="" width={48} height={48} unoptimized className="size-12 rounded-xl border border-slate-100 object-contain" />
@@ -84,11 +86,6 @@ async function LoginCard({ searchParams }: { searchParams: Promise<Record<string
           Kurumunuz henüz Pi Kampüs kullanmıyor mu?{" "}
           <Link href="/kurumlar-icin" className="font-semibold text-brand-700 hover:underline">
             Ücretsiz deneyin
-          </Link>
-        </p>
-        <p>
-          <Link href="/giris" className="text-slate-500 hover:underline">
-            Veli / öğrenci / öğretmen girişi
           </Link>
         </p>
       </div>

@@ -33,12 +33,19 @@ export function smsText(centerName: string, text: string): string {
 export async function messageGuardians(input: GuardianMessageInput, tx: Tx = db): Promise<MessageCounts> {
   const guardians = await tx.centerGuardian.findMany({
     where: { studentId: input.studentId, centerId: input.centerId, ...(input.guardianIds ? { id: { in: input.guardianIds } } : {}) },
-    select: { id: true, phone: true, email: true, notifySms: true, notifyEmail: true, userId: true, fullName: true },
+    select: { id: true, phone: true, email: true, notifySms: true, notifyEmail: true, userId: true, fullName: true, isStudentAccount: true },
   });
   const counts: MessageCounts = { sms: 0, email: 0, app: 0 };
   const sentTo = new Set<string>();
 
   for (const guardian of guardians) {
+    if (guardian.isStudentAccount) {
+      if (input.notification && guardian.userId) {
+        await tx.notification.create({ data: { userId: guardian.userId, type: `center.${input.kind}`, title: input.notification.title, body: input.notification.body, link: `/hesabim/kurum/${guardian.id}` } });
+        counts.app++;
+      }
+      continue;
+    }
     if (input.sms && input.channels?.sms !== false && guardian.phone && (guardian.notifySms || input.force) && !sentTo.has(`sms:${guardian.phone}`)) {
       sentTo.add(`sms:${guardian.phone}`);
       await tx.centerMessage.create({

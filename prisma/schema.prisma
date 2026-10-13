@@ -895,6 +895,12 @@ enum HomeworkStatus {
   MISSING
 }
 
+enum QuestionStatus {
+  OPEN
+  ANSWERED
+  IN_PERSON
+}
+
 enum LeadStatus {
   NEW
   CONTACTED
@@ -950,6 +956,7 @@ model Center {
   messages             CenterMessage[]
   leads                CenterLead[]
   homeworks            CenterHomework[]
+  questions            CenterQuestion[]
 
   @@index([status])
 }
@@ -971,6 +978,7 @@ model CenterMember {
   slots     CenterScheduleSlot[] @relation("SlotTeacher")
   etuds     CenterEtud[]         @relation("EtudTeacher")
   homeworks CenterHomework[]     @relation("HomeworkTeacher")
+  answers   CenterQuestion[]     @relation("QuestionAnswerer")
   notes     CenterNote[]         @relation("NoteAuthor")
   expenses  CenterExpense[]      @relation("ExpenseMember")
 
@@ -1028,30 +1036,33 @@ model CenterStudent {
   installments CenterInstallment[]
   payments     CenterPayment[]
   homeworks    CenterHomeworkStudent[]
+  questions    CenterQuestion[]
 
   @@unique([centerId, studentNumber])
   @@index([centerId, status])
 }
 
 model CenterGuardian {
-  id              String        @id @default(cuid())
-  centerId        String
-  studentId       String
-  student         CenterStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  fullName        String
-  relation        String
-  phone           String?
-  email           String?
-  isPrimary       Boolean       @default(false)
-  notifySms       Boolean       @default(true)
-  notifyEmail     Boolean       @default(true)
+  id               String        @id @default(cuid())
+  centerId         String
+  studentId        String
+  student          CenterStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  fullName         String
+  relation         String
+  phone            String?
+  email            String?
+  isPrimary        Boolean       @default(false)
+  notifySms        Boolean       @default(true)
+  notifyEmail      Boolean       @default(true)
   // Veli portalı: davetle sitedeki veli hesabına bağlanır
-  userId          String?
-  user            User?         @relation("GuardianAccounts", fields: [userId], references: [id], onDelete: SetNull)
-  inviteTokenHash String?       @unique
-  inviteExpiresAt DateTime?
-  linkedAt        DateTime?
-  createdAt       DateTime      @default(now())
+  userId           String?
+  user             User?         @relation("GuardianAccounts", fields: [userId], references: [id], onDelete: SetNull)
+  inviteTokenHash  String?       @unique
+  inviteExpiresAt  DateTime?
+  linkedAt         DateTime?
+  // Öğrencinin kendi giriş hesabı (veli değil): portalı görür, soru sorar; SMS/e-posta almaz
+  isStudentAccount Boolean       @default(false)
+  createdAt        DateTime      @default(now())
 
   @@index([centerId])
   @@index([studentId])
@@ -1473,5 +1484,29 @@ model CenterHomeworkStudent {
   notifiedAt DateTime?
 
   @@id([homeworkId, studentId])
+  @@index([studentId])
+}
+
+// Fotoğrafla soru: öğrenci/veli yükler, öğretmen çözüm (yazı, fotoğraf, video) ekler ya da yüz yüze anlatır
+model CenterQuestion {
+  id             String         @id @default(cuid())
+  centerId       String
+  center         Center         @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  studentId      String
+  student        CenterStudent  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  askedByUserId  String?
+  subject        String
+  note           String?
+  imageKey       String
+  status         QuestionStatus @default(OPEN)
+  answerText     String?
+  answerImageKey String?
+  answerVideoKey String?
+  answeredById   String?
+  answeredBy     CenterMember?  @relation("QuestionAnswerer", fields: [answeredById], references: [id], onDelete: SetNull)
+  answeredAt     DateTime?
+  createdAt      DateTime       @default(now())
+
+  @@index([centerId, status, createdAt])
   @@index([studentId])
 }

@@ -1,6 +1,8 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { dateStringToDbDate } from "@/lib/dates";
 import type { ImportedStudent } from "@/lib/center/import";
+import { generateUsername } from "../accounts";
+import { generateTemporaryPassword, hashPassword } from "../auth/password";
 import { encryptText } from "../crypto";
 import { db, type DbTransaction } from "../db";
 import type { CenterContext } from "./context";
@@ -262,4 +264,61 @@ export async function importStudents(ctx: CenterContext, rows: ImportedStudent[]
     }
   }
   return summary;
+}
+
+/**
+ * Öğrencinin kendi giriş hesabı: sitedeki öğrenci hesabı açılır (kullanıcı adı + geçici şifre) ve öğrenciye
+ * “öğrenci hesabı” olarak bağlanır. Öğrenci veli portalının aynısını görür, fotoğrafla soru sorar.
+ */
+export async function createStudentAccount(ctx: CenterContext, studentId: string) {
+  const student = await getStudentOrThrow(ctx, studentId);
+  const existing = await db.centerGuardian.findFirst({ where: { studentId, isStudentAccount: true } });
+  if (existing?.userId) throw new CenterError("Bu öğrencinin zaten giriş hesabı var; şifresini sıfırlayabilirsiniz.");
+  const username = await generateUsername(student.firstName, student.lastName);
+  const temporaryPassword = generateTemporaryPassword();
+  const user = await db.user.create({
+    data: {
+      role: "STUDENT",
+      username,
+      firstName: student.firstName,
+      lastName: student.lastName,
+      passwordHash: await hashPassword(temporaryPassword),
+      mustChangePassword: true,
+      // Kurum, öğrenci kaydını yaparken aydınlatma yükümlülüğünü üstlenir (veri sorumlusu kurumdur).
+      studentProfile: { create: { accountType: "STUDENT", kvkkConsentAt: new Date() } },
+    },
+  });
+  await db.centerGuardian.create({
+    data: { centerId: ctx.center.id, studentId, fullName: `${student.firstName} ${student.lastName}`, relation: "Öğrenci", isStudentAccount: true, notifySms: false, notifyEmail: false, userId: user.id, linkedAt: new Date() },
+  });
+  return { username, temporaryPassword };
+}
+
+export async function resetStudentAccountPassword(ctx: CenterContext, studentId: string) {
+  await getStudentOrThrow(ctx, studentId);
+  const link = await db.centerGuardian.findFirst({ where: { studentId, isStudentAccount: true, userId: { not: null } }, include: { user: true } });
+  if (!link?.user) throw new CenterError("Öğrencinin giriş hesabı yok.");
+  const others = await db.centerGuardian.count({ where: { userId: link.user.id, studentId: { not: studentId } } });
+  if (others || link.user.role !== "STUDENT") throw new CenterError("Bu hesap başka kayıtlarda da kullanılıyor; şifresini öğrenci “Şifremi unuttum” ile yenilemeli.");
+  const temporaryPassword = generateTemporaryPassword();
+  await db.user.update({ where: { id: link.user.id }, data: { passwordHash: await hashPassword(temporaryPassword), mustChangePassword: true } });
+  await db.session.deleteMany({ where: { userId: link.user.id } });
+  return { username: link.user.username, temporaryPassword };
+}
+
+/** Öğrencinin giriş hesabını kuruma bağlantısından ayırır ve hesabı kapatır. */
+export async function removeStudentAccount(ctx: CenterContext, studentId: string) {
+  await getStudentOrThrow(ctx, studentId);
+  const link = await db.centerGuardian.findFirst({ where: { studentId, isStudentAccount: true }, include: { user: { select: { id: true, role: true } } } });
+  if (!link) throw new CenterError("Öğrencinin giriş hesabı yok.");
+  await db.centerGuardian.delete({ where: { id: link.id } });
+  if (link.user && link.user.role === "STUDENT") {
+    const [otherLinks, bookings] = await Promise.all([
+      db.centerGuardian.count({ where: { userId: link.user.id } }),
+      db.booking.count({ where: { studentId: link.user.id } }),
+    ]);
+    // Başka kullanımı olmayan hesap kapatılır; pazaryerinde dersi olan hesaba dokunulmaz.
+    if (!otherLinks && !bookings) await db.user.update({ where: { id: link.user.id }, data: { status: "SUSPENDED" } });
+    await db.session.deleteMany({ where: { userId: link.user.id } });
+  }
 }

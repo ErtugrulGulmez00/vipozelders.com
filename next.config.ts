@@ -19,8 +19,8 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["iyzipay", "pg", "nodemailer", "exceljs"],
   experimental: {
     serverActions: {
-      // Profil fotoğrafı ve belge yüklemeleri için (dosya sınırı uygulamada 5 MB).
-      bodySizeLimit: "6mb",
+      // Fotoğraf, belge ve soru çözüm videosu yüklemeleri (dosya sınırları uygulamada: 5-8 MB, video 25 MB).
+      bodySizeLimit: "30mb",
       allowedOrigins: allowedOrigins(),
     },
   },

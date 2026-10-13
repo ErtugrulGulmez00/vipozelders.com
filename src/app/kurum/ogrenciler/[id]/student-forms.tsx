@@ -13,7 +13,8 @@ import {
   saveGuardianAction,
   setStudentStatusAction,
 } from "@/actions/center/students";
-import { InviteLinkBox } from "@/components/center/center-client";
+import { createStudentAccountAction, removeStudentAccountAction, resetStudentAccountAction } from "@/actions/center/questions";
+import { CredentialsBox, InviteLinkBox } from "@/components/center/center-client";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
 import { buildInstallments } from "@/lib/center/finance";
@@ -324,5 +325,44 @@ export function CancelPlanForm({ planId }: { planId: string }) {
         Planı iptal et
       </SubmitButton>
     </ActionForm>
+  );
+}
+
+export function StudentAccountCard({ studentId, account }: { studentId: string; account: { username: string | null; lastLoginAt: string | null } | null }) {
+  return (
+    <div className="space-y-3">
+      {account ? (
+        <>
+          <p className="text-sm text-slate-700">
+            Kullanıcı adı: <span className="font-mono font-semibold">{account.username}</span>
+            <span className="block text-xs text-slate-500">{account.lastLoginAt ? `Son giriş ${account.lastLoginAt}` : "Henüz giriş yapmadı"} · Giriş adresi: sitenin “Giriş yap” sayfası</span>
+          </p>
+          <ActionForm action={resetStudentAccountAction} className="space-y-2">
+            <CredentialsBox who="Öğrenci" />
+            <input type="hidden" name="studentId" value={studentId} />
+            <div className="flex flex-wrap gap-2">
+              <SubmitButton size="sm" variant="outline" confirmMessage="Öğrenciye yeni geçici şifre oluşturulsun mu?">
+                Şifreyi sıfırla
+              </SubmitButton>
+            </div>
+          </ActionForm>
+          <ActionForm action={removeStudentAccountAction}>
+            <input type="hidden" name="studentId" value={studentId} />
+            <SubmitButton size="sm" variant="ghost" className="text-rose-600" pendingText="…" confirmMessage="Öğrencinin giriş hesabı kaldırılsın mı?">
+              Hesabı kaldır
+            </SubmitButton>
+          </ActionForm>
+        </>
+      ) : (
+        <ActionForm action={createStudentAccountAction} className="space-y-2">
+          <CredentialsBox who="Öğrenci" />
+          <p className="text-sm text-slate-600">Öğrenci kendi hesabıyla devamsızlığını, ödevlerini, deneme sonuçlarını görür ve öğretmene fotoğrafla soru gönderir.</p>
+          <input type="hidden" name="studentId" value={studentId} />
+          <SubmitButton size="sm" variant="secondary">
+            Öğrenci giriş hesabı aç
+          </SubmitButton>
+        </ActionForm>
+      )}
+    </div>
   );
 }

@@ -29,6 +29,7 @@ import {
   InstallmentEditForm,
   NoteForm,
   StatusForm,
+  StudentAccountCard,
 } from "./student-forms";
 
 export const metadata: Metadata = { title: "Öğrenci kartı" };
@@ -42,7 +43,7 @@ export default async function StudentCardPage({ params, searchParams }: PageProp
   const student = await db.centerStudent.findFirst({
     where: { id, centerId },
     include: {
-      guardians: { orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }] },
+      guardians: { where: { isStudentAccount: false }, orderBy: [{ isPrimary: "desc" }, { createdAt: "asc" }] },
       groups: { include: { group: { select: { id: true, name: true } } } },
     },
   });
@@ -132,6 +133,7 @@ async function GeneralTab({
   memberId: string;
   isManager: boolean;
 }) {
+  const account = await db.centerGuardian.findFirst({ where: { studentId: student.id, isStudentAccount: true }, include: { user: { select: { username: true, lastLoginAt: true } } } });
   const notes = await db.centerNote.findMany({
     where: { studentId: student.id },
     orderBy: { createdAt: "desc" },
@@ -198,6 +200,16 @@ async function GeneralTab({
               />
             ))}
             {canEdit && student.guardians.length < 4 ? <AddGuardianForm studentId={student.id} /> : null}
+          </CardBody>
+        </Card>
+        <Card>
+          <CardHeader title="Öğrenci girişi" />
+          <CardBody>
+            {canEdit ? (
+              <StudentAccountCard studentId={student.id} account={account?.user ? { username: account.user.username, lastLoginAt: account.user.lastLoginAt ? formatCompact(account.user.lastLoginAt) : null } : null} />
+            ) : (
+              <p className="text-sm text-slate-600">{account ? `Öğrencinin giriş hesabı var (${account.user?.username ?? ""}).` : "Öğrencinin giriş hesabı yok."}</p>
+            )}
           </CardBody>
         </Card>
         {canMessage && student.guardians.length ? (

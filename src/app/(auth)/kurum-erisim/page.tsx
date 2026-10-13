@@ -16,6 +16,8 @@ export default async function CenterAccessPage() {
   if (resolved.kind === "anonymous") redirect("/kurum-giris");
   if (resolved.kind === "password") redirect("/sifre-degistir");
   if (resolved.kind === "ok") redirect("/kurum");
+  // Kurum girişinden giren veli/öğrenci/öğretmen kendi paneline gider (yanlış kapı sorun olmasın).
+  if (resolved.kind === "none" && resolved.user.role !== "CENTER") redirect(roleHome(resolved.user.role));
   const settings = await getSiteSettings();
   const { user } = resolved;
   return (

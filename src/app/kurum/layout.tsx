@@ -2,6 +2,7 @@ import {
   Bell,
   BookOpenCheck,
   Building2,
+  Camera,
   CalendarClock,
   CalendarRange,
   ClipboardCheck,
@@ -29,9 +30,10 @@ export const instant = false;
 
 export default async function CenterLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireCenter();
-  const [unread, newLeads] = await Promise.all([
+  const [unread, newLeads, openQuestions] = await Promise.all([
     db.notification.count({ where: { userId: ctx.user.id, readAt: null } }),
     ctx.can("leads.manage") ? db.centerLead.count({ where: { centerId: ctx.center.id, status: "NEW" } }) : Promise.resolve(0),
+    ctx.can("questions.answer") ? db.centerQuestion.count({ where: { centerId: ctx.center.id, status: "OPEN" } }) : Promise.resolve(0),
   ]);
   const items: (PanelNavItem & { permission?: CenterPermission })[] = [
     { href: "/kurum", label: "Özet", icon: <LayoutDashboard />, exact: true },
@@ -41,6 +43,7 @@ export default async function CenterLayout({ children }: { children: React.React
     { href: "/kurum/yoklama", label: "Yoklama", icon: <ClipboardCheck />, permission: "attendance.take" },
     { href: "/kurum/etutler", label: "Etütler", icon: <CalendarClock />, permission: "etud.manage" },
     { href: "/kurum/odevler", label: "Ödevler", icon: <NotebookPen />, permission: "homework.manage" },
+    { href: "/kurum/sorular", label: "Öğrenci soruları", icon: <Camera />, permission: "questions.answer", badge: openQuestions || undefined },
     { href: "/kurum/denemeler", label: "Denemeler", icon: <BookOpenCheck />, permission: "exams.manage" },
     { href: "/kurum/muhasebe", label: "Muhasebe", icon: <Wallet />, permission: "finance.view" },
     { href: "/kurum/duyurular", label: "Duyurular", icon: <Megaphone />, permission: "messages.send" },

@@ -28,7 +28,7 @@ export async function childrenJson(userId: string) {
 export async function childDetailJson(userId: string, guardianId: string) {
   const data = await portalChildDetail(userId, guardianId);
   if (!data) throw notFound("Öğrenci bulunamadı.");
-  const { student, attendance, etuds, results, installments, payments, announcements, notes, weakTopics, balance, today, trend, homeworks } = data;
+  const { student, attendance, etuds, results, installments, payments, announcements, notes, weakTopics, balance, today, trend, homeworks, questions } = data;
   return {
     id: guardianId,
     student: { firstName: student.firstName, lastName: student.lastName, gradeName: student.gradeName, studentNumber: student.studentNumber },
@@ -82,6 +82,7 @@ export async function childDetailJson(userId: string, guardianId: string) {
     announcements: announcements.map((a) => ({ id: a.id, title: a.title, body: a.body, group: a.group?.name ?? null, createdAt: a.createdAt.toISOString() })),
     notes: notes.map((n) => ({ kind: n.kind, text: n.text, author: n.author ? `${n.author.user.firstName} ${n.author.user.lastName}` : null, createdAt: n.createdAt.toISOString() })),
     homeworks: homeworks.map((h) => ({ id: h.homeworkId, subject: h.homework.subject, title: h.homework.title, description: h.homework.description, assignedOn: dbDateToString(h.homework.assignedOn), dueDate: dbDateToString(h.homework.dueDate), status: h.status, note: h.note })),
+    questions: questions.map((q) => ({ id: q.id, subject: q.subject, note: q.note, imageUrl: absoluteUpload(q.imageKey), status: q.status, answerText: q.answerText, answerImageUrl: absoluteUpload(q.answerImageKey), answerVideoUrl: absoluteUpload(q.answerVideoKey), answeredBy: q.answeredBy ? `${q.answeredBy.user.firstName} ${q.answeredBy.user.lastName}` : null, answeredAt: q.answeredAt?.toISOString() ?? null, createdAt: q.createdAt.toISOString() })),
     schedule: student.groups
       .flatMap((g) => g.group.slots.map((s) => ({ weekday: s.weekday, startMinute: s.startMinute, endMinute: s.endMinute, subject: s.subject, group: g.group.name, room: s.room, teacher: s.teacher ? `${s.teacher.user.firstName} ${s.teacher.user.lastName}` : null })))
       .sort((a, b) => a.weekday - b.weekday || a.startMinute - b.startMinute),

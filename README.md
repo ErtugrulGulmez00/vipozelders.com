@@ -6,7 +6,7 @@
 - **Öğrenci/Veli hesabı** (`/hesabim`): randevu, ödeme, sanal sınıfa katılma, takvime ekleme (.ics / Google Takvim), iptal, sorun bildirme, değerlendirme, favoriler, hesap silme talebi
 - **Öğretmen paneli** (`/ogretmen-paneli`): talepleri onaylama/reddetme, profil, dersler ve fiyatlar, müsaitlik takvimi, belge yükleme (kimlik, diploma, adli sicil; yalnızca yöneticiler görür), kazançlar, yorumlara cevap
 - **Yönetim paneli** (`/yonetim`): hızlı öğretmen ekleme (otomatik kullanıcı adı ve geçici şifre), öğretmen başvurularından tek tıkla hesap açma, belge inceleme, yayın ve doğrulama, randevu ve itiraz yönetimi, ödemesiz **test dersi** (görüntülü görüşme denemesi), finans ve hakediş ödemeleri, Excel/CSV çıktıları, yorum moderasyonu, kategoriler, sayfalar, site ayarları ve bakım modu, bildirimler, e-posta kutusu, işlem kayıtları, iki adımlı doğrulama (Google Authenticator)
-- **Kurum paneli** (`/kurum`, personel girişi `/kurum-giris` ya da `kurum.<alan adı>`): etüt merkezi, dershane ve kurslara aylık abonelikle satılan yönetim paneli: öğrenci ve veli kayıtları (Excel’den aktarım), sınıflar ve ders programı, yoklama ve velilere otomatik devamsızlık bildirimi (SMS / e-posta / site), etüt planı, ödev takibi, deneme sınavları (LGS, TYT, AYT, YDT şablonları; cevap anahtarı, net, sıralama, ders/konu/soru analizi, karne, eksik konular), muhasebe (ödeme planı, tahsilat, makbuz, gecikenler, otomatik taksit hatırlatma, giderler, gelir-gider raporu), duyurular, ön kayıtlar, personel rolleri, abonelik. Ayrıntılar: [docs/kurum-paneli.md](docs/kurum-paneli.md)
+- **Kurum paneli** (`/kurum`, personel girişi `/kurum-giris` ya da `kurum.<alan adı>`): etüt merkezi, dershane ve kurslara aylık abonelikle satılan yönetim paneli: öğrenci ve veli kayıtları (Excel’den aktarım), sınıflar ve ders programı, yoklama ve velilere otomatik devamsızlık bildirimi (SMS / e-posta / site), etüt planı, ödev takibi, fotoğrafla soru-çözüm, öğrenci giriş hesapları, deneme sınavları (LGS, TYT, AYT, YDT şablonları; cevap anahtarı, net, sıralama, ders/konu/soru analizi, karne, eksik konular), muhasebe (ödeme planı, tahsilat, makbuz, gecikenler, otomatik taksit hatırlatma, giderler, gelir-gider raporu), duyurular, ön kayıtlar, personel rolleri, abonelik. Ayrıntılar: [docs/kurum-paneli.md](docs/kurum-paneli.md)
 - **Kurumlar için** (`/kurumlar-icin`, `/kurumlar`, `/kurumlar/<kurum>`): tanıtım ve başvuru sayfası, kurum rehberi, kurum vitrin sayfası ve ön kayıt formu
 - **Veli portalı** (`/hesabim/kurum`): kurumun davet bağlantısıyla bağlanan veli; devamsızlık, etüt, deneme karnesi, eksik konular (pazaryeri öğretmenlerine yönlendirme), taksitler ve duyuruları görür
 - **Sanal sınıf** (`/ders/...`): kamera, mikrofon, ekran paylaşımı, sohbet ve ortak **beyaz tahta**; yoklama otomatik tutulur
@@ -84,6 +84,18 @@ Demo veriler `@demo.vipozelders.local` uzantılı hesaplar ve bunlara bağlı ö
 **Arka plan görevleri** (dakikada bir): süresi dolan ödeme ve onaylar, biten derslerin tamamlanması (yoklamaya göre “öğrenci/öğretmen katılmadı” tespiti), hakediş serbest bırakma, 24 saat ve 1 saat önce hatırlatmalar, bekleyen iadeler, e-posta kuyruğu. Varsayılan olarak Next sunucusunun içinde çalışır (`src/instrumentation.ts`). Birden çok sunucu kullanacaksanız `DISABLE_INTERNAL_SCHEDULER=true` yapıp `npm run worker` çalıştırın. Yönetim panelinde “Zamanlanmış görevleri şimdi çalıştır” butonu da vardır.
 
 ---
+
+## Kim nereden giriş yapar?
+
+Tek hesap sistemi, iki giriş kapısı. Giriş sayfasının üstündeki sekmelerle iki kapı arasında geçilir; girişten sonra herkes rolüne göre kendi paneline gider (yanlış kapıdan giren de doğru panele düşer).
+
+| Kişi | Giriş | Gittiği panel |
+| --- | --- | --- |
+| Veli | Kişisel giriş (`/giris`), e-posta | Hesabım (özel dersler + Kurumum) |
+| Öğrenci (bireysel ya da kurumun açtığı hesap) | Kişisel giriş, e-posta ya da kullanıcı adı | Hesabım (Kurumum: devam, ödev, deneme, soru sor) |
+| Pazaryeri öğretmeni | Kişisel giriş, kullanıcı adı | Öğretmen paneli (kurumda da çalışıyorsa “Kurum paneli” bağlantısı) |
+| Kurum personeli (sahip, müdür, öğretmen, muhasebe) | Kurum girişi (`/kurum-giris` ya da `kurum.<alan adı>`) | Kurum paneli; rolüne göre bölümler |
+| Pi Kampüs yöneticisi | Kişisel giriş, kullanıcı adı + 2 adımlı doğrulama | Yönetim paneli |
 
 ## Kurum paneli (etüt merkezi / dershane)
 

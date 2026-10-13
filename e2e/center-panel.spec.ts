@@ -242,3 +242,82 @@ test("ödev verilir, kontrol edilir; veli portalda görür; tüm veriler Excel o
     await sql(`DELETE FROM "CenterHomework" WHERE title = $1`, [title]);
   }
 });
+
+// 1x1 PNG
+const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
+
+test("öğrenci hesabı → fotoğrafla soru → öğretmen çözümü; yanlış kapıdan giren kendi paneline gider", async ({ page }) => {
+  const [ali] = await sql<{ id: string }>(`SELECT s.id FROM "CenterStudent" s JOIN "Center" c ON c.id = s."centerId" WHERE c.slug = 'basari-etut-merkezi' AND s."firstName" = 'Ali' AND s."lastName" = 'Demirtaş'`);
+  const note = `E2e soru ${stamp}`;
+  try {
+    // Veli kurum girişinden girse de kendi paneline gider
+    await page.context().clearCookies();
+    await page.goto("/kurum-giris");
+    await page.getByLabel("E-posta veya kullanıcı adı").fill("veli@demo.vipozelders.local");
+    await page.getByLabel("Şifre", { exact: true }).fill("Veli12345");
+    await page.getByRole("button", { name: "Giriş yap" }).click();
+    await expect(page).toHaveURL(/\/hesabim$/);
+
+    // Kurum öğrenci giriş hesabı açar
+    await login(page, "kurum@demo.vipozelders.local", "Kurum12345");
+    await page.goto(`/kurum/ogrenciler/${ali.id}`);
+    await page.getByRole("button", { name: "Öğrenci giriş hesabı aç" }).click();
+    await expect(page.getByText("Giriş bilgileri hazır")).toBeVisible();
+    const username = (await page.getByTestId("new-username").innerText()).trim();
+    const password = (await page.getByTestId("new-password").innerText()).trim();
+
+    // Öğrenci kişisel girişten girer, şifresini belirler, soru gönderir
+    await login(page, username, password);
+    await expect(page).toHaveURL(/\/sifre-degistir$/);
+    await page.getByLabel("Geçici şifre").fill(password);
+    await page.getByLabel("Yeni şifre", { exact: true }).fill("OgrenciSifre123");
+    await page.getByLabel("Yeni şifre (tekrar)").fill("OgrenciSifre123");
+    await page.getByRole("button", { name: "Şifremi kaydet" }).click();
+    await expect(page).toHaveURL(/\/hesabim$/);
+    await page.goto("/hesabim/kurum");
+    await page.getByRole("link", { name: /Ali Demirtaş/ }).click();
+    await page.getByRole("link", { name: "Soru sor" }).click();
+    await page.locator('input[name="image"]').setInputFiles({ name: "soru.png", mimeType: "image/png", buffer: PNG });
+    await page.locator('select[name="subject"]').selectOption("Matematik");
+    await page.getByLabel("Not (isteğe bağlı)").fill(note);
+    await page.getByRole("button", { name: "Soruyu gönder" }).click();
+    await expect(page.getByText("Sorun öğretmene iletildi", { exact: false })).toBeVisible();
+    await expect(page.getByText(note)).toBeVisible();
+
+    // Öğretmen (Burak, branş Matematik) bildirimi alır ve fotoğraflı çözüm gönderir
+    const [question] = await sql<{ id: string }>(`SELECT id FROM "CenterQuestion" WHERE note = $1`, [note]);
+    const notified = await sql(`SELECT 1 FROM "Notification" n JOIN "User" u ON u.id = n."userId" WHERE u.email = 'etut.ogretmen@demo.vipozelders.local' AND n.link = $1`, [`/kurum/sorular/${question.id}`]);
+    expect(notified.length).toBe(1);
+    await login(page, "etut.ogretmen@demo.vipozelders.local", "Ogretmen123");
+    await page.goto("/kurum/sorular");
+    await page.getByRole("link", { name: new RegExp(note) }).click();
+    await page.getByLabel("Açıklama").fill("Üslü sayılarda tabanları eşitle.");
+    await page.locator('input[name="image"]').setInputFiles({ name: "cozum.png", mimeType: "image/png", buffer: PNG });
+    await page.getByRole("button", { name: "Çözümü gönder" }).click();
+    await expect(page.getByText("Çözüm gönderildi", { exact: false })).toBeVisible();
+    const [answered] = await sql<{ status: string; answerImageKey: string }>(`SELECT status, "answerImageKey" FROM "CenterQuestion" WHERE id = $1`, [question.id]);
+    expect(answered.status).toBe("ANSWERED");
+    // Çözüm dosyası öğretmene açık, giriş yapmamış birine kapalı
+    expect((await page.request.get(`/api/dosya/${answered.answerImageKey}`)).status()).toBe(200);
+    const anonymous = await page.context().browser()!.newContext();
+    expect((await anonymous.request.get(new URL(`/api/dosya/${answered.answerImageKey}`, page.url()).toString())).status()).toBe(403);
+    await anonymous.close();
+
+    // Öğrenci çözümü görür
+    await login(page, username, "OgrenciSifre123");
+    await page.goto("/hesabim/kurum");
+    await page.getByRole("link", { name: /Ali Demirtaş/ }).click();
+    await page.getByRole("link", { name: "Soru sor" }).click();
+    await expect(page.getByText("Üslü sayılarda tabanları eşitle.")).toBeVisible();
+    await expect(page.getByText("Çözüldü").first()).toBeVisible();
+  } finally {
+    const links = await sql<{ userId: string }>(`SELECT "userId" FROM "CenterGuardian" WHERE "studentId" = $1 AND "isStudentAccount" = true`, [ali.id]);
+    await sql(`DELETE FROM "Notification" WHERE type = 'center.question' OR (type = 'center.question_answered')`);
+    await sql(`DELETE FROM "CenterQuestion" WHERE note = $1`, [note]);
+    await sql(`DELETE FROM "CenterGuardian" WHERE "studentId" = $1 AND "isStudentAccount" = true`, [ali.id]);
+    for (const { userId } of links) {
+      await sql(`DELETE FROM "AuditLog" WHERE "actorId" = $1`, [userId]);
+      await sql(`DELETE FROM "User" WHERE id = $1`, [userId]);
+    }
+  }
+});

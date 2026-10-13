@@ -31,7 +31,7 @@ export default async function CollectionsPage({ searchParams }: PageProps<"/kuru
       ? db.centerStudent.findFirst({
           where: { id: studentId, centerId },
           include: {
-            guardians: { orderBy: { isPrimary: "desc" } },
+            guardians: { where: { isStudentAccount: false }, orderBy: { isPrimary: "desc" } },
             installments: { where: { plan: { isCancelled: false } }, include: { plan: { select: { title: true } } }, orderBy: [{ dueDate: "asc" }, { order: "asc" }] },
           },
         })

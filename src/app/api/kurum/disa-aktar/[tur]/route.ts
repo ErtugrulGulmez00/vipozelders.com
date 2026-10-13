@@ -45,7 +45,7 @@ export async function GET(request: NextRequest, { params }: RouteContext<"/api/k
     const groupId = sp.get("grup");
     const students = await db.centerStudent.findMany({
       where: { centerId, ...(status !== "ALL" ? { status: status as "ACTIVE" | "PASSIVE" | "LEFT" } : {}), ...(groupId ? { groups: { some: { groupId } } } : {}) },
-      include: { guardians: { orderBy: { isPrimary: "desc" } }, groups: { include: { group: { select: { name: true } } } } },
+      include: { guardians: { where: { isStudentAccount: false }, orderBy: { isPrimary: "desc" } }, groups: { include: { group: { select: { name: true } } } } },
       orderBy: [{ firstName: "asc" }, { lastName: "asc" }],
     });
     const csv = toCsv(

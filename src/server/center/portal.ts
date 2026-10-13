@@ -84,7 +84,7 @@ export async function portalChildDetail(userId: string, guardianId: string) {
   const centerId = student.centerId;
   const today = toLocalDateString(new Date());
   const groupIds = student.groups.map((g) => g.groupId);
-  const [attendance, etuds, results, installments, payments, announcements, notes, weakTopics, balance, homeworks] = await Promise.all([
+  const [attendance, etuds, results, installments, payments, announcements, notes, weakTopics, balance, homeworks, questions] = await Promise.all([
     db.centerAttendance.findMany({
       where: { studentId: student.id, session: { date: { gte: dateStringToDbDate(addDaysToDateString(today, -60)) } } },
       include: { session: { select: { date: true, startMinute: true, subject: true, group: { select: { name: true } } } } },
@@ -115,7 +115,13 @@ export async function portalChildDetail(userId: string, guardianId: string) {
       orderBy: { homework: { dueDate: "desc" } },
       take: 60,
     }),
+    db.centerQuestion.findMany({
+      where: { studentId: student.id },
+      include: { answeredBy: { include: { user: { select: { firstName: true, lastName: true } } } } },
+      orderBy: { createdAt: "desc" },
+      take: 50,
+    }),
   ]);
   const trend = results[0] ? await studentNetTrend(centerId, student.id, results[0].exam.kind, 10, true) : [];
-  return { guardian, student, attendance, etuds, results, installments, payments, announcements, notes, weakTopics, balance, today, trend, homeworks };
+  return { guardian, student, attendance, etuds, results, installments, payments, announcements, notes, weakTopics, balance, today, trend, homeworks, questions };
 }

@@ -10,6 +10,7 @@ export const CENTER_PERMISSIONS = [
   "attendance.take",
   "etud.manage",
   "homework.manage",
+  "questions.answer",
   "exams.manage",
   "notes.write",
   "finance.view",
@@ -28,7 +29,7 @@ const MATRIX: Record<CenterRoleName, readonly CenterPermission[]> = {
   OWNER: CENTER_PERMISSIONS,
   // Müdür: abonelik dışında her şey (kurum sahibini düzenleyemez; staff modülünde ayrıca kontrol edilir)
   MANAGER: CENTER_PERMISSIONS.filter((p) => p !== "subscription.view"),
-  TEACHER: ["students.view", "attendance.take", "etud.manage", "homework.manage", "exams.manage", "notes.write"],
+  TEACHER: ["students.view", "attendance.take", "etud.manage", "homework.manage", "questions.answer", "exams.manage", "notes.write"],
   ACCOUNTANT: ["students.view", "students.edit", "finance.view", "finance.edit", "expenses.manage", "messages.send", "leads.manage"],
 };
 

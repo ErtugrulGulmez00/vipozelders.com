@@ -12,6 +12,8 @@ import { installmentState } from "@/lib/center/finance";
 import { WEEKDAY_NAMES, dbDateToString, formatCompact, formatDate, minutesToTime } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { HomeworkList } from "@/components/center/homework-list";
+import { QuestionView } from "@/components/center/question-view";
+import { AskQuestionForm, WithdrawQuestionButton } from "./ask-form";
 import { requireRole } from "@/server/auth/current-user";
 import { marketplaceLink } from "@/server/center/exams";
 import { portalChildDetail } from "@/server/center/portal";
@@ -25,7 +27,7 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
   const tab = String(sp.sekme ?? "ozet");
   const data = await portalChildDetail(user.id, id);
   if (!data) notFound();
-  const { student, attendance, etuds, results, installments, payments, announcements, notes, weakTopics, balance, today, trend, homeworks } = data;
+  const { student, attendance, etuds, results, installments, payments, announcements, notes, weakTopics, balance, today, trend, homeworks, questions } = data;
   const counted = attendance.length;
   const absent = attendance.filter((a) => a.status === "ABSENT").length;
   const rate = counted ? attendance.filter((a) => a.status === "PRESENT" || a.status === "LATE").length / counted : 1;
@@ -54,6 +56,7 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
           { key: "denemeler", label: "Denemeler", href: `${base}?sekme=denemeler` },
           { key: "odemeler", label: "Ödemeler", href: `${base}?sekme=odemeler` },
           { key: "odevler", label: "Ödevler", href: `${base}?sekme=odevler` },
+          { key: "sorular", label: "Soru sor", href: `${base}?sekme=sorular` },
           { key: "program", label: "Ders programı", href: `${base}?sekme=program` },
         ]}
       />
@@ -221,6 +224,33 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
         </div>
       ) : tab === "odevler" ? (
         <HomeworkList rows={homeworks.map((h) => ({ id: h.homeworkId, subject: h.homework.subject, title: h.homework.title, description: h.homework.description, dueDate: h.homework.dueDate, status: h.status, note: h.note }))} />
+      ) : tab === "sorular" ? (
+        <div className="grid gap-6 lg:grid-cols-[1fr_1.3fr] lg:items-start">
+          <Card>
+            <CardHeader title="Öğretmene soru sor" description="Takıldığın sorunun fotoğrafını gönder; öğretmen çözümü yazı, fotoğraf ya da videoyla gönderir ya da derste anlatır." />
+            <CardBody>
+              <AskQuestionForm guardianId={id} subjects={[...new Set([...student.groups.flatMap((g) => g.group.slots.map((s) => s.subject)), "Matematik", "Türkçe", "Fen Bilimleri", "Fizik", "Kimya", "Biyoloji", "Geometri", "İngilizce", "Sosyal Bilgiler", "Tarih", "Coğrafya", "Diğer"])]} />
+            </CardBody>
+          </Card>
+          <div className="space-y-4">
+            {questions.length === 0 ? (
+              <EmptyState title="Henüz soru göndermedin" />
+            ) : (
+              questions.map((q) => (
+                <Card key={q.id}>
+                  <CardBody>
+                    <QuestionView compact q={{ ...q, answeredBy: q.answeredBy ? `${q.answeredBy.user.firstName} ${q.answeredBy.user.lastName}` : null }} />
+                    {q.status === "OPEN" && q.askedByUserId === user.id ? (
+                      <div className="mt-2 flex justify-end">
+                        <WithdrawQuestionButton questionId={q.id} />
+                      </div>
+                    ) : null}
+                  </CardBody>
+                </Card>
+              ))
+            )}
+          </div>
+        </div>
       ) : tab === "program" ? (
         <Card>
           <CardHeader title="Haftalık ders programı" />

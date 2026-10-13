@@ -8,6 +8,7 @@ import { requestMeta } from "@/server/auth/session";
 import { centerApplicationSchema, leadSchema, submitCenterApplication, submitLead } from "@/server/center/admin";
 import { CenterError } from "@/server/center/errors";
 import { acceptInvite, unlinkGuardian } from "@/server/center/portal";
+import { askQuestion, withdrawQuestion } from "@/server/center/questions";
 import { maintenanceState } from "@/server/maintenance";
 
 const text = (formData: FormData, key: string) => String(formData.get(key) ?? "").trim();
@@ -68,4 +69,34 @@ export async function unlinkGuardianAction(_: ActionState, formData: FormData): 
   await unlinkGuardian(user.id, text(formData, "guardianId"));
   refresh();
   redirect("/hesabim/kurum?durum=ayrildi");
+}
+
+/** Öğrenci ya da velisi, kuruma fotoğrafla soru gönderir. */
+export async function askQuestionAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await actionUser("STUDENT");
+  if (!user) return failure("Soru göndermek için giriş yapın.");
+  const subject = text(formData, "subject").slice(0, 60);
+  if (subject.length < 2) return failure("Dersi seçin.", { subject: "Ders gerekli." });
+  const image = formData.get("image");
+  try {
+    await askQuestion(user.id, text(formData, "guardianId"), { subject, note: text(formData, "note").slice(0, 500) || null, image: image instanceof File ? image : null });
+  } catch (error) {
+    if (error instanceof CenterError) return failure(error.message, error.fieldErrors);
+    throw error;
+  }
+  refresh();
+  return success("Sorun öğretmene iletildi. Çözüm eklenince bildirim alacaksın.");
+}
+
+export async function withdrawQuestionAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await actionUser("STUDENT");
+  if (!user) return failure("Oturumunuz kapanmış.");
+  try {
+    await withdrawQuestion(user.id, text(formData, "questionId"));
+  } catch (error) {
+    if (error instanceof CenterError) return failure(error.message);
+    throw error;
+  }
+  refresh();
+  return success("Soru geri çekildi.");
 }

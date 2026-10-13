@@ -52,7 +52,7 @@ export default async function CenterStudentsPage({ searchParams }: PageProps<"/k
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
       include: {
-        guardians: { orderBy: { isPrimary: "desc" }, take: 1, select: { fullName: true, phone: true, userId: true } },
+        guardians: { where: { isStudentAccount: false }, orderBy: { isPrimary: "desc" }, take: 1, select: { fullName: true, phone: true, userId: true } },
         groups: { include: { group: { select: { name: true } } } },
         installments: ctx.can("finance.view") ? { where: { plan: { isCancelled: false } }, select: { amount: true, paidAmount: true, dueDate: true } } : false,
       },

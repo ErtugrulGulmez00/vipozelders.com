@@ -14,7 +14,7 @@ const name = (p: { firstName: string; lastName: string } | null | undefined) => 
 
 export async function centerBackupWorkbook(centerId: string): Promise<Buffer> {
   const [students, groups, slots, attendance, etuds, exams, plans, payments, expenses, notes, homeworks, leads, announcements] = await Promise.all([
-    db.centerStudent.findMany({ where: { centerId }, include: { guardians: true, groups: { include: { group: { select: { name: true } } } } }, orderBy: { studentNumber: "asc" } }),
+    db.centerStudent.findMany({ where: { centerId }, include: { guardians: { where: { isStudentAccount: false } }, groups: { include: { group: { select: { name: true } } } } }, orderBy: { studentNumber: "asc" } }),
     db.centerGroup.findMany({ where: { centerId }, include: { teacher: { include: { user: true } }, _count: { select: { students: true } } }, orderBy: { name: "asc" } }),
     db.centerScheduleSlot.findMany({ where: { centerId }, include: { group: { select: { name: true } }, teacher: { include: { user: true } } }, orderBy: [{ weekday: "asc" }, { startMinute: "asc" }] }),
     db.centerAttendance.findMany({ where: { session: { centerId } }, include: { session: { include: { group: { select: { name: true } } } }, student: true }, orderBy: [{ session: { date: "asc" } }, { session: { startMinute: "asc" } }] }),

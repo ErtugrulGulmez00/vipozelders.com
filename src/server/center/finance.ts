@@ -162,7 +162,7 @@ export type OverdueRow = {
 export async function overdueByStudent(centerId: string, today = toLocalDateString(new Date())): Promise<OverdueRow[]> {
   const installments = await db.centerInstallment.findMany({
     where: { centerId, dueDate: { lt: dateStringToDbDate(today) }, plan: { isCancelled: false }, student: { status: { not: "LEFT" } } },
-    include: { student: { select: { id: true, firstName: true, lastName: true, studentNumber: true, gradeName: true, guardians: { orderBy: { isPrimary: "desc" }, take: 1, select: { fullName: true, phone: true } } } } },
+    include: { student: { select: { id: true, firstName: true, lastName: true, studentNumber: true, gradeName: true, guardians: { where: { isStudentAccount: false }, orderBy: { isPrimary: "desc" }, take: 1, select: { fullName: true, phone: true } } } } },
     orderBy: { dueDate: "asc" },
   });
   const rows = new Map<string, OverdueRow>();
