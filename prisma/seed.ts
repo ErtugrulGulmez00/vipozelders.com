@@ -151,15 +151,16 @@ async function seedPages() {
 }
 
 async function seedAdmin() {
-  const username = process.env.ADMIN_USERNAME ?? "admin";
+  // .env'de boş bırakılan ("") değerler verilmemiş sayılır.
+  const username = process.env.ADMIN_USERNAME || "admin";
   const existing = await db.user.findUnique({ where: { username } });
   if (existing) return null;
-  const password = process.env.ADMIN_PASSWORD ?? (isProduction ? generateTemporaryPassword(14) : "Yonetici123");
+  const password = process.env.ADMIN_PASSWORD || (isProduction ? generateTemporaryPassword(14) : "Yonetici123");
   await db.user.create({
     data: {
       role: "ADMIN",
       username,
-      email: process.env.ADMIN_EMAIL?.toLowerCase() ?? null,
+      email: process.env.ADMIN_EMAIL?.toLowerCase() || null,
       firstName: "Site",
       lastName: "Yöneticisi",
       passwordHash: await hashPassword(password),

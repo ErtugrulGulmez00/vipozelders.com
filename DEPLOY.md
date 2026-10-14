@@ -116,7 +116,7 @@ nano .env
 Kurulum:
 
 ```bash
-npm ci
+npm install
 npx prisma migrate deploy
 NODE_ENV=production SEED_DEMO=false ADMIN_USERNAME=yonetici ADMIN_EMAIL=siz@alanadiniz.com npx prisma db seed
 npm run build
@@ -201,7 +201,7 @@ Yedekleri ara sıra sunucu dışına (ör. kendi bilgisayarınıza) da kopyalay�
 sudo -iu vipozelders
 cd app
 git pull
-npm ci
+npm install
 npx prisma migrate deploy
 npm run build
 exit
@@ -215,3 +215,5 @@ sudo systemctl restart vipozelders
 - **Ödeme onaylanmıyor:** PayTR panelindeki Bildirim URL'sini ve `PAYTR_*` değerlerini kontrol edin; **Yönetim → Finans** sayfasında ödemenin durumuna bakın.
 - **Sanal sınıf “yapılandırılmadı” diyor:** `LIVEKIT_*` değerlerini girip servisi yeniden başlatın.
 - **Yönetici telefonunu kaybetti:** `npm run admin:2fa-kapat -- yonetici` (sunucuda, uygulama klasöründe).
+- **Yönetici şifresini unuttu:** `npm run admin:sifre-sifirla -- yonetici` yeni geçici şifreyi ekrana yazar; ilk girişte değiştirilir.
+- **Sunucuda `npm ci` "lock file" hatası veriyor:** kilit dosyası Windows'ta oluşturulduysa Linux paketleri eksik kalabilir; `npm install` kullanın.
