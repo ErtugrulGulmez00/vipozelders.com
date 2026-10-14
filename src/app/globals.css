@@ -61,3 +61,10 @@ body {
 .classroom-root {
   height: 100dvh;
 }
+
+/* Beyaz tahta: Excalidraw'ın kütüphane bölmesi dış siteden şekil indirmeye çalışıyor ("Kütüphane yüklenemedi"); derste gerek yok, gizlenir. */
+.pk-whiteboard .default-sidebar-trigger,
+.pk-whiteboard .sidebar-trigger,
+.pk-whiteboard .default-sidebar {
+  display: none !important;
+}

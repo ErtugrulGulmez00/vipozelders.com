@@ -1,6 +1,6 @@
 // Fiyat, komisyon ve iade hesapları. Saf fonksiyonlar: veritabanına dokunmaz, test edilebilir.
 
-export const ALLOWED_DURATIONS = [30, 45, 60, 90, 120] as const;
+export const ALLOWED_DURATIONS = [45, 60] as const;
 
 /** Saatlik ücretten ders ücreti; tam liraya yuvarlanır (kuruş). */
 export function lessonPrice(hourlyPrice: number, durationMinutes: number): number {

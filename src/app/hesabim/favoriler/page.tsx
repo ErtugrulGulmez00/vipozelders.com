@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { TeacherCard } from "@/components/site/teacher-card";
 import { LinkButton } from "@/components/ui/button";
 import { EmptyState, PageHeader } from "@/components/ui/primitives";
-import { shortName } from "@/lib/text";
+import { fullName } from "@/lib/text";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { uploadUrl } from "@/server/storage";
@@ -39,7 +39,7 @@ export default async function FavoritesPage() {
               teacher={{
                 userId: teacher.userId,
                 slug: teacher.slug,
-                name: shortName(teacher.user),
+                name: fullName(teacher.user),
                 headline: teacher.headline,
                 photoUrl: uploadUrl(teacher.photoKey),
                 ratingAvg: teacher.ratingAvg,

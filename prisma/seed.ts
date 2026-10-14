@@ -373,7 +373,7 @@ async function seedDemo() {
           levelId: catalog.levels.get(level)!.id,
           subjectId: catalog.subjects.get(subject)!.id,
           hourlyPrice: hourlyTl * 100,
-          durations: service === "soru-cozum" ? [30, 45, 60] : service === "kocluk" ? [45, 60] : [45, 60, 90],
+          durations: [45, 60],
         },
       });
     }

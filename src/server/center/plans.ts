@@ -9,6 +9,10 @@ export type CenterPlanInfo = {
   name: string;
   /** Aylık, KDV dahil TL; null = teklif usulü */
   priceTl: number | null;
+  /** İndirim öncesi aylık fiyat (üstü çizili); null = gösterilmez */
+  listPriceTl: number | null;
+  yearlyPriceTl: number | null;
+  yearlyListPriceTl: number | null;
   /** null = sınırsız / anlaşmaya göre */
   students: number | null;
   highlight?: boolean;
@@ -21,6 +25,9 @@ export function centerPlans(settings: SiteSettings): CenterPlanInfo[] {
       plan: "STARTER",
       name: "Başlangıç",
       priceTl: settings.centerStarterPriceTl,
+      listPriceTl: settings.centerStarterListPriceTl || null,
+      yearlyPriceTl: settings.centerStarterYearlyPriceTl || null,
+      yearlyListPriceTl: settings.centerStarterYearlyListPriceTl || null,
       students: settings.centerStarterStudents,
       features: [
         `${settings.centerStarterStudents} aktif öğrenciye kadar`,
@@ -35,6 +42,9 @@ export function centerPlans(settings: SiteSettings): CenterPlanInfo[] {
       plan: "PRO",
       name: "Profesyonel",
       priceTl: settings.centerProPriceTl,
+      listPriceTl: settings.centerProListPriceTl || null,
+      yearlyPriceTl: settings.centerProYearlyPriceTl || null,
+      yearlyListPriceTl: settings.centerProYearlyListPriceTl || null,
       students: settings.centerProStudents,
       highlight: true,
       features: [
@@ -50,6 +60,9 @@ export function centerPlans(settings: SiteSettings): CenterPlanInfo[] {
       plan: "ENTERPRISE",
       name: "Kurumsal",
       priceTl: null,
+      listPriceTl: null,
+      yearlyPriceTl: null,
+      yearlyListPriceTl: null,
       students: null,
       features: ["Birden çok şube", "Kuruma özel SMS başlığı", "Toplu veri aktarımı ve eğitim", "Öncelikli destek"],
     },

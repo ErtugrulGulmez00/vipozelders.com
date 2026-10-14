@@ -115,7 +115,7 @@ export function ProfileForm({
 
         <fieldset className="space-y-3 rounded-xl border border-slate-200 p-4">
           <legend className="px-1 text-sm font-semibold text-slate-800">Ders şekli ve konum</legend>
-          <Checkbox name="offersOnline" defaultChecked={values.offersOnline} label="Online ders veriyorum (sitedeki sanal sınıf)" />
+          <Checkbox name="offersOnline" defaultChecked={values.offersOnline} label="Online ders veriyorum" />
           <Checkbox name="offersInPerson" defaultChecked={values.offersInPerson} onChange={(e) => setInPerson(e.target.checked)} label="Yüz yüze ders veriyorum" />
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="İl" htmlFor="cityId">

@@ -22,7 +22,7 @@ export type OfferingRow = {
   label: string;
 };
 
-const DURATIONS = [30, 45, 60, 90, 120];
+const DURATIONS = [45, 60];
 
 function Earnings({ priceTl, commissionBps }: { priceTl: number; commissionBps: number }) {
   if (!priceTl || priceTl <= 0) return null;

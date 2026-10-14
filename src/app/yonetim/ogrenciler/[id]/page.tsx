@@ -6,7 +6,7 @@ import { BookingRow } from "@/components/panel/booking-ui";
 import { Card, CardBody, CardHeader, DescriptionList, EmptyState } from "@/components/ui/primitives";
 import { formatCompact } from "@/lib/dates";
 import { ACCOUNT_TYPE_LABEL } from "@/lib/labels";
-import { shortName } from "@/lib/text";
+import { fullName } from "@/lib/text";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { UserStatusForm } from "../../ogretmenler/[id]/admin-forms";
@@ -61,7 +61,7 @@ export default async function AdminStudentPage({ params }: PageProps<"/yonetim/o
           <CardBody className="space-y-2">
             {user.bookingsAsStudent.length === 0 ? <EmptyState title="Randevu yok" /> : null}
             {user.bookingsAsStudent.map((b) => (
-              <BookingRow key={b.id} booking={{ ...b, counterpart: shortName(b.teacher.user) }} href={`/yonetim/randevular/${b.id}`} />
+              <BookingRow key={b.id} booking={{ ...b, counterpart: fullName(b.teacher.user) }} href={`/yonetim/randevular/${b.id}`} />
             ))}
           </CardBody>
         </Card>

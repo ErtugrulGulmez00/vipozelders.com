@@ -87,15 +87,17 @@ function overlaps(start: number, end: number, busy: BusyRange[]): boolean {
 }
 
 /**
- * Seçilen süre için günlere göre saatleri üretir. Erken haber süresi içinde kalan ya da
+ * Seçilen süre için günlere göre saatleri üretir. Dersler yalnızca tam saatte başlar (17:00, 18:00…)
+ * ve en fazla bir saat sürer; böylece farklı süreli dersler birbirinin saatini bölmez. Erken haber süresi içinde kalan ya da
  * en geç randevu sınırını aşan saatler hiç gösterilmez; dolu saatler available=false döner.
  */
 export function generateSlots(query: SlotQuery): SlotDay[] {
-  const step = query.stepMinutes ?? 30;
+  const step = query.stepMinutes ?? 60;
   const earliest = query.now.getTime() + query.minNoticeHours * 3_600_000;
   const latestDate = addDaysToDateString(toLocalDateString(query.now), query.maxAdvanceDays);
   const durationMs = query.durationMinutes * 60_000;
-  const blockMs = (query.durationMinutes + query.bufferMinutes) * 60_000;
+  // Saat başı düzende 45 dakikalık ders kendiliğinden mola bırakır; tampon süre artık kullanılmaz.
+  const blockMs = durationMs;
 
   const result: SlotDay[] = [];
   for (let i = 0; i < query.days; i++) {
@@ -104,7 +106,8 @@ export function generateSlots(query: SlotQuery): SlotDay[] {
 
     const slots: Slot[] = [];
     for (const [intervalStart, intervalEnd] of dayIntervals(date, query.rules, query.exceptions)) {
-      for (let minute = intervalStart; minute + query.durationMinutes <= intervalEnd; minute += step) {
+      const firstMinute = Math.ceil(intervalStart / step) * step;
+      for (let minute = firstMinute; minute + query.durationMinutes <= intervalEnd; minute += step) {
         const start = zonedDateTime(date, minute);
         if (start.getTime() < earliest) continue;
         const available = !overlaps(start.getTime(), start.getTime() + blockMs, query.busy);

@@ -22,7 +22,7 @@ import { buttonClasses } from "@/components/ui/button";
 import { Card } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/money";
-import { centerPlans } from "@/server/center/plans";
+import { type CenterPlanInfo, centerPlans } from "@/server/center/plans";
 import { getCities, getSiteSettings } from "@/server/site";
 import { CenterApplicationForm } from "./center-application-form";
 
@@ -68,11 +68,11 @@ export default async function ForCentersPage() {
             </p>
             <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl">Kurumunuzun tamamı tek panelde</h1>
             <p className="mt-4 max-w-xl text-lg text-brand-100">
-              Yoklama, deneme analizi, veli iletişimi ve muhasebe: defter, Excel ve WhatsApp grupları arasında kaybolmayın. {settings.centerTrialDays} gün ücretsiz deneyin.
+              Yoklama, deneme analizi, veli iletişimi ve muhasebe: defter, Excel ve WhatsApp grupları arasında kaybolmayın.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <a href="#basvuru" className={buttonClasses("gold", "lg")}>
-                Ücretsiz deneyin
+                Hemen başvurun
               </a>
               <a href="#planlar" className={buttonClasses("outline", "lg", "border-white/30 bg-white/10 text-white hover:bg-white/20")}>
                 Planlar ve fiyatlar
@@ -85,7 +85,7 @@ export default async function ForCentersPage() {
               </Link>
             </p>
             <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-brand-100">
-              {["Kurulum aynı gün", "Kredi kartı gerekmez", "Sınırsız personel"].map((t) => (
+              {["Kurulum aynı gün", "Birebir kurulum desteği", "Sınırsız personel"].map((t) => (
                 <li key={t} className="inline-flex items-center gap-1.5">
                   <Check className="size-4 text-gold-300" aria-hidden /> {t}
                 </li>
@@ -177,14 +177,13 @@ export default async function ForCentersPage() {
 
       <section id="planlar" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16">
         <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">Planlar</h2>
-        <p className="mt-2 text-slate-600">Aylık abonelik; taahhüt yok. Tüm planlarda {settings.centerTrialDays} gün ücretsiz deneme, sınırsız personel ve veli portalı.</p>
+        <p className="mt-2 text-slate-600">Aylık ya da yıllık abonelik. Tüm planlarda sınırsız personel ve veli portalı; yıllık ödemede daha avantajlı.</p>
         <div className="mt-8 grid gap-4 md:grid-cols-3">
           {plans.map((plan) => (
             <div key={plan.plan} className={cn("relative flex flex-col rounded-2xl border bg-white p-6", plan.highlight ? "border-brand-500 shadow-lg ring-2 ring-brand-200" : "border-slate-200")}>
               {plan.highlight ? <span className="absolute -top-3 left-6 rounded-full bg-brand-600 px-3 py-0.5 text-xs font-bold text-white">En çok tercih edilen</span> : null}
               <p className="text-lg font-bold text-slate-900">{plan.name}</p>
-              <p className="mt-3 text-3xl font-black text-slate-900">{plan.priceTl !== null ? formatMoney(plan.priceTl * 100) : "Teklif alın"}</p>
-              <p className="text-sm text-slate-500">{plan.priceTl !== null ? "aylık · KDV dahil" : "çok şubeli kurumlar için"}</p>
+              <PlanPrice plan={plan} />
               <ul className="mt-5 flex-1 space-y-2 text-sm text-slate-700">
                 {plan.features.map((f) => (
                   <li key={f} className="flex gap-2">
@@ -193,7 +192,7 @@ export default async function ForCentersPage() {
                 ))}
               </ul>
               <a href="#basvuru" className={buttonClasses(plan.highlight ? "primary" : "outline", "md", "mt-6 w-full")}>
-                {plan.priceTl !== null ? "Ücretsiz deneyin" : "İletişime geçin"}
+                {plan.priceTl !== null ? "Başvurun" : "İletişime geçin"}
               </a>
             </div>
           ))}
@@ -222,13 +221,42 @@ export default async function ForCentersPage() {
             </div>
           </div>
           <Card id="basvuru" className="h-fit scroll-mt-20 p-6">
-            <h2 className="text-xl font-bold text-slate-900">Ücretsiz deneme başvurusu</h2>
-            <p className="mt-1 mb-5 text-sm text-slate-500">Ekibimiz sizi arayıp paneli birlikte kurar; deneme süresi hesabınız açıldığı gün başlar.</p>
+            <h2 className="text-xl font-bold text-slate-900">Kurum başvurusu</h2>
+            <p className="mt-1 mb-5 text-sm text-slate-500">Ekibimiz sizi arayıp paneli birlikte kurar.</p>
             <CenterApplicationForm cities={cities.map((c) => ({ id: c.id, name: c.name }))} />
           </Card>
         </div>
       </section>
     </>
+  );
+}
+
+/** Plan fiyatı: indirimli aylık ve yıllık fiyat, varsa üstü çizili eski fiyatla. */
+function PlanPrice({ plan }: { plan: CenterPlanInfo }) {
+  if (plan.priceTl === null) {
+    return (
+      <>
+        <p className="mt-3 text-3xl font-black text-slate-900">Teklif alın</p>
+        <p className="text-sm text-slate-500">çok şubeli kurumlar için</p>
+      </>
+    );
+  }
+  const discount = plan.listPriceTl && plan.listPriceTl > plan.priceTl ? Math.round((1 - plan.priceTl / plan.listPriceTl) * 100) : 0;
+  return (
+    <div className="mt-3">
+      {discount ? <span className="inline-block rounded-full bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-600">%{discount} indirim</span> : null}
+      <p className="mt-1 flex items-baseline gap-2">
+        <span className="text-3xl font-black text-slate-900">{formatMoney(plan.priceTl * 100)}</span>
+        {discount ? <s className="text-base font-semibold text-slate-400">{formatMoney(plan.listPriceTl! * 100)}</s> : null}
+      </p>
+      <p className="text-sm text-slate-500">aylık · KDV dahil</p>
+      {plan.yearlyPriceTl ? (
+        <p className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          Yıllık: <span className="font-bold">{formatMoney(plan.yearlyPriceTl * 100)}</span>
+          {plan.yearlyListPriceTl && plan.yearlyListPriceTl > plan.yearlyPriceTl ? <s className="ml-1.5 text-emerald-600/70">{formatMoney(plan.yearlyListPriceTl * 100)}</s> : null}
+        </p>
+      ) : null}
+    </div>
   );
 }
 

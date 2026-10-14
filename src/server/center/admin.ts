@@ -143,7 +143,7 @@ export async function submitCenterApplication(input: CenterApplicationInput, ipA
     title: "Kurum paneli başvurunuzu aldık",
     lines: [
       `${input.centerName} için ${settings.siteName} kurum paneli başvurunuz bize ulaştı.`,
-      "Ekibimiz en kısa sürede sizi arayıp paneli birlikte kuracak; ücretsiz deneme süreniz hesabınız açıldığı gün başlar.",
+      "Ekibimiz en kısa sürede sizi arayıp paneli birlikte kuracak.",
     ],
   });
   await db.emailMessage.create({ data: { to: email, subject: `Başvurunuz alındı · ${settings.siteName}`, html, text } });

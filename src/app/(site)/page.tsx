@@ -168,7 +168,7 @@ export default async function HomePage() {
             </p>
             <h2 className="mt-3 text-2xl font-bold text-slate-900 sm:text-3xl">Etüt merkezi ya da dershane mi yönetiyorsunuz?</h2>
             <p className="mt-2 text-slate-600">
-              Öğrenci ve veli takibi, yoklama ve devamsızlık SMS&apos;i, deneme analizi ve eksik konular, ödeme planı ve makbuz: hepsi tek panelde. {settings.centerTrialDays} gün ücretsiz deneyin.
+              Öğrenci ve veli takibi, yoklama ve devamsızlık SMS&apos;i, deneme analizi ve eksik konular, ödeme planı ve makbuz: hepsi tek panelde.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <LinkButton href="/kurumlar-icin" size="lg">

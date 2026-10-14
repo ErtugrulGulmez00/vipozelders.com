@@ -10,7 +10,7 @@ import { Alert, Avatar, Badge, Card, CardBody, CardHeader, DescriptionList } fro
 import { formatCompact, formatDateTime, formatLessonRange } from "@/lib/dates";
 import { BOOKING_STATUS, durationLabel, IN_PERSON_PLACE_LABEL, MODE_LABEL, PAYMENT_STATUS, REFUND_STATUS } from "@/lib/labels";
 import { formatMoney } from "@/lib/money";
-import { initials, shortName } from "@/lib/text";
+import { fullName, initials } from "@/lib/text";
 import { requireRole } from "@/server/auth/current-user";
 import { previewStudentCancellation } from "@/server/bookings";
 import { db } from "@/server/db";
@@ -40,7 +40,7 @@ export default async function StudentBookingPage({ params, searchParams }: PageP
 
   const now = new Date();
   const settings = await loadSettings();
-  const teacherName = shortName(booking.teacher.user);
+  const teacherName = fullName(booking.teacher.user);
   const cancellation = await previewStudentCancellation(booking, now);
   const eligibility = await reviewEligibility(user.id, booking.teacherId, now);
   const opensAt = new Date(booking.startAt.getTime() - settings.classroomOpensMinutesBefore * 60_000);

@@ -116,7 +116,7 @@ export function Whiteboard({ open, onRemoteOpen }: { open: boolean; onRemoteOpen
   );
 
   return (
-    <div ref={wrapperRef} className="h-full w-full" data-testid="whiteboard" data-elements="0">
+    <div ref={wrapperRef} className="pk-whiteboard h-full w-full" data-testid="whiteboard" data-elements="0">
       <Excalidraw
         excalidrawAPI={onApiReady}
         onChange={broadcastChanges}

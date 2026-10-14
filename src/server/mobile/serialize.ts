@@ -1,6 +1,6 @@
 import type { Booking, Notification } from "@/generated/prisma/client";
 import { BOOKING_STATUS } from "@/lib/labels";
-import { shortName } from "@/lib/text";
+import { fullName, shortName } from "@/lib/text";
 import { appUrl } from "../email";
 import { lessonPrice } from "../pricing";
 import { uploadUrl } from "../storage";
@@ -45,7 +45,7 @@ export function teacherProfileJson(teacher: PublicTeacher) {
   return {
     userId: teacher.userId,
     slug: teacher.slug,
-    name: shortName(teacher.user),
+    name: fullName(teacher.user),
     headline: teacher.headline,
     bio: teacher.bio,
     photoUrl: absoluteUpload(teacher.photoKey),
@@ -131,7 +131,7 @@ export function bookingSummaryJson(booking: BookingWithPeople, viewer: "STUDENT"
     isTest: booking.isTest,
     counterpart:
       viewer === "STUDENT"
-        ? { name: shortName(booking.teacher.user), photoUrl: absoluteUpload(booking.teacher.photoKey), teacherSlug: booking.teacher.slug }
+        ? { name: fullName(booking.teacher.user), photoUrl: absoluteUpload(booking.teacher.photoKey), teacherSlug: booking.teacher.slug }
         : { name: `${booking.student.firstName} ${booking.student.lastName}`, photoUrl: null, teacherSlug: null },
   };
 }

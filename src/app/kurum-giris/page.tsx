@@ -85,7 +85,7 @@ async function LoginCard({ searchParams }: { searchParams: Promise<Record<string
         <p>
           Kurumunuz henüz Pi Kampüs kullanmıyor mu?{" "}
           <Link href="/kurumlar-icin" className="font-semibold text-brand-700 hover:underline">
-            Ücretsiz deneyin
+            Başvurun
           </Link>
         </p>
       </div>

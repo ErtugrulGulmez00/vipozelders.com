@@ -41,7 +41,7 @@ export async function createClassroomToken(
   const ttlSeconds = Math.max(60, Math.round((access.closesAt.getTime() - now.getTime()) / 1000));
   const token = new AccessToken(process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET, {
     identity: user.id,
-    name: `${user.firstName} ${user.lastName.charAt(0)}.${access.role === "teacher" ? " (Öğretmen)" : ""}`,
+    name: access.role === "teacher" ? `${user.firstName} ${user.lastName} (Öğretmen)` : `${user.firstName} ${user.lastName.charAt(0)}.`,
     ttl: ttlSeconds,
   });
   token.addGrant({

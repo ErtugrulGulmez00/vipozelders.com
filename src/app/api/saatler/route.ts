@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   const teacherId = searchParams.get("ogretmen") ?? "";
   const duration = Number(searchParams.get("sure"));
   const requestedStart = searchParams.get("baslangic") ?? "";
-  if (![30, 45, 60, 90, 120].includes(duration)) {
+  if (![45, 60].includes(duration)) {
     return NextResponse.json({ error: "Geçersiz süre." }, { status: 400 });
   }
 

@@ -55,7 +55,8 @@ describe("rezervasyon akışı", () => {
     expect(booking.price).toBe(100000);
     expect(booking.commissionAmount).toBe(15000);
     expect(booking.teacherAmount).toBe(85000);
-    expect(booking.blockEndAt).toEqual(hoursAfter(startAt, 1.25));
+    // Saat başı düzende tampon süre uygulanmaz; sonraki tam saat boş kalır.
+    expect(booking.blockEndAt).toEqual(hoursAfter(startAt, 1));
 
     let fresh = await db.booking.findUniqueOrThrow({ where: { id: booking.id } });
     expect(fresh.status).toBe("PENDING_APPROVAL");

@@ -17,6 +17,7 @@ export function BookingForm({
   grades,
   places,
   districts,
+  notePlaceholder,
 }: {
   offeringId: string;
   startAt: string;
@@ -27,6 +28,7 @@ export function BookingForm({
   grades: string[];
   places: { home: boolean; teacher: boolean };
   districts: { id: number; name: string }[];
+  notePlaceholder: string;
 }) {
   const [learnerName, setLearnerName] = useState(learners[0]?.name ?? "");
   const [grade, setGrade] = useState(learners[0]?.gradeName ?? "");
@@ -71,7 +73,7 @@ export function BookingForm({
         <Field label="Sınıfı" htmlFor="learnerGrade">
           <Select id="learnerGrade" name="learnerGrade" value={grade} onChange={(e) => setGrade(e.target.value)}>
             <option value="">Seçiniz</option>
-            {[...new Set([...grades, ...(grade && !grades.includes(grade) ? [grade] : [])])].map((g) => (
+            {[...new Set([...grades, ...(grade && !grades.includes(grade) ? [grade] : [])])].filter((g) => g !== "Diğer").map((g) => (
               <option key={g} value={g}>
                 {g}
               </option>
@@ -127,7 +129,7 @@ export function BookingForm({
       ) : null}
 
       <Field label="Öğretmene not (isteğe bağlı)" htmlFor="note" hint="Hangi konularda destek istediğinizi, hedeflerinizi yazın.">
-        <Textarea id="note" name="note" rows={3} maxLength={1000} placeholder="Örn: Kesirler ve problemlerde zorlanıyor, LGS'ye hazırlanıyoruz." />
+        <Textarea id="note" name="note" rows={3} maxLength={1000} placeholder={notePlaceholder} />
       </Field>
 
       <div className="rounded-xl border border-slate-200 p-4">

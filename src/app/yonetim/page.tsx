@@ -6,7 +6,7 @@ import { Alert, Card, CardBody, CardHeader, PageHeader, StatCard, Table, Td, Th 
 import { formatCompact, toLocalDateString, zonedDateTime } from "@/lib/dates";
 import { DEMO_EMAIL_DOMAIN } from "@/lib/demo";
 import { formatMoney } from "@/lib/money";
-import { shortName } from "@/lib/text";
+import { fullName, shortName } from "@/lib/text";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { getPaymentProvider } from "@/server/payments/service";
@@ -154,7 +154,7 @@ export default async function AdminDashboard() {
                 <Td>
                   {b.levelName} {b.subjectName}
                 </Td>
-                <Td>{shortName(b.teacher.user)}</Td>
+                <Td>{fullName(b.teacher.user)}</Td>
                 <Td>{shortName(b.student)}</Td>
                 <Td className="whitespace-nowrap">{formatCompact(b.startAt)}</Td>
                 <Td>{formatMoney(b.price)}</Td>

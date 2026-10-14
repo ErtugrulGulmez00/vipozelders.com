@@ -6,7 +6,7 @@ import { Alert, Avatar, Card, DescriptionList } from "@/components/ui/primitives
 import { formatLessonRange } from "@/lib/dates";
 import { durationLabel, MODE_LABEL } from "@/lib/labels";
 import { formatMoney } from "@/lib/money";
-import { initials, shortName } from "@/lib/text";
+import { fullName, initials } from "@/lib/text";
 import { requireUser } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { lessonPrice } from "@/server/pricing";
@@ -74,7 +74,7 @@ export default async function BookingPage({ searchParams }: PageProps<"/rezervas
   ]);
   const price = lessonPrice(offering.hourlyPrice, duration);
   const end = new Date(start.getTime() + duration * 60_000);
-  const name = shortName(teacher.user);
+  const name = fullName(teacher.user);
 
   return (
     <Shell>
@@ -92,6 +92,7 @@ export default async function BookingPage({ searchParams }: PageProps<"/rezervas
             grades={offering.level.grades.map((g) => g.name)}
             places={{ home: teacher.inPersonAtStudentHome, teacher: teacher.inPersonAtTeacherPlace }}
             districts={districts}
+            notePlaceholder={notePlaceholder(offering.level.name, offering.subject.name)}
           />
         </Card>
         <aside className="space-y-4">
@@ -136,6 +137,18 @@ export default async function BookingPage({ searchParams }: PageProps<"/rezervas
       </div>
     </Shell>
   );
+}
+
+/** Not alanındaki örnek, seçilen kademeye uygun olsun (lise öğrencisine LGS örneği çıkmasın). */
+function notePlaceholder(level: string, subject: string): string {
+  const l = level.toLocaleLowerCase("tr-TR");
+  if (l.includes("okul öncesi")) return "Örn: Okula başlamadan önce dikkat ve el becerisi çalışmak istiyoruz.";
+  if (l.includes("ilkokul")) return `Örn: ${subject} dersinde okulda öğrendiklerini pekiştirmek istiyoruz.`;
+  if (l.includes("lgs")) return "Örn: LGS'ye hazırlanıyoruz; denemelerde süre yetmiyor.";
+  if (l.includes("ortaokul")) return `Örn: ${subject} dersinde konu eksikleri var, LGS'ye de hazırlanmak istiyoruz.`;
+  if (l.includes("yks") || l.includes("tyt") || l.includes("ayt")) return "Örn: TYT/AYT'ye hazırlanıyorum; denemelerde netlerim düşük, eksik konularım var.";
+  if (l.includes("lise")) return `Örn: ${subject} dersinde konu eksiklerim var, yazılılara hazırlanmak istiyorum.`;
+  return "Örn: Hangi konularda zorlandığınızı ve hedefinizi yazın.";
 }
 
 function Shell({ children }: { children: React.ReactNode }) {

@@ -1,4 +1,4 @@
-import { shortName } from "@/lib/text";
+import { fullName } from "@/lib/text";
 import { db } from "@/server/db";
 import { requireRole } from "@/server/mobile/auth";
 import { json } from "@/server/mobile/http";
@@ -24,7 +24,7 @@ export const GET = withUser(async ({ user }) => {
     items: favorites.map(({ teacher }) => ({
       userId: teacher.userId,
       slug: teacher.slug,
-      name: shortName(teacher.user),
+      name: fullName(teacher.user),
       headline: teacher.headline,
       photoUrl: absoluteUpload(teacher.photoKey),
       ratingAvg: teacher.ratingAvg,

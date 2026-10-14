@@ -80,7 +80,7 @@ export function CenterApplicationForm({ cities }: { cities: { id: number; name: 
         <FieldError name="kvkk" />
       </div>
       <SubmitButton size="lg" className="w-full" pendingText="Gönderiliyor…">
-        Ücretsiz denemeyi başlat
+        Başvuruyu gönder
       </SubmitButton>
     </ActionForm>
   );

@@ -1,6 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache";
 import type { Prisma } from "@/generated/prisma/client";
-import { normalizeSearch, shortName } from "@/lib/text";
+import { fullName, normalizeSearch } from "@/lib/text";
 import { db } from "./db";
 import { weightedRating } from "./pricing";
 import { uploadUrl } from "./storage";
@@ -133,7 +133,7 @@ export async function searchTeachers(params: TeacherSearchParams) {
   const cards: TeacherCard[] = rows.map((row) => ({
     userId: row.userId,
     slug: row.slug,
-    name: shortName(row.user),
+    name: fullName(row.user),
     headline: row.headline,
     photoUrl: uploadUrl(row.photoKey),
     ratingAvg: row.ratingAvg,
@@ -231,7 +231,7 @@ export async function getTeacherMeta(slug: string) {
   });
   if (!teacher || !isTeacherPublic(teacher)) return null;
   return {
-    name: shortName(teacher.user),
+    name: fullName(teacher.user),
     headline: teacher.headline,
     subjects: [...new Set(teacher.offerings.map((o) => o.subject.name))].slice(0, 3),
   };

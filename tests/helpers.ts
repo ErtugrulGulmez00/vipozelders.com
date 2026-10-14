@@ -46,7 +46,7 @@ export async function createFixture(options: { bufferMinutes?: number; hourlyPri
       levelId: level.id,
       subjectId: subject.id,
       hourlyPrice: options.hourlyPrice ?? 100000,
-      durations: [45, 60, 90],
+      durations: [45, 60],
     },
   });
   return { teacher, offering, createStudent: () => createStudent(id) };

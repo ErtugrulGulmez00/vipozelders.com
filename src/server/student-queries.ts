@@ -1,5 +1,5 @@
 import type { Prisma } from "@/generated/prisma/client";
-import { shortName } from "@/lib/text";
+import { fullName } from "@/lib/text";
 import { db } from "./db";
 
 const bookingInclude = {
@@ -8,7 +8,7 @@ const bookingInclude = {
 
 export async function studentBookings(studentId: string, where: Prisma.BookingWhereInput, orderBy: Prisma.BookingOrderByWithRelationInput = { startAt: "asc" }, take = 50) {
   const rows = await db.booking.findMany({ where: { studentId, ...where }, include: bookingInclude, orderBy, take });
-  return rows.map((b) => ({ ...b, counterpart: shortName(b.teacher.user) }));
+  return rows.map((b) => ({ ...b, counterpart: fullName(b.teacher.user) }));
 }
 
 export const UPCOMING: Prisma.BookingWhereInput = { status: { in: ["PENDING_APPROVAL", "CONFIRMED"] } };

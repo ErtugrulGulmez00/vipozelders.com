@@ -7,11 +7,12 @@ import { Suspense } from "react";
 import { toggleFavoriteAction } from "@/actions/student";
 import { BookingWidget } from "@/components/site/booking-widget";
 import { buttonClasses } from "@/components/ui/button";
-import { Alert, Avatar, Badge, Card, RatingSummary, Skeleton, Stars } from "@/components/ui/primitives";
+import { PhotoZoom } from "@/components/site/photo-zoom";
+import { Alert, Badge, Card, RatingSummary, Skeleton, Stars } from "@/components/ui/primitives";
 import { formatDate, toLocalDateString } from "@/lib/dates";
 import { durationLabel } from "@/lib/labels";
 import { formatMoney } from "@/lib/money";
-import { initials, shortName } from "@/lib/text";
+import { fullName, initials, shortName } from "@/lib/text";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { uploadUrl } from "@/server/storage";
@@ -57,7 +58,7 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
     if (!viewer || (viewer.role !== "ADMIN" && viewer.id !== teacher.userId)) notFound();
   }
 
-  const name = shortName(teacher.user);
+  const name = fullName(teacher.user);
   const video = youtubeId(teacher.videoUrl);
   const serviceAreas = teacher.serviceDistricts.length
     ? teacher.serviceDistricts.map((d) => d.district.name).join(", ")
@@ -75,7 +76,7 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
       <div className="space-y-6">
         <Card className="p-6">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-            <Avatar src={uploadUrl(teacher.photoKey)} name={name} initials={initials(teacher.user)} size={112} />
+            <PhotoZoom src={uploadUrl(teacher.photoKey)} name={name} initials={initials(teacher.user)} size={112} />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl font-bold text-slate-900">{name}</h1>
@@ -100,7 +101,7 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
                 ) : null}
                 {teacher.offersOnline ? (
                   <li className="flex items-center gap-2">
-                    <Monitor className="size-4 text-slate-400" aria-hidden /> Online ders (sitedeki sanal sınıf)
+                    <Monitor className="size-4 text-slate-400" aria-hidden /> Online ders
                   </li>
                 ) : null}
                 {teacher.offersInPerson ? (

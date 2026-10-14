@@ -8,7 +8,7 @@ import { publicRoute } from "@/server/mobile/route";
 export const GET = publicRoute<{ slug: string }>(async ({ request, params }) => {
   const url = new URL(request.url);
   const duration = Number(url.searchParams.get("duration"));
-  if (![30, 45, 60, 90, 120].includes(duration)) throw new ApiError(400, "INVALID_DURATION", "Geçersiz süre.");
+  if (![45, 60].includes(duration)) throw new ApiError(400, "INVALID_DURATION", "Geçersiz süre.");
   const teacher = await db.teacherProfile.findUnique({ where: { slug: params.slug }, select: { userId: true, status: true, user: { select: { status: true } } } });
   if (!teacher || teacher.status !== "PUBLISHED" || teacher.user.status !== "ACTIVE") throw notFound("Öğretmen bulunamadı.");
 

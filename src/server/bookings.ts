@@ -196,7 +196,7 @@ export async function createBookingHold(input: CreateBookingInput, now = new Dat
   const commissionRateBps = teacher.commissionRateBps ?? settings.commissionRateBps;
   const { commissionAmount, teacherAmount } = splitCommission(price, commissionRateBps);
   const endAt = new Date(input.startAt.getTime() + input.durationMinutes * 60_000);
-  const blockEndAt = new Date(endAt.getTime() + teacher.bufferMinutes * 60_000);
+  const blockEndAt = endAt;
 
   try {
     return await db.$transaction(async (tx) => {
@@ -461,7 +461,7 @@ export async function createTestLesson(input: { teacherId: string; studentId: st
   ]);
   if (!teacher || teacher.user.status !== "ACTIVE") throw new BookingError("Öğretmen bulunamadı veya hesabı kapalı.");
   if (!student || student.role !== "STUDENT" || !student.studentProfile) throw new BookingError("Öğrenci/veli hesabı bulunamadı.");
-  if (![30, 45, 60, 90].includes(input.durationMinutes)) throw new BookingError("Geçersiz süre.");
+  if (![45, 60].includes(input.durationMinutes)) throw new BookingError("Geçersiz süre.");
 
   const offering = teacher.offerings[0];
   const [level, subject, service] = offering

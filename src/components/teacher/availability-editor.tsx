@@ -69,15 +69,8 @@ export function WeeklyAvailabilityEditor({
           </div>
         ))}
       </div>
-      <Field label="Dersler arası tampon süre" htmlFor="bufferMinutes" hint="Bir dersin bitişi ile sonraki dersin başlangıcı arasında boş bırakılacak süre.">
-        <Select id="bufferMinutes" name="bufferMinutes" defaultValue={bufferMinutes} className="w-48">
-          {[0, 5, 10, 15, 30].map((m) => (
-            <option key={m} value={m}>
-              {m ? `${m} dakika` : "Yok"}
-            </option>
-          ))}
-        </Select>
-      </Field>
+      <input type="hidden" name="bufferMinutes" value={0} data-previous={bufferMinutes} />
+      <p className="text-sm text-slate-500">Dersler tam saatte başlar (ör. 17:00, 18:00) ve 45 ya da 60 dakika sürer. Aralıkları tam saatlerle girmeniz yeterli; 45 dakikalık derslerden sonra 15 dakika mola kendiliğinden kalır.</p>
       <SubmitButton size="lg">Takvimi kaydet</SubmitButton>
     </ActionForm>
   );

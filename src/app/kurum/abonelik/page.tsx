@@ -74,6 +74,7 @@ export default async function SubscriptionPage() {
             </div>
             <p className="mt-2 text-2xl font-black text-slate-900">{plan.priceTl !== null ? `${formatMoney(plan.priceTl * 100)}` : "Teklif"}</p>
             <p className="text-xs text-slate-500">{plan.priceTl !== null ? "aylık, KDV dahil" : "kurumunuza özel"}</p>
+            {plan.yearlyPriceTl ? <p className="mt-1 text-sm font-semibold text-emerald-700">Yıllık {formatMoney(plan.yearlyPriceTl * 100)}</p> : null}
             <ul className="mt-4 space-y-1.5 text-sm text-slate-700">
               {plan.features.map((f) => (
                 <li key={f} className="flex gap-2">

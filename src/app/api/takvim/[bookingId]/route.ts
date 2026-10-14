@@ -1,5 +1,5 @@
 import { icsFile } from "@/lib/calendar";
-import { shortName } from "@/lib/text";
+import { fullName } from "@/lib/text";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { lessonCalendarEvent } from "@/server/lesson-calendar";
@@ -16,7 +16,7 @@ export async function GET(_request: Request, { params }: RouteContext<"/api/takv
   const viewer = booking?.studentId === user.id ? "STUDENT" : booking?.teacherId === user.id ? "TEACHER" : null;
   if (!booking || !viewer || !["CONFIRMED", "COMPLETED"].includes(booking.status)) return new Response("Bulunamadı.", { status: 404 });
 
-  const event = await lessonCalendarEvent(booking, viewer, shortName(booking.teacher.user));
+  const event = await lessonCalendarEvent(booking, viewer, fullName(booking.teacher.user));
   return new Response(icsFile(event), {
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",

@@ -75,12 +75,19 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
         <NumberField name="reviewWindowDays" label="Değerlendirme yapma süresi" value={settings.reviewWindowDays} suffix="gün" />
       </Section>
 
-      <Section title="Kurum paneli abonelikleri" description="Etüt merkezi ve dershanelere satılan paneller. Fiyatlar aylık, KDV dahil; “Kurumlar için” sayfasında görünür.">
-        <NumberField name="centerTrialDays" label="Ücretsiz deneme süresi" value={settings.centerTrialDays} suffix="gün" />
+      <Section title="Kurum paneli abonelikleri" description="Etüt merkezi ve dershanelere satılan paneller. Fiyatlar KDV dahil; “Kurumlar için” sayfasında görünür. “Eski fiyat” üstü çizili gösterilir; 0 yazarsanız gösterilmez.">
+        <NumberField name="centerTrialDays" label="Yeni kuruma tanınan ilk kullanım süresi" hint="Sitede ilan edilmez; kurum hesabı açılırken uygulanır." value={settings.centerTrialDays} suffix="gün" />
         <div className="hidden sm:block" />
-        <NumberField name="centerStarterPriceTl" label="Başlangıç planı" value={settings.centerStarterPriceTl} suffix="TL / ay" />
+        <NumberField name="centerStarterPriceTl" label="Başlangıç planı · aylık" value={settings.centerStarterPriceTl} suffix="TL / ay" />
+        <NumberField name="centerStarterListPriceTl" label="Başlangıç planı · aylık eski fiyat" value={settings.centerStarterListPriceTl} suffix="TL / ay" />
+        <NumberField name="centerStarterYearlyPriceTl" label="Başlangıç planı · yıllık" value={settings.centerStarterYearlyPriceTl} suffix="TL / yıl" />
+        <NumberField name="centerStarterYearlyListPriceTl" label="Başlangıç planı · yıllık eski fiyat" value={settings.centerStarterYearlyListPriceTl} suffix="TL / yıl" />
         <NumberField name="centerStarterStudents" label="Başlangıç planı öğrenci sınırı" value={settings.centerStarterStudents} suffix="öğrenci" />
-        <NumberField name="centerProPriceTl" label="Profesyonel plan" value={settings.centerProPriceTl} suffix="TL / ay" />
+        <div className="hidden sm:block" />
+        <NumberField name="centerProPriceTl" label="Profesyonel plan · aylık" value={settings.centerProPriceTl} suffix="TL / ay" />
+        <NumberField name="centerProListPriceTl" label="Profesyonel plan · aylık eski fiyat" value={settings.centerProListPriceTl} suffix="TL / ay" />
+        <NumberField name="centerProYearlyPriceTl" label="Profesyonel plan · yıllık" value={settings.centerProYearlyPriceTl} suffix="TL / yıl" />
+        <NumberField name="centerProYearlyListPriceTl" label="Profesyonel plan · yıllık eski fiyat" value={settings.centerProYearlyListPriceTl} suffix="TL / yıl" />
         <NumberField name="centerProStudents" label="Profesyonel plan öğrenci sınırı" value={settings.centerProStudents} suffix="öğrenci" />
         <Field label="Havale / EFT bilgileri" hint="Banka, alıcı adı ve IBAN. Kurumların abonelik sayfasında gösterilir." className="sm:col-span-2">
           <Textarea name="centerBankInfo" rows={3} defaultValue={settings.centerBankInfo} placeholder={"Örn: X Bankası · Pi Kampüs Eğitim Teknolojileri Ltd. Şti.\nTR00 0000 0000 0000 0000 0000 00"} />

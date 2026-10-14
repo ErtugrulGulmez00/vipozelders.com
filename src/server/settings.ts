@@ -37,10 +37,17 @@ export const settingsSchema = z.object({
 
   // Kurum paneli abonelik planları (aylık, KDV dahil, tam TL)
   centerTrialDays: z.number().int().min(0).max(90).default(14),
-  centerStarterPriceTl: z.number().int().min(0).max(1_000_000).default(1490),
-  centerStarterStudents: z.number().int().min(1).max(100_000).default(100),
-  centerProPriceTl: z.number().int().min(0).max(1_000_000).default(2990),
-  centerProStudents: z.number().int().min(1).max(100_000).default(300),
+  // Kurum planları: indirimli aylık/yıllık fiyat ve üstü çizili liste fiyatı (0 = gösterilmez)
+  centerStarterPriceTl: z.number().int().min(0).max(1_000_000).default(4000),
+  centerStarterListPriceTl: z.number().int().min(0).max(10_000_000).default(10000),
+  centerStarterYearlyPriceTl: z.number().int().min(0).max(10_000_000).default(40000),
+  centerStarterYearlyListPriceTl: z.number().int().min(0).max(10_000_000).default(100000),
+  centerStarterStudents: z.number().int().min(1).max(100_000).default(50),
+  centerProPriceTl: z.number().int().min(0).max(1_000_000).default(7000),
+  centerProListPriceTl: z.number().int().min(0).max(10_000_000).default(17500),
+  centerProYearlyPriceTl: z.number().int().min(0).max(10_000_000).default(80000),
+  centerProYearlyListPriceTl: z.number().int().min(0).max(10_000_000).default(200000),
+  centerProStudents: z.number().int().min(1).max(100_000).default(100),
   // Havale/EFT ile abonelik ödemesi için banka bilgisi (kurumun abonelik sayfasında görünür)
   centerBankInfo: z.string().default(""),
 

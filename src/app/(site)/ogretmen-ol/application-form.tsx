@@ -55,7 +55,7 @@ export function ApplicationForm({ cities }: { cities: { id: number; name: string
       <fieldset className="space-y-2">
         <legend className="mb-1 text-sm font-medium text-slate-700">Ders şekli</legend>
         <div className="flex flex-wrap gap-x-6 gap-y-2">
-          <Checkbox name="offersOnline" defaultChecked label="Online (sitedeki sanal sınıf)" />
+          <Checkbox name="offersOnline" defaultChecked label="Online" />
           <Checkbox name="offersInPerson" label="Yüz yüze" />
         </div>
       </fieldset>
