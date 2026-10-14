@@ -4,7 +4,9 @@ import "@livekit/components-styles";
 import {
   CarouselLayout,
   DisconnectButton,
+  FocusLayout,
   GridLayout,
+  isTrackReference,
   LiveKitRoom,
   ParticipantTile,
   RoomAudioRenderer,
@@ -31,6 +33,14 @@ type Chat = ReturnType<typeof useChat>;
 
 /** Kontrol düğmesi yazısı: telefonda gizli (yalnızca simge), geniş ekranda görünür. */
 const LABEL = "sr-only sm:not-sr-only";
+
+/** Ekran paylaşımı başlatılamadığında kullanıcıya gösterilecek açıklama. */
+function screenShareError(error: Error): string {
+  if (error.name === "NotAllowedError") return "Ekran paylaşımı başlatılmadı. Açılan pencerede paylaşmak istediğiniz ekranı, pencereyi ya da sekmeyi seçip “Paylaş”a basın. Daha önce engellediyseniz adres çubuğundaki kilit simgesinden izin verin.";
+  if (error.name === "NotSupportedError" || error.name === "TypeError") return "Bu cihazda ekran paylaşımı desteklenmiyor. Telefon tarayıcıları ekran paylaşamaz; bilgisayardan Chrome, Edge ya da Firefox kullanın.";
+  if (error.name === "NotReadableError") return "Ekran yakalanamadı. Başka bir program ekranı kullanıyor olabilir; kapatıp tekrar deneyin.";
+  return `Ekran paylaşımı başlatılamadı (${error.message || error.name}).`;
+}
 
 const SMALL_SCREEN = "(max-width: 639px)";
 const isSmallScreen = () => window.matchMedia(SMALL_SCREEN).matches;
@@ -123,6 +133,9 @@ function Stage({ title, endsAt }: { title: string; endsAt: number }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (chatOpen) setSeenCount(chat.chatMessages.length);
   }, [chatOpen, chat.chatMessages.length]);
+  const screenShare = tracks.find((t) => t.source === Track.Source.ScreenShare && isTrackReference(t));
+  const cameras = tracks.filter((t) => t.source !== Track.Source.ScreenShare);
+  const [shareError, setShareError] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 30_000);
@@ -143,11 +156,31 @@ function Stage({ title, endsAt }: { title: string; endsAt: number }) {
       </header>
       <div className="relative flex min-h-0 flex-1 flex-col sm:flex-row">
         <div className="relative min-h-0 min-w-0 flex-1">
-          {!boardOpen ? (
+          {!boardOpen && screenShare && isTrackReference(screenShare) ? (
+            // Paylaşılan ekran büyük, kameralar yanda (telefonda altta) şerit halinde.
+            <div className="absolute inset-0 flex flex-col gap-2 p-2 sm:flex-row">
+              <div className="min-h-0 min-w-0 flex-1">
+                <FocusLayout trackRef={screenShare} className="h-full" />
+              </div>
+              <aside className="h-28 shrink-0 overflow-hidden sm:h-auto sm:w-56" aria-label="Kameralar">
+                <CarouselLayout tracks={cameras} orientation={smallScreen ? "horizontal" : "vertical"} className="lk-carousel h-full">
+                  <ParticipantTile />
+                </CarouselLayout>
+              </aside>
+            </div>
+          ) : !boardOpen ? (
             <div className="absolute inset-0 p-2">
               <GridLayout tracks={tracks} className="h-full">
                 <ParticipantTile />
               </GridLayout>
+            </div>
+          ) : null}
+          {shareError ? (
+            <div role="alert" className="absolute inset-x-2 top-2 z-20 flex items-start gap-3 rounded-xl bg-amber-400 px-4 py-3 text-sm text-amber-950 shadow-lg">
+              <p className="flex-1">{shareError}</p>
+              <button type="button" onClick={() => setShareError(null)} className="shrink-0 rounded p-1 hover:bg-amber-300" aria-label="Uyarıyı kapat">
+                <X className="size-4" aria-hidden />
+              </button>
             </div>
           ) : null}
           {/* Tahta kapalıyken de bağlı kalır; karşı taraf çizdikçe içerik güncel tutulur. */}
@@ -174,7 +207,13 @@ function Stage({ title, endsAt }: { title: string; endsAt: number }) {
         <TrackToggle source={Track.Source.Camera} className="bg-slate-800 text-white hover:bg-slate-700">
           <span className={LABEL}>Kamera</span>
         </TrackToggle>
-        <TrackToggle source={Track.Source.ScreenShare} captureOptions={{ audio: true, selfBrowserSurface: "include" }} className="bg-slate-800 text-white hover:bg-slate-700">
+        <TrackToggle
+          source={Track.Source.ScreenShare}
+          captureOptions={{ audio: true, selfBrowserSurface: "include" }}
+          onChange={(enabled) => enabled && setShareError(null)}
+          onDeviceError={(error) => setShareError(screenShareError(error))}
+          className="bg-slate-800 text-white hover:bg-slate-700"
+        >
           <span className={LABEL}>Ekran paylaş</span>
         </TrackToggle>
         <button type="button" onClick={toggleBoard} className={cn("text-white", boardOpen ? "bg-brand-600" : "bg-slate-800 hover:bg-slate-700")}>

@@ -39,7 +39,8 @@ async function loggedInPage(browser: Browser, identifier: string, password: stri
   return page;
 }
 
-test.use({ launchOptions: { args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"] } });
+// Ekran paylaşımında seçim penceresi otomatik olarak "tüm ekran" ile geçilir.
+test.use({ launchOptions: { args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", "--auto-select-desktop-capture-source=Entire screen"] } });
 
 const created: string[] = [];
 
@@ -57,6 +58,11 @@ test.afterAll(removeTestLessons);
 /** Yönetici panelden ödemesiz test dersi oluşturur ve kimliğini döndürür. */
 async function createTestLesson(browser: Browser): Promise<string> {
   await removeTestLessons();
+  // Elle açılmış ve hâlâ süren bir test dersi varsa (aynı saate ikinci ders açılamaz) onu kullan; silme.
+  const [active] = await sql<{ id: string }>(
+    `SELECT b.id FROM "Booking" b JOIN "User" u ON u.id = b."teacherId" WHERE u.username = 'ayse.yilmaz' AND b."isTest" AND b.status = 'CONFIRMED' AND b."endAt" > now() + interval '10 minutes' ORDER BY b."startAt" LIMIT 1`,
+  );
+  if (active) return active.id;
   const adminPage = await loggedInPage(browser, "admin", "Yonetici123");
   await adminPage.goto("/yonetim/randevular");
   await adminPage.getByText("Test dersi oluştur (görüntülü görüşme ve beyaz tahta denemesi)").click();
@@ -88,6 +94,13 @@ test("yönetici test dersi açar, öğretmen ve veli sanal sınıfta buluşur", 
     await expect(page.locator(".lk-participant-tile")).toHaveCount(2, { timeout: 30_000 });
     await expect(page.getByRole("button", { name: /Ekran paylaş/ })).toBeVisible();
   }
+
+  // Ekran paylaşımı: öğretmen paylaşır, velide paylaşılan ekran büyük sahnede açılır
+  await teacherPage.getByRole("button", { name: /Ekran paylaş/ }).click();
+  await expect(parentPage.locator('.lk-participant-tile[data-lk-source="screen_share"]')).toBeVisible({ timeout: 20_000 });
+  await expect(parentPage.getByRole("complementary", { name: "Kameralar" })).toBeVisible();
+  await teacherPage.getByRole("button", { name: /Ekran paylaş/ }).click();
+  await expect(parentPage.locator('.lk-participant-tile[data-lk-source="screen_share"]')).toHaveCount(0, { timeout: 20_000 });
 
   // Sohbet
   await teacherPage.getByRole("button", { name: "Sohbet" }).click();
