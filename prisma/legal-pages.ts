@@ -134,6 +134,33 @@ Sitemizde oturumunuzu açık tutmak ve güvenliği sağlamak için zorunlu çere
 Gizlilikle ilgili sorularınız için: {contactEmail}`,
   },
   {
+    slug: "veri-silme",
+    title: "Verilerimi Nasıl Sildiririm?",
+    sortOrder: 11,
+    showInFooter: true,
+    content: `{siteName} hesabınızı ve kişisel verilerinizi istediğiniz zaman sildirebilirsiniz. Bu sayfa, WhatsApp ve SMS bildirimleri dahil sitemizde ve uygulamalarımızda işlenen tüm veriler için geçerlidir.
+
+## 1. Hesabınızı kendiniz silin (en hızlı yol)
+- Veli / öğrenci: Giriş yapın → Hesabım → Hesap ayarları → “Hesabı sil”.
+- Öğretmen: Giriş yapın → Öğretmen paneli → Ayarlar → “Hesabı sil”.
+
+Silme işlemi onaylandığında hesabınız hemen kapatılır; ad, e-posta, telefon, profil fotoğrafı, mesajlar ve bildirim tercihleriniz silinir ya da anonimleştirilir.
+
+## 2. E-postayla talep edin
+Hesabınıza giremiyorsanız ya da yalnızca belirli verilerin (ör. WhatsApp/SMS için kullanılan telefon numaranızın) silinmesini istiyorsanız {contactEmail} adresine, kayıtlı e-posta adresinizden “Veri silme talebi” konulu bir e-posta gönderin. Kimliğinizi doğruladıktan sonra talebinizi en geç 30 gün içinde sonuçlandırır ve size bilgi veririz.
+
+## 3. Kurum (etüt merkezi / dershane) kayıtları
+Bir kurumun öğrencisi ya da velisiyseniz, öğrenci kartı ve yoklama, deneme, ödeme gibi kayıtlar o kurum adına tutulur. Silme talebinizi kurumunuza iletebilir ya da {contactEmail} adresine yazabilirsiniz; talebi kurumla birlikte sonuçlandırırız.
+
+## Saklanması zorunlu kayıtlar
+Ödeme, fatura ve muhasebe kayıtları vergi mevzuatı gereği yasal süre boyunca saklanır; bu kayıtlar başka hiçbir amaçla kullanılmaz ve süre dolunca silinir.
+
+## İletişim
+{companyName}
+{companyAddress}
+E-posta: {contactEmail}`,
+  },
+  {
     slug: "mesafeli-satis-sozlesmesi",
     title: "Mesafeli Satış Sözleşmesi",
     sortOrder: 12,
