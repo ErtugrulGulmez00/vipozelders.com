@@ -13,7 +13,7 @@ const tl = (kurus: number) => kurus / 100;
 const name = (p: { firstName: string; lastName: string } | null | undefined) => (p ? `${p.firstName} ${p.lastName}` : null);
 
 export async function centerBackupWorkbook(centerId: string): Promise<Buffer> {
-  const [students, groups, slots, attendance, etuds, exams, plans, payments, expenses, notes, homeworks, leads, announcements] = await Promise.all([
+  const [students, groups, slots, attendance, etuds, exams, plans, payments, expenses, notes, homeworks, leads, announcements, resourceProgress, studyPlan] = await Promise.all([
     db.centerStudent.findMany({ where: { centerId }, include: { guardians: { where: { isStudentAccount: false } }, groups: { include: { group: { select: { name: true } } } } }, orderBy: { studentNumber: "asc" } }),
     db.centerGroup.findMany({ where: { centerId }, include: { teacher: { include: { user: true } }, _count: { select: { students: true } } }, orderBy: { name: "asc" } }),
     db.centerScheduleSlot.findMany({ where: { centerId }, include: { group: { select: { name: true } }, teacher: { include: { user: true } } }, orderBy: [{ weekday: "asc" }, { startMinute: "asc" }] }),
@@ -27,6 +27,8 @@ export async function centerBackupWorkbook(centerId: string): Promise<Buffer> {
     db.centerHomeworkStudent.findMany({ where: { homework: { centerId } }, include: { homework: { include: { group: { select: { name: true } } } }, student: true }, orderBy: { homework: { dueDate: "asc" } } }),
     db.centerLead.findMany({ where: { centerId }, orderBy: { createdAt: "asc" } }),
     db.centerAnnouncement.findMany({ where: { centerId }, include: { group: { select: { name: true } } }, orderBy: { createdAt: "asc" } }),
+    db.centerStudentResource.findMany({ where: { student: { centerId } }, include: { resource: true, student: true, progress: true }, orderBy: { assignedAt: "asc" } }),
+    db.centerStudyPlanItem.findMany({ where: { centerId }, include: { student: true, resource: { select: { name: true } } }, orderBy: [{ date: "asc" }, { createdAt: "asc" }] }),
   ]);
 
   const sheets: SheetSpec[] = [
@@ -64,6 +66,21 @@ export async function centerBackupWorkbook(centerId: string): Promise<Buffer> {
       name: "Ödevler",
       headers: ["Veriliş", "Teslim", "Sınıf", "Ders", "Ödev", "Öğrenci No", "Öğrenci", "Durum", "Not"],
       rows: homeworks.map((h) => [d(h.homework.assignedOn), d(h.homework.dueDate), h.homework.group?.name, h.homework.subject, h.homework.title, h.student.studentNumber, name(h.student), HOMEWORK_STATUS[h.status].label, h.note]),
+    },
+    {
+      name: "Kaynak ilerlemesi",
+      headers: ["Öğrenci No", "Öğrenci", "Ders", "Kaynak", "Konu", "Çözülen", "Doğru", "Yanlış", "Bitti"],
+      rows: resourceProgress.flatMap((a) =>
+        a.resource.topics.map((topic) => {
+          const p = a.progress.find((x) => x.topic === topic);
+          return [a.student.studentNumber, name(a.student), a.resource.subject, a.resource.name, topic, p?.solved ?? 0, p?.correct ?? 0, p?.wrong ?? 0, p?.completedAt ? "Evet" : ""];
+        }),
+      ),
+    },
+    {
+      name: "Çalışma programı",
+      headers: ["Tarih", "Öğrenci No", "Öğrenci", "Ders", "Konu", "Kaynak", "Hedef soru", "Not", "Yapıldı"],
+      rows: studyPlan.map((i) => [d(i.date), i.student.studentNumber, name(i.student), i.subject, i.topic, i.resource?.name, i.targetQuestions, i.note, i.doneAt ? "Evet" : ""]),
     },
     {
       name: "Deneme sonuçları",

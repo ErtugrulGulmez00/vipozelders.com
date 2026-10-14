@@ -42,7 +42,7 @@ export default async function PaymentResultPage({ params }: PageProps<"/odeme/so
       items={[
         { label: "Randevu no", value: booking.code },
         { label: "Ders", value: `${booking.levelName} ${booking.subjectName} · ${booking.serviceName}` },
-        { label: "Zaman", value: formatLessonRange(booking.startAt, booking.endAt) },
+        { label: "Zaman", value: booking.mode === "QUESTION" ? "Fotoğrafla soru (saat yok)" : formatLessonRange(booking.startAt, booking.endAt) },
         { label: "Tutar", value: formatMoney(booking.price) },
       ]}
     />
@@ -54,11 +54,13 @@ export default async function PaymentResultPage({ params }: PageProps<"/odeme/so
         <p className="text-slate-600">
           {booking.status === "CONFIRMED"
             ? "Dersiniz onaylandı."
-            : `Talebiniz öğretmene iletildi. Öğretmen ${booking.approvalDeadline ? formatDateTime(booking.approvalDeadline) : "kısa süre"} saatine kadar onaylayacak; onaylanmazsa ücretin tamamı iade edilir.`}
+            : booking.mode === "QUESTION"
+              ? `Sorunuz öğretmene iletildi. Çözüm en geç ${booking.approvalDeadline ? formatDateTime(booking.approvalDeadline) : "kısa süre içinde"} saatine kadar gelecek; gelmezse ücretin tamamı iade edilir.`
+              : `Talebiniz öğretmene iletildi. Öğretmen ${booking.approvalDeadline ? formatDateTime(booking.approvalDeadline) : "kısa süre"} saatine kadar onaylayacak; onaylanmazsa ücretin tamamı iade edilir.`}
         </p>
         <Card className="mt-6 p-5 text-left">{details}</Card>
         <LinkButton href={`/hesabim/derslerim/${booking.id}`} size="lg" className="mt-6">
-          Randevuma git
+          {booking.mode === "QUESTION" ? "Soruma git" : "Randevuma git"}
         </LinkButton>
       </Result>
     );

@@ -8,6 +8,12 @@ async function canReadPrivate(user: { id: string; role: string }, key: string): 
   if (user.role === "ADMIN") return true;
   const document = await db.teacherDocument.findFirst({ where: { fileKey: key }, select: { teacherId: true } });
   if (document) return document.teacherId === user.id;
+  // Fotoğrafla soru (pazaryeri): yalnızca o sorunun öğrencisi ve öğretmeni
+  const message = await db.bookingMessage.findFirst({
+    where: { OR: [{ imageKey: key }, { videoKey: key }] },
+    select: { booking: { select: { studentId: true, teacherId: true } } },
+  });
+  if (message) return message.booking.studentId === user.id || message.booking.teacherId === user.id;
   const question = await db.centerQuestion.findFirst({
     where: { OR: [{ imageKey: key }, { answerImageKey: key }, { answerVideoKey: key }] },
     select: { centerId: true, studentId: true },

@@ -28,6 +28,8 @@ const HOUR = 3_600_000;
 /** Saati meşgul eden durumlar (ödeme bekleyen kayıt yalnızca süresi dolmadıysa). */
 function blockingWhere(now: Date): Prisma.BookingWhereInput {
   return {
+    // Fotoğrafla soru saat tutmaz.
+    mode: { not: "QUESTION" },
     OR: [
       { status: { in: ["PENDING_APPROVAL", "CONFIRMED"] } },
       { status: "PENDING_PAYMENT", holdExpiresAt: { gt: now } },
@@ -82,7 +84,8 @@ async function loadBusy(tx: DbTransaction | typeof db, teacherId: string, from: 
   return rows.map((row) => ({ start: row.startAt, end: row.blockEndAt }));
 }
 
-function lessonSummary(booking: Pick<Booking, "subjectName" | "levelName" | "serviceName" | "startAt" | "endAt">) {
+export function lessonSummary(booking: Pick<Booking, "subjectName" | "levelName" | "serviceName" | "startAt" | "endAt" | "mode" | "code">) {
+  if (booking.mode === "QUESTION") return `${booking.levelName} ${booking.subjectName} · Fotoğrafla soru (${booking.code})`;
   return `${booking.levelName} ${booking.subjectName} · ${booking.serviceName} — ${formatLessonRange(booking.startAt, booking.endAt)}`;
 }
 
@@ -382,7 +385,7 @@ export async function completeCheckout(token: string, now = new Date()): Promise
         },
         select: { id: true },
       });
-      canProceed = !clash && booking.startAt.getTime() > now.getTime();
+      canProceed = booking.mode === "QUESTION" || (!clash && booking.startAt.getTime() > now.getTime());
     }
 
     if (!canProceed) {
@@ -410,7 +413,8 @@ export async function completeCheckout(token: string, now = new Date()): Promise
       return "refunded";
     }
 
-    const deadline = approvalDeadline(now, booking.startAt, settings);
+    const isQuestion = booking.mode === "QUESTION";
+    const deadline = isQuestion ? new Date(now.getTime() + settings.questionAnswerHours * HOUR) : approvalDeadline(now, booking.startAt, settings);
     await transition(
       tx,
       booking,
@@ -423,9 +427,11 @@ export async function completeCheckout(token: string, now = new Date()): Promise
       {
         userId: booking.teacherId,
         type: "booking.request",
-        title: "Yeni ders talebi",
-        body: `${booking.learnerName} için ${lessonSummary(booking)}. Lütfen ${formatDateTime(deadline)} saatine kadar onaylayın; yanıt verilmezse talep iptal edilir.`,
-        link: "/ogretmen-paneli/talepler",
+        title: isQuestion ? "Yeni soru geldi" : "Yeni ders talebi",
+        body: isQuestion
+          ? `${booking.learnerName} · ${lessonSummary(booking)}. Çözümü ${formatDateTime(deadline)} saatine kadar gönderin; gönderilmezse ücret öğrenciye iade edilir.`
+          : `${booking.learnerName} için ${lessonSummary(booking)}. Lütfen ${formatDateTime(deadline)} saatine kadar onaylayın; yanıt verilmezse talep iptal edilir.`,
+        link: isQuestion ? `/ogretmen-paneli/dersler/${booking.id}` : "/ogretmen-paneli/talepler",
       },
       tx,
     );
@@ -433,8 +439,10 @@ export async function completeCheckout(token: string, now = new Date()): Promise
       {
         userId: booking.studentId,
         type: "booking.paid",
-        title: "Ödemeniz alındı, öğretmen onayı bekleniyor",
-        body: `${lessonSummary(booking)}. Öğretmen onaylayınca size haber vereceğiz. Onaylanmazsa ödediğiniz ${formatMoney(booking.price)} tamamen iade edilir.`,
+        title: isQuestion ? "Sorunuz öğretmene iletildi" : "Ödemeniz alındı, öğretmen onayı bekleniyor",
+        body: isQuestion
+          ? `${lessonSummary(booking)}. Çözüm en geç ${formatDateTime(deadline)} saatine kadar gelecek; gelmezse ödediğiniz ${formatMoney(booking.price)} tamamen iade edilir.`
+          : `${lessonSummary(booking)}. Öğretmen onaylayınca size haber vereceğiz. Onaylanmazsa ödediğiniz ${formatMoney(booking.price)} tamamen iade edilir.`,
         link: `/hesabim/derslerim/${booking.id}`,
       },
       tx,
@@ -537,6 +545,7 @@ export async function approveBooking(bookingId: string, teacherId: string, now =
     const booking = await tx.booking.findUnique({ where: { id: bookingId } });
     if (!booking || booking.teacherId !== teacherId) throw new BookingError("Talep bulunamadı.");
     if (booking.status !== "PENDING_APPROVAL") throw new BookingError("Bu talep artık onay beklemiyor.");
+    if (booking.mode === "QUESTION") throw new BookingError("Fotoğrafla soruda onay yerine çözümü gönderin.");
     if (booking.approvalDeadline && booking.approvalDeadline <= now) {
       throw new BookingError("Onay süresi doldu; talep otomatik olarak iptal edilecek.");
     }
@@ -824,7 +833,7 @@ export async function expireOverdueApprovals(now = new Date()): Promise<number> 
           {
             userId: booking.studentId,
             type: "booking.expired",
-            title: "Talebiniz zamanında onaylanmadı",
+            title: booking.mode === "QUESTION" ? "Sorunuz zamanında çözülmedi" : "Talebiniz zamanında onaylanmadı",
             body: `${lessonSummary(booking)}. Öğretmen süresi içinde yanıt vermediği için talep iptal edildi; ${formatMoney(booking.price)} kartınıza iade ediliyor.`,
             link: "/ogretmenler",
           },

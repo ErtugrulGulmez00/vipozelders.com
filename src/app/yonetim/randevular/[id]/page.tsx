@@ -66,7 +66,7 @@ export default async function AdminBookingPage({ params, searchParams }: PagePro
               <DescriptionList
                 items={[
                   { label: "Ders", value: `${booking.levelName} ${booking.subjectName} · ${booking.serviceName}` },
-                  { label: "Zaman", value: formatLessonRange(booking.startAt, booking.endAt) },
+                  { label: "Zaman", value: booking.mode === "QUESTION" ? "Fotoğrafla soru (saat yok)" : formatLessonRange(booking.startAt, booking.endAt) },
                   { label: "Süre", value: durationLabel(booking.durationMinutes) },
                   { label: "Şekil", value: `${MODE_LABEL[booking.mode]}${booking.inPersonPlace ? ` · ${IN_PERSON_PLACE_LABEL[booking.inPersonPlace]}` : ""}` },
                   ...(booking.mode === "IN_PERSON" ? [{ label: "Adres", value: [booking.address, booking.district ? `${booking.district.name} / ${booking.district.city.name}` : null].filter(Boolean).join(" — ") || "—" }] : []),

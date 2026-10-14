@@ -1,5 +1,6 @@
 import {
   Bell,
+  BookMarked,
   BookOpenCheck,
   Building2,
   Camera,
@@ -43,6 +44,7 @@ export default async function CenterLayout({ children }: { children: React.React
     { href: "/kurum/yoklama", label: "Yoklama", icon: <ClipboardCheck />, permission: "attendance.take" },
     { href: "/kurum/etutler", label: "Etütler", icon: <CalendarClock />, permission: "etud.manage" },
     { href: "/kurum/odevler", label: "Ödevler", icon: <NotebookPen />, permission: "homework.manage" },
+    { href: "/kurum/kaynaklar", label: "Kaynaklar ve kitaplar", icon: <BookMarked />, permission: "resources.manage" },
     { href: "/kurum/sorular", label: "Öğrenci soruları", icon: <Camera />, permission: "questions.answer", badge: openQuestions || undefined },
     { href: "/kurum/denemeler", label: "Denemeler", icon: <BookOpenCheck />, permission: "exams.manage" },
     { href: "/kurum/muhasebe", label: "Muhasebe", icon: <Wallet />, permission: "finance.view" },

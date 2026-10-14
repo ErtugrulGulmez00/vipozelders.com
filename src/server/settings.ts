@@ -21,6 +21,8 @@ export const settingsSchema = z.object({
   // Randevu kuralları
   paymentHoldMinutes: z.number().int().min(5).max(120).default(15),
   approvalWindowHours: z.number().int().min(1).max(72).default(12),
+  // Fotoğrafla soruda öğretmenin çözümü göndermesi için süre; dolarsa ücret iade edilir.
+  questionAnswerHours: z.number().int().min(1).max(72).default(24),
   approvalMinHoursBeforeStart: z.number().int().min(0).max(48).default(2),
   minNoticeHours: z.number().int().min(1).max(168).default(12),
   maxAdvanceDays: z.number().int().min(1).max(180).default(30),

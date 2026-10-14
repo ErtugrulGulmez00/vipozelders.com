@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { BookingStatusBadge } from "@/components/panel/booking-ui";
 import { CalendarLinks } from "@/components/panel/calendar-links";
 import { FlashNotice } from "@/components/panel/flash-notice";
+import { QuestionThread } from "@/components/panel/question-thread";
 import { LinkButton } from "@/components/ui/button";
 import { Alert, Badge, Card, CardBody, CardHeader, DescriptionList } from "@/components/ui/primitives";
 import { formatDateTime, formatLessonRange } from "@/lib/dates";
@@ -66,14 +67,19 @@ export default async function TeacherLessonPage({ params, searchParams }: PagePr
               </CardBody>
             </Card>
           ) : null}
+          {booking.mode === "QUESTION" && booking.status !== "PENDING_PAYMENT" ? <QuestionThread booking={booking} viewerId={user.id} /> : null}
           <Card>
-            <CardHeader title="Ders bilgileri" />
+            <CardHeader title={booking.mode === "QUESTION" ? "Soru bilgileri" : "Ders bilgileri"} />
             <CardBody>
               <DescriptionList
                 items={[
                   { label: "Randevu no", value: booking.code },
-                  { label: "Zaman", value: formatLessonRange(booking.startAt, booking.endAt) },
-                  { label: "Süre", value: durationLabel(booking.durationMinutes) },
+                  ...(booking.mode === "QUESTION"
+                    ? [{ label: "Gönderildi", value: formatDateTime(booking.createdAt) }]
+                    : [
+                        { label: "Zaman", value: formatLessonRange(booking.startAt, booking.endAt) },
+                        { label: "Süre", value: durationLabel(booking.durationMinutes) },
+                      ]),
                   { label: "Hizmet", value: booking.serviceName },
                   { label: "Öğrenci", value: `${booking.learnerName}${booking.learnerGrade ? ` · ${booking.learnerGrade}` : ""}` },
                   { label: "Ders şekli", value: `${MODE_LABEL[booking.mode]}${booking.inPersonPlace ? ` · ${IN_PERSON_PLACE_LABEL[booking.inPersonPlace]}` : ""}` },
@@ -95,8 +101,8 @@ export default async function TeacherLessonPage({ params, searchParams }: PagePr
                         ...(confirmedOrLater && booking.student.phone ? [{ label: "Veli telefonu", value: booking.student.phone }] : []),
                       ]
                     : []),
-                  ...(booking.studentNote ? [{ label: "Öğrencinin notu", value: booking.studentNote }] : []),
-                  { label: "Ders ücreti", value: formatMoney(booking.price) },
+                  ...(booking.studentNote && booking.mode !== "QUESTION" ? [{ label: "Öğrencinin notu", value: booking.studentNote }] : []),
+                  { label: booking.mode === "QUESTION" ? "Soru ücreti" : "Ders ücreti", value: formatMoney(booking.price) },
                   { label: "Kazancınız", value: <strong>{formatMoney(booking.teacherAmount)}</strong> },
                 ]}
               />

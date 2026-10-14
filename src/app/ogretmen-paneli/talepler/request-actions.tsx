@@ -6,18 +6,20 @@ import { ActionForm, SubmitButton } from "@/components/forms/action-form";
 import { Button } from "@/components/ui/button";
 import { Field, Select, Textarea } from "@/components/ui/form";
 
-const PRESETS = ["O saatte müsait değilim", "Bu konu/kademe için uygun değilim", "Belirtilen adres hizmet bölgem dışında"];
+const PRESETS = ["O saatte müsait değilim", "Bu konu/kademe için uygun değilim", "Belirtilen adres hizmet bölgem dışında", "Fotoğraf okunmuyor, soruyu net çekip tekrar gönderin"];
 
-export function RequestActions({ bookingId }: { bookingId: string }) {
+export function RequestActions({ bookingId, rejectOnly }: { bookingId: string; rejectOnly?: boolean }) {
   const [rejecting, setRejecting] = useState(false);
   return (
     <div className="space-y-3">
       {!rejecting ? (
         <div className="flex flex-wrap gap-2">
-          <ActionForm action={approveRequestAction}>
-            <input type="hidden" name="bookingId" value={bookingId} />
-            <SubmitButton pendingText="Onaylanıyor…">Onayla</SubmitButton>
-          </ActionForm>
+          {rejectOnly ? null : (
+            <ActionForm action={approveRequestAction}>
+              <input type="hidden" name="bookingId" value={bookingId} />
+              <SubmitButton pendingText="Onaylanıyor…">Onayla</SubmitButton>
+            </ActionForm>
+          )}
           <Button variant="outline" onClick={() => setRejecting(true)}>
             Reddet
           </Button>

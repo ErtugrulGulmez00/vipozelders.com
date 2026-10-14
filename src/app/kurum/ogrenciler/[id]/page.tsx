@@ -12,6 +12,7 @@ import { dbDateToString, formatCompact, formatDate, minutesToTime, toLocalDateSt
 import { GENDER_LABEL } from "@/lib/labels";
 import { formatMoney } from "@/lib/money";
 import { HomeworkList } from "@/components/center/homework-list";
+import { StudyView } from "@/components/center/study-view";
 import { requireCenter } from "@/server/center/context";
 import { marketplaceLink, studentNetTrend, studentWeakTopics } from "@/server/center/exams";
 import { studentBalance } from "@/server/center/finance";
@@ -54,6 +55,7 @@ export default async function StudentCardPage({ params, searchParams }: PageProp
     { key: "genel", label: "Genel", href: `/kurum/ogrenciler/${id}` },
     { key: "devam", label: "Devam ve ödev", href: `/kurum/ogrenciler/${id}?sekme=devam` },
     { key: "denemeler", label: "Denemeler ve eksikler", href: `/kurum/ogrenciler/${id}?sekme=denemeler` },
+    { key: "program", label: "Program ve kaynaklar", href: `/kurum/ogrenciler/${id}?sekme=program` },
     ...(canFinance ? [{ key: "odemeler", label: "Ödemeler", href: `/kurum/ogrenciler/${id}?sekme=odemeler` }] : []),
   ];
   const [attendanceStats, balance] = await Promise.all([
@@ -105,6 +107,8 @@ export default async function StudentCardPage({ params, searchParams }: PageProp
         <AttendanceTab studentId={id} />
       ) : tab === "denemeler" ? (
         <ExamsTab centerId={centerId} studentId={id} />
+      ) : tab === "program" ? (
+        <StudyView centerId={centerId} studentId={id} week={typeof sp.hafta === "string" ? sp.hafta : undefined} baseHref={`/kurum/ogrenciler/${id}?sekme=program`} mode="staff" canEdit={ctx.can("resources.manage")} />
       ) : tab === "odemeler" && canFinance ? (
         <PaymentsTab centerId={centerId} studentId={id} today={today} canEdit={ctx.can("finance.edit")} academicYear={ctx.center.academicYear} />
       ) : (

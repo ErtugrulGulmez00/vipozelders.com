@@ -61,7 +61,7 @@ test("kurum başvurusu → kurum paneli → yoklama, deneme, makbuz → veli por
   await page.getByLabel("E-posta").fill(ownerEmail);
   await page.getByLabel("Öğrenci sayısı").selectOption("50-100");
   await page.getByLabel(/KVKK Aydınlatma Metni/).check();
-  await page.getByRole("button", { name: "Ücretsiz denemeyi başlat" }).click();
+  await page.getByRole("button", { name: "Başvuruyu gönder" }).click();
   await expect(page.getByText("Başvurunuz alındı!", { exact: false })).toBeVisible();
 
   // 2) Yönetici başvurudan kurumu açar; giriş bilgileri ekranda görünür

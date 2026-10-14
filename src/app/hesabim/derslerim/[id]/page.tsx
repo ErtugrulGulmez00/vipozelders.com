@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { BookingStatusBadge } from "@/components/panel/booking-ui";
 import { CalendarLinks } from "@/components/panel/calendar-links";
 import { FlashNotice } from "@/components/panel/flash-notice";
+import { QuestionThread } from "@/components/panel/question-thread";
 import { LinkButton } from "@/components/ui/button";
 import { Alert, Avatar, Badge, Card, CardBody, CardHeader, DescriptionList } from "@/components/ui/primitives";
 import { formatCompact, formatDateTime, formatLessonRange } from "@/lib/dates";
@@ -72,7 +73,12 @@ export default async function StudentBookingPage({ params, searchParams }: PageP
 
       <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
         <div className="space-y-6">
-          {booking.status === "PENDING_APPROVAL" && booking.approvalDeadline ? (
+          {booking.mode === "QUESTION" && booking.status === "PENDING_APPROVAL" && booking.approvalDeadline ? (
+            <Alert tone="info" title="Çözüm bekleniyor">
+              Öğretmeniniz çözümü en geç {formatDateTime(booking.approvalDeadline)} saatine kadar gönderecek. Gelmezse ödemenizin tamamı otomatik iade edilir.
+            </Alert>
+          ) : null}
+          {booking.mode !== "QUESTION" && booking.status === "PENDING_APPROVAL" && booking.approvalDeadline ? (
             <Alert tone="info" title="Öğretmen onayı bekleniyor">
               Öğretmeniniz {formatDateTime(booking.approvalDeadline)} saatine kadar yanıt verecek. Onaylanmazsa ödemenizin tamamı otomatik iade edilir.
             </Alert>
@@ -97,14 +103,20 @@ export default async function StudentBookingPage({ params, searchParams }: PageP
             </Card>
           ) : null}
 
+          {booking.mode === "QUESTION" && booking.status !== "PENDING_PAYMENT" ? <QuestionThread booking={booking} viewerId={user.id} /> : null}
+
           <Card>
-            <CardHeader title="Ders bilgileri" />
+            <CardHeader title={booking.mode === "QUESTION" ? "Soru bilgileri" : "Ders bilgileri"} />
             <CardBody>
               <DescriptionList
                 items={[
                   { label: "Randevu no", value: booking.code },
-                  { label: "Zaman", value: formatLessonRange(booking.startAt, booking.endAt) },
-                  { label: "Süre", value: durationLabel(booking.durationMinutes) },
+                  ...(booking.mode === "QUESTION"
+                    ? [{ label: "Gönderildi", value: formatDateTime(booking.createdAt) }]
+                    : [
+                        { label: "Zaman", value: formatLessonRange(booking.startAt, booking.endAt) },
+                        { label: "Süre", value: durationLabel(booking.durationMinutes) },
+                      ]),
                   { label: "Hizmet", value: booking.serviceName },
                   { label: "Öğrenci", value: `${booking.learnerName}${booking.learnerGrade ? ` · ${booking.learnerGrade}` : ""}` },
                   { label: "Ders şekli", value: `${MODE_LABEL[booking.mode]}${booking.inPersonPlace ? ` · ${IN_PERSON_PLACE_LABEL[booking.inPersonPlace]}` : ""}` },
@@ -121,7 +133,7 @@ export default async function StudentBookingPage({ params, searchParams }: PageP
                         },
                       ]
                     : []),
-                  ...(booking.studentNote ? [{ label: "Notunuz", value: booking.studentNote }] : []),
+                  ...(booking.studentNote && booking.mode !== "QUESTION" ? [{ label: "Notunuz", value: booking.studentNote }] : []),
                   { label: "Ücret", value: formatMoney(booking.price) },
                   ...(booking.refundedAmount ? [{ label: "İade", value: formatMoney(booking.refundedAmount) }] : []),
                 ]}

@@ -76,6 +76,7 @@ model User {
   devices           Device[]
   centerMemberships CenterMember[]
   guardianLinks     CenterGuardian[]   @relation("GuardianAccounts")
+  bookingMessages   BookingMessage[]
 }
 
 // Mobil uygulama push bildirim kayıtları (Firebase Cloud Messaging).
@@ -348,6 +349,8 @@ model TeacherOffering {
   // Öğrencinin ödeyeceği 60 dakikalık ücret (KDV dahil, kuruş).
   hourlyPrice   Int
   durations     Int[]
+  // Soru çözüm hizmetinde fotoğrafla soru başına ücret (kuruş); boşsa fotoğrafla soru kabul edilmez.
+  questionPrice Int?
   isActive      Boolean        @default(true)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
@@ -455,6 +458,8 @@ model TeacherDocument {
 enum LessonMode {
   ONLINE
   IN_PERSON
+  // Fotoğrafla soru: saat tutmaz; öğretmen süresi içinde yazılı/fotoğraflı/videolu çözüm gönderir.
+  QUESTION
 }
 
 enum InPersonPlace {
@@ -538,9 +543,12 @@ model Booking {
   videoRoomName      String?          @unique
   // Yönetici tarafından ödemesiz açılan deneme dersi (görüntülü görüşme testi); yorum, puan ve ciroya sayılmaz.
   isTest             Boolean          @default(false)
+  // Fotoğrafla soruda çözümün gönderildiği an
+  answeredAt         DateTime?
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
 
+  messages      BookingMessage[]
   events        BookingEvent[]
   payments      Payment[]
   attendance    LessonAttendance[]
@@ -550,6 +558,22 @@ model Booking {
   @@index([teacherId, startAt])
   @@index([studentId, startAt])
   @@index([status])
+}
+
+// Fotoğrafla soruda öğrenci ile öğretmen arasındaki yazışma; isSolution işaretli mesaj çözümdür.
+model BookingMessage {
+  id         String   @id @default(cuid())
+  bookingId  String
+  booking    Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body       String?
+  imageKey   String?
+  videoKey   String?
+  isSolution Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([bookingId, createdAt])
 }
 
 model BookingEvent {
@@ -957,6 +981,8 @@ model Center {
   leads                CenterLead[]
   homeworks            CenterHomework[]
   questions            CenterQuestion[]
+  resources            CenterResource[]
+  studyPlanItems       CenterStudyPlanItem[]
 
   @@index([status])
 }
@@ -1037,6 +1063,8 @@ model CenterStudent {
   payments     CenterPayment[]
   homeworks    CenterHomeworkStudent[]
   questions    CenterQuestion[]
+  resources    CenterStudentResource[]
+  studyPlan    CenterStudyPlanItem[]
 
   @@unique([centerId, studentNumber])
   @@index([centerId, status])
@@ -1485,6 +1513,74 @@ model CenterHomeworkStudent {
 
   @@id([homeworkId, studentId])
   @@index([studentId])
+}
+
+// Kaynak / kitap takibi: kurumun kullandığı soru bankaları ve kitaplar, konu (ünite/test) listesiyle.
+model CenterResource {
+  id        String   @id @default(cuid())
+  centerId  String
+  center    Center   @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  name      String
+  subject   String
+  publisher String?
+  // Konular/üniteler sırasıyla (öğrenci ilerlemesi bu adlarla tutulur)
+  topics    String[]
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  students  CenterStudentResource[]
+  planItems CenterStudyPlanItem[]
+
+  @@index([centerId])
+}
+
+// Öğrenciye atanan kaynak ve konu konu ilerlemesi
+model CenterStudentResource {
+  id         String         @id @default(cuid())
+  studentId  String
+  student    CenterStudent  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  resourceId String
+  resource   CenterResource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+  assignedAt DateTime       @default(now())
+
+  progress CenterResourceProgress[]
+
+  @@unique([studentId, resourceId])
+  @@index([resourceId])
+}
+
+model CenterResourceProgress {
+  id                String                @id @default(cuid())
+  studentResourceId String
+  studentResource   CenterStudentResource @relation(fields: [studentResourceId], references: [id], onDelete: Cascade)
+  topic             String
+  solved            Int                   @default(0)
+  correct           Int                   @default(0)
+  wrong             Int                   @default(0)
+  completedAt       DateTime?
+  updatedAt         DateTime              @updatedAt
+
+  @@unique([studentResourceId, topic])
+}
+
+// Haftalık çalışma programı: gün gün ders, konu, kaynak ve hedef soru; öğrenci/veli tamamlandı işaretler.
+model CenterStudyPlanItem {
+  id              String          @id @default(cuid())
+  centerId        String
+  center          Center          @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  studentId       String
+  student         CenterStudent   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  date            DateTime        @db.Date
+  subject         String
+  topic           String?
+  resourceId      String?
+  resource        CenterResource? @relation(fields: [resourceId], references: [id], onDelete: SetNull)
+  targetQuestions Int?
+  note            String?
+  doneAt          DateTime?
+  createdAt       DateTime        @default(now())
+
+  @@index([studentId, date])
 }
 
 // Fotoğrafla soru: öğrenci/veli yükler, öğretmen çözüm (yazı, fotoğraf, video) ekler ya da yüz yüze anlatır

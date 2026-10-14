@@ -1,4 +1,5 @@
 import { ExternalLink } from "lucide-react";
+import { StudyView } from "@/components/center/study-view";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -56,6 +57,7 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
           { key: "denemeler", label: "Denemeler", href: `${base}?sekme=denemeler` },
           { key: "odemeler", label: "Ödemeler", href: `${base}?sekme=odemeler` },
           { key: "odevler", label: "Ödevler", href: `${base}?sekme=odevler` },
+          { key: "calisma", label: "Çalışma programı", href: `${base}?sekme=calisma` },
           { key: "sorular", label: "Soru sor", href: `${base}?sekme=sorular` },
           { key: "program", label: "Ders programı", href: `${base}?sekme=program` },
         ]}
@@ -222,6 +224,8 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
             )}
           </Card>
         </div>
+      ) : tab === "calisma" ? (
+        <StudyView centerId={student.centerId} studentId={student.id} week={typeof sp.hafta === "string" ? sp.hafta : undefined} baseHref={`${base}?sekme=calisma`} mode="portal" canEdit={false} />
       ) : tab === "odevler" ? (
         <HomeworkList rows={homeworks.map((h) => ({ id: h.homeworkId, subject: h.homework.subject, title: h.homework.title, description: h.homework.description, dueDate: h.homework.dueDate, status: h.status, note: h.note }))} />
       ) : tab === "sorular" ? (

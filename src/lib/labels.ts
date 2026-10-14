@@ -43,7 +43,7 @@ export const VERIFICATION_STATUS: Record<string, { label: string; tone: Tone }> 
   REJECTED: { label: "Reddedildi", tone: "rose" },
 };
 
-export const MODE_LABEL: Record<string, string> = { ONLINE: "Online", IN_PERSON: "Yüz yüze" };
+export const MODE_LABEL: Record<string, string> = { ONLINE: "Online", IN_PERSON: "Yüz yüze", QUESTION: "Fotoğrafla soru" };
 
 export const IN_PERSON_PLACE_LABEL: Record<string, string> = {
   STUDENT_HOME: "Öğrencinin adresinde",

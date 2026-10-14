@@ -1,7 +1,7 @@
 import { CalendarClock, MapPin, Monitor } from "lucide-react";
 import Link from "next/link";
 import { Badge } from "@/components/ui/primitives";
-import { formatLessonRange } from "@/lib/dates";
+import { formatCompact, formatLessonRange } from "@/lib/dates";
 import { BOOKING_STATUS, MODE_LABEL } from "@/lib/labels";
 import { formatMoney } from "@/lib/money";
 
@@ -38,7 +38,7 @@ export function BookingRow({ booking, href }: { booking: BookingRowData; href: s
         </div>
         <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500">
           <span className="inline-flex items-center gap-1">
-            <CalendarClock className="size-3.5" aria-hidden /> {formatLessonRange(booking.startAt, booking.endAt)}
+            <CalendarClock className="size-3.5" aria-hidden /> {booking.mode === "QUESTION" ? `Gönderildi: ${formatCompact(booking.startAt)}` : formatLessonRange(booking.startAt, booking.endAt)}
           </span>
           <span className="inline-flex items-center gap-1">
             {booking.mode === "ONLINE" ? <Monitor className="size-3.5" aria-hidden /> : <MapPin className="size-3.5" aria-hidden />}

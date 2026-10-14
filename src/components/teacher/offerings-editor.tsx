@@ -18,6 +18,7 @@ export type OfferingRow = {
   subjectId: number;
   hourlyPrice: number;
   durations: number[];
+  questionPrice: number | null;
   isActive: boolean;
   label: string;
 };
@@ -57,6 +58,8 @@ function OfferingForm({
 }) {
   const [levelId, setLevelId] = useState(initial?.levelId ?? catalog.levels[0]?.id);
   const [price, setPrice] = useState(initial ? initial.hourlyPrice / 100 : 0);
+  const [serviceId, setServiceId] = useState(initial?.serviceTypeId ?? catalog.services[0]?.id);
+  const isQuestionService = catalog.services.find((s) => s.id === serviceId)?.slug === "soru-cozum";
   const level = catalog.levels.find((l) => l.id === levelId);
   const subjects = catalog.subjects.filter((s) => level?.subjectIds.includes(s.id));
 
@@ -74,7 +77,7 @@ function OfferingForm({
       {initial ? <input type="hidden" name="offeringId" value={initial.id} /> : null}
       <div className="grid gap-3 sm:grid-cols-3">
         <Field label="Hizmet">
-          <Select name="serviceTypeId" defaultValue={initial?.serviceTypeId}>
+          <Select name="serviceTypeId" value={serviceId} onChange={(e) => setServiceId(Number(e.target.value))}>
             {catalog.services.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
@@ -110,7 +113,7 @@ function OfferingForm({
           <div className="flex flex-wrap gap-1.5">
             {DURATIONS.map((d) => (
               <label key={d} className="cursor-pointer rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-slate-700 ring-1 ring-slate-300 has-checked:bg-brand-600 has-checked:text-white has-checked:ring-brand-600">
-                <input type="checkbox" name="durations" value={d} defaultChecked={initial ? initial.durations.includes(d) : [45, 60, 90].includes(d)} className="sr-only" />
+                <input type="checkbox" name="durations" value={d} defaultChecked={initial ? initial.durations.includes(d) : true} className="sr-only" />
                 {durationLabel(d)}
               </label>
             ))}
@@ -118,6 +121,11 @@ function OfferingForm({
         </fieldset>
       </div>
       <Earnings priceTl={price} commissionBps={commissionBps} />
+      {isQuestionService ? (
+        <Field label="Fotoğrafla soru ücreti (₺ / soru, KDV dahil)" hint="Öğrenci sorunun fotoğrafını gönderir, siz yazılı, fotoğraflı ya da videolu çözümü panelden yollarsınız. Boş bırakırsanız yalnızca görüntülü soru çözüm dersi alınabilir.">
+          <Input name="questionPrice" type="number" min={20} max={5000} step={5} defaultValue={initial?.questionPrice ? initial.questionPrice / 100 : ""} className="sm:w-48" />
+        </Field>
+      ) : null}
       <div className="flex gap-2">
         <SubmitButton>{initial ? "Güncelle" : "Dersi ekle"}</SubmitButton>
         {onDone && initial ? (
@@ -160,6 +168,7 @@ export function OfferingsEditor({
                     </p>
                     <p className="text-sm text-slate-500">
                       {formatMoney(o.hourlyPrice)} / saat · {o.durations.map(durationLabel).join(", ")}
+                      {o.questionPrice ? ` · fotoğrafla soru ${formatMoney(o.questionPrice)}` : ""}
                     </p>
                   </div>
                   <div className="flex gap-1">

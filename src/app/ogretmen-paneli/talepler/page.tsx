@@ -2,6 +2,7 @@ import { Clock, Inbox, MapPin, Monitor } from "lucide-react";
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { FlashNotice } from "@/components/panel/flash-notice";
+import { LinkButton } from "@/components/ui/button";
 import { Card, EmptyState, PageHeader } from "@/components/ui/primitives";
 import { formatDateTime, formatDuration, formatLessonRange } from "@/lib/dates";
 import { durationLabel, IN_PERSON_PLACE_LABEL, MODE_LABEL } from "@/lib/labels";
@@ -25,7 +26,7 @@ export default async function RequestsPage({ searchParams }: PageProps<"/ogretme
 
   return (
     <>
-      <PageHeader title="Ders talepleri" description="Ödemesi alınmış talepler. Süresi içinde yanıt vermezseniz talep iptal edilir ve öğrenciye iade yapılır." />
+      <PageHeader title="Talepler ve sorular" description="Ödemesi alınmış ders talepleri ve fotoğrafla gelen sorular. Süresi içinde yanıt vermezseniz talep iptal edilir ve öğrenciye iade yapılır." />
       <FlashNotice code={durum} />
       {requests.length === 0 ? (
         <EmptyState icon={<Inbox className="size-8" />} title="Yanıt bekleyen talep yok" />
@@ -38,7 +39,11 @@ export default async function RequestsPage({ searchParams }: PageProps<"/ogretme
                   <p className="text-lg font-semibold text-slate-900">
                     {b.levelName} · {b.subjectName} <span className="text-sm font-normal text-slate-500">({b.serviceName})</span>
                   </p>
-                  <p className="text-sm text-slate-700">{formatLessonRange(b.startAt, b.endAt)} · {durationLabel(b.durationMinutes)}</p>
+                  {b.mode === "QUESTION" ? (
+                    <p className="text-sm font-medium text-brand-700">Fotoğrafla soru · çözüm bekliyor</p>
+                  ) : (
+                    <p className="text-sm text-slate-700">{formatLessonRange(b.startAt, b.endAt)} · {durationLabel(b.durationMinutes)}</p>
+                  )}
                   <p className="flex items-center gap-1 text-sm text-slate-600">
                     {b.mode === "ONLINE" ? <Monitor className="size-4" aria-hidden /> : <MapPin className="size-4" aria-hidden />}
                     {MODE_LABEL[b.mode]}
@@ -53,7 +58,7 @@ export default async function RequestsPage({ searchParams }: PageProps<"/ogretme
                 </div>
                 <div className="text-right">
                   <p className="text-xl font-bold text-slate-900">{formatMoney(b.teacherAmount)}</p>
-                  <p className="text-xs text-slate-500">kazancınız (ders ücreti {formatMoney(b.price)})</p>
+                  <p className="text-xs text-slate-500">kazancınız ({b.mode === "QUESTION" ? "soru" : "ders"} ücreti {formatMoney(b.price)})</p>
                   {b.approvalDeadline ? (
                     <p className="mt-2 inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
                       <Clock className="size-3.5" aria-hidden /> {formatDuration(b.approvalDeadline.getTime() - now.getTime())} içinde yanıtlayın
@@ -63,7 +68,14 @@ export default async function RequestsPage({ searchParams }: PageProps<"/ogretme
                 </div>
               </div>
               <div className="mt-4 border-t border-slate-100 pt-4">
-                <RequestActions bookingId={b.id} />
+                {b.mode === "QUESTION" ? (
+                  <div className="flex flex-wrap items-start gap-2">
+                    <LinkButton href={`/ogretmen-paneli/dersler/${b.id}`}>Soruyu aç ve çöz</LinkButton>
+                    <RequestActions bookingId={b.id} rejectOnly />
+                  </div>
+                ) : (
+                  <RequestActions bookingId={b.id} />
+                )}
               </div>
             </Card>
           ))}

@@ -39,7 +39,7 @@ export default async function MockPaymentPage({ params }: PageProps<"/odeme/test
         <DescriptionList
           items={[
             { label: "Ders", value: `${booking.levelName} ${booking.subjectName} · ${booking.serviceName}` },
-            { label: "Zaman", value: formatLessonRange(booking.startAt, booking.endAt) },
+            { label: "Zaman", value: booking.mode === "QUESTION" ? "Fotoğrafla soru (saat yok)" : formatLessonRange(booking.startAt, booking.endAt) },
             { label: "Tutar", value: <strong>{formatMoney(payment.amount)}</strong> },
           ]}
         />

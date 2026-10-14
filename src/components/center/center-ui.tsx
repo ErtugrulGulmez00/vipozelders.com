@@ -19,6 +19,8 @@ const FLASH: Record<string, { tone: "success" | "warning"; text: string }> = {
   "etut-silindi": { tone: "success", text: "Etüt silindi." },
   "odev-verildi": { tone: "success", text: "Ödev verildi; veli portalına bağlı velilere bildirim gitti. Teslim günü bu sayfadan kontrol edin." },
   "odev-silindi": { tone: "success", text: "Ödev silindi." },
+  "kaynak-eklendi": { tone: "success", text: "Kaynak eklendi. Şimdi sınıfa ya da öğrencilere atayabilirsiniz." },
+  "kaynak-silindi": { tone: "success", text: "Kaynak silindi." },
   "deneme-olustu": { tone: "success", text: "Deneme oluşturuldu. Şimdi sonuçları girebilir ya da Excel'den aktarabilirsiniz." },
   "deneme-silindi": { tone: "success", text: "Deneme silindi." },
   tahsilat: { tone: "success", text: "Tahsilat kaydedildi. Makbuzu yazdırabilir ya da veliye iletebilirsiniz." },

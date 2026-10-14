@@ -119,7 +119,7 @@ test("öğretmen ekleme → yayın → rezervasyon ve ödeme → onay → tamaml
 
   // 8) Öğretmeni bulur ve saat seçer
   await page.goto(`/ogretmenler?q=${encodeURIComponent(teacherLastName)}`);
-  await page.getByRole("link", { name: /Test D\./ }).click();
+  await page.getByRole("link", { name: new RegExp(`Test ${teacherLastName}`) }).first().click();
   await expect(page.getByRole("heading", { name: "Randevu al" })).toBeVisible();
   const slot = page.locator("button:not([disabled])", { hasText: /^\d{2}:\d{2}$/ }).first();
   await expect(slot).toBeVisible();
