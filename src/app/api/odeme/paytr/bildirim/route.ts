@@ -8,6 +8,9 @@ import { handlePaytrNotification } from "@/server/payments/paytr";
  * Yanıt yalnızca düz metin "OK" olmalıdır; aksi hâlde PayTR bildirimi tekrar gönderir.
  */
 export async function POST(request: NextRequest) {
+  if (!process.env.PAYTR_MERCHANT_ID || !process.env.PAYTR_MERCHANT_KEY || !process.env.PAYTR_MERCHANT_SALT) {
+    return new Response("PAYTR notification failed: not configured", { status: 400 });
+  }
   const form = await request.formData();
   const field = (name: string) => String(form.get(name) ?? "");
   try {

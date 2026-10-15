@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import { Logo } from "@/components/site/logo";
 import { NotFoundContent } from "@/components/site/not-found-content";
+
+export const metadata: Metadata = { title: "Sayfa bulunamadı" };
 
 export default function NotFound() {
   return (

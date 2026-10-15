@@ -30,7 +30,7 @@ export default function CenterLoginPage({ searchParams }: PageProps<"/kurum-giri
           <span className="text-lg font-bold">Pi Kampüs · Kurum paneli</span>
         </Link>
         <div>
-          <h1 className="max-w-md text-3xl font-bold leading-tight">Kurumunuzun tamamı tek panelde</h1>
+          <h2 className="max-w-md text-3xl font-bold leading-tight">Kurumunuzun tamamı tek panelde</h2>
           <ul className="mt-6 space-y-3 text-brand-100">
             {[
               { Icon: ClipboardCheck, text: "Yoklama ve velilere anında devamsızlık bildirimi" },
