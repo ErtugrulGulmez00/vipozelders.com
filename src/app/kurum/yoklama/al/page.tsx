@@ -69,6 +69,7 @@ export default async function TakeAttendancePage({ searchParams }: PageProps<"/k
         <AttendanceSheet
           hidden={{ groupId: group.id, date, start: minutesToTime(startMinute), end: minutesToTime(endMinute), subject, ...(slot ? { slotId: slot.id } : {}) }}
           notifyAvailable={ctx.center.notifyAbsence}
+          topic={session?.topic ?? null}
           students={members.map((m) => {
             const record = records.get(m.id);
             return {

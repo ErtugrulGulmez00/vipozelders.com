@@ -13,7 +13,7 @@ const tl = (kurus: number) => kurus / 100;
 const name = (p: { firstName: string; lastName: string } | null | undefined) => (p ? `${p.firstName} ${p.lastName}` : null);
 
 export async function centerBackupWorkbook(centerId: string): Promise<Buffer> {
-  const [students, groups, slots, attendance, etuds, exams, plans, payments, expenses, notes, homeworks, leads, announcements, resourceProgress, studyPlan] = await Promise.all([
+  const [students, groups, slots, attendance, etuds, exams, plans, payments, expenses, notes, homeworks, leads, announcements, resourceProgress, studyPlan, coaching, hallDays] = await Promise.all([
     db.centerStudent.findMany({ where: { centerId }, include: { guardians: { where: { isStudentAccount: false } }, groups: { include: { group: { select: { name: true } } } } }, orderBy: { studentNumber: "asc" } }),
     db.centerGroup.findMany({ where: { centerId }, include: { teacher: { include: { user: true } }, _count: { select: { students: true } } }, orderBy: { name: "asc" } }),
     db.centerScheduleSlot.findMany({ where: { centerId }, include: { group: { select: { name: true } }, teacher: { include: { user: true } } }, orderBy: [{ weekday: "asc" }, { startMinute: "asc" }] }),
@@ -29,6 +29,8 @@ export async function centerBackupWorkbook(centerId: string): Promise<Buffer> {
     db.centerAnnouncement.findMany({ where: { centerId }, include: { group: { select: { name: true } } }, orderBy: { createdAt: "asc" } }),
     db.centerStudentResource.findMany({ where: { student: { centerId } }, include: { resource: true, student: true, progress: true }, orderBy: { assignedAt: "asc" } }),
     db.centerStudyPlanItem.findMany({ where: { centerId }, include: { student: true, resource: { select: { name: true } } }, orderBy: [{ date: "asc" }, { createdAt: "asc" }] }),
+    db.centerCoachingSession.findMany({ where: { centerId }, include: { student: true, coach: { include: { user: true } } }, orderBy: { date: "asc" } }),
+    db.centerHallDay.findMany({ where: { hall: { centerId } }, include: { student: true, hall: true }, orderBy: { date: "asc" } }),
   ]);
 
   const sheets: SheetSpec[] = [
@@ -54,8 +56,8 @@ export async function centerBackupWorkbook(centerId: string): Promise<Buffer> {
     },
     {
       name: "Yoklama",
-      headers: ["Tarih", "Saat", "Sınıf", "Ders", "Öğrenci No", "Öğrenci", "Durum", "Not", "Veliye bildirildi"],
-      rows: attendance.map((a) => [d(a.session.date), minutesToTime(a.session.startMinute), a.session.group.name, a.session.subject, a.student.studentNumber, name(a.student), ATTENDANCE_STATUS[a.status].label, a.note, a.notifiedAt ? "Evet" : ""]),
+      headers: ["Tarih", "Saat", "Sınıf", "Ders", "İşlenen konu", "Öğrenci No", "Öğrenci", "Durum", "Not", "Veliye bildirildi"],
+      rows: attendance.map((a) => [d(a.session.date), minutesToTime(a.session.startMinute), a.session.group.name, a.session.subject, a.session.topic, a.student.studentNumber, name(a.student), ATTENDANCE_STATUS[a.status].label, a.note, a.notifiedAt ? "Evet" : ""]),
     },
     {
       name: "Etütler",
@@ -81,6 +83,16 @@ export async function centerBackupWorkbook(centerId: string): Promise<Buffer> {
       name: "Çalışma programı",
       headers: ["Tarih", "Öğrenci No", "Öğrenci", "Ders", "Konu", "Kaynak", "Hedef soru", "Not", "Yapıldı"],
       rows: studyPlan.map((i) => [d(i.date), i.student.studentNumber, name(i.student), i.subject, i.topic, i.resource?.name, i.targetQuestions, i.note, i.doneAt ? "Evet" : ""]),
+    },
+    {
+      name: "Koçluk görüşmeleri",
+      headers: ["Tarih", "Öğrenci No", "Öğrenci", "Koç", "Yapıldı", "Not", "Öncelikli konular", "Hedef", "Veli görüyor"],
+      rows: coaching.map((c) => [d(c.date), c.student.studentNumber, name(c.student), name(c.coach?.user), c.held ? "Evet" : "Hayır", c.notes, c.priorityTopics.join(", "), c.nextGoal, c.visibleToParent ? "Evet" : ""]),
+    },
+    {
+      name: "Çalışma salonu",
+      headers: ["Tarih", "Salon", "Öğrenci No", "Öğrenci", ...Array.from({ length: Math.max(0, ...hallDays.map((h) => h.hall.periods.length)) }, (_, i) => `${i + 1}. periyot`)],
+      rows: hallDays.map((h) => [d(h.date), h.hall.name, h.student.studentNumber, name(h.student), ...h.hall.periods.map((_, i) => (h.marks[i] === "G" ? "Geldi" : h.marks[i] === "Y" ? "Gelmedi" : ""))]),
     },
     {
       name: "Deneme sonuçları",

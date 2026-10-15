@@ -23,7 +23,8 @@ export function ExamHeader({ exam, active }: { exam: { id: string; name: string;
           { key: "analiz", label: "Sonuçlar ve analiz", href: base },
           { key: "sonuclar", label: "Sonuç girişi", href: `${base}/sonuclar` },
           { key: "anahtar", label: "Cevap anahtarı ve konular", href: `${base}/anahtar` },
-          { key: "aktar", label: "Excel'den aktar", href: `${base}/ice-aktar` },
+          { key: "aktar", label: "Excel / optik aktar", href: `${base}/ice-aktar` },
+          { key: "kelebek", label: "Kelebek düzeni", href: `${base}/kelebek` },
           { key: "ayarlar", label: "Ayarlar", href: `${base}/ayarlar` },
         ]}
       />

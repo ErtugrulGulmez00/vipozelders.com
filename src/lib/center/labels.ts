@@ -97,6 +97,7 @@ export const MESSAGE_KIND_LABEL: Record<string, string> = {
   invite: "Veli portalı daveti",
   homework: "Ödev",
   homework_missing: "Yapılmayan ödev",
+  hall_absence: "Çalışma salonu devamsızlığı",
   subscription: "Abonelik",
   custom: "Mesaj",
 };

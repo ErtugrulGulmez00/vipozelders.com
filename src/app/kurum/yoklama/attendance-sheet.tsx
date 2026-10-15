@@ -21,10 +21,13 @@ export function AttendanceSheet({
   hidden,
   students,
   notifyAvailable,
+  topic,
 }: {
   hidden: Record<string, string>;
   students: SheetStudent[];
   notifyAvailable: boolean;
+  /** Sınıf defteri: daha önce girilmiş işlenen konu */
+  topic: string | null;
 }) {
   const [statuses, setStatuses] = useState<Record<string, Status>>(() => Object.fromEntries(students.map((s) => [s.id, s.status])));
   const [notes, setNotes] = useState<Record<string, boolean>>(() => Object.fromEntries(students.map((s) => [s.id, Boolean(s.note)])));
@@ -50,6 +53,11 @@ export function AttendanceSheet({
           Hepsini “Geldi” yap
         </button>
       </div>
+      <label className="block rounded-2xl border border-slate-200 bg-white p-4">
+        <span className="text-sm font-semibold text-slate-800">Sınıf defteri · bu derste işlenen konu</span>
+        <Input name="topic" defaultValue={topic ?? ""} maxLength={300} placeholder="Örn: Üslü ifadeler: negatif üs ve çarpma kuralları, 20 soruluk tarama" className="mt-2" />
+        <span className="mt-1 block text-xs text-slate-500">Veliler portalda görür; müdür hangi sınıfın nerede kaldığını izler.</span>
+      </label>
       <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white">
         {students.map((s, index) => (
           <li key={s.id} className="px-4 py-3">

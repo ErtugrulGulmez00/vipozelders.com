@@ -16,6 +16,7 @@ export function PanelShell({
   children,
   roleLabel,
   banner,
+  headerSlot,
 }: {
   user: SessionUser;
   title: string;
@@ -25,6 +26,8 @@ export function PanelShell({
   roleLabel?: string;
   /** Sayfa içeriğinin üstünde gösterilen uyarı (ör. abonelik bitiyor) */
   banner?: ReactNode;
+  /** Üst çubukta (ör. öğrenci arama) */
+  headerSlot?: ReactNode;
 }) {
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[260px_1fr]">
@@ -54,7 +57,7 @@ export function PanelShell({
             <Logo className="[&>span:last-child]:hidden sm:[&>span:last-child]:inline" />
             <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">{title}</span>
           </div>
-          <div className="hidden lg:block" />
+          <div className="hidden min-w-0 flex-1 lg:block">{headerSlot}</div>
           <div className="flex items-center gap-1">
             <Link href="/" className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100">
               <ExternalLink className="size-4" aria-hidden /> <span className="hidden sm:inline">Siteye git</span>

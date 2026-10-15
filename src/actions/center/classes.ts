@@ -112,6 +112,7 @@ export async function saveAttendanceAction(_: ActionState, formData: FormData): 
       endMinute: time(formData, "end", "Bitiş saati"),
       subject: str(formData, "subject", 60),
       slotId: opt(formData, "slotId"),
+      topic: opt(formData, "topic", 300),
       records,
       notify: bool(formData, "notify"),
     });

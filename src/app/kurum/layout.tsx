@@ -1,6 +1,9 @@
 import {
   Bell,
   BookMarked,
+  BookText,
+  HeartHandshake,
+  Library,
   BookOpenCheck,
   Building2,
   Camera,
@@ -45,6 +48,9 @@ export default async function CenterLayout({ children }: { children: React.React
     { href: "/kurum/etutler", label: "Etütler", icon: <CalendarClock />, permission: "etud.manage" },
     { href: "/kurum/odevler", label: "Ödevler", icon: <NotebookPen />, permission: "homework.manage" },
     { href: "/kurum/kaynaklar", label: "Kaynaklar ve kitaplar", icon: <BookMarked />, permission: "resources.manage" },
+    { href: "/kurum/kocluk", label: "Koçluk", icon: <HeartHandshake />, permission: "coaching.manage" },
+    { href: "/kurum/calisma-salonu", label: "Çalışma salonu", icon: <Library />, permission: "attendance.take" },
+    { href: "/kurum/sinif-defteri", label: "Sınıf defteri", icon: <BookText />, permission: "students.view" },
     { href: "/kurum/sorular", label: "Öğrenci soruları", icon: <Camera />, permission: "questions.answer", badge: openQuestions || undefined },
     { href: "/kurum/denemeler", label: "Denemeler", icon: <BookOpenCheck />, permission: "exams.manage" },
     { href: "/kurum/muhasebe", label: "Muhasebe", icon: <Wallet />, permission: "finance.view" },
@@ -68,6 +74,14 @@ export default async function CenterLayout({ children }: { children: React.React
       roleLabel={ctx.member.title || CENTER_ROLE_LABEL[ctx.member.role]}
       nav={nav}
       banner={<SubscriptionBanner access={ctx.access} canManage={ctx.can("subscription.view")} />}
+      headerSlot={
+        ctx.can("students.view") ? (
+          <form action="/kurum/ogrenciler" method="get" role="search" className="max-w-md">
+            <input type="hidden" name="ara" value="1" />
+            <input name="q" type="search" placeholder="Öğrenci ara: ad, numara, veli telefonu" aria-label="Öğrenci ara" className="h-9 w-full rounded-lg border border-slate-300 bg-slate-50 px-3 text-sm focus:border-brand-400 focus:bg-white focus:outline-none" />
+          </form>
+        ) : null
+      }
     >
       {children}
     </PanelShell>

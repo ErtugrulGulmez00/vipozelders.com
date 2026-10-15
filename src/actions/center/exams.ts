@@ -9,7 +9,10 @@ import { CenterError } from "@/server/center/errors";
 import {
   createExam,
   deleteExam,
+  deleteOpticTemplate,
   importExamResults,
+  importOpticResults,
+  saveOpticTemplate,
   publishExam,
   saveAnswerKey,
   saveResultsGrid,
@@ -17,7 +20,8 @@ import {
   updateExamMeta,
   type GridRow,
 } from "@/server/center/exams";
-import { bool, date, guard, list, opt, requiredText, str } from "@/server/center/form";
+import { bool, date, guard, int, list, opt, requiredText, str } from "@/server/center/form";
+import { parseSectionPositions } from "@/lib/center/optic";
 import { readSpreadsheet } from "@/server/center/spreadsheet";
 
 function penaltyFrom(formData: FormData): number | null {
@@ -159,5 +163,58 @@ export async function publishExamAction(_: ActionState, formData: FormData): Pro
     const notified = await publishExam(auth.ctx, str(formData, "examId"), publish, { email: bool(formData, "email"), sms: bool(formData, "sms") });
     refresh();
     return success(publish ? `Sonuçlar veli portalında yayında.${notified ? ` ${notified} öğrencinin velisine bildirim gönderildi.` : ""}` : "Sonuçlar veli portalından kaldırıldı.");
+  });
+}
+
+export async function saveOpticTemplateAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const auth = await centerAction("exams.manage");
+  if (!auth.ok) return auth.state;
+  return guard(async () => {
+    let sections: { start: number; length: number }[];
+    try {
+      sections = parseSectionPositions(str(formData, "sections", 2000));
+    } catch (error) {
+      throw new CenterError((error as Error).message, { sections: "Örn: 40:20, 60:20" });
+    }
+    const nameStart = int(formData, "nameStart", 0, 0, 2000);
+    const nameLength = int(formData, "nameLength", 0, 0, 200);
+    await saveOpticTemplate(auth.ctx, opt(formData, "templateId"), {
+      name: requiredText(formData, "name", "Şablon adı", 2, 80),
+      numberStart: int(formData, "numberStart", 1, 1, 2000),
+      numberLength: int(formData, "numberLength", 1, 1, 30),
+      nameStart: nameStart || null,
+      nameLength: nameStart ? nameLength || null : null,
+      sections,
+    });
+    refresh();
+    return success("Optik şablon kaydedildi.");
+  });
+}
+
+export async function deleteOpticTemplateAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const auth = await centerAction("exams.manage");
+  if (!auth.ok) return auth.state;
+  return guard(async () => {
+    await deleteOpticTemplate(auth.ctx, str(formData, "templateId"));
+    refresh();
+    return success("Şablon silindi.");
+  });
+}
+
+/** Optik okuyucu çıktısını (TXT/DAT) şablona göre okur. Türkçe karakterler için önce UTF-8, olmazsa Windows-1254 denenir. */
+export async function importOpticAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const auth = await centerAction("exams.manage");
+  if (!auth.ok) return auth.state;
+  return guard(async () => {
+    const file = formData.get("file");
+    if (!(file instanceof File) || file.size === 0) throw new CenterError("Optik okuyucu dosyasını seçin.", { file: "Dosya gerekli." });
+    if (file.size > 5 * 1024 * 1024) throw new CenterError("Dosya en fazla 5 MB olabilir.");
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    let text = new TextDecoder("utf-8").decode(bytes);
+    if (text.includes("�")) text = new TextDecoder("windows-1254").decode(bytes);
+    const summary = await importOpticResults(auth.ctx, str(formData, "examId"), str(formData, "templateId"), text);
+    refresh();
+    const notes = summary.problems.slice(0, 30).map((p) => `${p.row}. satır: ${p.message}`);
+    return success(`${summary.saved} öğrencinin optik formu okundu.`, { notes: notes.join("\n") });
   });
 }

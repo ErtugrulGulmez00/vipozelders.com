@@ -13,6 +13,8 @@ import { GENDER_LABEL } from "@/lib/labels";
 import { formatMoney } from "@/lib/money";
 import { HomeworkList } from "@/components/center/homework-list";
 import { StudyView } from "@/components/center/study-view";
+import { CoachingView } from "@/components/center/coaching-view";
+import { studentHallDays } from "@/server/center/study-hall";
 import { requireCenter } from "@/server/center/context";
 import { marketplaceLink, studentNetTrend, studentWeakTopics } from "@/server/center/exams";
 import { studentBalance } from "@/server/center/finance";
@@ -56,6 +58,7 @@ export default async function StudentCardPage({ params, searchParams }: PageProp
     { key: "devam", label: "Devam ve ödev", href: `/kurum/ogrenciler/${id}?sekme=devam` },
     { key: "denemeler", label: "Denemeler ve eksikler", href: `/kurum/ogrenciler/${id}?sekme=denemeler` },
     { key: "program", label: "Program ve kaynaklar", href: `/kurum/ogrenciler/${id}?sekme=program` },
+    ...(ctx.can("coaching.manage") ? [{ key: "kocluk", label: "Koçluk", href: `/kurum/ogrenciler/${id}?sekme=kocluk` }] : []),
     ...(canFinance ? [{ key: "odemeler", label: "Ödemeler", href: `/kurum/ogrenciler/${id}?sekme=odemeler` }] : []),
   ];
   const [attendanceStats, balance] = await Promise.all([
@@ -107,6 +110,8 @@ export default async function StudentCardPage({ params, searchParams }: PageProp
         <AttendanceTab studentId={id} />
       ) : tab === "denemeler" ? (
         <ExamsTab centerId={centerId} studentId={id} />
+      ) : tab === "kocluk" && ctx.can("coaching.manage") ? (
+        <CoachingView centerId={centerId} studentId={id} mode="staff" canWrite memberId={ctx.member.id} isManager={ctx.member.role === "OWNER" || ctx.member.role === "MANAGER"} />
       ) : tab === "program" ? (
         <StudyView centerId={centerId} studentId={id} week={typeof sp.hafta === "string" ? sp.hafta : undefined} baseHref={`/kurum/ogrenciler/${id}?sekme=program`} mode="staff" canEdit={ctx.can("resources.manage")} />
       ) : tab === "odemeler" && canFinance ? (
@@ -254,10 +259,10 @@ async function GeneralTab({
 }
 
 async function AttendanceTab({ studentId }: { studentId: string }) {
-  const [records, etuds, homeworks] = await Promise.all([
+  const [records, etuds, homeworks, hallDays] = await Promise.all([
     db.centerAttendance.findMany({
       where: { studentId },
-      include: { session: { select: { date: true, startMinute: true, subject: true, group: { select: { name: true } } } } },
+      include: { session: { select: { date: true, startMinute: true, subject: true, topic: true, group: { select: { name: true } } } } },
       orderBy: [{ session: { date: "desc" } }, { session: { startMinute: "desc" } }],
       take: 150,
     }),
@@ -268,9 +273,23 @@ async function AttendanceTab({ studentId }: { studentId: string }) {
       take: 50,
     }),
     db.centerHomeworkStudent.findMany({ where: { studentId }, include: { homework: true }, orderBy: { homework: { dueDate: "desc" } }, take: 40 }),
+    studentHallDays(studentId),
   ]);
   return (
     <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+      {hallDays.length ? (
+        <Card className="lg:col-span-2">
+          <CardHeader title="Çalışma salonu" description="Son günler · G geldi, Y gelmedi" />
+          <CardBody className="flex flex-wrap gap-2">
+            {hallDays.map((d) => (
+              <span key={`${d.date}-${d.hall}`} className="rounded-lg bg-slate-50 px-3 py-2 text-xs">
+                <span className="font-semibold text-slate-800">{d.date.slice(8)}.{d.date.slice(5, 7)}</span> · {d.hall} · {d.present}/{d.marked} periyot
+                <span className="ml-2 font-mono tracking-widest text-slate-500">{d.marks}</span>
+              </span>
+            ))}
+          </CardBody>
+        </Card>
+      ) : null}
       <Card>
         <CardHeader title="Ders yoklamaları" description="Son 150 kayıt" />
         {records.length === 0 ? (
@@ -294,6 +313,7 @@ async function AttendanceTab({ studentId }: { studentId: string }) {
                   </Td>
                   <Td className="text-xs">
                     {r.session.subject} <span className="text-slate-500">· {r.session.group.name}</span>
+                    {r.session.topic ? <p className="text-slate-600">İşlenen: {r.session.topic}</p> : null}
                     {r.note ? <p className="text-slate-500">{r.note}</p> : null}
                   </Td>
                   <Td>

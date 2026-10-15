@@ -14,6 +14,7 @@ import {
   type TopicStat,
   topicBreakdown,
 } from "@/lib/center/exams";
+import { parseOpticFile } from "@/lib/center/optic";
 import { normalizeSearch } from "@/lib/text";
 import { db } from "../db";
 import type { CenterContext } from "./context";
@@ -273,6 +274,70 @@ export async function importExamResults(ctx: CenterContext, examId: string, tabl
   return summary;
 }
 
+// ---------------------------------------------------------------------------
+// Optik okuyucu (sabit konumlu TXT/DAT) aktarımı
+// ---------------------------------------------------------------------------
+
+export type OpticTemplateInput = { name: string; numberStart: number; numberLength: number; nameStart: number | null; nameLength: number | null; sections: { start: number; length: number }[] };
+
+export async function saveOpticTemplate(ctx: CenterContext, templateId: string | null, input: OpticTemplateInput) {
+  if (!input.sections.length) throw new CenterError("En az bir ders için cevap konumu girin.", { sections: "Örn: 40:20" });
+  if (templateId) {
+    const existing = await db.centerOpticTemplate.findFirst({ where: { id: templateId, centerId: ctx.center.id } });
+    if (!existing) throw new CenterError("Şablon bulunamadı.");
+    return db.centerOpticTemplate.update({ where: { id: templateId }, data: input });
+  }
+  return db.centerOpticTemplate.create({ data: { centerId: ctx.center.id, ...input } });
+}
+
+export async function deleteOpticTemplate(ctx: CenterContext, templateId: string) {
+  const existing = await db.centerOpticTemplate.findFirst({ where: { id: templateId, centerId: ctx.center.id } });
+  if (!existing) throw new CenterError("Şablon bulunamadı.");
+  await db.centerOpticTemplate.delete({ where: { id: templateId } });
+}
+
+/**
+ * Optik okuyucu dosyasını şablona göre okur; öğrenciler numarayla (yoksa adla) eşleşir. Şablondaki ders sırası
+ * sınavın ders sırasıyla eşleşir. Çift işaretli (*) cevap yanlış sayılır. Yalnızca cevap anahtarı girilmiş dersler okunur.
+ */
+export async function importOpticResults(ctx: CenterContext, examId: string, templateId: string, text: string): Promise<ExamImportSummary> {
+  const exam = await getExamOrThrow(ctx, examId);
+  const template = await db.centerOpticTemplate.findFirst({ where: { id: templateId, centerId: ctx.center.id } });
+  if (!template) throw new CenterError("Optik şablon bulunamadı.");
+  const positions = template.sections as { start: number; length: number }[];
+  const mapped = exam.sections.slice(0, positions.length).map((section, index) => ({ section, index }));
+  const keyed = mapped.filter((m) => m.section.answerKey);
+  if (!keyed.length) throw new CenterError("Optik okuma için en az bir dersin cevap anahtarını girin.");
+  const rows = parseOpticFile(text, { ...template, sections: positions });
+  if (!rows.length) throw new CenterError("Dosyada okunacak satır bulunamadı.");
+
+  const students = await db.centerStudent.findMany({ where: { centerId: ctx.center.id }, select: { id: true, studentNumber: true, firstName: true, lastName: true } });
+  const byNumber = new Map(students.filter((s) => s.studentNumber).map((s) => [s.studentNumber!.replace(/^0+(?=\d)/, ""), s]));
+  const byName = new Map(students.map((s) => [normalizeSearch(`${s.firstName} ${s.lastName}`), s]));
+  const summary: ExamImportSummary = { saved: 0, problems: [] };
+  for (const row of rows) {
+    const student = (row.number && byNumber.get(row.number)) || (row.name && byName.get(normalizeSearch(row.name))) || null;
+    if (!student) {
+      summary.problems.push({ row: row.line, message: `${row.number || row.name || "Numarasız form"}: öğrenci bulunamadı.` });
+      continue;
+    }
+    const scores: SectionScore[] = keyed.map(({ section, index }) => {
+      const key = section.answerKey!;
+      const answers = [...row.answers[index].slice(0, key.length)]
+        .map((c, q) => (c === "*" ? "ABCDE".replace(key[q] ?? "", "")[0] : c))
+        .join("");
+      return { sectionId: section.id, correct: 0, wrong: 0, answers };
+    });
+    try {
+      await upsertResult(examId, student.id, scoreSections(exam, scores, `${student.firstName} ${student.lastName}`), undefined);
+      summary.saved++;
+    } catch (error) {
+      summary.problems.push({ row: row.line, message: error instanceof CenterError ? error.message : "Kaydedilemedi." });
+    }
+  }
+  await recomputeExam(examId);
+  return summary;
+}
 /** Sonuçları velilere açar; ilk yayında hesabı bağlı velilere bildirim (isteğe bağlı e-posta/SMS) gider. */
 export async function publishExam(ctx: CenterContext, examId: string, publish: boolean, channels: { email: boolean; sms: boolean }) {
   const exam = await getExamOrThrow(ctx, examId);

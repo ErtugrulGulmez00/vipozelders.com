@@ -7,6 +7,7 @@ import { requireCenter } from "@/server/center/context";
 import { getExamOrThrow } from "@/server/center/exams";
 import { CenterError } from "@/server/center/errors";
 import { db } from "@/server/db";
+import { DeleteOpticTemplateButton, OpticImportForm, OpticTemplateForm } from "@/components/center/optic-forms";
 import { ExamImportForm } from "../../exam-forms";
 import { ExamHeader } from "../exam-header";
 
@@ -19,7 +20,10 @@ export default async function ExamImportPage({ params }: PageProps<"/kurum/denem
     if (error instanceof CenterError) notFound();
     throw error;
   });
-  const groups = await db.centerGroup.findMany({ where: { centerId: ctx.center.id, isActive: true }, orderBy: { name: "asc" }, select: { id: true, name: true } });
+  const [groups, templates] = await Promise.all([
+    db.centerGroup.findMany({ where: { centerId: ctx.center.id, isActive: true }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    db.centerOpticTemplate.findMany({ where: { centerId: ctx.center.id }, orderBy: { name: "asc" } }),
+  ]);
   const hasKeys = exam.sections.every((s) => s.answerKey);
   const template = (extra: string) => `/api/kurum/disa-aktar/deneme-sablonu?deneme=${exam.id}${extra}`;
   return (
@@ -64,6 +68,37 @@ export default async function ExamImportPage({ params }: PageProps<"/kurum/denem
               <li>İsteğe bağlı “Puan” sütunu yayınevinin puanını kaydeder.</li>
               <li>Aynı öğrenci yeniden aktarılırsa sonucu güncellenir; net ve sıralama otomatik hesaplanır.</li>
             </ul>
+          </CardBody>
+        </Card>
+      </div>
+      <div className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:items-start">
+        <Card>
+          <CardHeader title="Optik okuyucu dosyası" description="Okuyucunun verdiği TXT/DAT dosyası; cevaplar anahtarla otomatik okunur, çift işaretli soru yanlış sayılır." />
+          <CardBody>
+            {!exam.sections.some((s) => s.answerKey) ? (
+              <p className="text-sm text-amber-700">Optik okuma için önce “Cevap anahtarı” sekmesinden derslerin anahtarını girin; anahtarı olmayan dersler okunmaz.</p>
+            ) : templates.length ? (
+              <OpticImportForm examId={exam.id} templates={templates.map((t) => ({ id: t.id, name: t.name }))} />
+            ) : (
+              <p className="text-sm text-slate-500">Önce sağdan okuyucunuzun dosya şablonunu tanımlayın.</p>
+            )}
+          </CardBody>
+        </Card>
+        <Card>
+          <CardHeader title="Optik şablonlar" description="Okuyucu programının kılavuzunda ya da örnek dosyada alanların hangi sütunda başladığı yazar." />
+          <CardBody className="space-y-4">
+            {templates.map((t) => (
+              <details key={t.id} className="rounded-xl border border-slate-200 p-3">
+                <summary className="flex cursor-pointer items-center justify-between gap-2 text-sm font-semibold text-slate-900">
+                  {t.name}
+                  <DeleteOpticTemplateButton templateId={t.id} />
+                </summary>
+                <div className="mt-3">
+                  <OpticTemplateForm initial={{ ...t, sections: t.sections as { start: number; length: number }[] }} sectionNames={exam.sections.map((s) => s.name)} />
+                </div>
+              </details>
+            ))}
+            <OpticTemplateForm sectionNames={exam.sections.map((s) => s.name)} />
           </CardBody>
         </Card>
       </div>

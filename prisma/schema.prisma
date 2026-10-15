@@ -983,6 +983,9 @@ model Center {
   questions            CenterQuestion[]
   resources            CenterResource[]
   studyPlanItems       CenterStudyPlanItem[]
+  coachingSessions     CenterCoachingSession[]
+  studyHalls           CenterStudyHall[]
+  opticTemplates       CenterOpticTemplate[]
 
   @@index([status])
 }
@@ -1000,13 +1003,15 @@ model CenterMember {
   isActive  Boolean    @default(true)
   createdAt DateTime   @default(now())
 
-  groups    CenterGroup[]        @relation("GroupTeacher")
-  slots     CenterScheduleSlot[] @relation("SlotTeacher")
-  etuds     CenterEtud[]         @relation("EtudTeacher")
-  homeworks CenterHomework[]     @relation("HomeworkTeacher")
-  answers   CenterQuestion[]     @relation("QuestionAnswerer")
-  notes     CenterNote[]         @relation("NoteAuthor")
-  expenses  CenterExpense[]      @relation("ExpenseMember")
+  groups    CenterGroup[]           @relation("GroupTeacher")
+  slots     CenterScheduleSlot[]    @relation("SlotTeacher")
+  etuds     CenterEtud[]            @relation("EtudTeacher")
+  homeworks CenterHomework[]        @relation("HomeworkTeacher")
+  answers   CenterQuestion[]        @relation("QuestionAnswerer")
+  notes     CenterNote[]            @relation("NoteAuthor")
+  expenses  CenterExpense[]         @relation("ExpenseMember")
+  coachees  CenterStudent[]         @relation("StudentCoach")
+  coachings CenterCoachingSession[] @relation("CoachingCoach")
 
   @@unique([centerId, userId])
   @@index([userId])
@@ -1047,6 +1052,11 @@ model CenterStudent {
   address           String?
   notes             String?
   status            CenterStudentStatus @default(ACTIVE)
+  // Koçluk: rehber/koç öğretmen ve haftalık görüşme günü (1=Pzt) ve saati (dakika)
+  coachId           String?
+  coach             CenterMember?       @relation("StudentCoach", fields: [coachId], references: [id], onDelete: SetNull)
+  coachWeekday      Int?
+  coachMinute       Int?
   enrolledAt        DateTime            @default(now())
   leftAt            DateTime?
   createdAt         DateTime            @default(now())
@@ -1065,6 +1075,9 @@ model CenterStudent {
   questions    CenterQuestion[]
   resources    CenterStudentResource[]
   studyPlan    CenterStudyPlanItem[]
+  coaching     CenterCoachingSession[]
+  halls        CenterHallStudent[]
+  hallDays     CenterHallDay[]
 
   @@unique([centerId, studentNumber])
   @@index([centerId, status])
@@ -1163,6 +1176,8 @@ model CenterAttendanceSession {
   teacherId   String?
   takenById   String?
   takenAt     DateTime?
+  // Sınıf defteri: bu derste işlenen konu / kazanım
+  topic       String?
   createdAt   DateTime    @default(now())
 
   records CenterAttendance[]
@@ -1605,4 +1620,87 @@ model CenterQuestion {
 
   @@index([centerId, status, createdAt])
   @@index([studentId])
+}
+
+// Koçluk / rehberlik görüşmesi
+model CenterCoachingSession {
+  id              String        @id @default(cuid())
+  centerId        String
+  center          Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  studentId       String
+  student         CenterStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  coachId         String?
+  coach           CenterMember? @relation("CoachingCoach", fields: [coachId], references: [id], onDelete: SetNull)
+  date            DateTime      @db.Date
+  // Görüşme yapılmadıysa (öğrenci gelmedi) false
+  held            Boolean       @default(true)
+  notes           String
+  // Öncelikli (üzerinde durulacak) konular
+  priorityTopics  String[]
+  nextGoal        String?
+  visibleToParent Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+
+  @@index([centerId, date])
+  @@index([studentId, date])
+}
+
+// Çalışma salonu / kütüphane: periyot periyot geldi-gelmedi
+model CenterStudyHall {
+  id        String   @id @default(cuid())
+  centerId  String
+  center    Center   @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  name      String
+  // "09:00-09:45" biçiminde periyotlar, sırasıyla
+  periods   String[]
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  students CenterHallStudent[]
+  days     CenterHallDay[]
+
+  @@index([centerId])
+}
+
+model CenterHallStudent {
+  hallId    String
+  hall      CenterStudyHall @relation(fields: [hallId], references: [id], onDelete: Cascade)
+  studentId String
+  student   CenterStudent   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  deskNo    String?
+
+  @@id([hallId, studentId])
+  @@index([studentId])
+}
+
+// Bir öğrencinin bir gündeki periyot işaretleri: her karakter bir periyot (G = geldi, Y = gelmedi, - = işaretlenmedi)
+model CenterHallDay {
+  hallId     String
+  hall       CenterStudyHall @relation(fields: [hallId], references: [id], onDelete: Cascade)
+  studentId  String
+  student    CenterStudent   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  date       DateTime        @db.Date
+  marks      String
+  notifiedAt DateTime?
+  updatedAt  DateTime        @updatedAt
+
+  @@id([hallId, studentId, date])
+  @@index([studentId, date])
+}
+
+// Optik okuyucu çıktı şablonu (sabit konumlu TXT/DAT): alanların satırdaki başlangıç konumu ve uzunluğu (1'den başlar)
+model CenterOpticTemplate {
+  id           String   @id @default(cuid())
+  centerId     String
+  center       Center   @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  name         String
+  numberStart  Int
+  numberLength Int
+  nameStart    Int?
+  nameLength   Int?
+  // Her ders için [başlangıç, uzunluk]; sınavın ders sırasıyla eşleşir. JSON: [{"start":40,"length":20}]
+  sections     Json
+  createdAt    DateTime @default(now())
+
+  @@index([centerId])
 }

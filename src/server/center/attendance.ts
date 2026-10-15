@@ -91,6 +91,8 @@ export type AttendanceSheetInput = {
   endMinute: number;
   subject: string;
   slotId: string | null;
+  /** Sınıf defteri: işlenen konu */
+  topic?: string | null;
   records: { studentId: string; status: AttendanceStatusName; note: string | null }[];
   notify: boolean;
 };
@@ -121,8 +123,9 @@ export async function saveAttendance(ctx: CenterContext, input: AttendanceSheetI
       teacherId: slot?.teacherId ?? (ctx.member.role === "TEACHER" ? ctx.member.id : null),
       takenById: ctx.member.id,
       takenAt: new Date(),
+      topic: input.topic ?? null,
     },
-    update: { takenById: ctx.member.id, takenAt: new Date(), endMinute: input.endMinute, subject: input.subject || undefined },
+    update: { takenById: ctx.member.id, takenAt: new Date(), endMinute: input.endMinute, subject: input.subject || undefined, ...(input.topic !== undefined ? { topic: input.topic } : {}) },
   });
   await db.$transaction(
     records.map((r) =>

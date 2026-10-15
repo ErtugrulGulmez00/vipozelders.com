@@ -87,7 +87,7 @@ export async function portalChildDetail(userId: string, guardianId: string) {
   const [attendance, etuds, results, installments, payments, announcements, notes, weakTopics, balance, homeworks, questions] = await Promise.all([
     db.centerAttendance.findMany({
       where: { studentId: student.id, session: { date: { gte: dateStringToDbDate(addDaysToDateString(today, -60)) } } },
-      include: { session: { select: { date: true, startMinute: true, subject: true, group: { select: { name: true } } } } },
+      include: { session: { select: { date: true, startMinute: true, subject: true, topic: true, group: { select: { name: true } } } } },
       orderBy: [{ session: { date: "desc" } }, { session: { startMinute: "desc" } }],
       take: 200,
     }),

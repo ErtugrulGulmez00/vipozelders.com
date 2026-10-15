@@ -1,5 +1,7 @@
 import { ExternalLink } from "lucide-react";
 import { StudyView } from "@/components/center/study-view";
+import { CoachingView } from "@/components/center/coaching-view";
+import { studentHallDays } from "@/server/center/study-hall";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -64,6 +66,7 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
       />
       {tab === "devam" ? (
         <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+          <HallDaysCard studentId={student.id} />
           <Card>
             <CardHeader title="Ders yoklamaları" description="Son 60 gün" />
             {attendance.length ? (
@@ -76,6 +79,7 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
                       </Td>
                       <Td className="text-sm">
                         {a.session.subject} <span className="text-xs text-slate-500">· {a.session.group.name}</span>
+                        {a.session.topic ? <p className="text-xs text-slate-600">İşlenen: {a.session.topic}</p> : null}
                       </Td>
                       <Td>
                         <Badge tone={ATTENDANCE_STATUS[a.status].tone}>{ATTENDANCE_STATUS[a.status].label}</Badge>
@@ -225,7 +229,10 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
           </Card>
         </div>
       ) : tab === "calisma" ? (
-        <StudyView centerId={student.centerId} studentId={student.id} week={typeof sp.hafta === "string" ? sp.hafta : undefined} baseHref={`${base}?sekme=calisma`} mode="portal" canEdit={false} />
+        <div className="space-y-6">
+          <StudyView centerId={student.centerId} studentId={student.id} week={typeof sp.hafta === "string" ? sp.hafta : undefined} baseHref={`${base}?sekme=calisma`} mode="portal" canEdit={false} />
+          <CoachingView centerId={student.centerId} studentId={student.id} mode="portal" canWrite={false} />
+        </div>
       ) : tab === "odevler" ? (
         <HomeworkList rows={homeworks.map((h) => ({ id: h.homeworkId, subject: h.homework.subject, title: h.homework.title, description: h.homework.description, dueDate: h.homework.dueDate, status: h.status, note: h.note }))} />
       ) : tab === "sorular" ? (
@@ -362,5 +369,26 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
         </div>
       )}
     </>
+  );
+}
+
+/** Çalışma salonu kayıtları (varsa). */
+async function HallDaysCard({ studentId }: { studentId: string }) {
+  const days = await studentHallDays(studentId);
+  if (!days.length) return null;
+  return (
+    <Card className="lg:col-span-2">
+      <CardHeader title="Çalışma salonu" description="Son günler · G geldi, Y gelmedi" />
+      <CardBody className="flex flex-wrap gap-2">
+        {days.map((d) => (
+          <span key={`${d.date}-${d.hall}`} className="rounded-lg bg-slate-50 px-3 py-2 text-xs">
+            <span className="font-semibold text-slate-800">
+              {d.date.slice(8)}.{d.date.slice(5, 7)}
+            </span>{" "}
+            · {d.hall} · {d.present}/{d.marked} periyot <span className="ml-2 font-mono tracking-widest text-slate-500">{d.marks}</span>
+          </span>
+        ))}
+      </CardBody>
+    </Card>
   );
 }

@@ -2,6 +2,7 @@ import { Download, FileSpreadsheet, PlusCircle, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Form from "next/form";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { CenterFlash } from "@/components/center/center-ui";
 import { buttonClasses, LinkButton } from "@/components/ui/button";
 import { Input, Select } from "@/components/ui/form";
@@ -22,7 +23,8 @@ export default async function CenterStudentsPage({ searchParams }: PageProps<"/k
   const params = await searchParams;
   const q = String(params.q ?? "").trim();
   const groupId = String(params.grup ?? "");
-  const rawStatus = String(params.statu ?? "ACTIVE");
+  // Üst çubuktaki aramadan gelindiyse ayrılmış öğrenciler de bulunur.
+  const rawStatus = String(params.statu ?? (params.ara === "1" ? "ALL" : "ACTIVE"));
   const status = ["ACTIVE", "PASSIVE", "LEFT", "ALL"].includes(rawStatus) ? rawStatus : "ACTIVE";
   const page = Math.max(1, Number(params.sayfa) || 1);
   const centerId = ctx.center.id;
@@ -34,8 +36,8 @@ export default async function CenterStudentsPage({ searchParams }: PageProps<"/k
     ...(q
       ? {
           OR: [
-            { firstName: { contains: q, mode: "insensitive" } },
-            { lastName: { contains: q, mode: "insensitive" } },
+            // "Ali Demirtaş": her kelime adda ya da soyadda geçmeli
+            { AND: q.split(/\s+/).map((word) => ({ OR: [{ firstName: { contains: word, mode: "insensitive" as const } }, { lastName: { contains: word, mode: "insensitive" as const } }] })) },
             { studentNumber: { contains: q } },
             { phone: { contains: q.replace(/\s/g, "") } },
             { schoolName: { contains: q, mode: "insensitive" } },
@@ -59,6 +61,7 @@ export default async function CenterStudentsPage({ searchParams }: PageProps<"/k
     }),
     db.centerGroup.findMany({ where: { centerId, isActive: true }, orderBy: { name: "asc" }, select: { id: true, name: true } }),
   ]);
+  if (params.ara === "1" && total === 1) redirect(`/kurum/ogrenciler/${students[0].id}`);
   const today = toLocalDateString(new Date());
   const query = (extra: Record<string, string | number>) => {
     const sp = new URLSearchParams({ ...(q ? { q } : {}), ...(groupId ? { grup: groupId } : {}), ...(status !== "ACTIVE" ? { statu: status } : {}) });
