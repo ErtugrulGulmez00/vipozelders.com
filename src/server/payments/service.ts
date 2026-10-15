@@ -11,6 +11,15 @@ export function getPaymentProvider(): PaymentProvider {
   return PAYMENT_PROVIDERS[process.env.PAYMENT_PROVIDER ?? ""] ?? mockProvider;
 }
 
+/**
+ * Canlı ortamda gerçek ödeme sağlayıcısı yokken (test ödemesi) ders ve soru satışı kapalıdır; aksi hâlde herkes
+ * "başarılı test ödemesi" ile ücretsiz ders alabilir. Denemeler için .env'de ALLOW_TEST_PAYMENTS="true".
+ */
+export function salesOpen(): boolean {
+  if (getPaymentProvider().id !== "mock") return true;
+  return process.env.NODE_ENV !== "production" || process.env.ALLOW_TEST_PAYMENTS === "true";
+}
+
 /** Var olan bir ödemenin sağlayıcısı: sağlayıcı sonradan değişse de eski ödemeler kendi sağlayıcısıyla sonuçlanır/iade edilir. */
 export function getProviderById(id: string): PaymentProvider {
   const provider = PAYMENT_PROVIDERS[id];

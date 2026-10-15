@@ -15,7 +15,7 @@ import { generateSlots, isSlotAvailable, type BusyRange, type DayException, type
 import { db, type DbTransaction } from "./db";
 import { addLedgerEntry, pendingForBooking, resetPendingForBooking } from "./ledger";
 import { notify, notifyRole } from "./notifications";
-import { getPaymentProvider, getProviderById, PAYMENT_PROVIDERS, processRefund, requestRefund } from "./payments/service";
+import { getPaymentProvider, getProviderById, PAYMENT_PROVIDERS, processRefund, requestRefund, salesOpen } from "./payments/service";
 import { approvalDeadline, lessonPrice, splitCommission, splitRetained, studentCancellationRefund } from "./pricing";
 import { appUrl } from "./email";
 import { loadSettings } from "./settings";
@@ -149,6 +149,7 @@ export type CreateBookingInput = {
 
 /** Saati ödeme süresi boyunca kilitleyen randevu kaydı oluşturur (PENDING_PAYMENT). */
 export async function createBookingHold(input: CreateBookingInput, now = new Date()): Promise<Booking> {
+  if (!salesOpen()) throw new BookingError("Online ödeme altyapımız çok yakında açılıyor; şu an ders ve soru satışı yapılamıyor.");
   const settings = await loadSettings();
   const offering = await db.teacherOffering.findUnique({
     where: { id: input.offeringId },

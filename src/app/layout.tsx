@@ -15,6 +15,9 @@ export async function generateMetadata(): Promise<Metadata> {
     title: { default: `${settings.siteName} · Özel ders, soru çözüm ve koçluk`, template: `%s · ${settings.siteName}` },
     description: settings.siteTagline,
     metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
+    // WhatsApp, Instagram vb. bağlantı önizlemesi (görsel: app/opengraph-image.tsx)
+    openGraph: { type: "website", locale: "tr_TR", siteName: settings.siteName, title: `${settings.siteName} · Özel ders, soru çözüm ve koçluk`, description: settings.siteTagline },
+    twitter: { card: "summary_large_image" },
   };
 }
 

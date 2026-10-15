@@ -6,6 +6,7 @@ import { connection } from "next/server";
 import { Suspense } from "react";
 import { toggleFavoriteAction } from "@/actions/student";
 import { BookingWidget } from "@/components/site/booking-widget";
+import { salesOpen } from "@/server/payments/service";
 import { buttonClasses } from "@/components/ui/button";
 import { PhotoZoom } from "@/components/site/photo-zoom";
 import { Alert, Badge, Card, RatingSummary, Skeleton, Stars } from "@/components/ui/primitives";
@@ -182,6 +183,12 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
           {preview ? (
             <p className="text-sm text-slate-500">Profil yayına alınınca boş saatleriniz burada görünecek ve veliler randevu alabilecek.</p>
           ) : (
+          <>
+          {salesOpen() ? null : (
+            <Alert tone="info" title="Online ödeme çok yakında" className="mb-4">
+              Saatleri ve fiyatları inceleyebilirsiniz; randevu ve soru gönderme, ödeme altyapımız açılınca başlayacak.
+            </Alert>
+          )}
           <BookingWidget
             teacherId={teacher.userId}
             online={teacher.offersOnline}
@@ -197,6 +204,7 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
               questionPrice: o.questionPrice,
             }))}
           />
+          </>
           )}
         </Card>
       </aside>

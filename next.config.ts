@@ -14,6 +14,8 @@ function allowedOrigins(): string[] {
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  // "X-Powered-By: Next.js" başlığı gönderilmez.
+  poweredByHeader: false,
   partialPrefetching: true,
   // iyzipay modüllerini dosya sisteminden dinamik yüklediği için paketlenmeden çalıştırılmalı.
   serverExternalPackages: ["iyzipay", "pg", "nodemailer", "exceljs"],

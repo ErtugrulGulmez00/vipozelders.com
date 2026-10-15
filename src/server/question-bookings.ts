@@ -5,7 +5,7 @@ import { BookingError, lessonSummary } from "./bookings";
 import { db } from "./db";
 import { addLedgerEntry } from "./ledger";
 import { notify } from "./notifications";
-import { getPaymentProvider } from "./payments/service";
+import { getPaymentProvider, salesOpen } from "./payments/service";
 import { splitCommission } from "./pricing";
 import { loadSettings } from "./settings";
 import { deleteUpload, saveUpload, UploadError } from "./storage";
@@ -41,6 +41,7 @@ export type QuestionHoldInput = {
 
 /** Soru fotoğrafını kaydeder ve ödeme için bekleyen soru kaydını oluşturur. */
 export async function createQuestionHold(input: QuestionHoldInput, now = new Date()): Promise<Booking> {
+  if (!salesOpen()) throw new BookingError("Online ödeme altyapımız çok yakında açılıyor; şu an ders ve soru satışı yapılamıyor.");
   const settings = await loadSettings();
   const offering = await db.teacherOffering.findUnique({
     where: { id: input.offeringId },
