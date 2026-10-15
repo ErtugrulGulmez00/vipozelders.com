@@ -17,6 +17,7 @@
     "worker": "tsx --env-file=.env scripts/worker.ts",
     "admin:2fa-kapat": "tsx --env-file=.env scripts/disable-2fa.ts",
     "admin:sifre-sifirla": "tsx --env-file=.env scripts/reset-password.ts",
+    "whatsapp:test": "tsx --env-file=.env scripts/whatsapp-test.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "postinstall": "prisma generate && node scripts/copy-excalidraw-assets.mjs",
