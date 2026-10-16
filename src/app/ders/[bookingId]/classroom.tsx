@@ -16,7 +16,7 @@ import {
   useConnectionState,
   useTracks,
 } from "@livekit/components-react";
-import { ConnectionState, Track } from "livekit-client";
+import { ConnectionState, Track, VideoPresets, type RoomOptions } from "livekit-client";
 import { LogOut, MessageSquare, PenLine, Send, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
@@ -41,6 +41,21 @@ function screenShareError(error: Error): string {
   if (error.name === "NotReadableError") return "Ekran yakalanamadı. Başka bir program ekranı kullanıyor olabilir; kapatıp tekrar deneyin.";
   return `Ekran paylaşımı başlatılamadı (${error.message || error.name}).`;
 }
+
+/**
+ * Görüntü kalitesi üst sınırı: birebir ders ve tahta için 720p yeterli; bit hızı sınırı sunucu trafiğini öngörülebilir
+ * tutar. Karşı tarafın interneti zayıfsa LiveKit düşük katmana (360p/180p) kendiliğinden geçer.
+ */
+const ROOM_OPTIONS: RoomOptions = {
+  adaptiveStream: true,
+  dynacast: true,
+  videoCaptureDefaults: { resolution: VideoPresets.h720.resolution },
+  publishDefaults: {
+    videoEncoding: { maxBitrate: 1_200_000, maxFramerate: 24 },
+    videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360],
+    screenShareEncoding: { maxBitrate: 1_500_000, maxFramerate: 15 },
+  },
+};
 
 const SMALL_SCREEN = "(max-width: 639px)";
 const isSmallScreen = () => window.matchMedia(SMALL_SCREEN).matches;
@@ -235,7 +250,7 @@ export function Classroom({ token, serverUrl, title, endsAt, backHref }: { token
   const router = useRouter();
   return (
     <div data-lk-theme="default" className="classroom-root">
-      <LiveKitRoom token={token} serverUrl={serverUrl} connect video audio onDisconnected={() => router.push(backHref)} className="h-full">
+      <LiveKitRoom token={token} serverUrl={serverUrl} options={ROOM_OPTIONS} connect video audio onDisconnected={() => router.push(backHref)} className="h-full">
         <Stage title={title} endsAt={endsAt} />
         <RoomAudioRenderer />
       </LiveKitRoom>
