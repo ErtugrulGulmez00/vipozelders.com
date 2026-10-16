@@ -77,6 +77,9 @@ model User {
   centerMemberships CenterMember[]
   guardianLinks     CenterGuardian[]   @relation("GuardianAccounts")
   bookingMessages   BookingMessage[]
+  creditPurchases   CreditPurchase[]
+  creditEntries     CreditLedger[]
+  poolQuestions     PoolQuestion[]
 }
 
 // Mobil uygulama push bildirim kayıtları (Firebase Cloud Messaging).
@@ -172,16 +175,17 @@ enum LevelGroup {
 }
 
 model Level {
-  id        Int               @id @default(autoincrement())
-  name      String
-  slug      String            @unique
-  group     LevelGroup        @default(SCHOOL)
-  sortOrder Int               @default(0)
-  isActive  Boolean           @default(true)
-  grades    Grade[]
-  subjects  LevelSubject[]
-  offerings TeacherOffering[]
-  bookings  Booking[]
+  id            Int               @id @default(autoincrement())
+  name          String
+  slug          String            @unique
+  group         LevelGroup        @default(SCHOOL)
+  sortOrder     Int               @default(0)
+  isActive      Boolean           @default(true)
+  grades        Grade[]
+  subjects      LevelSubject[]
+  offerings     TeacherOffering[]
+  bookings      Booking[]
+  poolQuestions PoolQuestion[]
 }
 
 model Grade {
@@ -195,14 +199,15 @@ model Grade {
 }
 
 model Subject {
-  id        Int               @id @default(autoincrement())
-  name      String
-  slug      String            @unique
-  sortOrder Int               @default(0)
-  isActive  Boolean           @default(true)
-  levels    LevelSubject[]
-  offerings TeacherOffering[]
-  bookings  Booking[]
+  id            Int               @id @default(autoincrement())
+  name          String
+  slug          String            @unique
+  sortOrder     Int               @default(0)
+  isActive      Boolean           @default(true)
+  levels        LevelSubject[]
+  offerings     TeacherOffering[]
+  bookings      Booking[]
+  poolQuestions PoolQuestion[]
 }
 
 model LevelSubject {
@@ -309,6 +314,8 @@ model TeacherProfile {
   responseCount           Int                @default(0)
   cancellationCount       Int                @default(0)
   searchText              String             @default("")
+  // Soru havuzundan soru çözmeye katılır mı (ders verdiği kademe/derslerde)
+  answersPool             Boolean            @default(true)
   publishedAt             DateTime?
   createdAt               DateTime           @default(now())
   updatedAt               DateTime           @updatedAt
@@ -323,6 +330,7 @@ model TeacherProfile {
   documents              TeacherDocument[]
   ledgerEntries          LedgerEntry[]
   payouts                Payout[]
+  poolQuestions          PoolQuestion[]
 
   @@index([status])
 }
@@ -599,23 +607,27 @@ enum PaymentStatus {
 }
 
 model Payment {
-  id                String        @id @default(cuid())
-  bookingId         String
-  booking           Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  id                String          @id @default(cuid())
+  // Ders ödemesi (bookingId) ya da soru kredisi satın alma (creditPurchaseId)
+  bookingId         String?
+  booking           Booking?        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  creditPurchaseId  String?
+  creditPurchase    CreditPurchase? @relation(fields: [creditPurchaseId], references: [id], onDelete: Cascade)
   provider          String
-  providerToken     String?       @unique
+  providerToken     String?         @unique
   providerPaymentId String?
   providerItemId    String?
   amount            Int
-  refundedAmount    Int           @default(0)
-  status            PaymentStatus @default(INITIATED)
+  refundedAmount    Int             @default(0)
+  status            PaymentStatus   @default(INITIATED)
   failureReason     String?
   raw               Json?
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
   refunds           Refund[]
 
   @@index([bookingId])
+  @@index([creditPurchaseId])
 }
 
 enum RefundStatus {
@@ -649,17 +661,19 @@ enum LedgerBucket {
 
 // Öğretmen hakediş defteri. Bir kovanın bakiyesi = o kovadaki tutarların toplamı.
 model LedgerEntry {
-  id          String         @id @default(cuid())
-  teacherId   String
-  teacher     TeacherProfile @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
-  bookingId   String?
-  booking     Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  payoutId    String?
-  payout      Payout?        @relation(fields: [payoutId], references: [id], onDelete: SetNull)
-  bucket      LedgerBucket
-  amount      Int
-  description String
-  createdAt   DateTime       @default(now())
+  id             String         @id @default(cuid())
+  teacherId      String
+  teacher        TeacherProfile @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+  bookingId      String?
+  booking        Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  poolQuestionId String?
+  poolQuestion   PoolQuestion?  @relation(fields: [poolQuestionId], references: [id], onDelete: SetNull)
+  payoutId       String?
+  payout         Payout?        @relation(fields: [payoutId], references: [id], onDelete: SetNull)
+  bucket         LedgerBucket
+  amount         Int
+  description    String
+  createdAt      DateTime       @default(now())
 
   @@index([teacherId, bucket])
 }
@@ -1703,4 +1717,136 @@ model CenterOpticTemplate {
   createdAt    DateTime @default(now())
 
   @@index([centerId])
+}
+
+// ---------------------------------------------------------------------------
+// Soru kredisi ve soru havuzu
+// ---------------------------------------------------------------------------
+
+enum CreditPurchaseStatus {
+  PENDING_PAYMENT
+  PAID
+  FAILED
+  EXPIRED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+// Bir kredi paketi satın alımı. Krediler paket paket (son kullanma tarihiyle) tutulur.
+model CreditPurchase {
+  id             String               @id @default(cuid())
+  code           String               @unique
+  studentId      String
+  student        User                 @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  credits        Int
+  // KDV dahil, kuruş
+  price          Int
+  // Satın alma anındaki tek soru fiyatı (kısmi iadede kullanılan kredi bu fiyattan düşülür)
+  singlePrice    Int
+  status         CreditPurchaseStatus @default(PENDING_PAYMENT)
+  paidAt         DateTime?
+  expiresAt      DateTime?
+  refundedAmount Int                  @default(0)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  payments  Payment[]
+  entries   CreditLedger[]
+  questions PoolQuestion[]
+
+  @@index([studentId, status])
+}
+
+enum CreditEntryKind {
+  PURCHASE
+  SPEND
+  RETURN
+  EXPIRE
+  REFUND
+}
+
+// Kredi hareketleri: bakiye = hareketlerin toplamı (elle değiştirilen bakiye alanı yok)
+model CreditLedger {
+  id         String          @id @default(cuid())
+  studentId  String
+  student    User            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  purchaseId String
+  purchase   CreditPurchase  @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  questionId String?
+  question   PoolQuestion?   @relation(fields: [questionId], references: [id], onDelete: SetNull)
+  kind       CreditEntryKind
+  amount     Int
+  note       String?
+  createdAt  DateTime        @default(now())
+
+  @@index([studentId])
+  @@index([purchaseId])
+}
+
+enum PoolQuestionStatus {
+  OPEN
+  CLAIMED
+  ANSWERED
+  CLOSED
+  EXPIRED
+  REJECTED
+  DISPUTED
+  REFUNDED
+  CANCELLED
+}
+
+// Havuza düşen soru: kademe + derse uygun öğretmenler görür, biri üstlenip çözer.
+model PoolQuestion {
+  id                 String             @id @default(cuid())
+  code               String             @unique
+  studentId          String
+  student            User               @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  purchaseId         String
+  purchase           CreditPurchase     @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  levelId            Int
+  level              Level              @relation(fields: [levelId], references: [id])
+  subjectId          Int
+  subject            Subject            @relation(fields: [subjectId], references: [id])
+  levelName          String
+  subjectName        String
+  note               String?
+  imageKey           String
+  status             PoolQuestionStatus @default(OPEN)
+  // Bu saate kadar çözülmezse kredi iade edilir
+  expiresAt          DateTime
+  claimedById        String?
+  claimedBy          TeacherProfile?    @relation(fields: [claimedById], references: [userId], onDelete: SetNull)
+  claimedAt          DateTime?
+  claimExpiresAt     DateTime?
+  answerText         String?
+  answerImageKey     String?
+  answerVideoKey     String?
+  answeredAt         DateTime?
+  followUpText       String?
+  followUpAt         DateTime?
+  followUpAnswer     String?
+  followUpAnsweredAt DateTime?
+  rating             Int?
+  ratedAt            DateTime?
+  rejectReason       String?
+  disputeReason      String?
+  disputedAt         DateTime?
+  resolutionNote     String?
+  resolvedAt         DateTime?
+  // Öğretmene ödenecek tutar (kuruş), soru gönderildiği andaki ayardan
+  teacherFee         Int
+  // Sorun bildirme süresinin sonu
+  disputeUntil       DateTime?
+  // Hakedişin serbest kalacağı an (itiraz süresi ve ödeme kuruluşu aktarım süresi dolunca)
+  releaseAt          DateTime?
+  releasedAt         DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  creditEntries CreditLedger[]
+  ledgerEntries LedgerEntry[]
+
+  @@index([status, levelId, subjectId])
+  @@index([studentId])
+  @@index([claimedById, status])
 }

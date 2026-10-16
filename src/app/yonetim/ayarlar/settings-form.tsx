@@ -71,8 +71,24 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
         <NumberField name="fullRefundHours" label="Tam iade için en az" value={settings.fullRefundHours} suffix="saat önce" />
         <NumberField name="partialRefundHours" label="Kısmi iade için en az" value={settings.partialRefundHours} suffix="saat önce" />
         <NumberField name="partialRefundPercent" label="Kısmi iade oranı" value={settings.partialRefundPercent} suffix="%" />
-        <NumberField name="disputeWindowHours" label="Sorun bildirme süresi" hint="Bu süre dolunca öğretmen hakedişi serbest kalır." value={settings.disputeWindowHours} suffix="saat" />
+        <NumberField name="disputeWindowHours" label="Sorun bildirme süresi" hint="Ders ya da çözümden sonra öğrencinin itiraz edebileceği süre." value={settings.disputeWindowHours} suffix="saat" />
+        <NumberField name="settlementDays" label="Ödeme kuruluşu aktarım süresi" hint="Öğretmen hakedişi, öğrencinin ödemesinden bu kadar gün geçmeden serbest kalmaz (PayTR anlaşması)." value={settings.settlementDays} suffix="gün" />
         <NumberField name="reviewWindowDays" label="Değerlendirme yapma süresi" value={settings.reviewWindowDays} suffix="gün" />
+      </Section>
+
+      <Section title="Soru kredisi ve soru havuzu" description="Öğrenci kredi paketi alır; her soru 1 kredi. Sorular kademe ve derse uygun öğretmenlerin havuzuna düşer.">
+        <Field label="Kredi paketleri" hint="kredi:fiyat (TL, KDV dahil), virgülle. 1 kredilik paket tek soru fiyatıdır; iadede kullanılan krediler bu fiyattan düşülür." className="sm:col-span-2">
+          <Input name="questionPackages" defaultValue={settings.questionPackages} placeholder="1:25,10:200,20:360,50:750" required />
+          <FieldError name="questionPackages" />
+        </Field>
+        <NumberField name="poolTeacherFeeTl" label="Öğretmene soru başı ödeme" value={settings.poolTeacherFeeTl} suffix="TL" />
+        <NumberField name="questionAnswerHours" label="Çözülmezse kredi iadesi" hint="Soru bu süre içinde çözülmezse kredi öğrenciye döner." value={settings.questionAnswerHours} suffix="saat" />
+        <NumberField name="poolClaimMinutes" label="Üstlenilen soruyu çözme süresi" hint="Dolarsa soru havuza geri döner." value={settings.poolClaimMinutes} suffix="dakika" />
+        <NumberField name="creditValidityMonths" label="Kredi geçerlilik süresi" value={settings.creditValidityMonths} suffix="ay" />
+        <NumberField name="creditRefundDays" label="Paket iadesi için süre" hint="Satın almadan sonra kullanılmayan krediler bu süre içinde iade edilebilir." value={settings.creditRefundDays} suffix="gün" />
+        <div className="sm:col-span-2">
+          <Checkbox name="poolVerifiedOnly" defaultChecked={settings.poolVerifiedOnly} label="Havuzdaki soruları yalnızca belgeleri onaylı öğretmenler görsün" />
+        </div>
       </Section>
 
       <Section title="Kurum paneli abonelikleri" description="Etüt merkezi ve dershanelere satılan paneller. Fiyatlar KDV dahil; “Kurumlar için” sayfasında görünür. “Eski fiyat” üstü çizili gösterilir; 0 yazarsanız gösterilmez.">

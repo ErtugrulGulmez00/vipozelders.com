@@ -4,10 +4,10 @@ import { redirect } from "next/navigation";
 import { mockPaymentAction } from "@/actions/student";
 import { Button } from "@/components/ui/button";
 import { Alert, Card, DescriptionList } from "@/components/ui/primitives";
-import { formatLessonRange } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { requireUser } from "@/server/auth/current-user";
 import { db } from "@/server/db";
+import { paymentSubject } from "@/server/payments/subject";
 
 export const metadata: Metadata = { title: "Test ödeme" };
 export const instant = false;
@@ -16,11 +16,11 @@ export const instant = false;
 export default async function MockPaymentPage({ params }: PageProps<"/odeme/test/[paymentId]">) {
   const user = await requireUser();
   const { paymentId } = await params;
-  const payment = await db.payment.findUnique({ where: { id: paymentId }, include: { booking: true } });
-  if (!payment || payment.booking.studentId !== user.id || payment.provider !== "mock") redirect("/hesabim");
-  if (payment.status !== "INITIATED") redirect(`/odeme/sonuc/${payment.bookingId}`);
+  const payment = await db.payment.findUnique({ where: { id: paymentId }, include: { booking: true, creditPurchase: true } });
+  const subject = payment ? paymentSubject(payment) : null;
+  if (!payment || !subject || subject.ownerId !== user.id || payment.provider !== "mock") redirect("/hesabim");
+  if (payment.status !== "INITIATED") redirect(`/odeme/sonuc/${subject.resultId}`);
 
-  const { booking } = payment;
   return (
     <div className="mx-auto max-w-lg px-4 py-10">
       <Alert tone="warning" title="Test ödeme sayfası" className="mb-4">
@@ -33,13 +33,13 @@ export default async function MockPaymentPage({ params }: PageProps<"/odeme/test
           </span>
           <div>
             <h1 className="font-bold text-slate-900">Güvenli ödeme</h1>
-            <p className="text-xs text-slate-500">{booking.code}</p>
+            <p className="text-xs text-slate-500">{subject.code}</p>
           </div>
         </div>
         <DescriptionList
           items={[
-            { label: "Ders", value: `${booking.levelName} ${booking.subjectName} · ${booking.serviceName}` },
-            { label: "Zaman", value: booking.mode === "QUESTION" ? "Fotoğrafla soru (saat yok)" : formatLessonRange(booking.startAt, booking.endAt) },
+            { label: subject.kind === "credits" ? "Paket" : "Ders", value: subject.title },
+            { label: subject.kind === "credits" ? "Açıklama" : "Zaman", value: subject.detail },
             { label: "Tutar", value: <strong>{formatMoney(payment.amount)}</strong> },
           ]}
         />

@@ -19,9 +19,9 @@ export default async function FinancePage() {
   const [totals, refunds, refundIssues, balanceGroups, payments, pendingTotal] = await Promise.all([
     db.payment.aggregate({ where: { status: { in: ["SUCCEEDED", "PARTIALLY_REFUNDED", "REFUNDED"] } }, _sum: { amount: true } }),
     db.refund.aggregate({ where: { status: "SUCCEEDED" }, _sum: { amount: true } }),
-    db.refund.findMany({ where: { status: { in: ["PENDING", "FAILED"] } }, include: { payment: { include: { booking: true } } }, orderBy: { createdAt: "asc" } }),
+    db.refund.findMany({ where: { status: { in: ["PENDING", "FAILED"] } }, include: { payment: { include: { booking: true, creditPurchase: true } } }, orderBy: { createdAt: "asc" } }),
     db.ledgerEntry.groupBy({ by: ["teacherId"], where: { bucket: "AVAILABLE" }, _sum: { amount: true } }),
-    db.payment.findMany({ where: { status: { not: "INITIATED" } }, orderBy: { createdAt: "desc" }, take: 30, include: { booking: true } }),
+    db.payment.findMany({ where: { status: { not: "INITIATED" } }, orderBy: { createdAt: "desc" }, take: 30, include: { booking: true, creditPurchase: true } }),
     db.ledgerEntry.aggregate({ where: { bucket: "PENDING" }, _sum: { amount: true } }),
   ]);
   const withBalance = balanceGroups.filter((g) => (g._sum.amount ?? 0) > 0);
@@ -72,9 +72,7 @@ export default async function FinancePage() {
               {refundIssues.map((r) => (
                 <tr key={r.id}>
                   <Td>
-                    <Link href={`/yonetim/randevular/${r.payment.bookingId}`} className="font-semibold text-brand-700 hover:underline">
-                      {r.payment.booking.code}
-                    </Link>
+                    <PaymentLink booking={r.payment.booking} purchase={r.payment.creditPurchase} />
                   </Td>
                   <Td>{formatMoney(r.amount)}</Td>
                   <Td>
@@ -135,9 +133,7 @@ export default async function FinancePage() {
               <tr key={p.id}>
                 <Td className="whitespace-nowrap text-xs">{formatCompact(p.createdAt)}</Td>
                 <Td>
-                  <Link href={`/yonetim/randevular/${p.bookingId}`} className="font-semibold text-brand-700 hover:underline">
-                    {p.booking.code}
-                  </Link>
+                  <PaymentLink booking={p.booking} purchase={p.creditPurchase} />
                 </Td>
                 <Td className="text-xs">{p.provider}</Td>
                 <Td>{formatMoney(p.amount)}</Td>
@@ -156,4 +152,22 @@ export default async function FinancePage() {
       ) : null}
     </>
   );
+}
+
+function PaymentLink({ booking, purchase }: { booking: { id: string; code: string } | null; purchase: { code: string; credits: number } | null }) {
+  if (booking) {
+    return (
+      <Link href={`/yonetim/randevular/${booking.id}`} className="font-semibold text-brand-700 hover:underline">
+        {booking.code}
+      </Link>
+    );
+  }
+  if (purchase) {
+    return (
+      <Link href={`/yonetim/soru-havuzu?paket=${purchase.code}`} className="font-semibold text-brand-700 hover:underline">
+        {purchase.code} <span className="font-normal text-slate-500">· {purchase.credits} kredi</span>
+      </Link>
+    );
+  }
+  return <>—</>;
 }

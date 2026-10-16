@@ -17,6 +17,7 @@ import {
 } from "@/server/bookings";
 import { db } from "@/server/db";
 import { getPaymentProvider } from "@/server/payments/service";
+import { paymentSubject } from "@/server/payments/subject";
 import { ReviewError, upsertReview } from "@/server/reviews";
 
 const text = (formData: FormData, key: string) => String(formData.get(key) ?? "").trim();
@@ -91,13 +92,14 @@ export async function mockPaymentAction(formData: FormData) {
   if (!user || getPaymentProvider().id !== "mock") redirect("/");
   const paymentId = text(formData, "paymentId");
   const outcome = text(formData, "outcome") === "success" ? "success" : "failure";
-  const payment = await db.payment.findUnique({ where: { id: paymentId }, include: { booking: true } });
-  if (!payment || payment.booking.studentId !== user.id || payment.provider !== "mock" || !payment.providerToken) redirect("/hesabim");
+  const payment = await db.payment.findUnique({ where: { id: paymentId }, include: { booking: true, creditPurchase: true } });
+  const subject = payment ? paymentSubject(payment) : null;
+  if (!payment || !subject || subject.ownerId !== user.id || payment.provider !== "mock" || !payment.providerToken) redirect("/hesabim");
   if (payment.status === "INITIATED") {
     await db.payment.update({ where: { id: payment.id }, data: { raw: { mockOutcome: outcome } } });
     await completeCheckout(payment.providerToken);
   }
-  redirect(`/odeme/sonuc/${payment.bookingId}`);
+  redirect(`/odeme/sonuc/${subject.resultId}`);
 }
 
 export async function cancelBookingAction(_: ActionState, formData: FormData): Promise<ActionState> {

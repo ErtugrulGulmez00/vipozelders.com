@@ -111,7 +111,6 @@ const offeringSchema = z.object({
   levelId: z.coerce.number().int(),
   subjectId: z.coerce.number().int(),
   hourlyPrice: z.coerce.number().min(100, "Saatlik ücret en az 100 ₺ olmalı.").max(20000, "Saatlik ücret en fazla 20.000 ₺ olabilir."),
-  questionPrice: z.coerce.number().min(20, "Soru ücreti en az 20 ₺ olmalı.").max(5000, "Soru ücreti en fazla 5.000 ₺ olabilir.").optional(),
 });
 
 export async function saveOffering(teacherId: string, formData: FormData) {
@@ -128,10 +127,9 @@ export async function saveOffering(teacherId: string, formData: FormData) {
   const pair = await db.levelSubject.findUnique({ where: { levelId_subjectId: { levelId: input.levelId, subjectId: input.subjectId } } });
   if (!pair) throw new ProfileError("Seçtiğiniz ders bu kademede yok.");
 
-  const service = await db.serviceType.findUnique({ where: { id: input.serviceTypeId }, select: { slug: true } });
   const data = {
-    // Fotoğrafla soru yalnızca soru çözüm hizmetinde
-    questionPrice: service?.slug === "soru-cozum" && input.questionPrice ? Math.round(input.questionPrice) * 100 : null,
+    // Öğretmene özel fotoğrafla soru kaldırıldı; tek soru çözümü soru havuzundan (kredi) yapılır.
+    questionPrice: null,
     serviceTypeId: input.serviceTypeId,
     levelId: input.levelId,
     subjectId: input.subjectId,

@@ -1,4 +1,4 @@
-import { Bell, Building2, CalendarDays, CreditCard, Heart, LayoutDashboard, UserRound } from "lucide-react";
+import { Bell, Building2, CalendarDays, Coins, CreditCard, Heart, LayoutDashboard, MessageCircleQuestion, UserRound } from "lucide-react";
 import { PanelShell } from "@/components/panel/panel-shell";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
@@ -18,6 +18,8 @@ export default async function StudentLayout({ children }: { children: React.Reac
       nav={[
         { href: "/hesabim", label: "Özet", icon: <LayoutDashboard />, exact: true },
         { href: "/hesabim/derslerim", label: "Derslerim", icon: <CalendarDays /> },
+        { href: "/hesabim/sorularim", label: "Sorularım", icon: <MessageCircleQuestion /> },
+        { href: "/hesabim/krediler", label: "Soru kredilerim", icon: <Coins /> },
         ...(centerLinks ? [{ href: "/hesabim/kurum", label: "Kurumum (etüt / dershane)", icon: <Building2 /> }] : []),
         { href: "/hesabim/favoriler", label: "Favori öğretmenler", icon: <Heart /> },
         { href: "/hesabim/odemeler", label: "Ödemelerim", icon: <CreditCard /> },

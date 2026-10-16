@@ -1,6 +1,7 @@
 "use client";
 
-import { Camera, CalendarDays, ChevronLeft, ChevronRight, Loader2, Monitor, MapPin } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Loader2, Monitor, MapPin } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -18,8 +19,6 @@ export type WidgetOffering = {
   subjectName: string;
   hourlyPrice: number;
   durations: number[];
-  /** Fotoğrafla soru ücreti (kuruş); null = kabul edilmiyor */
-  questionPrice: number | null;
 };
 
 type SlotDay = { date: string; weekday: string; day: string; slots: { start: string; time: string; available: boolean }[] };
@@ -38,10 +37,14 @@ export function BookingWidget({
   today: string;
 }) {
   const router = useRouter();
+  // Önce hizmet (Özel Ders / Soru Çözüm / Koçluk), sonra o hizmetteki dersler
+  const services = [...new Set(offerings.map((o) => o.serviceName))];
+  const [service, setService] = useState(services[0] ?? "");
+  const serviceOfferings = offerings.filter((o) => o.serviceName === service);
   const [offeringId, setOfferingId] = useState(offerings[0]?.id ?? "");
-  const offering = offerings.find((o) => o.id === offeringId) ?? offerings[0];
+  const offering = serviceOfferings.find((o) => o.id === offeringId) ?? serviceOfferings[0];
   const [duration, setDuration] = useState(offering?.durations.includes(60) ? 60 : (offering?.durations[0] ?? 60));
-  const [mode, setMode] = useState(online ? "ONLINE" : inPerson ? "IN_PERSON" : "QUESTION");
+  const [mode, setMode] = useState(online ? "ONLINE" : "IN_PERSON");
   const [weekStart, setWeekStart] = useState(today);
   const [days, setDays] = useState<SlotDay[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -70,13 +73,10 @@ export function BookingWidget({
     return () => controller.abort();
   }, [teacherId, duration, weekStart, offering]);
 
-  // Fotoğrafla soru: saat seçilmez, soru başı ücret ödenir.
-  const questionMode = mode === "QUESTION" && Boolean(offering?.questionPrice);
-  const price = offering ? (questionMode ? offering.questionPrice! : lessonPrice(offering.hourlyPrice, duration)) : 0;
+  const price = offering ? lessonPrice(offering.hourlyPrice, duration) : 0;
   const modeOptions = [
     ...(online ? [{ value: "ONLINE", label: "Online", Icon: Monitor }] : []),
     ...(inPerson ? [{ value: "IN_PERSON", label: "Yüz yüze", Icon: MapPin }] : []),
-    ...(offering?.questionPrice ? [{ value: "QUESTION", label: "Fotoğrafla soru", Icon: Camera }] : []),
   ];
   const hasAnySlot = useMemo(() => days?.some((d) => d.slots.some((s) => s.available)) ?? false, [days]);
   // Seçili gün bu haftada yoksa (hafta değişti) boş saati olan ilk gün açılır.
@@ -87,11 +87,13 @@ export function BookingWidget({
     return <p className="text-sm text-slate-500">Bu öğretmen henüz ders eklememiş.</p>;
   }
 
+  const pickOffering = (next: WidgetOffering | undefined) => {
+    if (!next) return;
+    setOfferingId(next.id);
+    if (!next.durations.includes(duration)) setDuration(next.durations.includes(60) ? 60 : next.durations[0]);
+  };
+
   const proceed = () => {
-    if (questionMode) {
-      router.push(`/rezervasyon?${new URLSearchParams({ ders: offering.id, sekil: "QUESTION" })}`);
-      return;
-    }
     if (!selected) return;
     const query = new URLSearchParams({ ders: offering.id, saat: selected, sure: String(duration), sekil: mode });
     router.push(`/rezervasyon?${query}`);
@@ -99,27 +101,48 @@ export function BookingWidget({
 
   return (
     <div className="space-y-4">
+      {services.length > 1 ? (
+        <div>
+          <span className="mb-1.5 block text-sm font-medium text-slate-700">Hizmet</span>
+          <div className={cn("grid gap-1.5", services.length >= 3 ? "grid-cols-3" : "grid-cols-2")}>
+            {services.map((name) => (
+              <button
+                key={name}
+                type="button"
+                aria-pressed={service === name}
+                onClick={() => {
+                  setService(name);
+                  pickOffering(offerings.find((o) => o.serviceName === name));
+                }}
+                className={cn("rounded-lg px-1 py-2 text-center text-sm font-semibold leading-tight ring-1", service === name ? "bg-brand-50 text-brand-700 ring-brand-400" : "bg-white text-slate-700 ring-slate-300")}
+              >
+                {name}
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       <div>
         <Label htmlFor="w-offering">Ders</Label>
-        <Select
-          id="w-offering"
-          value={offering.id}
-          onChange={(e) => {
-            const next = offerings.find((o) => o.id === e.target.value);
-            setOfferingId(e.target.value);
-            if (next && !next.durations.includes(duration)) setDuration(next.durations.includes(60) ? 60 : next.durations[0]);
-            if (next && !next.questionPrice && mode === "QUESTION") setMode(online ? "ONLINE" : "IN_PERSON");
-          }}
-        >
-          {offerings.map((o) => (
+        <Select id="w-offering" value={offering.id} onChange={(e) => pickOffering(serviceOfferings.find((o) => o.id === e.target.value))}>
+          {serviceOfferings.map((o) => (
             <option key={o.id} value={o.id}>
-              {o.levelName} · {o.subjectName} · {o.serviceName} · {formatMoney(o.hourlyPrice)}/saat{o.questionPrice ? ` · soru ${formatMoney(o.questionPrice)}` : ""}
+              {o.levelName} · {o.subjectName} · {formatMoney(o.hourlyPrice)}/saat
             </option>
           ))}
         </Select>
+        {/soru/i.test(service) ? (
+          <p className="mt-1.5 text-xs text-slate-500">
+            Tek bir soruyu fotoğrafla çözdürmek için{" "}
+            <Link href="/soru-sor" className="font-medium text-brand-700 underline">
+              Soru sor
+            </Link>{" "}
+            sayfasını kullanın.
+          </p>
+        ) : null}
       </div>
 
-      {questionMode ? null : (
       <div>
         <span className="mb-1.5 block text-sm font-medium text-slate-700">Süre</span>
         <div className="flex flex-wrap gap-1.5">
@@ -135,12 +158,11 @@ export function BookingWidget({
           ))}
         </div>
       </div>
-      )}
 
       {modeOptions.length > 1 ? (
         <div>
           <span className="mb-1.5 block text-sm font-medium text-slate-700">Ders şekli</span>
-          <div className={cn("grid gap-1.5", modeOptions.length === 3 ? "grid-cols-3" : "grid-cols-2")}>
+          <div className="grid grid-cols-2 gap-1.5">
             {modeOptions.map(({ value, label, Icon }) => (
               <button
                 key={value}
@@ -155,11 +177,6 @@ export function BookingWidget({
         </div>
       ) : null}
 
-      {questionMode ? (
-        <div className="rounded-xl bg-brand-50/60 p-3 text-sm text-slate-700">
-          Sorunun fotoğrafını çekip gönderin; öğretmen yazılı, fotoğraflı ya da videolu çözümü panelinize yollar. Anlamadığınız yeri ona yazabilirsiniz. Çözüm süresinde gelmezse ücret iade edilir.
-        </div>
-      ) : (
       <div>
         <div className="mb-2 flex items-center justify-between">
           <span className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-700">
@@ -245,22 +262,21 @@ export function BookingWidget({
           {days && !hasAnySlot && !loading ? <p className="mt-2 text-xs text-slate-500">Bu hafta boş saat yok; sonraki haftalara bakın.</p> : null}
         </div>
       </div>
-      )}
 
       <div className="rounded-xl bg-slate-50 p-3">
         <div className="flex items-baseline justify-between">
-          <span className="text-sm text-slate-600">{questionMode ? "Soru başı ücret" : `${durationLabel(duration)} ders ücreti`}</span>
+          <span className="text-sm text-slate-600">{durationLabel(duration)} ders ücreti</span>
           <span className="text-xl font-bold text-slate-900">{formatMoney(price)}</span>
         </div>
-        {selectedSlot && !questionMode ? (
+        {selectedSlot ? (
           <p className="mt-1 text-sm font-semibold text-brand-700">
             {selectedSlot.day.day}, {selectedSlot.day.weekday} · {selectedSlot.time}
           </p>
         ) : null}
         <p className="mt-0.5 text-xs text-slate-500">KDV dahil · Öğretmen onaylamazsa tamamı iade edilir.</p>
       </div>
-      <Button size="lg" className="w-full" disabled={!selected && !questionMode} onClick={proceed}>
-        {questionMode ? "Soruyu gönder" : selected ? "Devam et" : "Önce bir saat seçin"}
+      <Button size="lg" className="w-full" disabled={!selected} onClick={proceed}>
+        {selected ? "Devam et" : "Önce bir saat seçin"}
       </Button>
     </div>
   );

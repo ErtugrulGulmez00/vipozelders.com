@@ -73,3 +73,33 @@ export const DOCUMENT_TYPE_LABEL: Record<string, string> = {
 export function durationLabel(minutes: number): string {
   return minutes % 60 === 0 ? `${minutes / 60} saat` : minutes > 60 ? `${Math.floor(minutes / 60)} saat ${minutes % 60} dk` : `${minutes} dk`;
 }
+
+// Soru havuzu (öğrenciye ve öğretmene aynı etiket gösterilir)
+export const POOL_STATUS: Record<string, { label: string; tone: Tone }> = {
+  OPEN: { label: "Öğretmen bekleniyor", tone: "amber" },
+  CLAIMED: { label: "Öğretmen çözüyor", tone: "sky" },
+  ANSWERED: { label: "Çözüldü", tone: "green" },
+  CLOSED: { label: "Çözüldü", tone: "brand" },
+  EXPIRED: { label: "Süresinde çözülmedi · kredi iade", tone: "slate" },
+  REJECTED: { label: "Geri çevrildi · kredi iade", tone: "rose" },
+  DISPUTED: { label: "İtiraz inceleniyor", tone: "violet" },
+  REFUNDED: { label: "İtiraz haklı · kredi iade", tone: "slate" },
+  CANCELLED: { label: "Geri çekildi · kredi iade", tone: "slate" },
+};
+
+export const CREDIT_PURCHASE_STATUS: Record<string, { label: string; tone: Tone }> = {
+  PENDING_PAYMENT: { label: "Ödeme bekleniyor", tone: "amber" },
+  PAID: { label: "Aktif", tone: "green" },
+  FAILED: { label: "Ödeme başarısız", tone: "rose" },
+  EXPIRED: { label: "Ödeme yapılmadı", tone: "slate" },
+  REFUNDED: { label: "İade edildi", tone: "sky" },
+  PARTIALLY_REFUNDED: { label: "Kısmi iade", tone: "sky" },
+};
+
+export const CREDIT_ENTRY_KIND: Record<string, string> = {
+  PURCHASE: "Satın alma",
+  SPEND: "Soru gönderildi",
+  RETURN: "Kredi iadesi",
+  EXPIRE: "Süresi doldu",
+  REFUND: "Paket iadesi",
+};

@@ -91,3 +91,17 @@ export function isValidTckn(input: string): boolean {
   const eleventh = d.slice(0, 10).reduce((sum, n) => sum + n, 0) % 10;
   return d[9] === tenth && d[10] === eleventh;
 }
+
+/**
+ * Platform dışına yönlendirmeyi önlemek için metindeki iletişim bilgilerini gizler: e-posta, telefon (araya boşluk,
+ * nokta, tire konmuş hâlleri dahil), web adresi ve @kullanıcıadı.
+ */
+export function maskContacts(input: string): string {
+  return input
+    .replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, "[iletişim bilgisi gizlendi]")
+    .replace(/(https?:\/\/|www\.)\S+/gi, "[bağlantı gizlendi]")
+    .replace(/\b[\w-]+\.(com|net|org|me|io|co|tr|app|link)(\.tr)?\b\S*/gi, "[bağlantı gizlendi]")
+    // Rakamlar arasındaki boşluk/ayraçlar telefona dahil; sondaki boşluk metinde kalır
+    .replace(/\+?\d(?:[\s.\-()]*\d){9,}/g, "[telefon gizlendi]")
+    .replace(/(^|\s)@[a-z0-9_.]{3,}/gi, "$1[kullanıcı adı gizlendi]");
+}

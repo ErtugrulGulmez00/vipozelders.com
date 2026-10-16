@@ -19,6 +19,7 @@ import { notify } from "@/server/notifications";
 import { retryFailedRefund } from "@/server/payments/service";
 import { setReviewStatus } from "@/server/reviews";
 import { runScheduledTasks } from "@/server/scheduler";
+import { parsePackages } from "@/server/credits";
 import { saveSettings, settingsSchema, type SiteSettings } from "@/server/settings";
 import { DocumentError, reviewTeacherDocument } from "@/server/teacher-documents";
 import { CACHE_TAGS } from "@/server/site";
@@ -404,8 +405,9 @@ export async function saveSettingsAction(_: ActionState, formData: FormData): Pr
   const shape = settingsSchema.shape;
   const values: Record<string, unknown> = {};
   for (const key of Object.keys(shape) as (keyof SiteSettings)[]) {
-    if (!formData.has(key) && key !== "maintenanceMode") continue;
     const defaultValue = settingsSchema.parse({})[key];
+    // İşaretsiz onay kutusu forma hiç gelmez; formdaki tüm onay kutuları bu yüzden her zaman okunur.
+    if (!formData.has(key) && typeof defaultValue !== "boolean") continue;
     if (typeof defaultValue === "boolean") values[key] = formData.get(key) === "on";
     else if (typeof defaultValue === "number") values[key] = key === "commissionRateBps" ? Math.round(Number(String(formData.get(key)).replace(",", ".")) * 100) : Number(formData.get(key));
     else values[key] = String(formData.get(key) ?? "").trim();
@@ -413,6 +415,11 @@ export async function saveSettingsAction(_: ActionState, formData: FormData): Pr
   const parsed = settingsSchema.partial().safeParse(values);
   if (!parsed.success) {
     return failure("Bazı değerler geçersiz.", Object.fromEntries(parsed.error.issues.map((i) => [String(i.path[0]), i.message])));
+  }
+  if (parsed.data.questionPackages !== undefined) {
+    const packages = parsePackages(parsed.data.questionPackages);
+    if (!packages.length) return failure("Bazı değerler geçersiz.", { questionPackages: "En az bir paket yazın; örnek: 1:25,10:200" });
+    parsed.data.questionPackages = packages.map((p) => `${p.credits}:${p.price / 100}`).join(",");
   }
   await saveSettings(parsed.data);
   resetMaintenanceCache();

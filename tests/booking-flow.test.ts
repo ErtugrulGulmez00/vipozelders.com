@@ -44,6 +44,9 @@ async function bookAndPay(
   return { booking, payment, result };
 }
 
+// Ödeme kuruluşu aktarım süresi (varsayılan 15 gün); ödemeler testlerde NOW anında alınır
+const SETTLEMENT_HOURS = 15 * 24;
+
 describe("rezervasyon akışı", () => {
   it("ödeme → onay → tamamlama → yorum → hakediş", async () => {
     const fixture = await createFixture({ bufferMinutes: 15 });
@@ -96,7 +99,10 @@ describe("rezervasyon akışı", () => {
 
     // İtiraz süresi dolmadan hakediş serbest kalmaz
     expect(await releaseDueEarnings(hoursAfter(afterLesson, 47))).toBe(0);
-    await releaseDueEarnings(hoursAfter(afterLesson, 49));
+    // İtiraz süresi dolsa da ödeme kuruluşu parayı ödemeden 15 gün sonra aktarır; o gün gelmeden serbest kalmaz
+    expect(await releaseDueEarnings(hoursAfter(afterLesson, 49))).toBe(0);
+    expect(await releaseDueEarnings(hoursAfter(NOW, SETTLEMENT_HOURS - 1))).toBe(0);
+    expect(await releaseDueEarnings(hoursAfter(NOW, SETTLEMENT_HOURS))).toBe(1);
     expect(await teacherBalances(fixture.teacher.id)).toEqual({ pending: 0, available: 85000, paid: 0 });
   });
 
@@ -210,7 +216,8 @@ describe("iptal ve iadeler", () => {
     expect(fresh.status).toBe("CANCELLED_BY_STUDENT");
     expect(fresh.refundedAmount).toBe(50000);
     expect(await teacherBalances(fixture.teacher.id)).toEqual({ pending: 42500, available: 0, paid: 0 });
-    await releaseDueEarnings(hoursAfter(startAt, 60));
+    expect(await releaseDueEarnings(hoursAfter(startAt, 60))).toBe(0);
+    await releaseDueEarnings(hoursAfter(NOW, SETTLEMENT_HOURS));
     expect(await teacherBalances(fixture.teacher.id)).toEqual({ pending: 0, available: 42500, paid: 0 });
   });
 
@@ -239,7 +246,7 @@ describe("iptal ve iadeler", () => {
 
     const admin = await db.user.create({ data: { role: "ADMIN", username: `admin.${booking.id}`, firstName: "A", lastName: "B", passwordHash: "x" } });
     await resolveDispute(booking.id, admin.id, 30000, "Geç başlama nedeniyle kısmi iade", hoursAfter(afterLesson, 50));
-    await releaseDueEarnings(hoursAfter(afterLesson, 50));
+    await releaseDueEarnings(hoursAfter(NOW, SETTLEMENT_HOURS));
     const fresh = await db.booking.findUniqueOrThrow({ where: { id: booking.id } });
     expect(fresh.status).toBe("COMPLETED");
     expect(fresh.refundedAmount).toBe(30000);

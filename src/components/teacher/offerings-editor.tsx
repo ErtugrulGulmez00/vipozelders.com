@@ -18,7 +18,6 @@ export type OfferingRow = {
   subjectId: number;
   hourlyPrice: number;
   durations: number[];
-  questionPrice: number | null;
   isActive: boolean;
   label: string;
 };
@@ -59,7 +58,6 @@ function OfferingForm({
   const [levelId, setLevelId] = useState(initial?.levelId ?? catalog.levels[0]?.id);
   const [price, setPrice] = useState(initial ? initial.hourlyPrice / 100 : 0);
   const [serviceId, setServiceId] = useState(initial?.serviceTypeId ?? catalog.services[0]?.id);
-  const isQuestionService = catalog.services.find((s) => s.id === serviceId)?.slug === "soru-cozum";
   const level = catalog.levels.find((l) => l.id === levelId);
   const subjects = catalog.subjects.filter((s) => level?.subjectIds.includes(s.id));
 
@@ -121,11 +119,6 @@ function OfferingForm({
         </fieldset>
       </div>
       <Earnings priceTl={price} commissionBps={commissionBps} />
-      {isQuestionService ? (
-        <Field label="Fotoğrafla soru ücreti (₺ / soru, KDV dahil)" hint="Öğrenci sorunun fotoğrafını gönderir, siz yazılı, fotoğraflı ya da videolu çözümü panelden yollarsınız. Boş bırakırsanız yalnızca görüntülü soru çözüm dersi alınabilir.">
-          <Input name="questionPrice" type="number" min={20} max={5000} step={5} defaultValue={initial?.questionPrice ? initial.questionPrice / 100 : ""} className="sm:w-48" />
-        </Field>
-      ) : null}
       <div className="flex gap-2">
         <SubmitButton>{initial ? "Güncelle" : "Dersi ekle"}</SubmitButton>
         {onDone && initial ? (
@@ -168,7 +161,6 @@ export function OfferingsEditor({
                     </p>
                     <p className="text-sm text-slate-500">
                       {formatMoney(o.hourlyPrice)} / saat · {o.durations.map(durationLabel).join(", ")}
-                      {o.questionPrice ? ` · fotoğrafla soru ${formatMoney(o.questionPrice)}` : ""}
                     </p>
                   </div>
                   <div className="flex gap-1">

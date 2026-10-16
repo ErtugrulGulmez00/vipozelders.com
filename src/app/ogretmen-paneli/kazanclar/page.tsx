@@ -9,6 +9,7 @@ import { decryptText, maskIdentityNumber } from "@/server/crypto";
 import { db } from "@/server/db";
 import { teacherBalances } from "@/server/ledger";
 import { getPaymentProvider } from "@/server/payments/service";
+import { loadSettings } from "@/server/settings";
 
 export const metadata: Metadata = { title: "Kazançlarım" };
 
@@ -16,11 +17,12 @@ const BUCKET_LABEL = { PENDING: "Bekleyen", AVAILABLE: "Ödenebilir", PAID: "Öd
 
 export default async function EarningsPage() {
   const user = await requireRole("TEACHER");
-  const [teacher, balances, entries, payouts] = await Promise.all([
+  const [teacher, balances, entries, payouts, settings] = await Promise.all([
     db.teacherProfile.findUniqueOrThrow({ where: { userId: user.id } }),
     teacherBalances(user.id),
     db.ledgerEntry.findMany({ where: { teacherId: user.id }, orderBy: { createdAt: "desc" }, take: 50 }),
     db.payout.findMany({ where: { teacherId: user.id }, orderBy: { createdAt: "desc" }, take: 20 }),
+    loadSettings(),
   ]);
   const automatic = getPaymentProvider().automaticPayouts;
   let maskedIdentity: string | null = null;
@@ -34,7 +36,7 @@ export default async function EarningsPage() {
 
   return (
     <>
-      <PageHeader title="Kazançlarım" description="Ders ücretleri, ders tamamlanıp itiraz süresi dolduktan sonra ödenebilir bakiyenize geçer." />
+      <PageHeader title="Kazançlarım" description={`Ders ve soru ücretleri, itiraz süresi (${settings.disputeWindowHours} saat) dolduktan ve öğrencinin ödemesinin üzerinden ${settings.settlementDays} gün geçtikten sonra ödenebilir bakiyenize geçer. ${settings.settlementDays} gün, ödeme kuruluşunun parayı bize aktarma süresidir.`} />
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <StatCard label="Bekleyen" value={formatMoney(balances.pending)} hint="Onaylı/tamamlanan, henüz serbest kalmamış dersler" icon={<Clock className="size-5" />} />
         <StatCard label="Ödenebilir bakiye" value={formatMoney(balances.available)} hint={automatic ? "Ödeme kuruluşu otomatik aktarır" : "Yönetici haftalık olarak havale eder"} icon={<Wallet className="size-5" />} />

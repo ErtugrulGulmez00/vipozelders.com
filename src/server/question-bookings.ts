@@ -6,7 +6,7 @@ import { db } from "./db";
 import { addLedgerEntry } from "./ledger";
 import { notify } from "./notifications";
 import { getPaymentProvider, salesOpen } from "./payments/service";
-import { splitCommission } from "./pricing";
+import { settledReleaseAt, splitCommission } from "./pricing";
 import { loadSettings } from "./settings";
 import { deleteUpload, saveUpload, UploadError } from "./storage";
 
@@ -165,7 +165,7 @@ export async function addQuestionMessage(bookingId: string, user: { id: string; 
           tx,
         );
         await notify(
-          { userId: booking.teacherId, type: "booking.completed", title: "Çözüm gönderildi", body: `${lessonSummary(booking)}. ${formatMoney(booking.teacherAmount)} hakedişiniz ${formatDateTime(releaseAt)} sonrasında serbest kalacak.`, link: "/ogretmen-paneli/kazanclar", email: false },
+          { userId: booking.teacherId, type: "booking.completed", title: "Çözüm gönderildi", body: `${lessonSummary(booking)}. ${formatMoney(booking.teacherAmount)} hakedişiniz ${formatDateTime(settledReleaseAt(releaseAt, booking.paidAt, settings.settlementDays))} sonrasında serbest kalacak.`, link: "/ogretmen-paneli/kazanclar", email: false },
           tx,
         );
       } else {

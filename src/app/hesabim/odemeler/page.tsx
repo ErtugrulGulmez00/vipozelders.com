@@ -13,8 +13,8 @@ export const metadata: Metadata = { title: "Ödemelerim" };
 export default async function PaymentsPage() {
   const user = await requireRole("STUDENT");
   const payments = await db.payment.findMany({
-    where: { booking: { studentId: user.id }, status: { not: "INITIATED" } },
-    include: { booking: true, refunds: true },
+    where: { OR: [{ booking: { studentId: user.id } }, { creditPurchase: { studentId: user.id } }], status: { not: "INITIATED" } },
+    include: { booking: true, creditPurchase: true, refunds: true },
     orderBy: { createdAt: "desc" },
     take: 100,
   });
@@ -41,10 +41,23 @@ export default async function PaymentsPage() {
                 <tr key={p.id}>
                   <Td className="whitespace-nowrap">{formatCompact(p.createdAt)}</Td>
                   <Td>
-                    <Link href={`/hesabim/derslerim/${p.bookingId}`} className="font-medium text-brand-700 hover:underline">
-                      {p.booking.levelName} {p.booking.subjectName}
-                    </Link>
-                    <p className="text-xs text-slate-400">{p.booking.code}</p>
+                    {p.booking ? (
+                      <>
+                        <Link href={`/hesabim/derslerim/${p.booking.id}`} className="font-medium text-brand-700 hover:underline">
+                          {p.booking.levelName} {p.booking.subjectName}
+                        </Link>
+                        <p className="text-xs text-slate-400">{p.booking.code}</p>
+                      </>
+                    ) : p.creditPurchase ? (
+                      <>
+                        <Link href="/hesabim/krediler" className="font-medium text-brand-700 hover:underline">
+                          {p.creditPurchase.credits} soru kredisi
+                        </Link>
+                        <p className="text-xs text-slate-400">{p.creditPurchase.code}</p>
+                      </>
+                    ) : (
+                      "—"
+                    )}
                   </Td>
                   <Td className="font-semibold">{formatMoney(p.amount)}</Td>
                   <Td>

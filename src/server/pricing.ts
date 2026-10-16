@@ -61,3 +61,12 @@ export function approvalDeadline(
 export function weightedRating(average: number, count: number, prior = 4.2, weight = 5): number {
   return (prior * weight + average * count) / (weight + count);
 }
+
+/**
+ * Hakedişin serbest kalabileceği en erken an: itiraz süresinin sonu ile ödeme kuruluşunun parayı
+ * aktardığı gün (ödeme + aktarım süresi) arasından geç olanı.
+ */
+export function settledReleaseAt(base: Date, paidAt: Date | null | undefined, settlementDays: number): Date {
+  const settled = paidAt ? paidAt.getTime() + settlementDays * 24 * 3_600_000 : 0;
+  return new Date(Math.max(base.getTime(), settled));
+}

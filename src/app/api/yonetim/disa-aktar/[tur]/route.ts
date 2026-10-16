@@ -57,14 +57,18 @@ export async function GET(request: NextRequest, { params }: RouteContext<"/api/y
       where: { status: { not: "INITIATED" } },
       orderBy: { createdAt: "desc" },
       take: MAX_ROWS,
-      include: { booking: { select: { code: true, student: { select: { firstName: true, lastName: true } } } }, refunds: { where: { status: "SUCCEEDED" } } },
+      include: {
+        booking: { select: { code: true, student: { select: { firstName: true, lastName: true } } } },
+        creditPurchase: { select: { code: true, student: { select: { firstName: true, lastName: true } } } },
+        refunds: { where: { status: "SUCCEEDED" } },
+      },
     });
     const csv = toCsv(
-      ["Tarih", "Randevu no", "Veli/öğrenci", "Sağlayıcı", "Sağlayıcı işlem no", "Tutar (TL)", "İade edilen (TL)", "Durum", "Hata"],
+      ["Tarih", "Randevu / paket no", "Veli/öğrenci", "Sağlayıcı", "Sağlayıcı işlem no", "Tutar (TL)", "İade edilen (TL)", "Durum", "Hata"],
       payments.map((p) => [
         formatCompact(p.createdAt),
-        p.booking.code,
-        fullName(p.booking.student),
+        p.booking?.code ?? p.creditPurchase?.code ?? "",
+        fullName((p.booking ?? p.creditPurchase)?.student ?? { firstName: "", lastName: "" }),
         p.provider,
         p.providerPaymentId,
         csvMoney(p.amount),

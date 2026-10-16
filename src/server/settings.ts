@@ -34,6 +34,18 @@ export const settingsSchema = z.object({
   partialRefundPercent: z.number().int().min(0).max(100).default(50),
   disputeWindowHours: z.number().int().min(1).max(336).default(48),
 
+  // Ödeme kuruluşunun parayı bize aktarma süresi (gün). Öğretmen hakedişi bu süre dolmadan serbest kalmaz.
+  settlementDays: z.number().int().min(0).max(60).default(15),
+
+  // Soru kredisi ve soru havuzu. Paketler "kredi:fiyat(TL)" virgülle; 1 kredi = 1 soru.
+  questionPackages: z.string().default("1:25,10:200,20:360,50:750"),
+  poolTeacherFeeTl: z.number().int().min(0).max(1000).default(8),
+  poolClaimMinutes: z.number().int().min(5).max(240).default(30),
+  creditValidityMonths: z.number().int().min(1).max(60).default(12),
+  creditRefundDays: z.number().int().min(0).max(90).default(14),
+  // Havuzdaki soruları yalnızca belgeleri onaylı öğretmenler görsün
+  poolVerifiedOnly: z.boolean().default(true),
+
   // Yorumlar
   reviewWindowDays: z.number().int().min(1).max(365).default(30),
 

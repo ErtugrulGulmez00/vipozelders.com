@@ -10,10 +10,12 @@ import {
 import { sendCenterExpiryNotices } from "./center/expiry";
 import { sendCenterPaymentReminders } from "./center/finance";
 import { processCenterMessages } from "./center/messages";
+import { expireCredits, expireStalePurchases } from "./credits";
 import { db } from "./db";
 import { sendPendingEmails } from "./email";
 import { processPendingRefunds } from "./payments/service";
 import { sendPendingPushes } from "./push";
+import { expireUnansweredQuestions, releaseExpiredClaims, releasePoolEarnings } from "./question-pool";
 
 const HOLDER = `${hostname()}-${process.pid}-${randomUUID().slice(0, 8)}`;
 
@@ -38,6 +40,12 @@ const TASKS = {
   completedLessons: completeFinishedLessons,
   releasedEarnings: releaseDueEarnings,
   reminders: sendLessonReminders,
+  // Soru havuzu ve soru kredileri
+  poolClaims: releaseExpiredClaims,
+  poolExpired: expireUnansweredQuestions,
+  poolEarnings: releasePoolEarnings,
+  creditPurchases: expireStalePurchases,
+  creditExpiry: expireCredits,
   refunds: () => processPendingRefunds(),
   // Kurum paneli: taksit hatırlatmaları önce kuyruğa girer, aynı turda SMS ve e-postayla gönderilir.
   centerReminders: sendCenterPaymentReminders,

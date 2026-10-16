@@ -55,7 +55,6 @@ export async function loadTeacherEditorData(teacherId: string) {
     subjectId: o.subjectId,
     hourlyPrice: o.hourlyPrice,
     durations: o.durations,
-    questionPrice: o.questionPrice,
     isActive: o.isActive,
     label: `${o.level.name} · ${o.subject.name} · ${o.serviceType.name}`,
   }));

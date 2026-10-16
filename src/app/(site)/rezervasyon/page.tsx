@@ -1,6 +1,7 @@
 import { CalendarClock, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { LinkButton } from "@/components/ui/button";
 import { Alert, Avatar, Card, DescriptionList } from "@/components/ui/primitives";
 import { formatLessonRange } from "@/lib/dates";
@@ -13,7 +14,6 @@ import { lessonPrice } from "@/server/pricing";
 import { loadSettings } from "@/server/settings";
 import { uploadUrl } from "@/server/storage";
 import { BookingForm } from "./booking-form";
-import { QuestionForm } from "./question-form";
 
 export const metadata: Metadata = { title: "Randevu bilgileri" };
 export const instant = false;
@@ -24,7 +24,8 @@ export default async function BookingPage({ searchParams }: PageProps<"/rezervas
   const offeringId = String(query.ders ?? "");
   const start = new Date(String(query.saat ?? ""));
   const duration = Number(query.sure);
-  const question = query.sekil === "QUESTION";
+  // Fotoğrafla soru artık soru kredisiyle (soru havuzu) gönderilir.
+  if (query.sekil === "QUESTION") redirect("/soru-sor");
   const mode = query.sekil === "IN_PERSON" ? "IN_PERSON" : "ONLINE";
 
   if (user.role !== "STUDENT") {
@@ -38,10 +39,6 @@ export default async function BookingPage({ searchParams }: PageProps<"/rezervas
   }
 
   const offering = offeringId ? await loadOffering(offeringId) : null;
-
-  if (question && offering?.isActive && offering.questionPrice) {
-    return <QuestionCheckout userId={user.id} firstName={user.firstName} offering={offering} />;
-  }
 
   if (!offering || !offering.isActive || Number.isNaN(start.getTime()) || !offering.durations.includes(duration)) {
     return (
@@ -135,8 +132,6 @@ export default async function BookingPage({ searchParams }: PageProps<"/rezervas
   );
 }
 
-type CheckoutOffering = NonNullable<Awaited<ReturnType<typeof loadOffering>>>;
-
 function loadOffering(id: string) {
   return db.teacherOffering.findUnique({
     where: { id },
@@ -147,58 +142,6 @@ function loadOffering(id: string) {
       teacher: { include: { user: true, serviceDistricts: { include: { district: true } }, city: true } },
     },
   });
-}
-
-/** Fotoğrafla soru: saat seçilmez; soru başı ücret ödenir. */
-async function QuestionCheckout({ userId, firstName, offering }: { userId: string; firstName: string; offering: CheckoutOffering }) {
-  const [settings, learners] = await Promise.all([loadSettings(), db.learner.findMany({ where: { studentId: userId }, orderBy: { createdAt: "asc" } })]);
-  const teacher = offering.teacher;
-  const name = fullName(teacher.user);
-  return (
-    <Shell title="Soruyu gönder">
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-        <Card className="p-6">
-          <h2 className="mb-1 text-lg font-bold text-slate-900">Soru bilgileri</h2>
-          <p className="mb-5 text-sm text-slate-500">Fotoğrafı ekleyin; ödeme sonrası soru öğretmene iletilir.</p>
-          <QuestionForm offeringId={offering.id} learners={learners.map((l) => ({ name: l.name, gradeName: l.gradeName }))} defaultName={firstName} grades={offering.level.grades.map((g) => g.name)} />
-        </Card>
-        <aside className="space-y-4">
-          <Card className="p-5">
-            <div className="mb-4 flex items-center gap-3">
-              <Avatar src={uploadUrl(teacher.photoKey)} name={name} initials={initials(teacher.user)} size={48} />
-              <div>
-                <p className="font-semibold text-slate-900">{name}</p>
-                <Link href={`/ogretmen/${teacher.slug}`} className="text-xs font-medium text-brand-700 hover:underline">
-                  Profile dön
-                </Link>
-              </div>
-            </div>
-            <DescriptionList
-              items={[
-                { label: "Ders", value: `${offering.level.name} · ${offering.subject.name}` },
-                { label: "Hizmet", value: "Fotoğrafla soru çözüm" },
-                { label: "Çözüm süresi", value: `en geç ${settings.questionAnswerHours} saat` },
-              ]}
-            />
-            <div className="mt-4 flex items-baseline justify-between border-t border-slate-100 pt-4">
-              <span className="text-sm text-slate-600">Toplam (KDV dahil)</span>
-              <span className="text-2xl font-bold text-slate-900">{formatMoney(offering.questionPrice!)}</span>
-            </div>
-          </Card>
-          <Card className="space-y-3 p-5 text-sm text-slate-600">
-            <p className="flex gap-2">
-              <CalendarClock className="mt-0.5 size-4 shrink-0 text-brand-600" aria-hidden />
-              Öğretmen çözümü {settings.questionAnswerHours} saat içinde yazılı, fotoğraflı ya da videolu olarak gönderir; anlamadığınız yeri ona yazabilirsiniz.
-            </p>
-            <p className="flex gap-2">
-              <ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-600" aria-hidden />
-              Çözüm süresinde gelmezse ödediğiniz ücretin tamamı iade edilir.
-            </p>
-          </Card>
-        </aside>
-      </div>
-    </Shell>
-  );
 }
 
 /** Not alanındaki örnek, seçilen kademeye uygun olsun (lise öğrencisine LGS örneği çıkmasın). */

@@ -16,7 +16,7 @@ export default async function BecomeTeacherPage() {
     { Icon: Wallet, title: "Kendi fiyatınız", text: `Her ders ve kademe için ücreti siz belirlersiniz. Platform hizmet bedeli yalnızca tamamlanan derslerden %${commission}.` },
     { Icon: CalendarClock, title: "Kendi takviminiz", text: "Haftalık müsait saatlerinizi girin; veliler yalnızca boş saatlerinizden randevu alır, onayı siz verirsiniz." },
     { Icon: PenLine, title: "Site içi sanal sınıf", text: "Kamera, ekran paylaşımı, sohbet ve ortak beyaz tahta. Ek program ya da bağlantı paylaşmak gerekmez." },
-    { Icon: ShieldCheck, title: "Ödemeniz güvencede", text: `Veli dersi rezervasyonda öder; ders tamamlanıp ${settings.disputeWindowHours} saatlik itiraz süresi dolunca hakedişiniz serbest kalır.` },
+    { Icon: ShieldCheck, title: "Ödemeniz güvencede", text: `Veli dersi rezervasyonda öder; ders tamamlanıp ${settings.disputeWindowHours} saatlik itiraz süresi dolunca hakedişiniz serbest kalır; ödeme kuruluşunun aktarım süresi nedeniyle ödemeden en erken ${settings.settlementDays} gün sonra ödenir.` },
   ];
   const steps = ["Formu doldurun", "Kısa görüşme ve belge kontrolü", "Öğretmen hesabınız açılır", "Profilinizi tamamlayıp ders vermeye başlayın"];
 

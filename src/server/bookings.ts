@@ -16,7 +16,8 @@ import { db, type DbTransaction } from "./db";
 import { addLedgerEntry, pendingForBooking, resetPendingForBooking } from "./ledger";
 import { notify, notifyRole } from "./notifications";
 import { getPaymentProvider, getProviderById, PAYMENT_PROVIDERS, processRefund, requestRefund, salesOpen } from "./payments/service";
-import { approvalDeadline, lessonPrice, splitCommission, splitRetained, studentCancellationRefund } from "./pricing";
+import { completeCreditCheckout } from "./credits";
+import { approvalDeadline, lessonPrice, settledReleaseAt, splitCommission, splitRetained, studentCancellationRefund } from "./pricing";
 import { appUrl } from "./email";
 import { loadSettings } from "./settings";
 import { videoConfigured } from "./video-config";
@@ -341,10 +342,18 @@ export async function startCheckout(bookingId: string, studentId: string, ipAddr
 
 export type CheckoutOutcome = "paid" | "failed" | "refunded" | "already" | "pending";
 
-/** Ödeme kuruluşundan dönüşte (veya test ödeme sayfasından) ödemeyi sonuçlandırır. Tekrar çağrılabilir. */
+/**
+ * Ödeme kuruluşundan dönüşte (veya test ödeme sayfasından) ödemeyi sonuçlandırır. Tekrar çağrılabilir.
+ * Dönen bookingId sonuç sayfasının kimliğidir: kredi paketi ödemesinde paketin kimliği.
+ */
 export async function completeCheckout(token: string, now = new Date()): Promise<{ bookingId: string; outcome: CheckoutOutcome }> {
-  const payment = await db.payment.findUnique({ where: { providerToken: token } });
-  if (!payment) throw new BookingError("Ödeme kaydı bulunamadı.");
+  const found = await db.payment.findUnique({ where: { providerToken: token } });
+  if (!found) throw new BookingError("Ödeme kaydı bulunamadı.");
+  if (found.creditPurchaseId) {
+    return { bookingId: found.creditPurchaseId, outcome: await completeCreditCheckout(found, now) };
+  }
+  if (!found.bookingId) throw new BookingError("Ödeme kaydı bulunamadı.");
+  const payment = { ...found, bookingId: found.bookingId };
   if (payment.status !== "INITIATED") return { bookingId: payment.bookingId, outcome: "already" };
 
   const result = await getProviderById(payment.provider).retrieveResult(token);
@@ -915,7 +924,7 @@ export async function completeFinishedLessons(now = new Date()): Promise<number>
           );
         }
         await notify(
-          { userId: booking.teacherId, type: "booking.completed", title: outcome === "COMPLETED" ? "Ders tamamlandı" : "Öğrenci derse katılmadı", body: `${lessonSummary(booking)}. ${formatMoney(booking.teacherAmount)} hakedişiniz ${formatDateTime(releaseAt)} sonrasında serbest kalacak.`, link: "/ogretmen-paneli/kazanclar", email: false },
+          { userId: booking.teacherId, type: "booking.completed", title: outcome === "COMPLETED" ? "Ders tamamlandı" : "Öğrenci derse katılmadı", body: `${lessonSummary(booking)}. ${formatMoney(booking.teacherAmount)} hakedişiniz ${formatDateTime(settledReleaseAt(releaseAt, booking.paidAt, settings.settlementDays))} sonrasında serbest kalacak.`, link: "/ogretmen-paneli/kazanclar", email: false },
           tx,
         );
       });
@@ -930,8 +939,11 @@ export async function completeFinishedLessons(now = new Date()): Promise<number>
 const RELEASABLE: BookingStatus[] = ["COMPLETED", "NO_SHOW_STUDENT", "CANCELLED_BY_STUDENT", "CANCELLED_BY_ADMIN"];
 
 export async function releaseDueEarnings(now = new Date()): Promise<number> {
+  const settings = await loadSettings();
+  // Ödeme kuruluşu parayı ödemeden belirli gün sonra aktarır; o gün gelmeden hakediş serbest kalmaz.
+  const settledBefore = new Date(now.getTime() - settings.settlementDays * 24 * HOUR);
   const due = await db.booking.findMany({
-    where: { earningsReleaseAt: { lte: now }, earningsReleasedAt: null, status: { in: RELEASABLE } },
+    where: { earningsReleaseAt: { lte: now }, earningsReleasedAt: null, status: { in: RELEASABLE }, OR: [{ paidAt: null }, { paidAt: { lte: settledBefore } }] },
     include: {
       payments: { where: { status: { in: ["SUCCEEDED", "PARTIALLY_REFUNDED", "REFUNDED"] } } },
     },

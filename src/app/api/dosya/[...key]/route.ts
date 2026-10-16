@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { optionalUser } from "@/server/mobile/auth";
+import { teacherQuestion } from "@/server/question-pool";
 import { readUpload } from "@/server/storage";
 
 /** Belgeyi sahibi öğretmen ve yönetici; kurum soru/çözüm dosyasını kurum personeli ve öğrenciye bağlı hesaplar görür. */
@@ -15,6 +16,16 @@ async function canReadPrivate(user: { id: string; role: string }, key: string): 
     select: { booking: { select: { studentId: true, teacherId: true } } },
   });
   if (message) return message.booking.studentId === user.id || message.booking.teacherId === user.id;
+  // Soru havuzu: öğrenci her zaman; soru fotoğrafını havuzdaki uygun öğretmenler, çözümü yalnızca üstlenen öğretmen
+  const poolQuestion = await db.poolQuestion.findFirst({
+    where: { OR: [{ imageKey: key }, { answerImageKey: key }, { answerVideoKey: key }] },
+    select: { id: true, studentId: true, claimedById: true },
+  });
+  if (poolQuestion) {
+    if (poolQuestion.studentId === user.id || poolQuestion.claimedById === user.id) return true;
+    if (user.role !== "TEACHER") return false;
+    return teacherQuestion(user.id, poolQuestion.id).then(() => true, () => false);
+  }
   const question = await db.centerQuestion.findFirst({
     where: { OR: [{ imageKey: key }, { answerImageKey: key }, { answerVideoKey: key }] },
     select: { centerId: true, studentId: true },

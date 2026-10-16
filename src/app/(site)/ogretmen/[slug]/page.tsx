@@ -154,7 +154,6 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
                   </p>
                   <p className="text-sm text-slate-500">
                     {offering.serviceType.name} · {offering.durations.map(durationLabel).join(", ")}
-                    {offering.questionPrice ? ` · fotoğrafla soru ${formatMoney(offering.questionPrice)}` : ""}
                   </p>
                 </div>
                 <p className="text-right">
@@ -201,7 +200,6 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
               subjectName: o.subject.name,
               hourlyPrice: o.hourlyPrice,
               durations: o.durations,
-              questionPrice: o.questionPrice,
             }))}
           />
           </>

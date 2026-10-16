@@ -24,7 +24,8 @@ export default async function PaymentResultPage({ params }: PageProps<"/odeme/so
       include: { payments: { orderBy: { createdAt: "desc" }, take: 1 }, teacher: { select: { slug: true } } },
     });
   let booking = await load();
-  if (!booking || booking.studentId !== user.id) redirect("/hesabim");
+  if (!booking) return <CreditPurchaseResult purchaseId={bookingId} userId={user.id} />;
+  if (booking.studentId !== user.id) redirect("/hesabim");
   let payment = booking.payments[0];
 
   // PayTR sonucu sunucuya bildirimle gelir; henüz gelmediyse durum sorgusuyla kontrol edilir.
@@ -110,6 +111,69 @@ export default async function PaymentResultPage({ params }: PageProps<"/odeme/so
       </p>
       <LinkButton href={`/ogretmen/${booking.teacher.slug}`} size="lg" className="mt-6">
         Yeni saat seç
+      </LinkButton>
+    </Result>
+  );
+}
+
+/** Soru kredisi paketi ödemesinin sonucu (aynı adres, paketin kimliğiyle). */
+async function CreditPurchaseResult({ purchaseId, userId }: { purchaseId: string; userId: string }) {
+  const load = () => db.creditPurchase.findUnique({ where: { id: purchaseId }, include: { payments: { orderBy: { createdAt: "desc" }, take: 1 } } });
+  let purchase = await load();
+  if (!purchase || purchase.studentId !== userId) redirect("/hesabim");
+  let payment = purchase.payments[0];
+  if (payment?.status === "INITIATED" && payment.provider === "paytr" && payment.providerToken) {
+    await completeCheckout(payment.providerToken).catch((error: unknown) => console.error("[ödeme sonucu]", error));
+    purchase = (await load())!;
+    payment = purchase.payments[0];
+  }
+  const details = (
+    <DescriptionList
+      items={[
+        { label: "Paket no", value: purchase.code },
+        { label: "Paket", value: `${purchase.credits} soru kredisi` },
+        { label: "Tutar", value: formatMoney(purchase.price) },
+        ...(purchase.expiresAt ? [{ label: "Son kullanma", value: formatDateTime(purchase.expiresAt) }] : []),
+      ]}
+    />
+  );
+  if (purchase.status === "PAID" || purchase.status === "PARTIALLY_REFUNDED") {
+    return (
+      <Result icon={<CheckCircle2 className="size-12 text-emerald-500" />} title="Kredileriniz hesabınızda">
+        <p className="text-slate-600">Sorunuzun fotoğrafını çekip gönderin; her soru 1 kredi.</p>
+        <Card className="mt-6 p-5 text-left">{details}</Card>
+        <LinkButton href="/soru-sor" size="lg" className="mt-6">
+          Soru sor
+        </LinkButton>
+      </Result>
+    );
+  }
+  if (purchase.status === "PENDING_PAYMENT" && payment?.status === "INITIATED" && payment.provider === "paytr") {
+    return (
+      <Result icon={<LoaderCircle className="size-12 animate-spin text-brand-500" />} title="Ödemeniz kontrol ediliyor">
+        <AutoRefresh />
+        <p className="text-slate-600">Bankanızdan gelen sonuç bekleniyor. Bu sayfa birkaç saniyede bir kendiliğinden yenilenir.</p>
+        <Card className="mt-6 p-5 text-left">{details}</Card>
+        <LinkButton href={`/odeme/paytr/${payment.id}`} variant="outline" className="mt-6">
+          Ödeme formuna dön
+        </LinkButton>
+      </Result>
+    );
+  }
+  if (purchase.status === "REFUNDED") {
+    return (
+      <Result icon={<Clock className="size-12 text-slate-400" />} title="Paket iade edildi">
+        <p className="text-slate-600">{formatMoney(purchase.refundedAmount)} kartınıza iade edildi.</p>
+        <Card className="mt-6 p-5 text-left">{details}</Card>
+      </Result>
+    );
+  }
+  return (
+    <Result icon={<XCircle className="size-12 text-rose-500" />} title="Ödeme tamamlanamadı">
+      <p className="text-slate-600">{payment?.failureReason ?? "Ödeme işlemi tamamlanmadı."} Kartınızdan para çekilmedi; tekrar deneyebilirsiniz.</p>
+      <Card className="mt-6 p-5 text-left">{details}</Card>
+      <LinkButton href="/soru-sor" size="lg" className="mt-6">
+        <RotateCcw className="size-4" aria-hidden /> Paket seçimine dön
       </LinkButton>
     </Result>
   );
