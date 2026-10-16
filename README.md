@@ -10,7 +10,8 @@
 - **Kurumlar için** (`/kurumlar-icin`, `/kurumlar`, `/kurumlar/<kurum>`): tanıtım ve başvuru sayfası, kurum rehberi, kurum vitrin sayfası ve ön kayıt formu
 - **Veli portalı** (`/hesabim/kurum`): kurumun davet bağlantısıyla bağlanan veli; devamsızlık, etüt, deneme karnesi, eksik konular (pazaryeri öğretmenlerine yönlendirme), taksitler ve duyuruları görür
 - **Sanal sınıf** (`/ders/...`): kamera, mikrofon, ekran paylaşımı, sohbet ve ortak **beyaz tahta**; yoklama otomatik tutulur
-- **Mobil API** (`/api/mobil/v1`): Flutter uygulaması için JSON uç noktaları (Bearer oturum, randevu, ödeme ve sınıf için WebView bağlantısı, push bildirimi). Sözleşme ve uygulama promptu: [docs/flutter-uygulama-promptu.md](docs/flutter-uygulama-promptu.md)
+- **Mobil uygulama** ([piakademi-mobil/](piakademi-mobil/README.md), Flutter, Android ve iOS): veli/öğrenci (öğretmen arama, randevu, ödeme, sanal sınıf, fotoğrafla soru, Kurumum), öğretmen (talepler, dersler, takvim, kazanç, yorumlar) ve push bildirimleri
+- **Mobil API** (`/api/mobil/v1`): uygulamanın kullandığı JSON uç noktaları (Bearer oturum, randevu, ödeme ve sınıf için WebView bağlantısı, push bildirimi). Sözleşme: [docs/flutter-uygulama-promptu.md](docs/flutter-uygulama-promptu.md)
 
 Teknoloji: Next.js 16 (App Router, Cache Components) · TypeScript · Tailwind CSS 4 · PostgreSQL 18 + Prisma 7 · LiveKit (sanal sınıf) · PayTR (ödeme; iyzico da hazır).
 
@@ -175,7 +176,7 @@ Testler her çalıştırmada ayrı bir `vipozelders_test` veritabanı oluşturur
 - uçtan uca randevu: ödeme → onay → tamamlama → yorum → hakediş
 - PayTR: imza hesapları, bildirim doğrulama, tekrar gelen bildirim, durum sorgusu, iade ve mükerrer ödeme iadesi
 - iki adımlı doğrulama (RFC 6238 test vektörleri), takvim dosyası
-- mobil API: Bearer oturumu, tek kullanımlık WebView girişi, push (imzalı JWT, ölü cihaz temizliği) ve uçtan uca kayıt → randevu → ödeme → onay → iptal akışı (`e2e/mobile-api.spec.ts`)
+- mobil API: Bearer oturumu, tek kullanımlık WebView girişi, push (imzalı JWT, ölü cihaz temizliği) ve uçtan uca kayıt → randevu → ödeme → onay → iptal akışı (`e2e/mobile-api.spec.ts`); fotoğrafla soru → ödeme → çözüm ve yazışma, özel dosyalara Bearer erişimi, kurum çalışma programı, kaynak ilerlemesi, soru geri çekme, bağlantı kaldırma (`e2e/mobile-api-extra.spec.ts`). Flutter uygulamasının kendi testleri için [piakademi-mobil/README.md](piakademi-mobil/README.md)
 - öğretmen başvurusu → hesap açma → belge yükleme ve onay, özel belgelerin yabancılara kapalı olması (`e2e/teacher-onboarding.spec.ts`)
 - kurum paneli: deneme şablonları ve net hesabı (LGS 1/3, YKS 1/4), cevap anahtarıyla okuma, konu dağılımı, sıralama, taksit planı, tahsilatın taksitlere dağıtılması, yazıyla tutar, yetki matrisi, abonelik durumu, Excel/CSV öğrenci aktarımı
 - kurum başvurusu → kurum açma → ilk girişte şifre → sınıf/program → öğrenci ve veli → yoklama ve veli bildirimi → deneme → ödeme planı ve makbuz → veli daveti ve portal (`e2e/center-panel.spec.ts`)
@@ -225,10 +226,12 @@ src/server/          iş mantığı: bookings, availability, pricing, ledger, pa
 src/server/center/   kurum paneli: öğrenciler, sınıflar, yoklama, etüt, denemeler, muhasebe, mesajlar (SMS), personel, abonelik
 src/components/      arayüz bileşenleri
 tests/               Vitest testleri
+e2e/                 Playwright uçtan uca testleri
+piakademi-mobil/     Flutter mobil uygulaması (Android / iOS)
 ```
 
 İl ve ilçe verisi [turkey-neighbourhoods](https://www.npmjs.com/package/turkey-neighbourhoods) paketinden alınmıştır (MIT, `prisma/data/LICENSE-turkey-neighbourhoods.txt`).
 
 ## Sonraki aşamalar (Faz 2–3)
 
-Mesajlaşma (iletişim bilgisi maskeleme), paketler ve deneme dersi, kupon, pazaryeri için SMS bildirimleri, erteleme ve tekrarlayan ders, ders notu/ödev ve veli raporu, il/ilçe SEO sayfaları ve blog, asenkron soru çözüm, koçluk araçları, grup dersleri, Flutter mobil uygulaması (sunucu tarafı API hazır). Kurum paneli için: online etüt (sanal sınıfla), optik okuyucu dosyası (TXT/DAT) aktarımı, ödev takibi, öğrenci girişi, kartla abonelik ödemesi, kuruma özel SMS başlığı.
+Mesajlaşma (iletişim bilgisi maskeleme), paketler ve deneme dersi, kupon, pazaryeri için SMS bildirimleri, erteleme ve tekrarlayan ders, ders notu/ödev ve veli raporu, il/ilçe SEO sayfaları ve blog, asenkron soru çözüm, koçluk araçları, grup dersleri, mobil uygulamada Kurum Paneli (kurum personeli şimdilik web panelini kullanır). Kurum paneli için: online etüt (sanal sınıfla), optik okuyucu dosyası (TXT/DAT) aktarımı, ödev takibi, öğrenci girişi, kartla abonelik ödemesi, kuruma özel SMS başlığı.

@@ -1,6 +1,8 @@
 # Pi Kampüs mobil uygulaması (Flutter) için prompt
 
-Aşağıdaki metnin tamamını Flutter uygulamasını yazacak yapay zekâya veya geliştiriciye verin. Bölüm 5'teki mobil API web projesinde hazırdır (`/api/mobil/v1`) ve uçtan uca testlerle doğrulanmıştır.
+Aşağıdaki metnin tamamını Flutter uygulamasını yazacak yapay zekâya veya geliştiriciye verin. Bölüm 5'teki mobil API web projesinde hazırdır (`/api/mobil/v1`) ve uçtan uca testlerle doğrulanmıştır (`e2e/mobile-api.spec.ts`, `e2e/mobile-api-extra.spec.ts`).
+
+> Uygulama bu promptla yazıldı: `piakademi-mobil/` (kurulum ve derleme için oradaki `README.md`). Bu dosya API'nin güncel başvuru belgesi olarak tutulur; API'ye eklenen her alan buraya da yazılır.
 
 ---
 
@@ -14,7 +16,8 @@ Arayüz tamamen **Türkçe**, saatler **Europe/Istanbul**, para birimi **TL**. S
 
 - **Veli / öğrenci:** öğretmen arar (kademe, ders, hizmet türü, online/yüz yüze, il/ilçe, fiyat, puan), profil ve boş saatleri görür, saat seçip randevu alır, kartla öder (PayTR, uygulama içi WebView), öğretmen onaylayınca sanal sınıfa katılır, ders sonrası puan/yorum bırakır.
 - **Öğretmen** (hesabı yönetici açar, kullanıcı adıyla girer): talepleri onaylar/reddeder, derslerini görür, sanal sınıfa katılır, haftalık müsaitliğini ve izinlerini düzenler, kazançlarını görür, yorumlara cevap verir. Profil (fotoğraf, ders ve fiyatlar) web panelinden düzenlenir.
-- **Yönetici** mobil uygulamaya giremez (API `ADMIN_NOT_SUPPORTED` döner); yönetim yalnızca web'de.
+- **Yönetici** ve **kurum personeli** mobil uygulamaya giremez (API `ADMIN_NOT_SUPPORTED` / `CENTER_NOT_SUPPORTED` döner); yönetim ve Kurum Paneli yalnızca web'de.
+- **Fotoğrafla soru:** öğretmen “Soru Çözüm” hizmetinde soru başı ücret (`questionPrice`) belirlediyse veli sorunun fotoğrafını çekip öder; öğretmen `rules.questionAnswerHours` saat içinde çözümü (yazı, fotoğraf, video) gönderir, ardından kısa bir yazışma açık kalır.
 - Kademeler (Okul Öncesi, İlkokul, Ortaokul, Lise, LGS, YKS…), dersler ve hizmet türleri (Özel Ders, Soru Çözüm, Koçluk) sunucudan dinamik gelir.
 - Randevu durumları (`status`, Türkçe karşılığı `statusLabel` olarak hazır gelir): `PENDING_PAYMENT`, `PAYMENT_FAILED`, `PENDING_APPROVAL`, `CONFIRMED`, `COMPLETED`, `REJECTED`, `EXPIRED`, `CANCELLED_BY_STUDENT`, `CANCELLED_BY_TEACHER`, `CANCELLED_BY_ADMIN`, `NO_SHOW_STUDENT`, `NO_SHOW_TEACHER`, `DISPUTED`.
 
@@ -58,7 +61,9 @@ Arayüz tamamen **Türkçe**, saatler **Europe/Istanbul**, para birimi **TL**. S
 ## 4. Oturum
 
 - `POST /oturum` ve `POST /kayit` yanıtındaki `token` `flutter_secure_storage`'a yazılır, her istekte `Authorization: Bearer <token>` olarak gönderilir. Anahtar 90 gün geçerlidir.
-- **401** → anahtar silinir, giriş ekranı açılır. **403 `PASSWORD_CHANGE_REQUIRED`** → şifre değiştirme ekranı. **403 `ADMIN_NOT_SUPPORTED`** → “Yönetici hesabı mobil uygulamada kullanılamaz” mesajı.
+- **401** → anahtar silinir, giriş ekranı açılır. **403 `PASSWORD_CHANGE_REQUIRED`** → şifre değiştirme ekranı. **403 `ADMIN_NOT_SUPPORTED`** / **`CENTER_NOT_SUPPORTED`** → sunucunun mesajı ve web panelini açan düğme.
+- Özel dosyalar (`/api/dosya/…`: soru ve çözüm fotoğrafları, videolar) uygulamada aynı `Authorization: Bearer` başlığıyla istenir; başlıksız istek 403 döner.
+- Siteden WebView'da açılan sayfalar (ödeme, sanal sınıf, yasal metinler) user-agent'a `PiKampusApp/1.0` eklenirse “uygulama modu”nda açılır: sitenin üst menüsü, alt bilgisi ve çerez uyarısı gizlenir.
 - Çıkış: `DELETE /oturum?cihaz=<fcmToken>` (anahtarı ve bu cihazın push kaydını siler).
 
 ## 5. Mobil API (`{API_BASE_URL}` = `https://alanadi.com/api/mobil/v1`)
@@ -73,7 +78,7 @@ Arayüz tamamen **Türkçe**, saatler **Europe/Istanbul**, para birimi **TL**. S
 | --- | --- | --- |
 | `UNAUTHENTICATED` | 401 | Anahtar yok, geçersiz veya süresi dolmuş |
 | `INVALID_CREDENTIALS` | 401 | Hatalı kullanıcı adı/şifre |
-| `ACCOUNT_SUSPENDED`, `ADMIN_NOT_SUPPORTED`, `PASSWORD_CHANGE_REQUIRED`, `FORBIDDEN` | 403 | Hesap durumu veya rol uygun değil |
+| `ACCOUNT_SUSPENDED`, `ADMIN_NOT_SUPPORTED`, `CENTER_NOT_SUPPORTED`, `PASSWORD_CHANGE_REQUIRED`, `FORBIDDEN` | 403 | Hesap durumu veya rol uygun değil |
 | `NOT_FOUND` | 404 | Kayıt yok veya kullanıcıya ait değil |
 | `EMAIL_TAKEN` | 409 | Bu e-postayla hesap var |
 | `CLASSROOM_CLOSED` | 409 | Sınıf açık değil; varsa `opensAt` alanı da döner |
@@ -114,7 +119,7 @@ Sayfalı listelerde `?sayfa=N` gönderilir; yanıttaki `nextPage` null ise son s
 
 | İstek | Yanıt |
 | --- | --- |
-| `GET /katalog` | `{site, maintenance: {on, message}, rules, levels: [{id, name, slug, group, grades: [{id, name}], subjectIds}], subjects, services, cities, sortOptions, timeOptions, pages: [{slug, title, url}], paymentReturnPrefix}` |
+| `GET /katalog` | `{site, maintenance: {on, message}, rules (… , questionAnswerHours), levels: [{id, name, slug, group, grades: [{id, name}], subjectIds}], subjects, services, cities, sortOptions, timeOptions, pages: [{slug, title, url}], paymentReturnPrefix}` |
 | `GET /iller/{ilId}/ilceler` | `{items: [{id, name, slug}]}` |
 | `GET /ogretmenler?level=&subject=&service=&mode=online\|yuz-yuze&city=&district=&minPrice=&maxPrice=&rating=4&gender=kadin\|erkek&time=hafta-ici-gunduz\|hafta-ici-aksam\|hafta-sonu&verified=1&q=&sort=&page=` (kademe, ders, hizmet, il, ilçe **slug**; fiyatlar **TL**) | `{items: TeacherCard[], total, page, pageCount}` |
 | `GET /ogretmenler/{slug}` (anahtar gönderilirse `isFavorite` dolu gelir) | `TeacherProfile` |
@@ -138,10 +143,13 @@ Sayfalı listelerde `?sayfa=N` gönderilir; yanıttaki `nextPage` null ise son s
   "serviceDistricts": [{ "id": 444, "name": "Kadıköy", "cityId": 34, "cityName": "İstanbul" }],
   "offerings": [{ "id": "cmv47…", "level": { "id": 3, "name": "Ortaokul", "slug": "ortaokul" }, "subject": { "id": 5, "name": "Matematik", "slug": "matematik" },
     "service": { "id": 1, "name": "Özel Ders", "slug": "ozel-ders" }, "hourlyPrice": 80000,
-    "durations": [{ "minutes": 45, "price": 60000 }, { "minutes": 60, "price": 80000 }, { "minutes": 90, "price": 120000 }] }],
+    "durations": [{ "minutes": 45, "price": 60000 }, { "minutes": 60, "price": 80000 }, { "minutes": 90, "price": 120000 }],
+    "questionPrice": null }],
   "reviews": [{ "id": "…", "rating": 5, "comment": "…", "studentName": "Hülya K.", "lesson": "Ortaokul Matematik", "teacherReply": null, "teacherRepliedAt": null, "createdAt": "…" }],
   "isFavorite": false }
 ```
+
+`questionPrice` (kuruş): öğretmen bu derste fotoğrafla soru kabul ediyorsa soru başı ücret, etmiyorsa null. Profilde “Fotoğrafla soru sor” düğmesi yalnızca `questionPrice` dolu bir ders varsa görünür.
 
 Saatler:
 
@@ -164,6 +172,8 @@ Saatler:
 | `POST /rezervasyonlar/{id}/degerlendirme` (veli) | `{rating: 1-5, comment?}` | `BookingDetail` |
 | `POST /rezervasyonlar/{id}/onay` (öğretmen) | — | `BookingDetail` |
 | `POST /rezervasyonlar/{id}/red` (öğretmen) | `{reason}` | `BookingDetail` |
+| `POST /rezervasyonlar/soru` (veli) | multipart/form-data: `image` (sorunun fotoğrafı), `offeringId`, `learnerName`, `learnerGrade?`, `note?`, `consent=true` | 201 `{booking: BookingDetail, payment}` (ödeme bölüm 6 ile aynı) |
+| `POST /rezervasyonlar/{id}/mesajlar` | multipart/form-data: `body?`, `image?`, `video?` (yalnızca öğretmen), `isSolution=true` (öğretmenin çözümü; soru “Tamamlandı” olur) | `BookingDetail` |
 | `GET /rezervasyonlar/{id}/sinif` | — | `{url, opensAt, closesAt}` veya 409 `CLASSROOM_CLOSED` |
 | `GET /rezervasyonlar/{id}/takvim` | — | `text/calendar` (.ics) |
 
@@ -193,7 +203,16 @@ Saatler:
     "cancelPreview": { "refundAmount": 90000, "refundPercent": 100, "reason": null }, "canReview": false, "canDispute": false } }
 ```
 
-Öğretmen görünümünde `payments`, `review` ve veli `actions` yerine şunlar gelir: `parent: {name, phone}` (telefon onaydan sonra), `teacherAmount`, `actions: {canJoin, canApprove, canReject, canCancel}`. Yüz yüze derste `location: {place, address, districtName, cityName}` (öğretmene onaydan sonra).
+Öğretmen görünümünde `payments`, `review` ve veli `actions` yerine şunlar gelir: `parent: {name, phone}` (telefon onaydan sonra), `teacherAmount`, `actions: {canJoin, canApprove, canReject, canCancel, canSolve, canMessage}`. Yüz yüze derste `location: {place, address, districtName, cityName}` (öğretmene onaydan sonra).
+
+Her iki görünümde `createdAt` ve `question` alanı bulunur. `question` yalnızca fotoğrafla soruda (`mode: "QUESTION"`) doludur, diğer derslerde null:
+
+```json
+{ "answerDeadline": "…", "answeredAt": null, "threadOpen": true,
+  "messages": [{ "id": "…", "mine": true, "fromTeacher": false, "authorName": "Fatma D.", "body": "Türev sorusu", "imageUrl": "https://…/api/dosya/…", "videoUrl": null, "isSolution": false, "createdAt": "…" }] }
+```
+
+Fotoğrafla soruda öğretmen onaylamaz (`canApprove` false): `canSolve` iken çözümü `isSolution=true` ile gönderir ya da reddeder (veliye tam iade). `canMessage` (veli ve öğretmen) yazışmanın açık olduğunu gösterir; video yalnızca öğretmen mesajında kabul edilir. `answerDeadline` geçerse soru süresi dolar ve ücret iade edilir.
 
 ### Favoriler, bildirimler, cihazlar
 
@@ -211,12 +230,17 @@ Saatler:
 | İstek | Gövde | Yanıt |
 | --- | --- | --- |
 | `GET /kurum` (veli) | — | `{items: [{id, relation, student: {firstName, lastName, gradeName, groups}, center: {name, phone, logoUrl}}]}` (`id` bağlantı kimliğidir) |
-| `GET /kurum/{id}` | — | `{id, student, center, balance: {total, paid, remaining, overdue}, attendance: [{date, startMinute, subject, group, status}], etuds: [{id, date, startMinute, endMinute, subject, topic, teacher, status, attendance}], exams: [{examId, name, kind, date, net, correct, wrong, blank, rank, participants, sections: [{name, questionCount, net}]}], trend: [{name, date, net, average}], weakTopics: [{topic, section, rate, questions, teachersUrl}], installments: [{title, order, dueDate, amount, paidAmount, state}], payments: [{receiptNo, amount, method, paidAt}], announcements: [{id, title, body, group, createdAt}], notes: [{kind, text, author, createdAt}], homeworks: [{id, subject, title, description, assignedOn, dueDate, status, note}], questions: [{id, subject, note, imageUrl, status, answerText, answerImageUrl, answerVideoUrl, answeredBy, answeredAt, createdAt}], schedule: [{weekday, startMinute, endMinute, subject, group, room, teacher}]}` |
+| `GET /kurum/{id}` | — | `{id, student, center, balance: {total, paid, remaining, overdue}, attendance: [{date, startMinute, subject, group, status}], etuds: [{id, date, startMinute, endMinute, subject, topic, teacher, status, attendance}], exams: [{examId, name, kind, date, net, correct, wrong, blank, rank, participants, sections: [{name, questionCount, net}]}], trend: [{name, date, net, average}], weakTopics: [{topic, section, rate, questions, teachersUrl}], installments: [{title, order, dueDate, amount, paidAmount, state}], payments: [{receiptNo, amount, method, paidAt}], announcements: [{id, title, body, group, createdAt}], notes: [{kind, text, author, createdAt}], homeworks: [{id, subject, title, description, assignedOn, dueDate, status, note}], questions: [{id, subject, note, imageUrl, status, answerText, answerImageUrl, answerVideoUrl, answeredBy, answeredAt, createdAt, mine}], questionSubjects: [string], schedule: [{weekday, startMinute, endMinute, subject, group, room, teacher}], hallDays: [{date, hall, periods, marks, present, marked}]}` |
+| `DELETE /kurum/{id}` | — | 204; veli bu öğrenciyle bağlantısını kaldırır (kurumun kaydı silinmez) |
+| `GET /kurum/{id}/calisma?hafta=YYYY-MM-DD` | — (haftanın herhangi bir günü; yoksa bu hafta) | `{weekStart, weekEnd, today, items: [{id, date, subject, topic, resource, targetQuestions, note, done}], resources: [{id, name, subject, publisher, topicCount, doneCount, completion, solved, accuracy, topics: [{topic, solved, correct, wrong, done, accuracy}]}], coaching: {coach, weekday, minute, sessions: [{id, date, coach, held, notes, priorityTopics, nextGoal}]}}` |
+| `POST /kurum/{id}/calisma/{itemId}` | `{done}` | `{ok, done}`; çalışma programındaki maddeyi işaretler |
+| `PUT /kurum/{id}/kaynaklar/{resourceId}` | `{rows: [{topic, solved, correct, wrong, done}]}` (`resourceId` = `resources[].id`) | `{ok: true}`; yalnızca kaynağın kendi konuları kaydedilir |
+| `DELETE /kurum/{id}/sorular/{questionId}` | — | 204; cevaplanmamış ve bu hesabın sorduğu (`mine`) soru geri çekilir |
 | `GET /kurum/{id}/deneme/{examId}` | — | `{exam, result: {net, correct, wrong, blank, score, rank, participants}, average, sections: [{name, questionCount, correct, wrong, blank, net, averageNet, topics: [{topic, questions, correct, rate}]}], weakTopics, trend}` |
 | `POST /kurum/{id}/sorular` | multipart/form-data: `image` (fotoğraf, en fazla 8 MB), `subject`, `note?` | 201 `{id}`; öğrenci/veli fotoğrafla soru gönderir (soru durumu `OPEN`, `ANSWERED`, `IN_PERSON`) |
 | `POST /kurum/davet` | `{token}` (davet bağlantısının son kısmı) | `{id}`; geçersiz/süresi dolmuş davette 422 `INVITE_INVALID` |
 
-Devam durumu `PRESENT` (Geldi), `ABSENT` (Gelmedi), `LATE` (Geç), `EXCUSED` (İzinli); taksit durumu `paid`, `partial`, `overdue`, `due`, `upcoming`; ödev durumu `PENDING` (kontrol edilmedi), `DONE`, `PARTIAL`, `MISSING`; `rate` 0-1 arası doğru oranıdır. Yalnızca kurumun yayınladığı denemeler döner. Kurum bildirimleri (`type` `center.` ile başlar) `link` olarak `/hesabim/kurum/<id>` taşır; uygulama bunu Kurumum → öğrenci ekranına yönlendirmelidir.
+Çalışma salonunda `marks` periyot başına `G` (geldi), `Y` (gelmedi), `-` (işaretlenmedi) içerir; `completion` ve `accuracy` 0-1 arasıdır; koç görüşmelerinde `weekday` 1 = Pazartesi, `minute` gün başından dakikadır. Devam durumu `PRESENT` (Geldi), `ABSENT` (Gelmedi), `LATE` (Geç), `EXCUSED` (İzinli); taksit durumu `paid`, `partial`, `overdue`, `due`, `upcoming`; ödev durumu `PENDING` (kontrol edilmedi), `DONE`, `PARTIAL`, `MISSING`; `rate` 0-1 arası doğru oranıdır. Yalnızca kurumun yayınladığı denemeler döner. Kurum bildirimleri (`type` `center.` ile başlar) `link` olarak `/hesabim/kurum/<id>` taşır; uygulama bunu Kurumum → öğrenci ekranına yönlendirmelidir.
 
 `target` uygulamada açılacak ekrandır: `{screen: "booking", id}`, `{screen: "requests"}`, `{screen: "reviews"}`, `{screen: "earnings"}`, `{screen: "teacher", id: slug}`, `{screen: "centerStudent", id}` (Kurumum → öğrenci), `{screen: "center"}` (Kurumum listesi) veya null.
 

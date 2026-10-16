@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Flutter mobil uygulaması (kendi araçlarıyla derlenir)
+    "piakademi-mobil/**",
   ]),
 ]);
 

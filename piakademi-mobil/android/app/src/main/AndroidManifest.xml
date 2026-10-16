@@ -1,0 +1,101 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- API, ödeme sayfası ve sanal sınıf için -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Sanal sınıf: kamera ve mikrofon (görüntülü ders) -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- Ders talebi, onay ve hatırlatma bildirimleri (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
+
+    <application
+        android:label="Pi Kampüs"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher"
+        android:enableOnBackInvokedCallback="true">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <meta-data
+              android:name="io.flutter.embedding.android.NormalTheme"
+              android:resource="@style/NormalTheme"
+              />
+            <!-- Bağlantılar app_links ile işlenir; Flutter'ın kendi derin bağlantı yönlendirmesi kapalı. -->
+            <meta-data android:name="flutter_deeplinking_enabled" android:value="false" />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+
+            <!-- pikampus://kurum-davet/<kod>, pikampus://ders/<id> … -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="pikampus" />
+            </intent-filter>
+
+            <!-- Sitenin bağlantıları uygulamada açılır (App Links; doğrulama için sitede assetlinks.json gerekir) -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" />
+                <data android:host="pikampus.com" />
+                <data android:host="www.pikampus.com" />
+                <data android:pathPrefix="/kurum-davet/" />
+                <data android:pathPrefix="/ogretmen/" />
+                <data android:pathPrefix="/hesabim/derslerim/" />
+                <data android:pathPrefix="/hesabim/kurum" />
+                <data android:pathPrefix="/ogretmen-paneli/dersler/" />
+            </intent-filter>
+        </activity>
+
+        <!-- Firebase Cloud Messaging: varsayılan bildirim kanalı, simgesi ve rengi -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="pikampus_genel" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_stat_pikampus" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_color"
+            android:resource="@color/pikampus_brand" />
+
+        <!-- Don't delete the meta-data below.
+             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+    </application>
+
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- url_launcher: tarayıcı, telefon, e-posta -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.DIAL" />
+            <data android:scheme="tel" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SENDTO" />
+            <data android:scheme="mailto" />
+        </intent>
+    </queries>
+</manifest>
