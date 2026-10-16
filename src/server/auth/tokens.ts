@@ -9,10 +9,16 @@ const TTL_MS: Record<UserTokenType, number> = {
   MOBILE_WEB_LOGIN: 5 * 60 * 1000,
 };
 
+// E-postayla giden bağlantılarda yeni bağlantı eskisini iptal etmez (art arda istenen e-postaların hepsi süresince
+// çalışır); biri kullanılınca aynı türden diğerleri de kapanır.
+const KEEP_PREVIOUS: UserTokenType[] = ["EMAIL_VERIFICATION", "PASSWORD_RESET"];
+
 /** Tek kullanımlık bağlantı anahtarı üretir; veritabanında yalnızca özeti tutulur. */
 export async function issueUserToken(userId: string, type: UserTokenType, ttlMs = TTL_MS[type]): Promise<string> {
   const token = randomToken();
-  await db.userToken.deleteMany({ where: { userId, type, usedAt: null } });
+  await db.userToken.deleteMany({
+    where: { userId, type, usedAt: null, ...(KEEP_PREVIOUS.includes(type) ? { expiresAt: { lt: new Date() } } : {}) },
+  });
   await db.userToken.create({
     data: { id: hashToken(token), userId, type, expiresAt: new Date(Date.now() + ttlMs) },
   });
@@ -29,7 +35,9 @@ export async function consumeUserToken(token: string, type: UserTokenType): Prom
     where: { id: record.id, usedAt: null },
     data: { usedAt: new Date() },
   });
-  return updated.count === 1 ? record.userId : null;
+  if (updated.count !== 1) return null;
+  if (KEEP_PREVIOUS.includes(type)) await db.userToken.deleteMany({ where: { userId: record.userId, type, usedAt: null } });
+  return record.userId;
 }
 
 export async function peekUserToken(token: string, type: UserTokenType): Promise<boolean> {

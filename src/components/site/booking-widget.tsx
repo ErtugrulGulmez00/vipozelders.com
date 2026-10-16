@@ -113,7 +113,7 @@ export function BookingWidget({
         >
           {offerings.map((o) => (
             <option key={o.id} value={o.id}>
-              {o.levelName} · {o.subjectName} · {o.serviceName}
+              {o.levelName} · {o.subjectName} · {o.serviceName} · {formatMoney(o.hourlyPrice)}/saat{o.questionPrice ? ` · soru ${formatMoney(o.questionPrice)}` : ""}
             </option>
           ))}
         </Select>

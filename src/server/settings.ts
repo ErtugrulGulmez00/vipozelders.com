@@ -23,8 +23,8 @@ export const settingsSchema = z.object({
   approvalWindowHours: z.number().int().min(1).max(72).default(12),
   // Fotoğrafla soruda öğretmenin çözümü göndermesi için süre; dolarsa ücret iade edilir.
   questionAnswerHours: z.number().int().min(1).max(72).default(24),
-  approvalMinHoursBeforeStart: z.number().int().min(0).max(48).default(2),
-  minNoticeHours: z.number().int().min(1).max(168).default(12),
+  approvalMinHoursBeforeStart: z.number().int().min(0).max(48).default(1),
+  minNoticeHours: z.number().int().min(1).max(168).default(2),
   maxAdvanceDays: z.number().int().min(1).max(180).default(30),
   classroomOpensMinutesBefore: z.number().int().min(0).max(60).default(10),
 
