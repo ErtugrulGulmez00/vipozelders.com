@@ -208,6 +208,17 @@ exit
 sudo systemctl restart vipozelders
 ```
 
+### 9. Görüntülü ders sunucusu: kendi LiveKit'imiz (isteğe bağlı)
+
+LiveKit Cloud yerine aynı sunucuda çalıştırılabilir; görüntü trafiği Türkiye'de kalır, ders sayısıyla ücret artmaz. Birebir ders sunucudan yaklaşık 4-6 Mbit/s geçirir (sanal sınıf görüntüyü 720p / 1,2 Mbit/s ile sınırlar).
+
+1. DNS: `livekit` için sunucunun IP'sine `A` kaydı. Sunucu firmasından UDP'nin açık olduğunu ve sürekli bant genişliği sınırını öğrenin.
+2. `livekit-server`'ı GitHub sürümünden kurun (sürümü sabitleyin, `checksums.txt` ile doğrulayın), `livekit` adlı sistem kullanıcısıyla systemd servisi yapın.
+3. `/etc/livekit/livekit.yaml`: `port: 7880`, `rtc.tcp_port: 7881`, `rtc.port_range_start/end: 50000/60000`, `rtc.node_ip: <sunucu IP>`, `keys` (yeni anahtar/gizli), `webhook.urls: [https://alanadiniz.com/api/livekit/webhook]`, `turn.enabled: true` (`udp_port: 3478`, `tls_port: 5349`, `domain: livekit.alanadiniz.com`, sertifika dosyaları).
+4. Caddy: `livekit.alanadiniz.com { reverse_proxy 127.0.0.1:7880 }`. TURN/TLS sertifikasını Caddy'nin aldığı sertifikadan günlük bir betikle kopyalayın (değişince `systemctl restart livekit`).
+5. Güvenlik duvarı: `7881/tcp`, `50000:60000/udp`, `3478/udp`, `5349/tcp`, `30000:40000/udp` (TURN aktarma). 7880 dışarı açılmaz.
+6. `.env`: `LIVEKIT_URL="wss://livekit.alanadiniz.com"` ve yeni anahtarlar; servisi yeniden başlatın. Cloud'a dönmek için eski üç satırı geri koymanız yeterli.
+
 ### Sorun giderme
 
 - **Site açılmıyor:** `sudo journalctl -u vipozelders -n 100` ve `sudo systemctl status caddy`.
