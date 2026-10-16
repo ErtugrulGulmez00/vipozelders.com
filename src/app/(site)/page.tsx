@@ -168,7 +168,7 @@ export default async function HomePage() {
             </p>
             <h2 className="mt-3 text-2xl font-bold text-slate-900 sm:text-3xl">Etüt merkezi ya da dershane mi yönetiyorsunuz?</h2>
             <p className="mt-2 text-slate-600">
-              Öğrenci ve veli takibi, yoklama ve devamsızlık SMS&apos;i, deneme analizi ve eksik konular, ödeme planı ve makbuz: hepsi tek panelde.
+              Öğrenci ve veli takibi, yoklama ve devamsızlık bildirimi, deneme analizi ve eksik konular, ödeme planı ve makbuz: hepsi tek panelde.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <LinkButton href="/kurumlar-icin" size="lg">
@@ -181,7 +181,7 @@ export default async function HomePage() {
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             {[
-              { icon: ClipboardCheck, title: "Yoklama", text: "Gelmeyen öğrencinin velisine anında SMS" },
+              { icon: ClipboardCheck, title: "Yoklama", text: "Gelmeyen öğrencinin velisine anında bildirim" },
               { icon: BookOpenCheck, title: "Deneme analizi", text: "Net, sıralama ve konu bazında eksikler" },
               { icon: Wallet, title: "Muhasebe", text: "Taksit, tahsilat, makbuz ve giderler" },
               { icon: BellRing, title: "Veli portalı", text: "Veli her şeyi telefonundan takip eder" },

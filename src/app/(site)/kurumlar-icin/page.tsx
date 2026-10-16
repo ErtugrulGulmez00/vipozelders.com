@@ -28,12 +28,12 @@ import { CenterApplicationForm } from "./center-application-form";
 
 export const metadata: Metadata = {
   title: "Etüt merkezi ve dershane yönetim paneli",
-  description: "Öğrenci ve veli takibi, yoklama ve devamsızlık SMS'i, deneme analizi ve eksik konular, ödeme planı, tahsilat ve makbuz: etüt merkeziniz ya da dershaneniz için tek panel.",
+  description: "Öğrenci ve veli takibi, yoklama ve devamsızlık bildirimi, deneme analizi ve eksik konular, ödeme planı, tahsilat ve makbuz: etüt merkeziniz ya da dershaneniz için tek panel.",
 };
 
 const FEATURES = [
   { Icon: Users, title: "Öğrenci ve veli kayıtları", text: "Okul, sınıf, hedef sınav, veli bilgileri ve notlar tek kartta. Excel listenizi bir seferde aktarın." },
-  { Icon: ClipboardCheck, title: "Yoklama ve devamsızlık SMS'i", text: "Programdaki her ders için tek dokunuşla yoklama; gelmeyen öğrencinin velisine anında SMS, e-posta ve bildirim." },
+  { Icon: ClipboardCheck, title: "Yoklama ve devamsızlık bildirimi", text: "Programdaki her ders için tek dokunuşla yoklama; gelmeyen öğrencinin velisine anında e-posta ve uygulama bildirimi." },
   { Icon: BookOpenCheck, title: "Deneme analizi", text: "LGS, TYT, AYT şablonları; D/Y ya da cevap anahtarıyla okuma, net ve kurum sıralaması, ders ve konu analizi." },
   { Icon: LineChart, title: "Eksik konular ve karne", text: "Her öğrencinin zayıf konuları, net gelişim grafiği ve yazdırılabilir deneme karnesi otomatik hazırlanır." },
   { Icon: Wallet, title: "Ödeme planı ve tahsilat", text: "Peşinat, indirim ve taksitler; tahsilat en eski taksitten düşer, sıra numaralı makbuz çıkar." },
@@ -41,7 +41,7 @@ const FEATURES = [
   { Icon: CalendarRange, title: "Ders programı", text: "Sınıflar, öğretmenler ve derslikler için çakışma uyarılı haftalık program; yazdırıp panoya asın." },
   { Icon: CalendarClock, title: "Etüt planlama", text: "Birebir ve küçük grup etütleri; öğretmen, derslik ve öğrenci çakışmasını sistem yakalar." },
   { Icon: Receipt, title: "Gider ve gelir raporu", text: "Kira, maaş, fatura giderleri; aylık gelir-gider grafiği ve Excel çıktıları." },
-  { Icon: Megaphone, title: "Duyurular", text: "Tüm kuruma ya da bir sınıfa duyuru; veliye SMS, e-posta ve uygulama bildirimi." },
+  { Icon: Megaphone, title: "Duyurular", text: "Tüm kuruma ya da bir sınıfa duyuru; veliye e-posta ve uygulama bildirimi." },
   { Icon: UserPlus, title: "Ön kayıt ve vitrin sayfası", text: "Kurumunuzun Pi Kampüs'teki tanıtım sayfasından gelen ön kayıtlar doğrudan panelinize düşer." },
   { Icon: ShieldCheck, title: "Personel yetkileri", text: "Müdür, öğretmen ve muhasebe rolleri; herkes yalnızca kendi bölümünü görür. Tüm işlemler kayıt altında." },
 ];
@@ -51,7 +51,7 @@ const FAQ = [
   { q: "Veriler güvende mi?", a: "Veriler şifreli bağlantıyla taşınır, T.C. kimlik numaraları veritabanında şifreli saklanır. Her personel yalnızca yetkili olduğu bölümleri görür ve yapılan işlemler kayıt altına alınır." },
   { q: "Deneme süresi bitince ne olur?", a: "Kayıtlarınız silinmez; panel salt okunur olur. Aboneliğinizi başlatınca kaldığınız yerden devam edersiniz." },
   { q: "Veliler ne görür?", a: "Davet bağlantısıyla ücretsiz veli hesabına bağlanan veli; devamsızlığı, etütleri, yayınladığınız deneme sonuçlarını ve eksik konuları, ödeme planını ve duyuruları görür." },
-  { q: "SMS nasıl gönderiliyor?", a: "Devamsızlık, ödeme hatırlatma ve duyuru SMS'leri kurumunuz adına gönderilir. E-posta ve veli portalı bildirimleri her planda ücretsizdir." },
+  { q: "Velilere bildirim nasıl gidiyor?", a: "Devamsızlık, ödeme hatırlatma ve duyurular velilere e-posta ve veli portalı / uygulama bildirimi olarak gider; her planda ücretsizdir." },
   { q: "Telefondan kullanılır mı?", a: "Evet. Panel telefon ve tabletle uyumludur; öğretmenler yoklamayı sınıfta telefondan alabilir." },
 ];
 
@@ -315,7 +315,7 @@ function PanelPreview() {
         </div>
       </div>
       <div className="absolute -bottom-5 -left-6 rounded-xl bg-white px-4 py-3 text-xs text-slate-800 shadow-xl">
-        <p className="font-semibold">📩 SMS gönderildi</p>
+        <p className="font-semibold">📩 Veliye bildirildi</p>
         <p className="text-slate-500">Öğrenciniz Ali 16:50 Fen dersine katılmamıştır.</p>
       </div>
     </div>

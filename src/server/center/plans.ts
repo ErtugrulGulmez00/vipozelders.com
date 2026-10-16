@@ -19,6 +19,18 @@ export type CenterPlanInfo = {
   features: string[];
 };
 
+/** İki planda da tüm özellikler aynıdır; yalnızca aktif öğrenci sınırı değişir. */
+const ALL_FEATURES = [
+  "Öğrenci ve veli kayıtları, Excel'den aktarım",
+  "Yoklama, devamsızlık bildirimi, sınıf defteri",
+  "Deneme sonuçları, optik okuma, konu bazında eksik analizi",
+  "Ödev, etüt, ders programı, çalışma salonu",
+  "Koçluk, çalışma programı, kaynak takibi",
+  "Ödeme planı, tahsilat, makbuz, gider takibi",
+  "Veli ve öğrenci portalı, fotoğrafla soru",
+  "Sınırsız personel hesabı",
+];
+
 export function centerPlans(settings: SiteSettings): CenterPlanInfo[] {
   return [
     {
@@ -29,14 +41,7 @@ export function centerPlans(settings: SiteSettings): CenterPlanInfo[] {
       yearlyPriceTl: settings.centerStarterYearlyPriceTl || null,
       yearlyListPriceTl: settings.centerStarterYearlyListPriceTl || null,
       students: settings.centerStarterStudents,
-      features: [
-        `${settings.centerStarterStudents} aktif öğrenciye kadar`,
-        "Öğrenci ve veli kayıtları, Excel'den aktarım",
-        "Yoklama, devamsızlık bildirimi",
-        "Deneme sonuçları ve net analizi",
-        "Ödeme planı, tahsilat ve makbuz",
-        "Veli portalı",
-      ],
+      features: [`${settings.centerStarterStudents} aktif öğrenciye kadar`, ...ALL_FEATURES],
     },
     {
       plan: "PRO",
@@ -47,14 +52,7 @@ export function centerPlans(settings: SiteSettings): CenterPlanInfo[] {
       yearlyListPriceTl: settings.centerProYearlyListPriceTl || null,
       students: settings.centerProStudents,
       highlight: true,
-      features: [
-        `${settings.centerProStudents} aktif öğrenciye kadar`,
-        "Başlangıç planındaki her şey",
-        "Cevap anahtarıyla okuma ve konu bazında eksik analizi",
-        "Etüt planlama, ders programı",
-        "Gider takibi ve aylık gelir-gider raporu",
-        "Sınırsız personel hesabı",
-      ],
+      features: [`${settings.centerProStudents} aktif öğrenciye kadar`, ...ALL_FEATURES],
     },
     {
       plan: "ENTERPRISE",
@@ -64,7 +62,7 @@ export function centerPlans(settings: SiteSettings): CenterPlanInfo[] {
       yearlyPriceTl: null,
       yearlyListPriceTl: null,
       students: null,
-      features: ["Birden çok şube", "Kuruma özel SMS başlığı", "Toplu veri aktarımı ve eğitim", "Öncelikli destek"],
+      features: ["Daha fazla öğrenci", "Birden çok şube", "Toplu veri aktarımı ve eğitim", "Öncelikli destek"],
     },
   ];
 }
