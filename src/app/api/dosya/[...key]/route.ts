@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { db } from "@/server/db";
+import { optionalUser } from "@/server/mobile/auth";
 import { readUpload } from "@/server/storage";
 
 /** Belgeyi sahibi öğretmen ve yönetici; kurum soru/çözüm dosyasını kurum personeli ve öğrenciye bağlı hesaplar görür. */
@@ -27,10 +28,11 @@ async function canReadPrivate(user: { id: string; role: string }, key: string): 
 }
 
 /** Yüklenen dosyaları sunar. Özel (private/) dosyaları yalnızca sahibi ve yöneticiler görebilir. */
-export async function GET(_request: NextRequest, { params }: RouteContext<"/api/dosya/[...key]">) {
+export async function GET(request: NextRequest, { params }: RouteContext<"/api/dosya/[...key]">) {
   const key = (await params).key.join("/");
   if (key.startsWith("private/")) {
-    const user = await getCurrentUser();
+    // Web oturumu (çerez) ya da mobil uygulamanın "Authorization: Bearer" anahtarı
+    const user = (await getCurrentUser()) ?? (await optionalUser(request));
     if (!user || !(await canReadPrivate(user, key))) return new NextResponse("Erişim yok", { status: 403 });
   }
   const file = await readUpload(key);

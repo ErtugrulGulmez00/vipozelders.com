@@ -57,6 +57,11 @@ body {
   line-height: 1.6;
 }
 
+/* Mobil uygulamanın WebView'ı (ödeme, yasal sayfalar): site menüsü, alt bilgi ve çerez bandı gizlenir. */
+.pk-app .pk-site-chrome {
+  display: none !important;
+}
+
 /* LiveKit hazır bileşenleri için tam ekran sınıf */
 .classroom-root {
   height: 100dvh;

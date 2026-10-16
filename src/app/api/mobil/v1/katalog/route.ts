@@ -24,6 +24,7 @@ export const GET = publicRoute(async () => {
       partialRefundPercent: settings.partialRefundPercent,
       disputeWindowHours: settings.disputeWindowHours,
       reviewWindowDays: settings.reviewWindowDays,
+      questionAnswerHours: settings.questionAnswerHours,
     },
     levels: catalog.levels.map((l) => ({ id: l.id, name: l.name, slug: l.slug, group: l.group, grades: l.grades, subjectIds: l.subjectIds })),
     subjects: catalog.subjects.map((s) => ({ id: s.id, name: s.name, slug: s.slug })),

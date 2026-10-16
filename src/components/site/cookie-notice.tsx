@@ -17,7 +17,7 @@ export function CookieNotice() {
 
   if (!visible) return null;
   return (
-    <div className="fixed inset-x-3 bottom-3 z-50 mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-4 shadow-xl sm:flex sm:items-center sm:gap-4">
+    <div className="pk-site-chrome fixed inset-x-3 bottom-3 z-50 mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-4 shadow-xl sm:flex sm:items-center sm:gap-4">
       <p className="text-sm text-slate-600">
         Sitemizde yalnızca oturumunuzu açık tutmak ve güvenliği sağlamak için zorunlu çerezler kullanıyoruz. Ayrıntılar için{" "}
         <Link href="/sayfa/gizlilik-ve-cerez-politikasi" className="font-medium text-brand-700 underline">

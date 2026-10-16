@@ -1,13 +1,15 @@
-import type { BookingStatus, Prisma } from "@/generated/prisma/client";
+import type { Booking, BookingStatus, Prisma } from "@/generated/prisma/client";
 import { PAYMENT_STATUS, REFUND_STATUS } from "@/lib/labels";
+import { fullName, shortName } from "@/lib/text";
 import { previewStudentCancellation } from "../bookings";
 import { db } from "../db";
+import { questionThread, threadOpen } from "../question-bookings";
 import { reviewEligibility } from "../reviews";
 import { loadSettings } from "../settings";
 import { CANCELLED_STATUSES, PAST_STATUSES } from "../student-queries";
 import type { MobileUser } from "./auth";
 import { ApiError, notFound } from "./http";
-import { bookingSummaryJson, statusJson } from "./serialize";
+import { absoluteUpload, bookingSummaryJson, statusJson } from "./serialize";
 
 const PEOPLE = {
   teacher: { select: { slug: true, photoKey: true, user: { select: { firstName: true, lastName: true } } } },
@@ -87,6 +89,8 @@ export async function bookingDetail(user: MobileUser, bookingId: string, now = n
       ? { place: booking.inPersonPlace, address: booking.address, districtName: booking.district?.name ?? null, cityName: booking.district?.city.name ?? null }
       : null;
 
+  const isQuestion = booking.mode === "QUESTION";
+  const question = isQuestion ? await questionJson(booking, user.id) : null;
   const base = {
     ...bookingSummaryJson(booking, user.role),
     learnerGrade: booking.learnerGrade,
@@ -100,6 +104,9 @@ export async function bookingDetail(user: MobileUser, bookingId: string, now = n
     disputeReason: booking.disputeReason,
     location,
     classroom: online ? { opensAt, closesAt, open: classroomOpen } : null,
+    createdAt: booking.createdAt,
+    // Fotoğrafla soru: soru, çözüm ve yazışma (diğer derslerde null)
+    question,
     events: booking.events.map((e) => ({ ...statusJson(e.toStatus), note: e.note, createdAt: e.createdAt })),
   };
 
@@ -128,6 +135,7 @@ export async function bookingDetail(user: MobileUser, bookingId: string, now = n
         cancelPreview: { refundAmount: cancellation.refundAmount, refundPercent: cancellation.refundPercent, reason: cancellation.reason ?? null },
         canReview: eligibility.eligible && booking.status === "COMPLETED",
         canDispute: ["COMPLETED", "NO_SHOW_STUDENT"].includes(booking.status) && !booking.earningsReleasedAt && Boolean(booking.earningsReleaseAt && booking.earningsReleaseAt > now),
+        canMessage: Boolean(question?.threadOpen),
       },
     };
   }
@@ -138,10 +146,37 @@ export async function bookingDetail(user: MobileUser, bookingId: string, now = n
     teacherAmount: booking.teacherAmount,
     actions: {
       canJoin: classroomOpen,
-      canApprove: booking.status === "PENDING_APPROVAL",
+      // Fotoğrafla soruda onay yoktur: öğretmen çözümü gönderir (canSolve) ya da reddeder.
+      canApprove: booking.status === "PENDING_APPROVAL" && !isQuestion,
       canReject: booking.status === "PENDING_APPROVAL",
       canCancel: booking.status === "CONFIRMED" && booking.startAt > now,
+      canSolve: isQuestion && booking.status === "PENDING_APPROVAL",
+      canMessage: Boolean(question?.threadOpen),
     },
+  };
+}
+
+/** Fotoğrafla sorunun yazışması; özel dosyalar uygulamada Bearer anahtarıyla açılır (/api/dosya). */
+async function questionJson(booking: Booking, viewerId: string) {
+  const messages = booking.status === "PENDING_PAYMENT" ? [] : await questionThread(booking.id);
+  return {
+    answerDeadline: booking.status === "PENDING_APPROVAL" ? booking.approvalDeadline : null,
+    answeredAt: booking.answeredAt,
+    threadOpen: booking.status !== "PENDING_PAYMENT" && threadOpen(booking),
+    messages: messages.map((m) => {
+      const fromTeacher = m.authorId === booking.teacherId;
+      return {
+        id: m.id,
+        mine: m.authorId === viewerId,
+        fromTeacher,
+        authorName: fromTeacher ? fullName(m.author) : shortName(m.author),
+        body: m.body,
+        imageUrl: absoluteUpload(m.imageKey),
+        videoUrl: absoluteUpload(m.videoKey),
+        isSolution: m.isSolution,
+        createdAt: m.createdAt,
+      };
+    }),
   };
 }
 

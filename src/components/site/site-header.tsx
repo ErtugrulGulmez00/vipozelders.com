@@ -18,9 +18,9 @@ export async function SiteHeader() {
   return (
     <>
       {settings.announcement ? (
-        <div className="bg-brand-900 px-4 py-2 text-center text-sm font-medium text-gold-100">{settings.announcement}</div>
+        <div className="pk-site-chrome bg-brand-900 px-4 py-2 text-center text-sm font-medium text-gold-100">{settings.announcement}</div>
       ) : null}
-      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur">
+      <header className="pk-site-chrome sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-4 sm:gap-4">
           <div className="flex items-center gap-8">
             <Logo />

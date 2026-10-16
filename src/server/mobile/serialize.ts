@@ -72,6 +72,8 @@ export function teacherProfileJson(teacher: PublicTeacher) {
       service: { id: o.serviceType.id, name: o.serviceType.name, slug: o.serviceType.slug },
       hourlyPrice: o.hourlyPrice,
       durations: o.durations.map((minutes) => ({ minutes, price: lessonPrice(o.hourlyPrice, minutes) })),
+      // Fotoğrafla soru kabul ediliyorsa soru başı ücret (kuruş), yoksa null
+      questionPrice: o.questionPrice ?? null,
     })),
     reviews: teacher.reviews.map((r) => ({
       id: r.id,

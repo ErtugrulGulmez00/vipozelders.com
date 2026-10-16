@@ -28,6 +28,7 @@ export const POST = publicRoute(async ({ request }) => {
   if (!user || !valid) throw new ApiError(401, "INVALID_CREDENTIALS", "Kullanıcı adı/e-posta veya şifre hatalı.");
   if (user.status !== "ACTIVE") throw new ApiError(403, "ACCOUNT_SUSPENDED", "Hesabınız askıya alınmış. Destek ekibimizle iletişime geçin.");
   if (user.role === "ADMIN") throw new ApiError(403, "ADMIN_NOT_SUPPORTED", "Yönetici hesabı mobil uygulamada kullanılamaz; web panelini kullanın.");
+  if (user.role === "CENTER") throw new ApiError(403, "CENTER_NOT_SUPPORTED", "Kurum paneli hesabı mobil uygulamada henüz kullanılamıyor; web panelini kullanın.");
 
   const token = await issueMobileSession(user.id, request, input.deviceName);
   return json({ token, user: await meJson(user.id) });

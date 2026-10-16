@@ -21,9 +21,15 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+// Pi Kampüs mobil uygulaması WebView'ı user-agent'a "PiKampusApp" ekler; sayfa boyanmadan önce işaretlenir.
+const APP_MODE_SCRIPT = "if(/PiKampusApp/.test(navigator.userAgent))document.documentElement.classList.add('pk-app')";
+
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="tr" className={font.variable}>
+    <html lang="tr" className={font.variable} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: APP_MODE_SCRIPT }} />
+      </head>
       <body className="min-h-dvh font-sans">{children}</body>
     </html>
   );
