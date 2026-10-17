@@ -13,6 +13,7 @@ const FLASH: Record<string, { tone: "success" | "warning"; text: string }> = {
   guncellendi: { tone: "success", text: "Öğrenci bilgileri güncellendi." },
   silindi: { tone: "success", text: "Öğrenci silindi." },
   yetki: { tone: "warning", text: "Bu bölüm için yetkiniz yok. Kurum yöneticinizden yetki isteyebilirsiniz." },
+  modul: { tone: "warning", text: "Bu modül kurum ayarlarından kapatılmış. Kurum ayarları → Modüller bölümünden açabilirsiniz." },
   "sinif-silindi": { tone: "success", text: "Sınıf silindi." },
   "sinif-arsiv": { tone: "success", text: "Sınıfın yoklama geçmişi olduğu için silinmedi, arşive alındı." },
   "etut-planlandi": { tone: "success", text: "Etüt planlandı." },

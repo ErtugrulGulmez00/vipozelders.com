@@ -10,7 +10,7 @@ import { formatMoney } from "@/lib/money";
 import { fullName, initials } from "@/lib/text";
 import { requireUser } from "@/server/auth/current-user";
 import { db } from "@/server/db";
-import { lessonPrice } from "@/server/pricing";
+import { INTRO_MINUTES, lessonPrice } from "@/server/pricing";
 import { loadSettings } from "@/server/settings";
 import { uploadUrl } from "@/server/storage";
 import { BookingForm } from "./booking-form";
@@ -26,7 +26,9 @@ export default async function BookingPage({ searchParams }: PageProps<"/rezervas
   const duration = Number(query.sure);
   // Fotoğrafla soru artık soru kredisiyle (soru havuzu) gönderilir.
   if (query.sekil === "QUESTION") redirect("/soru-sor");
-  const mode = query.sekil === "IN_PERSON" ? "IN_PERSON" : "ONLINE";
+  // Ücretsiz 15 dk tanışma görüşmesi (her zaman online, ödemesiz)
+  const intro = query.tanisma === "1";
+  const mode = !intro && query.sekil === "IN_PERSON" ? "IN_PERSON" : "ONLINE";
 
   if (user.role !== "STUDENT") {
     return (
@@ -40,7 +42,8 @@ export default async function BookingPage({ searchParams }: PageProps<"/rezervas
 
   const offering = offeringId ? await loadOffering(offeringId) : null;
 
-  if (!offering || !offering.isActive || Number.isNaN(start.getTime()) || !offering.durations.includes(duration)) {
+  const durationOk = offering ? (intro ? duration === INTRO_MINUTES && offering.teacher.offersIntro : offering.durations.includes(duration)) : false;
+  if (!offering || !offering.isActive || Number.isNaN(start.getTime()) || !durationOk) {
     return (
       <Shell>
         <Alert tone="warning" title="Randevu bilgisi eksik">
@@ -65,7 +68,7 @@ export default async function BookingPage({ searchParams }: PageProps<"/rezervas
           : Promise.resolve([])
       : Promise.resolve([]),
   ]);
-  const price = lessonPrice(offering.hourlyPrice, duration);
+  const price = intro ? 0 : lessonPrice(offering.hourlyPrice, duration);
   const end = new Date(start.getTime() + duration * 60_000);
   const name = fullName(teacher.user);
 
@@ -86,6 +89,7 @@ export default async function BookingPage({ searchParams }: PageProps<"/rezervas
             places={{ home: teacher.inPersonAtStudentHome, teacher: teacher.inPersonAtTeacherPlace }}
             districts={districts}
             notePlaceholder={notePlaceholder(offering.level.name, offering.subject.name)}
+            intro={intro}
           />
         </Card>
         <aside className="space-y-4">
@@ -102,7 +106,7 @@ export default async function BookingPage({ searchParams }: PageProps<"/rezervas
             <DescriptionList
               items={[
                 { label: "Ders", value: `${offering.level.name} · ${offering.subject.name}` },
-                { label: "Hizmet", value: offering.serviceType.name },
+                { label: "Hizmet", value: intro ? "Ücretsiz tanışma görüşmesi" : offering.serviceType.name },
                 { label: "Zaman", value: formatLessonRange(start, end) },
                 { label: "Süre", value: durationLabel(duration) },
                 { label: "Şekil", value: MODE_LABEL[mode] },
@@ -110,22 +114,35 @@ export default async function BookingPage({ searchParams }: PageProps<"/rezervas
             />
             <div className="mt-4 flex items-baseline justify-between border-t border-slate-100 pt-4">
               <span className="text-sm text-slate-600">Toplam (KDV dahil)</span>
-              <span className="text-2xl font-bold text-slate-900">{formatMoney(price)}</span>
+              <span className="text-2xl font-bold text-slate-900">{intro ? "Ücretsiz" : formatMoney(price)}</span>
             </div>
           </Card>
-          <Card className="space-y-3 p-5 text-sm text-slate-600">
-            <p className="flex gap-2">
-              <CalendarClock className="mt-0.5 size-4 shrink-0 text-brand-600" aria-hidden />
-              Saat, ödeme için {settings.paymentHoldMinutes} dakika boyunca size ayrılır. Öğretmen {settings.approvalWindowHours} saat içinde onaylar; onaylamazsa ödemenin tamamı iade edilir.
-            </p>
-            <p className="flex gap-2">
-              <ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-600" aria-hidden />
-              Dersten {settings.fullRefundHours} saat öncesine kadar ücretsiz iptal; {settings.partialRefundHours} saat öncesine kadar %{settings.partialRefundPercent} iade.{" "}
-              <Link href="/sayfa/iptal-ve-iade-politikasi" target="_blank" className="font-medium text-brand-700 underline">
-                Ayrıntılar
-              </Link>
-            </p>
-          </Card>
+          {intro ? (
+            <Card className="space-y-3 p-5 text-sm text-slate-600">
+              <p className="flex gap-2">
+                <CalendarClock className="mt-0.5 size-4 shrink-0 text-brand-600" aria-hidden />
+                15 dakikalık online tanışma: öğretmenle hedeflerinizi konuşur, seviyeyi görürsünüz. Ödeme yok; öğretmen {settings.approvalWindowHours} saat içinde onaylar.
+              </p>
+              <p className="flex gap-2">
+                <ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-600" aria-hidden />
+                Görüşme sitemizdeki sanal sınıfta yapılır; telefon numarası paylaşmanız gerekmez.
+              </p>
+            </Card>
+          ) : (
+            <Card className="space-y-3 p-5 text-sm text-slate-600">
+              <p className="flex gap-2">
+                <CalendarClock className="mt-0.5 size-4 shrink-0 text-brand-600" aria-hidden />
+                Saat, ödeme için {settings.paymentHoldMinutes} dakika boyunca size ayrılır. Öğretmen {settings.approvalWindowHours} saat içinde onaylar; onaylamazsa ödemenin tamamı iade edilir.
+              </p>
+              <p className="flex gap-2">
+                <ShieldCheck className="mt-0.5 size-4 shrink-0 text-emerald-600" aria-hidden />
+                Dersten {settings.fullRefundHours} saat öncesine kadar ücretsiz iptal; {settings.partialRefundHours} saat öncesine kadar %{settings.partialRefundPercent} iade.{" "}
+                <Link href="/sayfa/iptal-ve-iade-politikasi" target="_blank" className="font-medium text-brand-700 underline">
+                  Ayrıntılar
+                </Link>
+              </p>
+            </Card>
+          )}
         </aside>
       </div>
     </Shell>

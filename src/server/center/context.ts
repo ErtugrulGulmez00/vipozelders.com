@@ -2,6 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
+import { moduleEnabled, type CenterModuleKey } from "@/lib/center/modules";
 import { failure, type ActionState } from "@/lib/action-state";
 import { centerAccess, type CenterAccess } from "@/lib/center/subscription";
 import { centerCan, type CenterPermission, type CenterRoleName } from "@/lib/center/permissions";
@@ -33,6 +34,7 @@ const centerSelect = {
   reminderDaysBefore: true,
   isPublic: true,
   showTeacherSuggestions: true,
+  disabledModules: true,
 } as const;
 
 export type CenterSummary = {
@@ -55,6 +57,7 @@ export type CenterSummary = {
   reminderDaysBefore: number;
   isPublic: boolean;
   showTeacherSuggestions: boolean;
+  disabledModules: string[];
 };
 
 export type CenterContext = {
@@ -142,4 +145,11 @@ export async function centerAudit(ctx: CenterContext, action: string, entityType
 
 export async function selectCenterCookie(centerId: string) {
   (await cookies()).set(CENTER_COOKIE, centerId, { httpOnly: true, secure: secureCookies(), sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 365 });
+}
+
+/** Kurumun kapattığı modülün sayfaları açılmaz (modül klasörünün layout'unda çağrılır). */
+export async function requireCenterModule(key: CenterModuleKey): Promise<CenterContext> {
+  const ctx = await requireCenter();
+  if (!moduleEnabled(ctx.center, key)) redirect("/kurum?durum=modul");
+  return ctx;
 }

@@ -1,6 +1,8 @@
 import { Wrench } from "lucide-react";
 import Link from "next/link";
+import { Suspense } from "react";
 import { CookieNotice } from "@/components/site/cookie-notice";
+import { PageViewTracker } from "@/components/site/page-view-tracker";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
 import { getSiteSettings } from "@/server/site";
@@ -22,6 +24,10 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <main className="flex-1">{children}</main>
       <SiteFooter />
       <CookieNotice />
+      {/* Adres bilgisi istemcide okunur; sayfanın önceden hazırlanmasını bekletmesin */}
+      <Suspense fallback={null}>
+        <PageViewTracker />
+      </Suspense>
     </div>
   );
 }

@@ -11,7 +11,7 @@ export async function reviewEligibility(studentId: string, teacherId: string, no
   const since = new Date(now.getTime() - settings.reviewWindowDays * 24 * 3_600_000);
   const [lastCompleted, existing] = await Promise.all([
     db.booking.findFirst({
-      where: { studentId, teacherId, status: "COMPLETED", isTest: false, completedAt: { gte: since } },
+      where: { studentId, teacherId, status: "COMPLETED", isTest: false, isIntro: false, completedAt: { gte: since } },
       orderBy: { completedAt: "desc" },
       select: { id: true },
     }),

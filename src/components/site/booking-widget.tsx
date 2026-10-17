@@ -10,7 +10,7 @@ import { cn } from "@/lib/cn";
 import { addDaysToDateString } from "@/lib/dates";
 import { durationLabel } from "@/lib/labels";
 import { formatMoney } from "@/lib/money";
-import { lessonPrice } from "@/server/pricing";
+import { INTRO_MINUTES, lessonPrice } from "@/server/pricing";
 
 export type WidgetOffering = {
   id: string;
@@ -29,12 +29,15 @@ export function BookingWidget({
   online,
   inPerson,
   today,
+  offersIntro = false,
 }: {
   teacherId: string;
   offerings: WidgetOffering[];
   online: boolean;
   inPerson: boolean;
   today: string;
+  /** Ücretsiz 15 dk tanışma görüşmesi (online, ödemesiz) */
+  offersIntro?: boolean;
 }) {
   const router = useRouter();
   // Önce hizmet (Özel Ders / Soru Çözüm / Koçluk), sonra o hizmetteki dersler
@@ -73,7 +76,8 @@ export function BookingWidget({
     return () => controller.abort();
   }, [teacherId, duration, weekStart, offering]);
 
-  const price = offering ? lessonPrice(offering.hourlyPrice, duration) : 0;
+  const intro = offersIntro && duration === INTRO_MINUTES;
+  const price = offering && !intro ? lessonPrice(offering.hourlyPrice, duration) : 0;
   const modeOptions = [
     ...(online ? [{ value: "ONLINE", label: "Online", Icon: Monitor }] : []),
     ...(inPerson ? [{ value: "IN_PERSON", label: "Yüz yüze", Icon: MapPin }] : []),
@@ -95,7 +99,7 @@ export function BookingWidget({
 
   const proceed = () => {
     if (!selected) return;
-    const query = new URLSearchParams({ ders: offering.id, saat: selected, sure: String(duration), sekil: mode });
+    const query = new URLSearchParams({ ders: offering.id, saat: selected, sure: String(duration), sekil: intro ? "ONLINE" : mode, ...(intro ? { tanisma: "1" } : {}) });
     router.push(`/rezervasyon?${query}`);
   };
 
@@ -156,10 +160,19 @@ export function BookingWidget({
               {durationLabel(d)}
             </button>
           ))}
+          {offersIntro ? (
+            <button
+              type="button"
+              onClick={() => setDuration(INTRO_MINUTES)}
+              className={cn("rounded-lg px-3 py-1.5 text-sm font-semibold ring-1", intro ? "bg-emerald-600 text-white ring-emerald-600" : "bg-emerald-50 text-emerald-800 ring-emerald-200 hover:bg-emerald-100")}
+            >
+              15 dk tanışma · ücretsiz
+            </button>
+          ) : null}
         </div>
       </div>
 
-      {modeOptions.length > 1 ? (
+      {modeOptions.length > 1 && !intro ? (
         <div>
           <span className="mb-1.5 block text-sm font-medium text-slate-700">Ders şekli</span>
           <div className="grid grid-cols-2 gap-1.5">
@@ -265,15 +278,15 @@ export function BookingWidget({
 
       <div className="rounded-xl bg-slate-50 p-3">
         <div className="flex items-baseline justify-between">
-          <span className="text-sm text-slate-600">{durationLabel(duration)} ders ücreti</span>
-          <span className="text-xl font-bold text-slate-900">{formatMoney(price)}</span>
+          <span className="text-sm text-slate-600">{intro ? "Online tanışma görüşmesi" : `${durationLabel(duration)} ders ücreti`}</span>
+          <span className="text-xl font-bold text-slate-900">{intro ? "Ücretsiz" : formatMoney(price)}</span>
         </div>
         {selectedSlot ? (
           <p className="mt-1 text-sm font-semibold text-brand-700">
             {selectedSlot.day.day}, {selectedSlot.day.weekday} · {selectedSlot.time}
           </p>
         ) : null}
-        <p className="mt-0.5 text-xs text-slate-500">KDV dahil · Öğretmen onaylamazsa tamamı iade edilir.</p>
+        <p className="mt-0.5 text-xs text-slate-500">{intro ? "Ödeme yok · öğretmen onaylayınca sanal sınıfta görüşürsünüz." : "KDV dahil · Öğretmen onaylamazsa tamamı iade edilir."}</p>
       </div>
       <Button size="lg" className="w-full" disabled={!selected} onClick={proceed}>
         {selected ? "Devam et" : "Önce bir saat seçin"}

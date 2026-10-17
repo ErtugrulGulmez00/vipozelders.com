@@ -80,6 +80,10 @@ model User {
   creditPurchases   CreditPurchase[]
   creditEntries     CreditLedger[]
   poolQuestions     PoolQuestion[]
+  classroomReports  ClassroomReport[]
+  threadsAsStudent  MessageThread[]    @relation("ThreadStudent")
+  threadsAsTeacher  MessageThread[]    @relation("ThreadTeacher")
+  directMessages    DirectMessage[]
 }
 
 // Mobil uygulama push bildirim kayıtları (Firebase Cloud Messaging).
@@ -316,6 +320,8 @@ model TeacherProfile {
   searchText              String             @default("")
   // Soru havuzundan soru çözmeye katılır mı (ders verdiği kademe/derslerde)
   answersPool             Boolean            @default(true)
+  // Ücretsiz 15 dakikalık tanışma görüşmesi sunar (online)
+  offersIntro             Boolean            @default(false)
   publishedAt             DateTime?
   createdAt               DateTime           @default(now())
   updatedAt               DateTime           @updatedAt
@@ -455,6 +461,10 @@ model TeacherDocument {
   fileName   String
   status     DocumentStatus @default(PENDING)
   note       String?
+  // Belgenin düzenlendiği gün (adli sicil son 30 gün içinde alınmış olmalı)
+  issuedAt   DateTime?
+  // e-Devlet barkod / doğrulama kodu (yönetici turkiye.gov.tr'de doğrular)
+  barcode    String?
   createdAt  DateTime       @default(now())
   reviewedAt DateTime?
 }
@@ -551,6 +561,8 @@ model Booking {
   videoRoomName      String?          @unique
   // Yönetici tarafından ödemesiz açılan deneme dersi (görüntülü görüşme testi); yorum, puan ve ciroya sayılmaz.
   isTest             Boolean          @default(false)
+  // Ücretsiz tanışma görüşmesi (15 dk, online, ödemesiz); hakediş, yorum ve ders sayısına girmez.
+  isIntro            Boolean          @default(false)
   // Fotoğrafla soruda çözümün gönderildiği an
   answeredAt         DateTime?
   createdAt          DateTime         @default(now())
@@ -562,6 +574,7 @@ model Booking {
   attendance    LessonAttendance[]
   review        Review?
   ledgerEntries LedgerEntry[]
+  reports       ClassroomReport[]
 
   @@index([teacherId, startAt])
   @@index([studentId, startAt])
@@ -974,7 +987,9 @@ model Center {
   remindPayments         Boolean      @default(true)
   reminderDaysBefore     Int          @default(3)
   // Veli portalında eksik konular için Pi Kampüs özel ders öğretmeni önerileri
-  showTeacherSuggestions Boolean      @default(true)
+  showTeacherSuggestions Boolean      @default(false)
+  // Kurumun kapattığı modüller (menüde görünmez): ör. calisma-salonu, kocluk, kaynaklar
+  disabledModules        String[]     @default([])
   // Abonelik bitiş hatırlatması: en son gönderilen eşik (7, 3, 1, 0 gün); süre uzayınca sıfırlanır
   expiryNoticeDays       Int?
   nextReceiptNo          Int          @default(1)
@@ -1873,4 +1888,75 @@ model ErrorEvent {
   resolvedAt     DateTime?
 
   @@index([resolvedAt, lastSeenAt])
+}
+
+// ---------------------------------------------------------------------------
+// Sanal sınıfta "uygunsuz durum bildir"
+// ---------------------------------------------------------------------------
+
+model ClassroomReport {
+  id               String    @id @default(cuid())
+  bookingId        String
+  booking          Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  reporterId       String
+  reporter         User      @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+  reason           String
+  details          String?
+  // Öğrenci tarafı bildirdiyse öğretmen profili inceleme bitene kadar askıya alınır
+  teacherSuspended Boolean   @default(false)
+  resolvedAt       DateTime?
+  resolutionNote   String?
+  createdAt        DateTime  @default(now())
+
+  @@index([resolvedAt, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Veli/öğrenci ile öğretmen arasında mesajlaşma (iletişim bilgileri gizlenir)
+// ---------------------------------------------------------------------------
+
+model MessageThread {
+  id            String          @id @default(cuid())
+  studentId     String
+  student       User            @relation("ThreadStudent", fields: [studentId], references: [id], onDelete: Cascade)
+  teacherId     String
+  teacher       User            @relation("ThreadTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  lastMessageAt DateTime        @default(now())
+  studentReadAt DateTime?
+  teacherReadAt DateTime?
+  createdAt     DateTime        @default(now())
+  messages      DirectMessage[]
+
+  @@unique([studentId, teacherId])
+  @@index([teacherId, lastMessageAt])
+}
+
+model DirectMessage {
+  id        String        @id @default(cuid())
+  threadId  String
+  thread    MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body      String
+  // Gizlenen iletişim bilgisi varsa (yönetici incelemesi için işaret)
+  masked    Boolean       @default(false)
+  createdAt DateTime      @default(now())
+
+  @@index([threadId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Çerezsiz ziyaret istatistiği: kişisel veri tutulmaz; ziyaretçi günlük değişen anonim özetle sayılır
+// ---------------------------------------------------------------------------
+
+model PageView {
+  id        String   @id @default(cuid())
+  day       DateTime @db.Date
+  path      String
+  referrer  String?
+  device    String
+  visitor   String
+  createdAt DateTime @default(now())
+
+  @@index([day])
 }

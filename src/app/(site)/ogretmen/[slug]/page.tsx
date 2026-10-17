@@ -1,10 +1,11 @@
-import { BadgeCheck, BookOpen, Clock, GraduationCap, Heart, Home, MapPin, Monitor, Users } from "lucide-react";
+import { BadgeCheck, BookOpen, Clock, GraduationCap, Heart, Home, MapPin, Monitor, Sparkles, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { toggleFavoriteAction } from "@/actions/student";
+import { MessageTeacherBox } from "@/components/panel/message-forms";
 import { BookingWidget } from "@/components/site/booking-widget";
 import { salesOpen } from "@/server/payments/service";
 import { buttonClasses } from "@/components/ui/button";
@@ -105,6 +106,11 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
                     <Monitor className="size-4 text-slate-400" aria-hidden /> Online ders
                   </li>
                 ) : null}
+                {teacher.offersIntro && teacher.offersOnline ? (
+                  <li className="flex items-center gap-2 font-medium text-emerald-700">
+                    <Sparkles className="size-4" aria-hidden /> Ücretsiz 15 dk tanışma görüşmesi
+                  </li>
+                ) : null}
                 {teacher.offersInPerson ? (
                   <li className="flex items-center gap-2">
                     <MapPin className="size-4 text-slate-400" aria-hidden /> Yüz yüze: {serviceAreas ?? "Belirtilmemiş"}
@@ -185,12 +191,13 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
           <>
           {salesOpen() ? null : (
             <Alert tone="info" title="Online ödeme çok yakında" className="mb-4">
-              Saatleri ve fiyatları inceleyebilirsiniz; randevu ve soru gönderme, ödeme altyapımız açılınca başlayacak.
+              Saatleri ve fiyatları inceleyebilirsiniz; ücretli dersler ödeme altyapımız açılınca başlayacak.{teacher.offersIntro && teacher.offersOnline ? " Ücretsiz tanışma görüşmesini ve mesajlaşmayı şimdiden kullanabilirsiniz." : " Öğretmene şimdiden mesaj gönderebilirsiniz."}
             </Alert>
           )}
           <BookingWidget
             teacherId={teacher.userId}
             online={teacher.offersOnline}
+            offersIntro={teacher.offersIntro && teacher.offersOnline}
             inPerson={teacher.offersInPerson}
             today={toLocalDateString(new Date())}
             offerings={teacher.offerings.map((o) => ({
@@ -202,6 +209,9 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
               durations: o.durations,
             }))}
           />
+          <div className="mt-4 border-t border-slate-100 pt-4">
+            <MessageTeacherBox teacherId={teacher.userId} teacherFirstName={teacher.user.firstName} />
+          </div>
           </>
           )}
         </Card>

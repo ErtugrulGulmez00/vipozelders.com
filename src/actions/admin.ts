@@ -20,6 +20,7 @@ import { retryFailedRefund } from "@/server/payments/service";
 import { setReviewStatus } from "@/server/reviews";
 import { runScheduledTasks } from "@/server/scheduler";
 import { parsePackages } from "@/server/credits";
+import { parsePayoutDays } from "@/server/pricing";
 import { saveSettings, settingsSchema, type SiteSettings } from "@/server/settings";
 import { DocumentError, reviewTeacherDocument } from "@/server/teacher-documents";
 import { CACHE_TAGS } from "@/server/site";
@@ -176,7 +177,7 @@ export async function reviewDocumentAction(_: ActionState, formData: FormData): 
   if (!user) return DENIED;
   const decision = text(formData, "decision") === "APPROVED" ? "APPROVED" : "REJECTED";
   try {
-    await reviewTeacherDocument(text(formData, "documentId"), user.id, decision, text(formData, "note"));
+    await reviewTeacherDocument(text(formData, "documentId"), user.id, decision, text(formData, "note"), formData.get("barcodeChecked") === "on");
   } catch (error) {
     if (error instanceof DocumentError) return failure(error.message);
     throw error;
@@ -415,6 +416,11 @@ export async function saveSettingsAction(_: ActionState, formData: FormData): Pr
   const parsed = settingsSchema.partial().safeParse(values);
   if (!parsed.success) {
     return failure("Bazı değerler geçersiz.", Object.fromEntries(parsed.error.issues.map((i) => [String(i.path[0]), i.message])));
+  }
+  if (parsed.data.payoutDays !== undefined) {
+    const days = parsePayoutDays(parsed.data.payoutDays);
+    if (!days.length) return failure("Bazı değerler geçersiz.", { payoutDays: "1 ile 28 arasında en az bir gün yazın; örnek: 1,15" });
+    parsed.data.payoutDays = days.join(",");
   }
   if (parsed.data.questionPackages !== undefined) {
     const packages = parsePackages(parsed.data.questionPackages);

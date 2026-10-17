@@ -3,12 +3,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { buttonClasses } from "@/components/ui/button";
 import { Alert, Badge, Card, CardBody, CardHeader, PageHeader, StatCard, Table, Td, Th } from "@/components/ui/primitives";
-import { formatCompact } from "@/lib/dates";
+import { formatCompact, formatDate, toLocalDateString, zonedDateTime } from "@/lib/dates";
 import { PAYMENT_STATUS, REFUND_STATUS } from "@/lib/labels";
 import { formatMoney } from "@/lib/money";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { getPaymentProvider } from "@/server/payments/service";
+import { nextPayoutDay, parsePayoutDays } from "@/server/pricing";
+import { loadSettings } from "@/server/settings";
 import { PayoutRecordForm } from "../ogretmenler/[id]/admin-forms";
 import { RetryRefundButton } from "../randevular/[id]/booking-admin-forms";
 
@@ -25,6 +27,10 @@ export default async function FinancePage() {
     db.ledgerEntry.aggregate({ where: { bucket: "PENDING" }, _sum: { amount: true } }),
   ]);
   const withBalance = balanceGroups.filter((g) => (g._sum.amount ?? 0) > 0);
+  const settings = await loadSettings();
+  const today = toLocalDateString(new Date());
+  const nextPayout = nextPayoutDay(today, parsePayoutDays(settings.payoutDays));
+  const payableTotal = withBalance.reduce((sum, g) => sum + (g._sum.amount ?? 0), 0);
   const teachers = await db.teacherProfile.findMany({
     where: { userId: { in: withBalance.map((g) => g.teacherId) } },
     include: { user: { select: { firstName: true, lastName: true } } },
@@ -48,6 +54,13 @@ export default async function FinancePage() {
           </>
         }
       />
+      {nextPayout ? (
+        <Alert tone={nextPayout === today ? "warning" : "info"} className="mb-6" title={nextPayout === today ? "Bugün öğretmen ödeme günü" : `Sonraki öğretmen ödeme günü: ${formatDate(zonedDateTime(nextPayout, 12 * 60))}`}>
+          {withBalance.length
+            ? `${withBalance.length} öğretmenin ödenebilir bakiyesi var, toplam ${formatMoney(payableTotal)}. Havaleyi yapıp aşağıdan kaydedin.`
+            : "Şu an ödenebilir bakiyesi olan öğretmen yok."}
+        </Alert>
+      ) : null}
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard label="Toplam tahsilat" value={formatMoney(totals._sum.amount ?? 0)} />
         <StatCard label="Toplam iade" value={formatMoney(refunds._sum.amount ?? 0)} />

@@ -15,6 +15,8 @@ import { db } from "./db";
 import { sendPendingEmails } from "./email";
 import { recordError } from "./errors";
 import { processPendingRefunds } from "./payments/service";
+import { sendPayoutDayReminder } from "./payout-reminder";
+import { pruneStats } from "./stats";
 import { sendPendingPushes } from "./push";
 import { expireUnansweredQuestions, releaseExpiredClaims, releasePoolEarnings } from "./question-pool";
 
@@ -48,6 +50,8 @@ const TASKS = {
   creditPurchases: expireStalePurchases,
   creditExpiry: expireCredits,
   refunds: () => processPendingRefunds(),
+  payoutDay: sendPayoutDayReminder,
+  statsPrune: pruneStats,
   // Kurum paneli: taksit hatırlatmaları önce kuyruğa girer, aynı turda SMS ve e-postayla gönderilir.
   centerReminders: sendCenterPaymentReminders,
   centerExpiry: sendCenterExpiryNotices,

@@ -72,6 +72,10 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
         <NumberField name="partialRefundHours" label="Kısmi iade için en az" value={settings.partialRefundHours} suffix="saat önce" />
         <NumberField name="partialRefundPercent" label="Kısmi iade oranı" value={settings.partialRefundPercent} suffix="%" />
         <NumberField name="disputeWindowHours" label="Sorun bildirme süresi" hint="Ders ya da çözümden sonra öğrencinin itiraz edebileceği süre." value={settings.disputeWindowHours} suffix="saat" />
+        <Field label="Öğretmen ödeme günleri" hint="Ayın hangi günleri ödenebilir bakiyeler havale edilir (1-28, virgülle). Öğretmenlere ve size bu günler gösterilir.">
+          <Input name="payoutDays" defaultValue={settings.payoutDays} placeholder="1,15" required />
+          <FieldError name="payoutDays" />
+        </Field>
         <NumberField name="settlementDays" label="Ödeme kuruluşu aktarım süresi" hint="Öğretmen hakedişi, öğrencinin ödemesinden bu kadar gün geçmeden serbest kalmaz (PayTR anlaşması)." value={settings.settlementDays} suffix="gün" />
         <NumberField name="reviewWindowDays" label="Değerlendirme yapma süresi" value={settings.reviewWindowDays} suffix="gün" />
       </Section>

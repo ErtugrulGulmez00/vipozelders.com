@@ -6,6 +6,7 @@ import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-
 import { CopyButton } from "@/components/ui/copy-button";
 import { FileInput } from "@/components/ui/file-input";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
+import { OPTIONAL_MODULES } from "@/lib/center/modules";
 import { CENTER_KIND_LABEL } from "@/lib/center/labels";
 
 export type CenterSettingsValues = {
@@ -25,6 +26,7 @@ export type CenterSettingsValues = {
   remindPayments: boolean;
   reminderDaysBefore: number;
   showTeacherSuggestions: boolean;
+  disabledModules: string[];
   loginUrl: string;
   logoUrl: string | null;
   slug: string;
@@ -141,6 +143,14 @@ export function CenterSettingsForm({ values, cities, initialDistricts }: { value
           />
           <p className="mt-1 pl-6.5 text-xs text-slate-500">Kapatırsanız veli portalında, karnede ve mobil uygulamada öğretmen önerisi görünmez; eksik konular yine listelenir.</p>
         </div>
+      </Section>
+      <Section title="Modüller" description="Kullanmadığınız modülleri kapatın; menüde görünmezler. Kayıtlar silinmez, istediğiniz zaman tekrar açabilirsiniz.">
+        {OPTIONAL_MODULES.map((m) => (
+          <div key={m.key}>
+            <Checkbox name={`module:${m.key}`} defaultChecked={!values.disabledModules.includes(m.key)} label={m.label} />
+            <p className="mt-0.5 pl-6.5 text-xs text-slate-500">{m.hint}</p>
+          </div>
+        ))}
       </Section>
       <Section title="Personel girişi" description="Personelinize bu adresi verin; giriş sayfasında kurumunuzun adı ve logosu görünür.">
         <div className="flex flex-wrap items-center gap-2 sm:col-span-2">

@@ -143,10 +143,23 @@ export function PayoutRecordForm({ teacherId, available }: { teacherId: string; 
 }
 
 /** Belge incelemesi: onay veya gerekçeli ret (gerekçe öğretmene iletilir). */
-export function DocumentReviewForm({ documentId }: { documentId: string }) {
+export function DocumentReviewForm({ documentId, needsBarcode = false }: { documentId: string; needsBarcode?: boolean }) {
   return (
     <ActionForm action={reviewDocumentAction} className="flex flex-wrap items-end gap-2">
       <input type="hidden" name="documentId" value={documentId} />
+      {needsBarcode ? (
+        <div className="w-full">
+          <Checkbox name="barcodeChecked" label={
+            <>
+              Barkodu{" "}
+              <a href="https://www.turkiye.gov.tr/belge-dogrulama" target="_blank" rel="noopener noreferrer" className="font-medium text-brand-700 underline">
+                e-Devlet belge doğrulama
+              </a>{" "}
+              ekranında kontrol ettim; belge gerçek ve kayıt temiz.
+            </>
+          } />
+        </div>
+      ) : null}
       <Field label="Not (ret için zorunlu)" className="min-w-48 flex-1">
         <Input name="note" placeholder="Örn: Belge okunmuyor, lütfen yeniden yükleyin" />
       </Field>

@@ -83,6 +83,17 @@ export async function saveOfferingAction(_: ActionState, formData: FormData): Pr
   return success("Ders ve fiyat kaydedildi.");
 }
 
+/** Ücretsiz 15 dk tanışma görüşmesi sunma tercihi. */
+export async function setOffersIntroAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await actionUser("TEACHER");
+  if (!user) return failure("Oturumunuz kapanmış.");
+  const on = formData.get("offersIntro") === "on";
+  await db.teacherProfile.update({ where: { userId: user.id }, data: { offersIntro: on } });
+  updateTag(TEACHERS_CACHE_TAG);
+  refresh();
+  return success(on ? "Profilinizde ücretsiz tanışma görüşmesi görünecek." : "Tanışma görüşmesi kapatıldı.");
+}
+
 export async function removeOfferingAction(_: ActionState, formData: FormData): Promise<ActionState> {
   const target = await resolveTarget(formData);
   if (!target) return failure("Bu işlem için yetkiniz yok.");
@@ -225,7 +236,11 @@ export async function uploadDocumentAction(_: ActionState, formData: FormData): 
   if (!user) return failure("Oturumunuz kapanmış.");
   const file = formData.get("file");
   try {
-    await uploadTeacherDocument(user.id, text(formData, "type"), file instanceof File ? file : null);
+    const issued = text(formData, "issuedAt");
+    await uploadTeacherDocument(user.id, text(formData, "type"), file instanceof File ? file : null, {
+      issuedAt: issued ? new Date(`${issued}T12:00:00+03:00`) : null,
+      barcode: text(formData, "barcode") || null,
+    });
   } catch (error) {
     if (error instanceof DocumentError) return failure(error.message);
     throw error;

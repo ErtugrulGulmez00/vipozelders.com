@@ -98,11 +98,14 @@ describe("rezervasyon akışı", () => {
     expect(profile.completedLessons).toBe(1);
 
     // İtiraz süresi dolmadan hakediş serbest kalmaz
-    expect(await releaseDueEarnings(hoursAfter(afterLesson, 47))).toBe(0);
+    const pendingOnly = { pending: 85000, available: 0, paid: 0 };
+    await releaseDueEarnings(hoursAfter(afterLesson, 47));
+    expect(await teacherBalances(fixture.teacher.id)).toEqual(pendingOnly);
     // İtiraz süresi dolsa da ödeme kuruluşu parayı ödemeden 15 gün sonra aktarır; o gün gelmeden serbest kalmaz
-    expect(await releaseDueEarnings(hoursAfter(afterLesson, 49))).toBe(0);
-    expect(await releaseDueEarnings(hoursAfter(NOW, SETTLEMENT_HOURS - 1))).toBe(0);
-    expect(await releaseDueEarnings(hoursAfter(NOW, SETTLEMENT_HOURS))).toBe(1);
+    await releaseDueEarnings(hoursAfter(afterLesson, 49));
+    await releaseDueEarnings(hoursAfter(NOW, SETTLEMENT_HOURS - 1));
+    expect(await teacherBalances(fixture.teacher.id)).toEqual(pendingOnly);
+    await releaseDueEarnings(hoursAfter(NOW, SETTLEMENT_HOURS));
     expect(await teacherBalances(fixture.teacher.id)).toEqual({ pending: 0, available: 85000, paid: 0 });
   });
 
@@ -216,7 +219,8 @@ describe("iptal ve iadeler", () => {
     expect(fresh.status).toBe("CANCELLED_BY_STUDENT");
     expect(fresh.refundedAmount).toBe(50000);
     expect(await teacherBalances(fixture.teacher.id)).toEqual({ pending: 42500, available: 0, paid: 0 });
-    expect(await releaseDueEarnings(hoursAfter(startAt, 60))).toBe(0);
+    await releaseDueEarnings(hoursAfter(startAt, 60));
+    expect(await teacherBalances(fixture.teacher.id)).toEqual({ pending: 42500, available: 0, paid: 0 });
     await releaseDueEarnings(hoursAfter(NOW, SETTLEMENT_HOURS));
     expect(await teacherBalances(fixture.teacher.id)).toEqual({ pending: 0, available: 42500, paid: 0 });
   });
@@ -242,7 +246,8 @@ describe("iptal ve iadeler", () => {
     const afterLesson = hoursAfter(startAt, 1.1);
     await completeFinishedLessons(afterLesson);
     await openDispute(booking.id, student.id, "Ders 20 dakika geç başladı", hoursAfter(afterLesson, 2));
-    expect(await releaseDueEarnings(hoursAfter(afterLesson, 49))).toBe(0);
+    await releaseDueEarnings(hoursAfter(afterLesson, 49));
+    expect((await teacherBalances(fixture.teacher.id)).available).toBe(0);
 
     const admin = await db.user.create({ data: { role: "ADMIN", username: `admin.${booking.id}`, firstName: "A", lastName: "B", passwordHash: "x" } });
     await resolveDispute(booking.id, admin.id, 30000, "Geç başlama nedeniyle kısmi iade", hoursAfter(afterLesson, 50));

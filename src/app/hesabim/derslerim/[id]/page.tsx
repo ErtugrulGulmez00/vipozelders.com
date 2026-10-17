@@ -1,4 +1,4 @@
-import { ArrowLeft, MapPin, Video } from "lucide-react";
+import { ArrowLeft, Eye, MapPin, Video } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -93,9 +93,15 @@ export default async function StudentBookingPage({ params, searchParams }: PageP
                   </p>
                 </div>
                 {classroomOpen ? (
-                  <LinkButton href={`/ders/${booking.id}`} size="lg">
-                    <Video className="size-4" aria-hidden /> Derse katıl
-                  </LinkButton>
+                  <div className="flex flex-wrap gap-2">
+                    <LinkButton href={`/ders/${booking.id}`} size="lg">
+                      <Video className="size-4" aria-hidden /> Derse katıl
+                    </LinkButton>
+                    {/* Öğrenci dersteyken veli ikinci bir cihazdan görünmeden izleyebilir */}
+                    <LinkButton href={`/ders/${booking.id}?izle=1`} size="lg" variant="outline">
+                      <Eye className="size-4" aria-hidden /> Veli olarak izle
+                    </LinkButton>
+                  </div>
                 ) : (
                   <Badge tone="slate">Henüz açılmadı</Badge>
                 )}

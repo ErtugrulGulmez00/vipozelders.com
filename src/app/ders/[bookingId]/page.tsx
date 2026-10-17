@@ -10,9 +10,10 @@ import { Classroom } from "./classroom";
 export const metadata: Metadata = { title: "Sanal sınıf" };
 export const instant = false;
 
-export default async function ClassroomPage({ params }: PageProps<"/ders/[bookingId]">) {
+export default async function ClassroomPage({ params, searchParams }: PageProps<"/ders/[bookingId]">) {
   const user = await requireUser();
   const { bookingId } = await params;
+  const { izle } = await searchParams;
   const access = await classroomAccess(bookingId, user.id);
   const backHref = user.role === "TEACHER" ? `/ogretmen-paneli/dersler/${bookingId}` : `/hesabim/derslerim/${bookingId}`;
 
@@ -24,7 +25,9 @@ export default async function ClassroomPage({ params }: PageProps<"/ders/[bookin
     );
   }
 
-  await recordClassroomVisit(bookingId, user.id);
+  // Veli izleyici modu: öğrenci hesabıyla ikinci cihazdan, görünmeden izleme
+  const observer = izle === "1" && access.role === "student";
+  if (!observer) await recordClassroomVisit(bookingId, user.id);
   const title = `${access.booking.levelName} ${access.booking.subjectName} · ${access.booking.learnerName}`;
 
   if (!videoConfigured()) {
@@ -37,8 +40,8 @@ export default async function ClassroomPage({ params }: PageProps<"/ders/[bookin
     );
   }
 
-  const { token, serverUrl } = await createClassroomToken(access, user);
-  return <Classroom token={token} serverUrl={serverUrl} title={title} endsAt={access.booking.endAt.getTime()} backHref={backHref} />;
+  const { token, serverUrl } = await createClassroomToken(access, user, new Date(), { observer });
+  return <Classroom token={token} serverUrl={serverUrl} title={observer ? `İzleyici · ${title}` : title} endsAt={access.booking.endAt.getTime()} backHref={backHref} bookingId={bookingId} observer={observer} />;
 }
 
 function Message({ icon, title, children, backHref }: { icon: React.ReactNode; title: string; children?: React.ReactNode; backHref: string }) {

@@ -2,6 +2,9 @@
 
 export const ALLOWED_DURATIONS = [45, 60] as const;
 
+/** Ücretsiz tanışma görüşmesinin süresi (dakika). */
+export const INTRO_MINUTES = 15;
+
 /** Saatlik ücretten ders ücreti; tam liraya yuvarlanır (kuruş). */
 export function lessonPrice(hourlyPrice: number, durationMinutes: number): number {
   return Math.round((hourlyPrice * durationMinutes) / 60 / 100) * 100;
@@ -69,4 +72,21 @@ export function weightedRating(average: number, count: number, prior = 4.2, weig
 export function settledReleaseAt(base: Date, paidAt: Date | null | undefined, settlementDays: number): Date {
   const settled = paidAt ? paidAt.getTime() + settlementDays * 24 * 3_600_000 : 0;
   return new Date(Math.max(base.getTime(), settled));
+}
+
+/** "1,15" → [1, 15]: ayın 1-28 arası ödeme günleri (geçersizler atılır). */
+export function parsePayoutDays(text: string): number[] {
+  const days = text.split(/[,\s]+/).map(Number).filter((d) => Number.isInteger(d) && d >= 1 && d <= 28);
+  return [...new Set(days)].sort((a, b) => a - b);
+}
+
+/** Bugün (İstanbul) ya da sonraki ilk ödeme günü, "YYYY-MM-DD". Gün listesi boşsa null. */
+export function nextPayoutDay(today: string, days: number[]): string | null {
+  if (!days.length) return null;
+  const [y, m, d] = today.split("-").map(Number);
+  const day = days.find((p) => p >= d);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  if (day) return `${y}-${pad(m)}-${pad(day)}`;
+  const next = m === 12 ? { y: y + 1, m: 1 } : { y, m: m + 1 };
+  return `${next.y}-${pad(next.m)}-${pad(days[0])}`;
 }

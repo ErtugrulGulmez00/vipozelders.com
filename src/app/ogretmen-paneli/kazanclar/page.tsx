@@ -2,13 +2,14 @@ import { Clock, Landmark, Wallet } from "lucide-react";
 import type { Metadata } from "next";
 import { PayoutForm } from "@/components/teacher/payout-form";
 import { Alert, Card, CardBody, CardHeader, EmptyState, PageHeader, StatCard, Table, Td, Th } from "@/components/ui/primitives";
-import { formatCompact } from "@/lib/dates";
+import { formatCompact, formatDate, toLocalDateString, zonedDateTime } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { requireRole } from "@/server/auth/current-user";
 import { decryptText, maskIdentityNumber } from "@/server/crypto";
 import { db } from "@/server/db";
 import { teacherBalances } from "@/server/ledger";
 import { getPaymentProvider } from "@/server/payments/service";
+import { nextPayoutDay, parsePayoutDays } from "@/server/pricing";
 import { loadSettings } from "@/server/settings";
 
 export const metadata: Metadata = { title: "Kazançlarım" };
@@ -25,6 +26,11 @@ export default async function EarningsPage() {
     loadSettings(),
   ]);
   const automatic = getPaymentProvider().automaticPayouts;
+  const payoutDays = parsePayoutDays(settings.payoutDays);
+  const nextPayout = nextPayoutDay(toLocalDateString(new Date()), payoutDays);
+  const payoutText = payoutDays.length
+    ? `Ayın ${payoutDays.join(" ve ")}. günü havale edilir${nextPayout ? ` · sonraki: ${formatDate(zonedDateTime(nextPayout, 12 * 60))}` : ""}`
+    : "Yönetici havale eder";
   let maskedIdentity: string | null = null;
   if (teacher.payoutIdentityNumberEnc) {
     try {
@@ -39,7 +45,7 @@ export default async function EarningsPage() {
       <PageHeader title="Kazançlarım" description={`Ders ve soru ücretleri, itiraz süresi (${settings.disputeWindowHours} saat) dolduktan ve öğrencinin ödemesinin üzerinden ${settings.settlementDays} gün geçtikten sonra ödenebilir bakiyenize geçer. ${settings.settlementDays} gün, ödeme kuruluşunun parayı bize aktarma süresidir.`} />
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <StatCard label="Bekleyen" value={formatMoney(balances.pending)} hint="Onaylı/tamamlanan, henüz serbest kalmamış dersler" icon={<Clock className="size-5" />} />
-        <StatCard label="Ödenebilir bakiye" value={formatMoney(balances.available)} hint={automatic ? "Ödeme kuruluşu otomatik aktarır" : "Yönetici haftalık olarak havale eder"} icon={<Wallet className="size-5" />} />
+        <StatCard label="Ödenebilir bakiye" value={formatMoney(balances.available)} hint={automatic ? "Ödeme kuruluşu otomatik aktarır" : payoutText} icon={<Wallet className="size-5" />} />
         <StatCard label="Toplam ödenen" value={formatMoney(balances.paid)} icon={<Landmark className="size-5" />} />
       </div>
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">

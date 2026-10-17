@@ -1,15 +1,17 @@
-import { Bell, Building2, CalendarDays, Coins, CreditCard, Heart, LayoutDashboard, MessageCircleQuestion, UserRound } from "lucide-react";
+import { Bell, Building2, CalendarDays, Coins, CreditCard, Heart, LayoutDashboard, MessageCircle, MessageCircleQuestion, UserRound } from "lucide-react";
 import { PanelShell } from "@/components/panel/panel-shell";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
+import { unreadThreadCount } from "@/server/messages";
 
 export const instant = false;
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
   const user = await requireRole("STUDENT");
-  const [unread, centerLinks] = await Promise.all([
+  const [unread, centerLinks, unreadMessages] = await Promise.all([
     db.notification.count({ where: { userId: user.id, readAt: null } }),
     db.centerGuardian.count({ where: { userId: user.id } }),
+    unreadThreadCount(user.id, "student"),
   ]);
   return (
     <PanelShell
@@ -18,6 +20,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
       nav={[
         { href: "/hesabim", label: "Özet", icon: <LayoutDashboard />, exact: true },
         { href: "/hesabim/derslerim", label: "Derslerim", icon: <CalendarDays /> },
+        { href: "/hesabim/mesajlar", label: "Mesajlar", icon: <MessageCircle />, badge: unreadMessages || undefined },
         { href: "/hesabim/sorularim", label: "Sorularım", icon: <MessageCircleQuestion /> },
         { href: "/hesabim/krediler", label: "Soru kredilerim", icon: <Coins /> },
         ...(centerLinks ? [{ href: "/hesabim/kurum", label: "Kurumum (etüt / dershane)", icon: <Building2 /> }] : []),

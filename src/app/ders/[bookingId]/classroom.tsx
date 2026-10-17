@@ -22,6 +22,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { cn } from "@/lib/cn";
+import { ReportButton } from "./report-dialog";
 
 // Beyaz tahta yalnızca tarayıcıda yüklenir (büyük bir paket; sınıf açılınca arka planda gelir).
 const Whiteboard = dynamic(() => import("./whiteboard").then((m) => m.Whiteboard), {
@@ -114,7 +115,21 @@ function ChatPanel({ chat, onClose }: { chat: Chat; onClose: () => void }) {
   );
 }
 
-function Stage({ title, endsAt }: { title: string; endsAt: number }) {
+function Stage({
+  title,
+  endsAt,
+  bookingId,
+  observer,
+  onReporting,
+  onReported,
+}: {
+  title: string;
+  endsAt: number;
+  bookingId: string;
+  observer: boolean;
+  onReporting: () => void;
+  onReported: () => void;
+}) {
   const tracks = useTracks(
     [
       { source: Track.Source.Camera, withPlaceholder: true },
@@ -169,6 +184,7 @@ function Stage({ title, endsAt }: { title: string; endsAt: number }) {
         </div>
         <StartAudio label="Sesi aç" className="rounded-lg bg-gold-400 px-3 py-1.5 text-xs font-semibold text-brand-950" />
       </header>
+      {observer ? <p className="bg-brand-700 px-4 py-1.5 text-center text-xs text-white">İzleyici modundasınız: dersi görüyor ve duyuyorsunuz; kameranız ve mikrofonunuz kapalı, odada görünmüyorsunuz.</p> : null}
       <div className="relative flex min-h-0 flex-1 flex-col sm:flex-row">
         <div className="relative min-h-0 min-w-0 flex-1">
           {!boardOpen && screenShare && isTrackReference(screenShare) ? (
@@ -199,9 +215,11 @@ function Stage({ title, endsAt }: { title: string; endsAt: number }) {
             </div>
           ) : null}
           {/* Tahta kapalıyken de bağlı kalır; karşı taraf çizdikçe içerik güncel tutulur. */}
-          <div className={cn("absolute inset-0", boardOpen ? "visible" : "pointer-events-none invisible")} aria-hidden={!boardOpen}>
-            <Whiteboard open={boardOpen} onRemoteOpen={openBoard} />
-          </div>
+          {observer ? null : (
+            <div className={cn("absolute inset-0", boardOpen ? "visible" : "pointer-events-none invisible")} aria-hidden={!boardOpen}>
+              <Whiteboard open={boardOpen} onRemoteOpen={openBoard} />
+            </div>
+          )}
         </div>
         {boardOpen ? (
           // Telefonda tahtanın altında yatay şerit, geniş ekranda sağda dikey sütun.
@@ -216,28 +234,33 @@ function Stage({ title, endsAt }: { title: string; endsAt: number }) {
       </div>
       <nav className="flex flex-wrap items-center justify-center gap-2 border-t border-white/10 px-3 py-3 [&_button]:inline-flex [&_button]:items-center [&_button]:gap-2 [&_button]:rounded-lg [&_button]:px-3 [&_button]:py-2 [&_button]:text-sm [&_button]:font-semibold" aria-label="Ders kontrolleri">
         {/* Telefonda yalnızca simgeler görünür; yazılar ekran okuyucular için kalır. */}
-        <TrackToggle source={Track.Source.Microphone} className="bg-slate-800 text-white hover:bg-slate-700">
-          <span className={LABEL}>Mikrofon</span>
-        </TrackToggle>
-        <TrackToggle source={Track.Source.Camera} className="bg-slate-800 text-white hover:bg-slate-700">
-          <span className={LABEL}>Kamera</span>
-        </TrackToggle>
-        <TrackToggle
-          source={Track.Source.ScreenShare}
-          captureOptions={{ audio: true, selfBrowserSurface: "include" }}
-          onChange={(enabled) => enabled && setShareError(null)}
-          onDeviceError={(error) => setShareError(screenShareError(error))}
-          className="bg-slate-800 text-white hover:bg-slate-700"
-        >
-          <span className={LABEL}>Ekran paylaş</span>
-        </TrackToggle>
-        <button type="button" onClick={toggleBoard} className={cn("text-white", boardOpen ? "bg-brand-600" : "bg-slate-800 hover:bg-slate-700")}>
-          <PenLine className="size-4" aria-hidden /> <span className={LABEL}>Beyaz tahta</span>
-        </button>
-        <button type="button" onClick={toggleChat} className={cn("relative text-white", chatOpen ? "bg-brand-600" : "bg-slate-800 hover:bg-slate-700")}>
-          <MessageSquare className="size-4" aria-hidden /> <span className={LABEL}>Sohbet</span>
-          {unread ? <span className="rounded-full bg-gold-400 px-1.5 text-xs text-brand-950">{unread}</span> : null}
-        </button>
+        {observer ? null : (
+          <>
+            <TrackToggle source={Track.Source.Microphone} className="bg-slate-800 text-white hover:bg-slate-700">
+              <span className={LABEL}>Mikrofon</span>
+            </TrackToggle>
+            <TrackToggle source={Track.Source.Camera} className="bg-slate-800 text-white hover:bg-slate-700">
+              <span className={LABEL}>Kamera</span>
+            </TrackToggle>
+            <TrackToggle
+              source={Track.Source.ScreenShare}
+              captureOptions={{ audio: true, selfBrowserSurface: "include" }}
+              onChange={(enabled) => enabled && setShareError(null)}
+              onDeviceError={(error) => setShareError(screenShareError(error))}
+              className="bg-slate-800 text-white hover:bg-slate-700"
+            >
+              <span className={LABEL}>Ekran paylaş</span>
+            </TrackToggle>
+            <button type="button" onClick={toggleBoard} className={cn("text-white", boardOpen ? "bg-brand-600" : "bg-slate-800 hover:bg-slate-700")}>
+              <PenLine className="size-4" aria-hidden /> <span className={LABEL}>Beyaz tahta</span>
+            </button>
+            <button type="button" onClick={toggleChat} className={cn("relative text-white", chatOpen ? "bg-brand-600" : "bg-slate-800 hover:bg-slate-700")}>
+              <MessageSquare className="size-4" aria-hidden /> <span className={LABEL}>Sohbet</span>
+              {unread ? <span className="rounded-full bg-gold-400 px-1.5 text-xs text-brand-950">{unread}</span> : null}
+            </button>
+          </>
+        )}
+        <ReportButton bookingId={bookingId} onSending={onReporting} onDone={onReported} className="bg-slate-800 text-rose-300 hover:bg-slate-700" />
         <DisconnectButton className="bg-rose-600 text-white hover:bg-rose-700">
           <LogOut className="size-4" aria-hidden /> <span className={LABEL}>Dersten çık</span>
         </DisconnectButton>
@@ -246,12 +269,39 @@ function Stage({ title, endsAt }: { title: string; endsAt: number }) {
   );
 }
 
-export function Classroom({ token, serverUrl, title, endsAt, backHref }: { token: string; serverUrl: string; title: string; endsAt: number; backHref: string }) {
+export function Classroom({
+  token,
+  serverUrl,
+  title,
+  endsAt,
+  backHref,
+  bookingId,
+  observer = false,
+}: {
+  token: string;
+  serverUrl: string;
+  title: string;
+  endsAt: number;
+  backHref: string;
+  bookingId: string;
+  observer?: boolean;
+}) {
   const router = useRouter();
+  const reported = useRef(false);
+  const leave = () => router.push(reported.current ? `${backHref}?durum=bildirim` : backHref);
   return (
     <div data-lk-theme="default" className="classroom-root">
-      <LiveKitRoom token={token} serverUrl={serverUrl} options={ROOM_OPTIONS} connect video audio onDisconnected={() => router.push(backHref)} className="h-full">
-        <Stage title={title} endsAt={endsAt} />
+      <LiveKitRoom token={token} serverUrl={serverUrl} options={ROOM_OPTIONS} connect video={!observer} audio={!observer} onDisconnected={leave} className="h-full">
+        <Stage
+          title={title}
+          endsAt={endsAt}
+          bookingId={bookingId}
+          observer={observer}
+          onReporting={() => {
+            reported.current = true;
+          }}
+          onReported={leave}
+        />
         <RoomAudioRenderer />
       </LiveKitRoom>
     </div>

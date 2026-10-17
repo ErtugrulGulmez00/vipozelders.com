@@ -8,7 +8,7 @@ import { OfferingsEditor } from "@/components/teacher/offerings-editor";
 import { ProfileForm } from "@/components/teacher/profile-form";
 import { Alert, Badge, Card, CardBody, CardHeader, DescriptionList, EmptyState, StatCard } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
-import { formatCompact, toLocalDateString } from "@/lib/dates";
+import { formatCompact, formatDate, toLocalDateString } from "@/lib/dates";
 import { DOCUMENT_STATUS, DOCUMENT_TYPE_LABEL, TEACHER_STATUS, VERIFICATION_STATUS } from "@/lib/labels";
 import { formatMoney } from "@/lib/money";
 import { requireRole } from "@/server/auth/current-user";
@@ -262,7 +262,14 @@ async function DocumentsSection({ teacherId }: { teacherId: string }) {
                   {doc.reviewedAt ? ` · İncelendi: ${formatCompact(doc.reviewedAt)}` : ""}
                   {doc.note ? ` · Not: ${doc.note}` : ""}
                 </p>
-                {doc.status === "PENDING" ? <DocumentReviewForm documentId={doc.id} /> : null}
+                {doc.type === "CRIMINAL_RECORD" ? (
+                  <p className="text-sm text-slate-700">
+                    Belge tarihi: <strong>{doc.issuedAt ? formatDate(doc.issuedAt) : "girilmemiş"}</strong>
+                    {doc.issuedAt && doc.createdAt.getTime() - doc.issuedAt.getTime() > 30 * 86_400_000 ? <span className="ml-1 font-semibold text-rose-600">(30 günden eski)</span> : null} · Barkod:{" "}
+                    <span className="font-mono">{doc.barcode ?? "girilmemiş"}</span>
+                  </p>
+                ) : null}
+                {doc.status === "PENDING" ? <DocumentReviewForm documentId={doc.id} needsBarcode={doc.type === "CRIMINAL_RECORD"} /> : null}
               </li>
             ))}
           </ul>

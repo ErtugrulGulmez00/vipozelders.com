@@ -52,6 +52,8 @@ export type TeacherCard = {
   cityName: string | null;
   offersOnline: boolean;
   offersInPerson: boolean;
+  /** Ücretsiz 15 dk tanışma görüşmesi */
+  offersIntro: boolean;
   verified: boolean;
   featured: boolean;
   minHourlyPrice: number;
@@ -143,6 +145,7 @@ export async function searchTeachers(params: TeacherSearchParams) {
     cityName: row.city?.name ?? null,
     offersOnline: row.offersOnline,
     offersInPerson: row.offersInPerson,
+    offersIntro: row.offersIntro && row.offersOnline,
     verified: row.verificationStatus === "VERIFIED",
     featured: row.isFeatured,
     minHourlyPrice: Math.min(...row.offerings.map((o) => o.hourlyPrice)),

@@ -1,4 +1,5 @@
-import { AccessToken, WebhookReceiver } from "livekit-server-sdk";
+import { randomUUID } from "node:crypto";
+import { AccessToken, RoomServiceClient, WebhookReceiver } from "livekit-server-sdk";
 import type { Booking } from "@/generated/prisma/client";
 import { db } from "./db";
 import { loadSettings } from "./settings";
@@ -32,24 +33,31 @@ export async function classroomAccess(bookingId: string, userId: string, now = n
   return { ok: true, booking, role: booking.teacherId === userId ? "teacher" : "student", opensAt, closesAt };
 }
 
+/**
+ * Sınıf anahtarı. observer: veli izleyici modu (öğrenci hesabının ikinci cihazı): kamera, mikrofon ve sohbet
+ * yok, odada görünmez; yoklamaya sayılmaz (kimliği öğrencinin kimliğinden farklıdır).
+ */
 export async function createClassroomToken(
   access: Extract<ClassroomAccess, { ok: true }>,
   user: { id: string; firstName: string; lastName: string },
   now = new Date(),
+  options: { observer?: boolean } = {},
 ): Promise<{ token: string; serverUrl: string }> {
   if (!videoConfigured()) throw new Error("Sanal sınıf yapılandırılmamış.");
+  const observer = Boolean(options.observer) && access.role === "student";
   const ttlSeconds = Math.max(60, Math.round((access.closesAt.getTime() - now.getTime()) / 1000));
   const token = new AccessToken(process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET, {
-    identity: user.id,
-    name: access.role === "teacher" ? `${user.firstName} ${user.lastName} (Öğretmen)` : `${user.firstName} ${user.lastName.charAt(0)}.`,
+    identity: observer ? `${user.id}:izleyici:${randomUUID().slice(0, 8)}` : user.id,
+    name: observer ? "Veli (izleyici)" : access.role === "teacher" ? `${user.firstName} ${user.lastName} (Öğretmen)` : `${user.firstName} ${user.lastName.charAt(0)}.`,
     ttl: ttlSeconds,
   });
   token.addGrant({
     roomJoin: true,
     room: access.booking.videoRoomName!,
-    canPublish: true,
+    canPublish: !observer,
     canSubscribe: true,
-    canPublishData: true,
+    canPublishData: !observer,
+    hidden: observer,
   });
   return { token: await token.toJwt(), serverUrl: process.env.LIVEKIT_URL! };
 }
@@ -83,4 +91,11 @@ export async function recordClassroomVisit(bookingId: string, userId: string) {
     where: { bookingId, userId, joinedAt: { gte: new Date(Date.now() - 5 * 60_000) } },
   });
   if (!recent) await db.lessonAttendance.create({ data: { bookingId, userId, joinedAt: new Date() } });
+}
+
+/** Odayı kapatır: içerideki herkesin bağlantısı kesilir (uygunsuz durum bildirildiğinde). */
+export async function closeClassroom(roomName: string): Promise<void> {
+  if (!videoConfigured()) return;
+  const host = process.env.LIVEKIT_URL!.replace(/^ws/, "http");
+  await new RoomServiceClient(host, process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET).deleteRoom(roomName).catch(() => {});
 }

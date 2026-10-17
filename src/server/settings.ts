@@ -36,6 +36,8 @@ export const settingsSchema = z.object({
 
   // Ödeme kuruluşunun parayı bize aktarma süresi (gün). Öğretmen hakedişi bu süre dolmadan serbest kalmaz.
   settlementDays: z.number().int().min(0).max(60).default(15),
+  // Öğretmenlere ödenebilir bakiyenin havale edildiği ayın günleri (ör. "1,15")
+  payoutDays: z.string().default("1,15"),
 
   // Soru kredisi ve soru havuzu. Paketler "kredi:fiyat(TL)" virgülle; 1 kredi = 1 soru.
   questionPackages: z.string().default("1:25,10:200,20:360,50:750"),

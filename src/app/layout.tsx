@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { getSiteSettings } from "@/server/site";
 import "./globals.css";
@@ -18,8 +18,12 @@ export async function generateMetadata(): Promise<Metadata> {
     // WhatsApp, Instagram vb. bağlantı önizlemesi (görsel: app/opengraph-image.tsx)
     openGraph: { type: "website", locale: "tr_TR", siteName: settings.siteName, title: `${settings.siteName} · Özel ders, soru çözüm ve koçluk`, description: settings.siteTagline },
     twitter: { card: "summary_large_image" },
+    // iPhone: "Ana Ekrana Ekle" ile tam ekran açılır (simge: app/apple-icon.png)
+    appleWebApp: { capable: true, title: settings.siteName, statusBarStyle: "default" },
   };
 }
+
+export const viewport: Viewport = { themeColor: "#4f46e5" };
 
 // Pi Kampüs mobil uygulaması WebView'ı user-agent'a "PiKampusApp" ekler; sayfa boyanmadan önce işaretlenir.
 const APP_MODE_SCRIPT = "if(/PiKampusApp/.test(navigator.userAgent))document.documentElement.classList.add('pk-app')";

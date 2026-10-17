@@ -33,7 +33,9 @@ const bookingSchema = z.object({
   districtId: z.coerce.number().int().optional(),
   address: z.string().trim().max(500).optional(),
   note: z.string().trim().max(1000).optional(),
-  consent: z.literal("on", { error: "Ön bilgilendirme formunu ve mesafeli satış sözleşmesini onaylayın." }),
+  // Ücretsiz tanışma görüşmesinde satış olmadığı için sözleşme onayı istenmez
+  intro: z.literal("1").optional(),
+  consent: z.literal("on").optional(),
 });
 
 /** Rezervasyon formu: saati ayırır ve ödeme sayfasına yönlendirir. */
@@ -45,6 +47,8 @@ export async function createBookingAction(_: ActionState, formData: FormData): P
   const parsed = bookingSchema.safeParse(raw);
   if (!parsed.success) return failure("Lütfen işaretli alanları kontrol edin.", zodFieldErrors(parsed.error.issues));
   const input = parsed.data;
+  const intro = input.intro === "1";
+  if (!intro && input.consent !== "on") return failure("Lütfen işaretli alanları kontrol edin.", { consent: "Ön bilgilendirme formunu ve mesafeli satış sözleşmesini onaylayın." });
 
   let redirectUrl: string;
   try {
@@ -60,9 +64,14 @@ export async function createBookingAction(_: ActionState, formData: FormData): P
       districtId: input.districtId ?? null,
       address: input.address ?? null,
       studentNote: input.note ?? null,
+      intro,
     });
-    const { ipAddress } = await requestMeta();
-    redirectUrl = await startCheckout(booking.id, user.id, ipAddress ?? "127.0.0.1");
+    if (intro) {
+      redirectUrl = `/hesabim/derslerim/${booking.id}?durum=tanisma`;
+    } else {
+      const { ipAddress } = await requestMeta();
+      redirectUrl = await startCheckout(booking.id, user.id, ipAddress ?? "127.0.0.1");
+    }
   } catch (error) {
     if (error instanceof BookingError) return failure(error.message);
     throw error;

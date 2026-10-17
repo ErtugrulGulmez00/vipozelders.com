@@ -49,6 +49,7 @@ export default async function FavoritesPage() {
                 cityName: teacher.city?.name ?? null,
                 offersOnline: teacher.offersOnline,
                 offersInPerson: teacher.offersInPerson,
+                offersIntro: teacher.offersIntro && teacher.offersOnline,
                 verified: teacher.verificationStatus === "VERIFIED",
                 featured: teacher.isFeatured,
                 minHourlyPrice: Math.min(...teacher.offerings.map((o) => o.hourlyPrice)),

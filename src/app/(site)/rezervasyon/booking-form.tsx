@@ -18,6 +18,7 @@ export function BookingForm({
   places,
   districts,
   notePlaceholder,
+  intro = false,
 }: {
   offeringId: string;
   startAt: string;
@@ -29,6 +30,7 @@ export function BookingForm({
   places: { home: boolean; teacher: boolean };
   districts: { id: number; name: string }[];
   notePlaceholder: string;
+  intro?: boolean;
 }) {
   const [learnerName, setLearnerName] = useState(learners[0]?.name ?? "");
   const [grade, setGrade] = useState(learners[0]?.gradeName ?? "");
@@ -40,6 +42,7 @@ export function BookingForm({
       <input type="hidden" name="startAt" value={startAt} />
       <input type="hidden" name="duration" value={duration} />
       <input type="hidden" name="mode" value={mode} />
+      {intro ? <input type="hidden" name="intro" value="1" /> : null}
 
       {learners.length ? (
         <div>
@@ -132,28 +135,30 @@ export function BookingForm({
         <Textarea id="note" name="note" rows={3} maxLength={1000} placeholder={notePlaceholder} />
       </Field>
 
-      <div className="rounded-xl border border-slate-200 p-4">
-        <Checkbox
-          name="consent"
-          required
-          label={
-            <>
-              <Link href="/sayfa/on-bilgilendirme-formu" target="_blank" className="font-medium text-brand-700 underline">
-                Ön Bilgilendirme Formu
-              </Link>{" "}
-              ile{" "}
-              <Link href="/sayfa/mesafeli-satis-sozlesmesi" target="_blank" className="font-medium text-brand-700 underline">
-                Mesafeli Satış Sözleşmesi
-              </Link>
-              ’ni okudum ve onaylıyorum.
-            </>
-          }
-        />
-        <FieldError name="consent" />
-      </div>
+      {intro ? null : (
+        <div className="rounded-xl border border-slate-200 p-4">
+          <Checkbox
+            name="consent"
+            required
+            label={
+              <>
+                <Link href="/sayfa/on-bilgilendirme-formu" target="_blank" className="font-medium text-brand-700 underline">
+                  Ön Bilgilendirme Formu
+                </Link>{" "}
+                ile{" "}
+                <Link href="/sayfa/mesafeli-satis-sozlesmesi" target="_blank" className="font-medium text-brand-700 underline">
+                  Mesafeli Satış Sözleşmesi
+                </Link>
+                ’ni okudum ve onaylıyorum.
+              </>
+            }
+          />
+          <FieldError name="consent" />
+        </div>
+      )}
 
-      <SubmitButton size="lg" className="w-full" pendingText="Ödeme sayfası hazırlanıyor…">
-        Ödemeye geç
+      <SubmitButton size="lg" className="w-full" pendingText={intro ? "Gönderiliyor…" : "Ödeme sayfası hazırlanıyor…"}>
+        {intro ? "Tanışma talebini gönder" : "Ödemeye geç"}
       </SubmitButton>
     </ActionForm>
   );

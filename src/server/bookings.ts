@@ -17,7 +17,7 @@ import { addLedgerEntry, pendingForBooking, resetPendingForBooking } from "./led
 import { notify, notifyRole } from "./notifications";
 import { getPaymentProvider, getProviderById, PAYMENT_PROVIDERS, processRefund, requestRefund, salesOpen } from "./payments/service";
 import { completeCreditCheckout } from "./credits";
-import { approvalDeadline, lessonPrice, settledReleaseAt, splitCommission, splitRetained, studentCancellationRefund } from "./pricing";
+import { approvalDeadline, INTRO_MINUTES, lessonPrice, settledReleaseAt, splitCommission, splitRetained, studentCancellationRefund } from "./pricing";
 import { appUrl } from "./email";
 import { loadSettings } from "./settings";
 import { videoConfigured } from "./video-config";
@@ -146,11 +146,20 @@ export type CreateBookingInput = {
   districtId?: number | null;
   address?: string | null;
   studentNote?: string | null;
+  /** Ücretsiz 15 dakikalık tanışma görüşmesi: ödeme yok, doğrudan öğretmen onayına düşer. */
+  intro?: boolean;
 };
 
-/** Saati ödeme süresi boyunca kilitleyen randevu kaydı oluşturur (PENDING_PAYMENT). */
+/** Bir öğrencinin aynı anda bekleyen/onaylı en fazla tanışma görüşmesi. */
+const MAX_OPEN_INTROS = 2;
+
+/**
+ * Saati ödeme süresi boyunca kilitleyen randevu kaydı oluşturur (PENDING_PAYMENT).
+ * Tanışma görüşmesinde ödeme yoktur: kayıt doğrudan öğretmen onayına (PENDING_APPROVAL) düşer.
+ */
 export async function createBookingHold(input: CreateBookingInput, now = new Date()): Promise<Booking> {
-  if (!salesOpen()) throw new BookingError("Online ödeme altyapımız çok yakında açılıyor; şu an ders ve soru satışı yapılamıyor.");
+  const intro = Boolean(input.intro);
+  if (!intro && !salesOpen()) throw new BookingError("Online ödeme altyapımız çok yakında açılıyor; şu an ders ve soru satışı yapılamıyor.");
   const settings = await loadSettings();
   const offering = await db.teacherOffering.findUnique({
     where: { id: input.offeringId },
@@ -167,7 +176,18 @@ export async function createBookingHold(input: CreateBookingInput, now = new Dat
     throw new BookingError("Bu öğretmen şu an randevu kabul etmiyor.");
   }
   if (teacher.userId === input.studentId) throw new BookingError("Kendi profilinizden randevu alamazsınız.");
-  if (!offering.durations.includes(input.durationMinutes)) throw new BookingError("Seçtiğiniz ders süresi sunulmuyor.");
+  if (intro) {
+    if (!teacher.offersIntro) throw new BookingError("Bu öğretmen ücretsiz tanışma görüşmesi sunmuyor.");
+    if (input.durationMinutes !== INTRO_MINUTES || input.mode !== "ONLINE") throw new BookingError("Tanışma görüşmesi 15 dakika ve online yapılır.");
+    const previous = await db.booking.count({
+      where: { studentId: input.studentId, teacherId: teacher.userId, isIntro: true, status: { in: ["PENDING_APPROVAL", "CONFIRMED", "COMPLETED", "NO_SHOW_STUDENT", "NO_SHOW_TEACHER"] } },
+    });
+    if (previous) throw new BookingError("Bu öğretmenle tanışma görüşmesini zaten aldınız; ders almak için süre ve saat seçin.");
+    const open = await db.booking.count({ where: { studentId: input.studentId, isIntro: true, status: { in: ["PENDING_APPROVAL", "CONFIRMED"] } } });
+    if (open >= MAX_OPEN_INTROS) throw new BookingError(`Aynı anda en fazla ${MAX_OPEN_INTROS} tanışma görüşmesi bekleyebilir; önce onları tamamlayın.`);
+  } else if (!offering.durations.includes(input.durationMinutes)) {
+    throw new BookingError("Seçtiğiniz ders süresi sunulmuyor.");
+  }
 
   const learnerName = input.learnerName.trim();
   if (!learnerName) throw new BookingError("Dersin kimin için olduğunu yazın.");
@@ -193,11 +213,11 @@ export async function createBookingHold(input: CreateBookingInput, now = new Dat
   }
 
   const provider = getPaymentProvider();
-  if (provider.requiresSubMerchant && !teacher.subMerchantKey) {
+  if (!intro && provider.requiresSubMerchant && !teacher.subMerchantKey) {
     throw new BookingError("Öğretmenin ödeme hesabı henüz tamamlanmadığı için şu an randevu alınamıyor.");
   }
 
-  const price = lessonPrice(offering.hourlyPrice, input.durationMinutes);
+  const price = intro ? 0 : lessonPrice(offering.hourlyPrice, input.durationMinutes);
   const commissionRateBps = teacher.commissionRateBps ?? settings.commissionRateBps;
   const { commissionAmount, teacherAmount } = splitCommission(price, commissionRateBps);
   const endAt = new Date(input.startAt.getTime() + input.durationMinutes * 60_000);
@@ -250,7 +270,7 @@ export async function createBookingHold(input: CreateBookingInput, now = new Dat
           serviceTypeId: offering.serviceTypeId,
           levelId: offering.levelId,
           subjectId: offering.subjectId,
-          serviceName: offering.serviceType.name,
+          serviceName: intro ? "Ücretsiz tanışma" : offering.serviceType.name,
           levelName: offering.level.name,
           subjectName: offering.subject.name,
           learnerName,
@@ -269,13 +289,27 @@ export async function createBookingHold(input: CreateBookingInput, now = new Dat
           commissionRateBps,
           commissionAmount,
           teacherAmount,
-          status: "PENDING_PAYMENT",
-          holdExpiresAt: new Date(now.getTime() + settings.paymentHoldMinutes * 60_000),
+          status: intro ? "PENDING_APPROVAL" : "PENDING_PAYMENT",
+          isIntro: intro,
+          holdExpiresAt: intro ? null : new Date(now.getTime() + settings.paymentHoldMinutes * 60_000),
+          approvalDeadline: intro ? approvalDeadline(now, input.startAt, settings) : null,
         },
       });
       await tx.bookingEvent.create({
-        data: { bookingId: booking.id, toStatus: "PENDING_PAYMENT", actorId: input.studentId, note: "Saat ödeme için ayrıldı" },
+        data: { bookingId: booking.id, toStatus: booking.status, actorId: input.studentId, note: intro ? "Ücretsiz tanışma görüşmesi istendi" : "Saat ödeme için ayrıldı" },
       });
+      if (intro) {
+        await notify(
+          {
+            userId: teacher.userId,
+            type: "booking.request",
+            title: "Ücretsiz tanışma görüşmesi talebi",
+            body: `${learnerName} için ${lessonSummary(booking)}. Lütfen ${formatDateTime(booking.approvalDeadline!)} saatine kadar onaylayın.`,
+            link: "/ogretmen-paneli/talepler",
+          },
+          tx,
+        );
+      }
       return booking;
     });
   } catch (error) {
@@ -911,6 +945,17 @@ export async function completeFinishedLessons(now = new Date()): Promise<number>
         }
 
         await transition(tx, booking, outcome, { completedAt: now, earningsReleaseAt: releaseAt }, null, outcome === "COMPLETED" ? "Ders tamamlandı" : "Öğrenci derse katılmadı");
+        if (booking.isIntro) {
+          // Ücretsiz tanışma: hakediş ve değerlendirme yok; veliye devam etme yolu gösterilir.
+          if (outcome === "COMPLETED") {
+            const teacher = await tx.teacherProfile.findUnique({ where: { userId: booking.teacherId }, select: { slug: true } });
+            await notify(
+              { userId: booking.studentId, type: "booking.intro_completed", title: "Tanışma görüşmeniz tamamlandı", body: "Öğretmenle devam etmek isterseniz profilinden ders saati seçebilirsiniz.", link: teacher ? `/ogretmen/${teacher.slug}` : "/ogretmenler" },
+              tx,
+            );
+          }
+          return;
+        }
         if (outcome === "COMPLETED") {
           await tx.teacherProfile.update({ where: { userId: booking.teacherId }, data: { completedLessons: { increment: 1 } } });
           await notify(

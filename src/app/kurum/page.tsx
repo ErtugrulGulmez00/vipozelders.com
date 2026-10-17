@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CenterFlash, shortDate } from "@/components/center/center-ui";
 import { LinkButton } from "@/components/ui/button";
+import { moduleEnabled, type CenterModuleKey } from "@/lib/center/modules";
 import { Badge, Card, CardBody, CardHeader, EmptyState, PageHeader, StatCard } from "@/components/ui/primitives";
 import { CENTER_ACCESS_LABEL } from "@/lib/center/labels";
 import { formatNet } from "@/lib/center/exams";
@@ -22,23 +23,24 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
   const centerId = ctx.center.id;
   const today = toLocalDateString(new Date());
   const teacherOnly = ctx.member.role === "TEACHER";
+  const on = (key: CenterModuleKey) => moduleEnabled(ctx.center, key);
   const [activeStudents, lessons, absentToday, etudsToday, finance, overdue, exams, newLeads, groupCount, weeklySlots] = await Promise.all([
     db.centerStudent.count({ where: { centerId, status: "ACTIVE" } }),
     ctx.can("attendance.take") ? lessonsForDate(centerId, today, teacherOnly ? { teacherId: ctx.member.id } : {}) : Promise.resolve([]),
     db.centerAttendance.count({ where: { status: "ABSENT", session: { centerId, date: dateStringToDbDate(today) } } }),
-    ctx.can("etud.manage")
+    (ctx.can("etud.manage") && on("etutler"))
       ? db.centerEtud.findMany({
           where: { centerId, date: dateStringToDbDate(today), status: { not: "CANCELLED" }, ...(teacherOnly ? { teacherId: ctx.member.id } : {}) },
           include: { teacher: { include: { user: { select: { firstName: true, lastName: true } } } }, _count: { select: { students: true } } },
           orderBy: { startMinute: "asc" },
         })
       : Promise.resolve([]),
-    ctx.can("finance.view") ? financeOverview(centerId) : Promise.resolve(null),
-    ctx.can("finance.view") ? overdueByStudent(centerId, today) : Promise.resolve([]),
-    ctx.can("exams.manage")
+    (ctx.can("finance.view") && on("muhasebe")) ? financeOverview(centerId) : Promise.resolve(null),
+    (ctx.can("finance.view") && on("muhasebe")) ? overdueByStudent(centerId, today) : Promise.resolve([]),
+    (ctx.can("exams.manage") && on("denemeler"))
       ? db.centerExam.findMany({ where: { centerId }, orderBy: { date: "desc" }, take: 4, include: { results: { select: { net: true } }, sections: { select: { questionCount: true } } } })
       : Promise.resolve([]),
-    ctx.can("leads.manage") ? db.centerLead.count({ where: { centerId, status: "NEW" } }) : Promise.resolve(0),
+    (ctx.can("leads.manage") && on("on-kayit")) ? db.centerLead.count({ where: { centerId, status: "NEW" } }) : Promise.resolve(0),
     db.centerGroup.count({ where: { centerId, isActive: true } }),
     db.centerScheduleSlot.count({ where: { centerId, group: { isActive: true }, ...(teacherOnly ? { teacherId: ctx.member.id } : {}) } }),
   ]);
@@ -52,7 +54,7 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
     ctx.can("homework.manage")
       ? db.centerHomework.findMany({ where: { centerId, dueDate: dateStringToDbDate(today), ...(teacherOnly ? { teacherId: ctx.member.id } : {}) }, include: { group: { select: { name: true } }, _count: { select: { students: true } } }, take: 8 })
       : Promise.resolve([]),
-    ctx.can("coaching.manage") ? coachingOverview(ctx, today) : Promise.resolve(null),
+    (ctx.can("coaching.manage") && on("kocluk")) ? coachingOverview(ctx, today) : Promise.resolve(null),
     db.centerStudent.groupBy({ by: ["gradeName"], where: { centerId, status: "ACTIVE" }, _count: true }),
     ctx.can("attendance.take") ? db.centerHallDay.findMany({ where: { date: dateStringToDbDate(today), hall: { centerId } }, select: { marks: true } }) : Promise.resolve([]),
   ]);
@@ -83,7 +85,7 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
                 <ClipboardCheck className="size-4" aria-hidden /> Yoklama al
               </LinkButton>
             ) : null}
-            {ctx.can("finance.edit") ? (
+            {(ctx.can("finance.edit") && on("muhasebe")) ? (
               <LinkButton href="/kurum/muhasebe/tahsilat" size="sm" variant="outline">
                 <Wallet className="size-4" aria-hidden /> Tahsilat
               </LinkButton>
@@ -104,7 +106,7 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
         <StatCard label="Bugün gelmeyen" value={absentToday} hint={`${etudsToday.length} etüt planlı`} icon={<CalendarClock className="size-5" />} />
         {finance ? (
           <StatCard label="Bu ay tahsilat" value={formatMoney(finance.collectedThisMonth)} hint={finance.overdue ? `Geciken: ${formatMoney(finance.overdue)}` : "Geciken ödeme yok"} icon={<Wallet className="size-5" />} />
-        ) : ctx.can("leads.manage") ? (
+        ) : (ctx.can("leads.manage") && on("on-kayit")) ? (
           <StatCard label="Yeni ön kayıt" value={newLeads} icon={<PlusCircle className="size-5" />} />
         ) : (
           <StatCard label="Sınıf" value={groupCount} hint={`${teacherOnly ? "Sizin " : ""}${weeklySlots} ders / hafta`} icon={<BookOpenCheck className="size-5" />} />
@@ -134,7 +136,7 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
               ))}
             </ul>
           )}
-          {hallToday.length ? <p className="border-t border-slate-100 px-5 py-2 text-xs text-slate-500">Çalışma salonunda bugün {hallToday.filter((d) => d.marks.includes("G")).length} öğrenci var.</p> : null}
+          {hallToday.length && on("calisma-salonu") ? <p className="border-t border-slate-100 px-5 py-2 text-xs text-slate-500">Çalışma salonunda bugün {hallToday.filter((d) => d.marks.includes("G")).length} öğrenci var.</p> : null}
         </Card>
         {coaching ? (
           <Card>
@@ -154,7 +156,7 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
               ) : (
                 <p className="text-sm text-slate-500">Bugün bekleyen görüşme yok.</p>
               )}
-              {homeworkDue.length ? (
+              {homeworkDue.length && on("odevler") ? (
                 <div className="mt-4 border-t border-slate-100 pt-3">
                   <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">Bugün teslim ödevler</p>
                   <ul className="space-y-1 text-sm">
@@ -243,7 +245,7 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
           </Card>
         ) : null}
 
-        {ctx.can("etud.manage") ? (
+        {(ctx.can("etud.manage") && on("etutler")) ? (
           <Card>
             <CardHeader title="Bugünkü etütler" action={<Link href="/kurum/etutler" className="text-sm font-semibold text-brand-700 hover:underline">Etüt planı</Link>} />
             {etudsToday.length === 0 ? (
@@ -301,7 +303,7 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
           </Card>
         ) : null}
 
-        {ctx.can("exams.manage") ? (
+        {(ctx.can("exams.manage") && on("denemeler")) ? (
           <Card>
             <CardHeader title="Son denemeler" action={<Link href="/kurum/denemeler" className="text-sm font-semibold text-brand-700 hover:underline">Denemeler</Link>} />
             {exams.length === 0 ? (
