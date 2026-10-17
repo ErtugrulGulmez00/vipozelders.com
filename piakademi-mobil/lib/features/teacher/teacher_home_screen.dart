@@ -2,14 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/config.dart';
 import '../../core/format/money.dart';
 import '../../core/models/teacher_panel.dart';
 import '../../core/providers.dart';
 import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/cards.dart';
-import '../../core/widgets/feedback.dart';
 import '../../core/widgets/rating.dart';
 import '../../core/widgets/states.dart';
 import '../shared/data.dart';
@@ -59,9 +57,9 @@ class _Body extends StatelessWidget {
             title: data.published ? 'Profilinizi güçlendirin' : 'Profiliniz henüz yayında değil',
             message: data.missing.isEmpty ? 'Profiliniz yönetici onayından sonra yayınlanır.' : 'Eksikler: ${data.missing.map((c) => c.label).join(', ')}.',
             action: TextButton.icon(
-              onPressed: () => openExternal(context, '${AppConfig.siteUrl}/ogretmen-paneli/profil'),
-              icon: const Icon(Icons.open_in_new_rounded, size: 18),
-              label: const Text('Web panelinde tamamla'),
+              onPressed: () => context.push(Routes.teacherWeb('/ogretmen-paneli/profil', 'Profil ve fotoğraf')),
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              label: const Text('Profili tamamla'),
             ),
           ),
           const SizedBox(height: 12),

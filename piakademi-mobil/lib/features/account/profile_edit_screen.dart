@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/api/api_exception.dart';
-import '../../core/config.dart';
 import '../../core/models/catalog.dart';
 import '../../core/models/json.dart';
 import '../../core/providers.dart';
+import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/cards.dart';
 import '../../core/widgets/feedback.dart';
@@ -87,9 +87,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               NoticeBox(
                 message: 'Fotoğraf, tanıtım yazısı, dersler ve fiyatlar web panelinden düzenlenir.',
                 action: TextButton.icon(
-                  onPressed: () => openExternal(context, '${AppConfig.siteUrl}/ogretmen-paneli/profil'),
-                  icon: const Icon(Icons.open_in_new_rounded, size: 18),
-                  label: const Text('Web panelini aç'),
+                  onPressed: () => context.push(Routes.teacherWeb('/ogretmen-paneli/profil', 'Profil ve fotoğraf')),
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  label: const Text('Profili düzenle'),
                 ),
               ),
               const SizedBox(height: 16),

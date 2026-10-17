@@ -99,7 +99,15 @@ export function requireRole(user: MobileUser, role: MobileUser["role"]): void {
 // WebView için tek kullanımlık web girişi (ödeme formu ve sanal sınıf sitede açılır)
 // ---------------------------------------------------------------------------
 
-const WEB_LOGIN_TARGETS = [/^\/ders\/[a-z0-9]+$/i, /^\/odeme\/(paytr|test)\/[a-z0-9]+$/i, /^\/odeme\/sonuc\/[a-z0-9]+$/i];
+/** Öğretmenin uygulamada açabildiği web paneli sayfaları (profil, fotoğraf, fiyatlar, belgeler, IBAN). */
+export const TEACHER_PANEL_TARGETS = ["/ogretmen-paneli/profil", "/ogretmen-paneli/dersler-ve-fiyatlar", "/ogretmen-paneli/belgeler", "/ogretmen-paneli/kazanclar"];
+
+const WEB_LOGIN_TARGETS = [
+  /^\/ders\/[a-z0-9]+$/i,
+  /^\/odeme\/(paytr|test)\/[a-z0-9]+$/i,
+  /^\/odeme\/sonuc\/[a-z0-9]+$/i,
+  ...TEACHER_PANEL_TARGETS.map((path) => new RegExp(`^${path}$`)),
+];
 
 export function isWebLoginTarget(path: string): boolean {
   return WEB_LOGIN_TARGETS.some((pattern) => pattern.test(path));

@@ -13,7 +13,7 @@ import '../test/support/fixtures.dart';
 /// misafir → öğretmen profili → randevu al → giriş → saat seç → öde → ödeme sayfası dönüş adresine
 /// gidince kapanır → "ödemeniz kontrol ediliyor" → öğretmen onayı bekleniyor.
 ///
-/// flutter test integration_test/booking_flow_test.dart -d <cihaz>
+/// `flutter test integration_test/booking_flow_test.dart -d <cihaz>`
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 

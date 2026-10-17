@@ -82,6 +82,7 @@ class Routes {
   static String reportCard(String id, String examId) => '/kurum/$id/deneme/$examId';
   static String invite(String token) => '/kurum-davet/$token';
   static String page(String slug) => '/sayfa/$slug';
+  static String teacherWeb(String panelPath, String title) => Uri(path: '/panel/web', queryParameters: {'yol': panelPath, 'baslik': title}).toString();
   static String teacherSearch(TeacherQuery query) => Uri(path: teachers, queryParameters: query.toUri().isEmpty ? null : query.toUri()).toString();
 
   /// Giriş gerektiren tam ekran sayfalar.
@@ -290,6 +291,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(parentNavigatorKey: rootNavigatorKey, path: Routes.deleteAccount, builder: (_, _) => const DeleteAccountScreen()),
       GoRoute(parentNavigatorKey: rootNavigatorKey, path: Routes.earnings, builder: (_, _) => const EarningsScreen()),
       GoRoute(parentNavigatorKey: rootNavigatorKey, path: Routes.teacherReviews, builder: (_, _) => const TeacherReviewsScreen()),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: '/panel/web',
+        builder: (_, state) => WebPageScreen.teacherPanel(
+          path: state.uri.queryParameters['yol'] ?? '/ogretmen-paneli/profil',
+          title: state.uri.queryParameters['baslik'] ?? 'Web paneli',
+        ),
+      ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
         path: '/sayfa/:slug',

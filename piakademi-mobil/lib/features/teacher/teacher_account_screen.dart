@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/config.dart';
 import '../../core/providers.dart';
 import '../../core/router/app_router.dart';
 import '../../core/widgets/feedback.dart';
@@ -35,26 +34,23 @@ class TeacherAccountScreen extends ConsumerWidget {
           const MenuTitle('Kazanç ve geri bildirim'),
           MenuTile(icon: Icons.payments_outlined, title: 'Kazançlar', subtitle: 'Bekleyen, ödenebilir ve ödenen tutarlar', onTap: () => context.push(Routes.earnings)),
           MenuTile(icon: Icons.reviews_outlined, title: 'Yorumlar', subtitle: 'Gelen yorumlar ve cevaplarınız', onTap: () => context.push(Routes.teacherReviews)),
-          const MenuTitle('Profil (web paneli)'),
+          const MenuTitle('Profil'),
           if (teacher != null)
             MenuTile(icon: Icons.visibility_outlined, title: 'Profilimi görüntüle', subtitle: 'Velilerin gördüğü sayfa', onTap: () => context.push(Routes.teacher(teacher.slug))),
           MenuTile(
             icon: Icons.edit_outlined,
             title: 'Profil, fotoğraf ve tanıtım',
-            trailing: const Icon(Icons.open_in_new_rounded, size: 18),
-            onTap: () => openExternal(context, '${AppConfig.siteUrl}/ogretmen-paneli/profil'),
+            onTap: () => context.push(Routes.teacherWeb('/ogretmen-paneli/profil', 'Profil ve fotoğraf')),
           ),
           MenuTile(
             icon: Icons.sell_outlined,
             title: 'Dersler ve fiyatlar',
-            trailing: const Icon(Icons.open_in_new_rounded, size: 18),
-            onTap: () => openExternal(context, '${AppConfig.siteUrl}/ogretmen-paneli/dersler-ve-fiyatlar'),
+            onTap: () => context.push(Routes.teacherWeb('/ogretmen-paneli/dersler-ve-fiyatlar', 'Dersler ve fiyatlar')),
           ),
           MenuTile(
             icon: Icons.folder_shared_outlined,
             title: 'Belgeler (kimlik, diploma)',
-            trailing: const Icon(Icons.open_in_new_rounded, size: 18),
-            onTap: () => openExternal(context, '${AppConfig.siteUrl}/ogretmen-paneli/belgeler'),
+            onTap: () => context.push(Routes.teacherWeb('/ogretmen-paneli/belgeler', 'Belgeler')),
           ),
           const MenuTitle('Hesap'),
           MenuTile(icon: Icons.phone_outlined, title: 'Telefon numarası', subtitle: me.phone ?? 'Eklenmemiş', onTap: () => context.push(Routes.profileEdit)),

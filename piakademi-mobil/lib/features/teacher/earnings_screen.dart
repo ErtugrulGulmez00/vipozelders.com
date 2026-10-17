@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/config.dart';
 import '../../core/format/dates.dart';
 import '../../core/format/money.dart';
 import '../../core/models/teacher_panel.dart';
@@ -10,7 +9,6 @@ import '../../core/router/app_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/badges.dart';
 import '../../core/widgets/cards.dart';
-import '../../core/widgets/feedback.dart';
 import '../../core/widgets/states.dart';
 import '../shared/data.dart';
 import '../shared/widgets.dart';
@@ -70,8 +68,8 @@ class _Body extends StatelessWidget {
                   children: [
                     Text('IBAN bilginiz eksik. Hakedişlerin ödenebilmesi için web panelinden ekleyin.', style: TextStyle(color: scheme.onSurfaceVariant)),
                     TextButton.icon(
-                      onPressed: () => openExternal(context, '${AppConfig.siteUrl}/ogretmen-paneli/kazanclar'),
-                      icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                      onPressed: () => context.push(Routes.teacherWeb('/ogretmen-paneli/kazanclar', 'Ödeme hesabı')),
+                      icon: const Icon(Icons.add_card_rounded, size: 18),
                       label: const Text('IBAN ekle'),
                     ),
                   ],

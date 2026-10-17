@@ -325,6 +325,9 @@ class PiApi {
 
   Future<BookingDetail> reject(String id, String reason) async => BookingDetail.fromJson(asJson(await client.post('/rezervasyonlar/$id/red', data: {'reason': reason})));
 
+  /// Öğretmen web panelinin bir sayfası için tek kullanımlık, oturum açan bağlantı (WebView'da açılır).
+  Future<String> teacherPanelLink(String path) async => asString(asJson(await client.post('/web-oturum', data: {'path': path}))['url']);
+
   Future<ClassroomAccess> classroom(String id) async => ClassroomAccess.fromJson(asJson(await client.get('/rezervasyonlar/$id/sinif')));
 
   /// Onaylı dersin takvim dosyası (.ics metni).
