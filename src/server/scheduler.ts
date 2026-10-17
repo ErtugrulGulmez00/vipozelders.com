@@ -13,6 +13,7 @@ import { processCenterMessages } from "./center/messages";
 import { expireCredits, expireStalePurchases } from "./credits";
 import { db } from "./db";
 import { sendPendingEmails } from "./email";
+import { recordError } from "./errors";
 import { processPendingRefunds } from "./payments/service";
 import { sendPendingPushes } from "./push";
 import { expireUnansweredQuestions, releaseExpiredClaims, releasePoolEarnings } from "./question-pool";
@@ -67,6 +68,7 @@ export async function runScheduledTasks(now = new Date()): Promise<SchedulerSumm
     } catch (error) {
       summary[name] = `hata: ${String(error).slice(0, 200)}`;
       console.error(`[zamanlayıcı] ${name}:`, error);
+      await recordError({ error, source: "scheduler", routePath: `zamanlayıcı: ${name}` }, now);
     }
   }
   await db.jobLock.updateMany({ where: { name: "scheduler", holder: HOLDER }, data: { lockedUntil: new Date(0) } });

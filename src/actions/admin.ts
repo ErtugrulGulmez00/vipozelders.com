@@ -428,3 +428,13 @@ export async function saveSettingsAction(_: ActionState, formData: FormData): Pr
   refresh();
   return success("Ayarlar kaydedildi.");
 }
+
+/** Hata takibi: hatayı (ya da tümünü) çözüldü işaretler; tekrar oluşursa yeniden bildirilir. */
+export async function resolveErrorAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await admin();
+  if (!user) return DENIED;
+  const id = text(formData, "id");
+  const result = await db.errorEvent.updateMany({ where: { resolvedAt: null, ...(id ? { id } : {}) }, data: { resolvedAt: new Date() } });
+  refresh();
+  return success(result.count ? "Çözüldü olarak işaretlendi." : "Açık hata yok.");
+}

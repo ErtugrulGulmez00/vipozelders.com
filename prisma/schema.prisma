@@ -1850,3 +1850,27 @@ model PoolQuestion {
   @@index([studentId])
   @@index([claimedById, status])
 }
+
+// ---------------------------------------------------------------------------
+// Sunucu hataları (hata takibi). Aynı hata tek satırda sayılır.
+// ---------------------------------------------------------------------------
+
+model ErrorEvent {
+  id             String    @id @default(cuid())
+  // Mesaj + rota özeti; aynı hata tekrarlandıkça count artar
+  fingerprint    String    @unique
+  message        String
+  stack          String?
+  source         String
+  routePath      String?
+  lastPath       String?
+  method         String?
+  digest         String?
+  count          Int       @default(1)
+  firstSeenAt    DateTime  @default(now())
+  lastSeenAt     DateTime  @default(now())
+  lastNotifiedAt DateTime?
+  resolvedAt     DateTime?
+
+  @@index([resolvedAt, lastSeenAt])
+}
