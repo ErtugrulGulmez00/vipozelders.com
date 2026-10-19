@@ -1,12 +1,13 @@
 import { db, type DbTransaction } from "../db";
+import { garantiProvider } from "./garanti";
 import { iyzicoProvider } from "./iyzico";
 import { mockProvider } from "./mock";
 import { paytrProvider } from "./paytr";
 import type { PaymentProvider } from "./types";
 
-export const PAYMENT_PROVIDERS: Record<string, PaymentProvider> = { mock: mockProvider, iyzico: iyzicoProvider, paytr: paytrProvider };
+export const PAYMENT_PROVIDERS: Record<string, PaymentProvider> = { mock: mockProvider, iyzico: iyzicoProvider, paytr: paytrProvider, garanti: garantiProvider };
 
-/** Yeni ödemeler için kullanılan sağlayıcı (.env → PAYMENT_PROVIDER=paytr | iyzico | mock). */
+/** Yeni ödemeler için kullanılan sağlayıcı (.env → PAYMENT_PROVIDER=garanti | paytr | iyzico | mock). */
 export function getPaymentProvider(): PaymentProvider {
   return PAYMENT_PROVIDERS[process.env.PAYMENT_PROVIDER ?? ""] ?? mockProvider;
 }

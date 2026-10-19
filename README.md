@@ -113,6 +113,30 @@ Kurumu Pi Kampüs yöneticisi açar (**Yönetim → Kurumlar**; “Kurumlar içi
 
 ---
 
+## Ödeme (Garanti BBVA sanal POS)
+
+Garanti BBVA **Ortak Ödeme Sayfası (3D_OOS_PAY)** kullanılır: veli ödeme adımında bankanın 3D Secure sayfasına yönlendirilir, kart bilgisi sitemize hiç gelmez. Bankadan dönüşteki alanlara güvenilmez; sonuç sunucudan bankaya **sipariş sorgusu** (orderinq) ile doğrulanır ve tutar karşılaştırılır. İadeler XML ile otomatik yapılır; gün sonundan önce iade kabul edilmezse tam tutar için **iptal (void)** denenir, kısmi iadeler gün sonundan sonra arka plan göreviyle yeniden denenir.
+
+`.env`:
+
+```
+PAYMENT_PROVIDER="garanti"
+GARANTI_MODE="PROD"            # yoksa bankanın herkese açık test terminali kullanılır
+GARANTI_MERCHANT_ID="..."      # üye işyeri no
+GARANTI_TERMINAL_ID="..."      # 8 haneli terminal no
+GARANTI_PROV_PASSWORD="..."    # PROVAUT şifresi (satış sorgusu)
+GARANTI_OOS_PASSWORD="..."     # PROVOOS şifresi (boşsa PROVAUT şifresi kullanılır)
+GARANTI_REFUND_PASSWORD="..."  # PROVRFN şifresi (iade/iptal)
+GARANTI_STORE_KEY="..."        # 3D Secure güvenlik anahtarı
+GARANTI_COMPANY_NAME="PI KAMPUS"
+```
+
+Şifreler ve 3D güvenlik anahtarı Garanti Sanal POS yönetim panelinden belirlenir. Bankadan dönüş adresi formla gönderilir (`/api/odeme/garanti/donus`); panelde ayrıca tanımlanmaz.
+
+**Deneme:** Yönetim → **Ödeme testi** sayfası randevuya bağlı olmayan 1,00 TL'lik ödeme başlatır. "Test ortamında dene" bankanın test terminaliyle çalışır (para çekilmez; test kartı sayfada yazılı), "Gerçek kartla dene" canlı terminali kullanır ve başarılı ödeme aynı sayfadan iade edilir. Banka sayfası insan doğrulaması (captcha) istediği için kart adımı otomatik testlerle denenemez; imza, sorgu ve iade biçimi `tests/garanti.test.ts` ile ve bankanın test servisinde doğrulandı.
+
+Garanti'de para üye işyeri hesabına gelir; öğretmen hakedişleri yönetim panelindeki **Finans** bölümünden havaleyle ödenir. Hakedişin serbest kalma süresini (site ayarlarında "ödeme kuruluşu aktarım süresi") bankanın valör süresine göre ayarlayın.
+
 ## Ödeme (PayTR)
 
 Geliştirmede `PAYMENT_PROVIDER=mock` ile site içindeki **test ödeme sayfası** kullanılır; para çekilmez.

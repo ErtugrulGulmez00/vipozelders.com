@@ -13,6 +13,9 @@ import { completeCheckout } from "@/server/bookings";
 import { db } from "@/server/db";
 
 export const metadata: Metadata = { title: "Ödeme sonucu" };
+
+/** Sonucu bankadan sonradan gelen sağlayıcılar (dönüşte durum sorgusuyla kontrol edilir). */
+const REMOTE_PROVIDERS = new Set(["paytr", "garanti"]);
 export const instant = false;
 
 export default async function PaymentResultPage({ params }: PageProps<"/odeme/sonuc/[bookingId]">) {
@@ -28,8 +31,8 @@ export default async function PaymentResultPage({ params }: PageProps<"/odeme/so
   if (booking.studentId !== user.id) redirect("/hesabim");
   let payment = booking.payments[0];
 
-  // PayTR sonucu sunucuya bildirimle gelir; henüz gelmediyse durum sorgusuyla kontrol edilir.
-  const awaitingProvider = payment?.status === "INITIATED" && payment.provider === "paytr" && payment.providerToken;
+  // Banka sonucu (PayTR bildirimi, Garanti dönüşü) henüz işlenmediyse durum sorgusuyla kontrol edilir.
+  const awaitingProvider = payment?.status === "INITIATED" && REMOTE_PROVIDERS.has(payment.provider) && payment.providerToken;
   if (awaitingProvider) {
     await completeCheckout(payment.providerToken!).catch((error: unknown) => console.error("[ödeme sonucu]", error));
     booking = (await load())!;
@@ -67,10 +70,10 @@ export default async function PaymentResultPage({ params }: PageProps<"/odeme/so
     );
   }
 
-  // Süresi dolan saat için de kısa bir süre geç gelen bildirim beklenir (PayTR formu 30 dk açık kalır).
+  // Süresi dolan saat için de kısa bir süre geç gelen bildirim beklenir (PayTR formu 30 dk, Garanti sayfası 5 dk açık kalır).
   const awaitingResult =
     payment?.status === "INITIATED" &&
-    payment.provider === "paytr" &&
+    REMOTE_PROVIDERS.has(payment.provider) &&
     (booking.status === "PENDING_PAYMENT" || (booking.status === "EXPIRED" && payment.createdAt.getTime() > now.getTime() - 35 * 60_000));
   if (awaitingResult) {
     return (
@@ -79,7 +82,7 @@ export default async function PaymentResultPage({ params }: PageProps<"/odeme/so
         <p className="text-slate-600">Bankanızdan gelen sonuç bekleniyor. Bu sayfa birkaç saniyede bir kendiliğinden yenilenir.</p>
         <Card className="mt-6 p-5 text-left">{details}</Card>
         {booking.status === "PENDING_PAYMENT" ? (
-          <LinkButton href={`/odeme/paytr/${payment!.id}`} variant="outline" className="mt-6">
+          <LinkButton href={`/odeme/${payment!.provider}/${payment!.id}`} variant="outline" className="mt-6">
             Ödeme formuna dön
           </LinkButton>
         ) : null}
@@ -122,7 +125,7 @@ async function CreditPurchaseResult({ purchaseId, userId }: { purchaseId: string
   let purchase = await load();
   if (!purchase || purchase.studentId !== userId) redirect("/hesabim");
   let payment = purchase.payments[0];
-  if (payment?.status === "INITIATED" && payment.provider === "paytr" && payment.providerToken) {
+  if (payment?.status === "INITIATED" && REMOTE_PROVIDERS.has(payment.provider) && payment.providerToken) {
     await completeCheckout(payment.providerToken).catch((error: unknown) => console.error("[ödeme sonucu]", error));
     purchase = (await load())!;
     payment = purchase.payments[0];
@@ -148,13 +151,13 @@ async function CreditPurchaseResult({ purchaseId, userId }: { purchaseId: string
       </Result>
     );
   }
-  if (purchase.status === "PENDING_PAYMENT" && payment?.status === "INITIATED" && payment.provider === "paytr") {
+  if (purchase.status === "PENDING_PAYMENT" && payment?.status === "INITIATED" && REMOTE_PROVIDERS.has(payment.provider)) {
     return (
       <Result icon={<LoaderCircle className="size-12 animate-spin text-brand-500" />} title="Ödemeniz kontrol ediliyor">
         <AutoRefresh />
         <p className="text-slate-600">Bankanızdan gelen sonuç bekleniyor. Bu sayfa birkaç saniyede bir kendiliğinden yenilenir.</p>
         <Card className="mt-6 p-5 text-left">{details}</Card>
-        <LinkButton href={`/odeme/paytr/${payment.id}`} variant="outline" className="mt-6">
+        <LinkButton href={`/odeme/${payment.provider}/${payment.id}`} variant="outline" className="mt-6">
           Ödeme formuna dön
         </LinkButton>
       </Result>
