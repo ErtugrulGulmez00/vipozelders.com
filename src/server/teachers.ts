@@ -34,6 +34,8 @@ export type TeacherSearchParams = {
   gender?: string;
   time?: string;
   verified?: string;
+  /** "1": yalnızca ücretsiz tanışma sunanlar */
+  intro?: string;
   q?: string;
   sort?: string;
   page?: string;
@@ -54,6 +56,8 @@ export type TeacherCard = {
   offersInPerson: boolean;
   /** Ücretsiz 15 dk tanışma görüşmesi */
   offersIntro: boolean;
+  /** Yeni katılan, henüz az yorumu olan öğretmen ("Yeni" rozeti; önerilen sıralamada öne alınır) */
+  isNew: boolean;
   verified: boolean;
   featured: boolean;
   minHourlyPrice: number;
@@ -62,6 +66,13 @@ export type TeacherCard = {
 };
 
 const PAGE_SIZE = 12;
+const NEW_TEACHER_DAYS = 45;
+
+/** Son 45 günde yayına alınmış ve 3'ten az yorumu olan öğretmen "yeni" sayılır. */
+export function isNewTeacher(row: { publishedAt: Date | null; createdAt: Date; ratingCount: number }, now = new Date()): boolean {
+  const since = (row.publishedAt ?? row.createdAt).getTime();
+  return row.ratingCount < 3 && now.getTime() - since < NEW_TEACHER_DAYS * 86_400_000;
+}
 
 function int(value: string | undefined): number | undefined {
   if (!value) return undefined;
@@ -114,6 +125,7 @@ export async function searchTeachers(params: TeacherSearchParams) {
   const minRating = int(params.rating);
   if (minRating) and.push({ ratingAvg: { gte: minRating }, ratingCount: { gt: 0 } });
   if (params.verified === "1") and.push({ verificationStatus: "VERIFIED" });
+  if (params.intro === "1") and.push({ offersIntro: true, offersOnline: true });
   if (params.time === "hafta-ici-gunduz") and.push({ availabilityRules: { some: { weekday: { lte: 5 }, startMinute: { lt: 17 * 60 } } } });
   if (params.time === "hafta-ici-aksam") and.push({ availabilityRules: { some: { weekday: { lte: 5 }, endMinute: { gt: 17 * 60 } } } });
   if (params.time === "hafta-sonu") and.push({ availabilityRules: { some: { weekday: { gte: 6 } } } });
@@ -146,6 +158,7 @@ export async function searchTeachers(params: TeacherSearchParams) {
     offersOnline: row.offersOnline,
     offersInPerson: row.offersInPerson,
     offersIntro: row.offersIntro && row.offersOnline,
+    isNew: isNewTeacher(row),
     verified: row.verificationStatus === "VERIFIED",
     featured: row.isFeatured,
     minHourlyPrice: Math.min(...row.offerings.map((o) => o.hourlyPrice)),
@@ -155,7 +168,7 @@ export async function searchTeachers(params: TeacherSearchParams) {
 
   const createdAt = new Map(rows.map((r) => [r.userId, r.publishedAt?.getTime() ?? r.createdAt.getTime()]));
   const score = (c: TeacherCard) =>
-    (c.featured ? 1 : 0) * 10 + weightedRating(c.ratingAvg, c.ratingCount) + Math.log10(c.completedLessons + 1) * 0.3 + (c.verified ? 0.2 : 0);
+    (c.featured ? 1 : 0) * 10 + weightedRating(c.ratingAvg, c.ratingCount) + Math.log10(c.completedLessons + 1) * 0.3 + (c.verified ? 0.2 : 0) + (c.isNew ? 0.25 : 0) + (c.offersIntro ? 0.1 : 0);
 
   const sorters: Record<string, (a: TeacherCard, b: TeacherCard) => number> = {
     "fiyat-artan": (a, b) => a.minHourlyPrice - b.minHourlyPrice,

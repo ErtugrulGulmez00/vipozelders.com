@@ -121,7 +121,7 @@ Sayfalı listelerde `?sayfa=N` gönderilir; yanıttaki `nextPage` null ise son s
 | --- | --- |
 | `GET /katalog` | `{site, maintenance: {on, message}, rules (… , questionAnswerHours), levels: [{id, name, slug, group, grades: [{id, name}], subjectIds}], subjects, services, cities, sortOptions, timeOptions, pages: [{slug, title, url}], paymentReturnPrefix}` |
 | `GET /iller/{ilId}/ilceler` | `{items: [{id, name, slug}]}` |
-| `GET /ogretmenler?level=&subject=&service=&mode=online\|yuz-yuze&city=&district=&minPrice=&maxPrice=&rating=4&gender=kadin\|erkek&time=hafta-ici-gunduz\|hafta-ici-aksam\|hafta-sonu&verified=1&q=&sort=&page=` (kademe, ders, hizmet, il, ilçe **slug**; fiyatlar **TL**) | `{items: TeacherCard[], total, page, pageCount}` |
+| `GET /ogretmenler?level=&subject=&service=&mode=online\|yuz-yuze&city=&district=&minPrice=&maxPrice=&rating=4&gender=kadin\|erkek&time=hafta-ici-gunduz\|hafta-ici-aksam\|hafta-sonu&verified=1&intro=1&q=&sort=&page=` (kademe, ders, hizmet, il, ilçe **slug**; fiyatlar **TL**) | `{items: TeacherCard[], total, page, pageCount}` |
 | `GET /ogretmenler/{slug}` (anahtar gönderilirse `isFavorite` dolu gelir) | `TeacherProfile` |
 | `GET /ogretmenler/{slug}/saatler?duration=60&start=2026-10-14` | 7 günlük takvim |
 
@@ -130,7 +130,7 @@ Sayfalı listelerde `?sayfa=N` gönderilir; yanıttaki `nextPage` null ise son s
 ```json
 { "userId": "cmv47…", "slug": "mehmet-demir", "name": "Mehmet D.", "headline": "Fizik öğretmeni ve YKS koçu", "photoUrl": "https://…/api/dosya/…",
   "ratingAvg": 5, "ratingCount": 2, "completedLessons": 2, "experienceYears": 8, "cityName": "Ankara", "offersOnline": true, "offersInPerson": false,
-  "verified": true, "featured": false, "minHourlyPrice": 95000, "subjects": ["Fizik"], "avgResponseMinutes": 60 }
+  "offersIntro": true, "isNew": false, "verified": true, "featured": false, "minHourlyPrice": 95000, "subjects": ["Fizik"], "avgResponseMinutes": 60 }
 ```
 
 `TeacherProfile` (özet):

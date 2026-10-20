@@ -1,6 +1,6 @@
 import { maskContacts } from "@/lib/text";
 import { db } from "./db";
-import { notify } from "./notifications";
+import { notify, notifyRole } from "./notifications";
 
 // Veli/öğrenci ile öğretmen arasında mesajlaşma (randevu öncesi soru, ders sonrası takip).
 // İletişim bilgileri (telefon, e-posta, adres, sosyal medya) otomatik gizlenir; platform dışına çıkışı önler.
@@ -14,6 +14,27 @@ const MAX_UNANSWERED = 3;
 const MAX_NEW_THREADS_PER_DAY = 5;
 /** Yeni mesaj bildirimi aynı konuşma için en fazla bu aralıkla gider. */
 const NOTIFY_EVERY_MS = 10 * 60_000;
+/** Öğretmen son 30 günde bu kadar şüpheli mesaj yazarsa yöneticiye bildirilir (günde en fazla bir kez). */
+const ADMIN_ALERT_THRESHOLD = 3;
+
+// Platform dışına yönlendirme işaretleri (küçük harfe çevrilmiş metinde aranır). Gizleme yapılmasa da
+// "WhatsApp'tan yazalım", "elden ödersiniz" gibi ifadeler yönetici denetimine düşer.
+const OFF_PLATFORM: [RegExp, string][] = [
+  [/whats\s*app|watsap|vatsap|whatsap|\bwp\b|wpden|telegram|instagram|\binsta\b|\bdm\b|snapchat|facebook|\bface\b/, "Başka uygulamaya yönlendirme"],
+  [/(numara|telefon)(n|m)?(ı|i|ı|u)?(n|m)?\s*(ver|yaz|at|gönder|söyle|paylaş)|beni\s+ara|ararım|ara\s+beni|arayın|arar\s*mısın/, "Telefon isteme / verme"],
+  [/\biban\b|havale|\beft\b|elden|nakit|hesabıma|hesap\s*numara/, "Platform dışı ödeme"],
+  [/site\s*dışı|platform\s*dışı|siteden\s*(değil|bağımsız)|dışarıda\s*(ders|görüş|anlaş)|özelden|komisyon\s*(vermeden|ödemeden|olmadan)|aracısız|direkt\s*(ödeme|anlaş)|doğrudan\s*(ödeme|anlaş)/, "Platform dışına yönlendirme"],
+  [/gmail|hotmail|outlook|yandex|e-?posta\s*adres|mail\s*adres/, "E-posta isteme / verme"],
+];
+
+/** Mesajda platform dışına çıkma işareti var mı? Varsa nedeni döner. */
+export function offPlatformReason(text: string): string | null {
+  // Türkçe küçük harfte "IBAN" → "ıban" olur; ı'sız hâli de aranır.
+  const lower = text.toLocaleLowerCase("tr-TR");
+  const dotted = lower.replace(/ı/g, "i");
+  const reasons = OFF_PLATFORM.filter(([re]) => re.test(lower) || re.test(dotted)).map(([, reason]) => reason);
+  return reasons.length ? [...new Set(reasons)].join(", ") : null;
+}
 
 type Sender = { id: string; role: string };
 
@@ -53,11 +74,17 @@ export async function sendMessage(threadId: string, sender: Sender, text: string
 
   const body = maskContacts(raw);
   const masked = body !== raw;
+  const detected = offPlatformReason(raw);
+  const flagReason = masked ? ["İletişim bilgisi paylaşıldı (gizlendi)", detected].filter(Boolean).join(", ") : detected;
   const previous = await db.directMessage.findFirst({ where: { threadId, authorId: sender.id }, orderBy: { createdAt: "desc" }, select: { createdAt: true } });
   await db.$transaction([
-    db.directMessage.create({ data: { threadId, authorId: sender.id, body, masked, createdAt: now } }),
-    db.messageThread.update({ where: { id: threadId }, data: { lastMessageAt: now, ...(fromStudent ? { studentReadAt: now } : { teacherReadAt: now }) } }),
+    db.directMessage.create({ data: { threadId, authorId: sender.id, body, masked, flagReason, originalBody: masked ? raw : null, createdAt: now } }),
+    db.messageThread.update({
+      where: { id: threadId },
+      data: { lastMessageAt: now, ...(fromStudent ? { studentReadAt: now } : { teacherReadAt: now }), ...(flagReason ? { flaggedAt: now } : {}) },
+    }),
   ]);
+  if (flagReason && !fromStudent) await warnTeacher(thread.teacherId, threadId, now);
 
   // Karşı tarafa bildirim (art arda mesajlarda 10 dakikada bir)
   if (!previous || now.getTime() - previous.createdAt.getTime() > NOTIFY_EVERY_MS) {
@@ -109,4 +136,40 @@ export async function listThreads(userId: string, as: "student" | "teacher") {
 
 export async function unreadThreadCount(userId: string, as: "student" | "teacher") {
   return (await listThreads(userId, as)).filter((t) => t.unread).length;
+}
+
+/**
+ * Öğretmenin şüpheli mesajı: öğretmene kural hatırlatması (saatte en fazla bir), son 30 günde eşik aşılırsa
+ * yöneticiye bildirim (günde en fazla bir).
+ */
+async function warnTeacher(teacherId: string, threadId: string, now: Date) {
+  const hourAgo = new Date(now.getTime() - 3_600_000);
+  if (!(await db.notification.count({ where: { userId: teacherId, type: "message.warning", createdAt: { gte: hourAgo } } }))) {
+    await notify({
+      userId: teacherId,
+      type: "message.warning",
+      title: "Uyarı: kişisel iletişim ve platform dışı anlaşma yasaktır",
+      body: "Mesajınızda iletişim bilgisi ya da platform dışına yönlendirme tespit edildi ve ekibimize iletildi. Tekrarı hâlinde hesabınız kalıcı olarak kapatılır.",
+      link: `/ogretmen-paneli/mesajlar/${threadId}`,
+    });
+  }
+  const monthAgo = new Date(now.getTime() - 30 * 86_400_000);
+  const flagged = await db.directMessage.count({ where: { authorId: teacherId, flagReason: { not: null }, createdAt: { gte: monthAgo } } });
+  if (flagged < ADMIN_ALERT_THRESHOLD) return;
+  const dayAgo = new Date(now.getTime() - 86_400_000);
+  const link = `/yonetim/mesajlar?ogretmen=${teacherId}`;
+  if (await db.notification.count({ where: { type: "admin.message_flags", link, createdAt: { gte: dayAgo } } })) return;
+  const teacher = await db.user.findUniqueOrThrow({ where: { id: teacherId }, select: { firstName: true, lastName: true } });
+  await notifyRole("ADMIN", {
+    type: "admin.message_flags",
+    title: `Öğretmen tekrar tekrar platform dışına yönlendiriyor olabilir: ${teacher.firstName} ${teacher.lastName}`,
+    body: `Son 30 günde ${flagged} şüpheli mesaj. İnceleyip gerekirse hesabı askıya alın.`,
+    link,
+  });
+}
+
+/** Yönetici denetimi: incelenecek konuşma sayısı (son şüpheli mesaj son incelemeden sonra). */
+export async function threadsToReviewCount() {
+  const rows = await db.$queryRaw<{ n: bigint }[]>`SELECT COUNT(*) AS n FROM "MessageThread" WHERE "flaggedAt" IS NOT NULL AND ("reviewedAt" IS NULL OR "reviewedAt" < "flaggedAt")`;
+  return Number(rows[0]?.n ?? 0);
 }

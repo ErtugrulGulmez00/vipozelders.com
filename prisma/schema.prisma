@@ -1924,6 +1924,9 @@ model MessageThread {
   lastMessageAt DateTime        @default(now())
   studentReadAt DateTime?
   teacherReadAt DateTime?
+  // Mesaj denetimi: son şüpheli mesaj ve yöneticinin son incelemesi (flaggedAt > reviewedAt ise incelenecek)
+  flaggedAt     DateTime?
+  reviewedAt    DateTime?
   createdAt     DateTime        @default(now())
   messages      DirectMessage[]
 
@@ -1939,7 +1942,11 @@ model DirectMessage {
   author    User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
   body      String
   // Gizlenen iletişim bilgisi varsa (yönetici incelemesi için işaret)
-  masked    Boolean       @default(false)
+  masked       Boolean       @default(false)
+  // Platform dışına yönlendirme şüphesi (ör. "whatsapp", "elden", "IBAN"); boşsa temiz
+  flagReason   String?
+  // Gizleme yapıldıysa mesajın aslı: yalnızca yönetici denetiminde görünür (kanıt)
+  originalBody String?
   createdAt DateTime      @default(now())
 
   @@index([threadId, createdAt])

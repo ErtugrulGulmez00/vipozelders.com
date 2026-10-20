@@ -33,6 +33,8 @@ export function teacherCardJson(card: TeacherCard) {
     cityName: card.cityName,
     offersOnline: card.offersOnline,
     offersInPerson: card.offersInPerson,
+    offersIntro: card.offersIntro,
+    isNew: card.isNew,
     verified: card.verified,
     featured: card.featured,
     minHourlyPrice: card.minHourlyPrice,

@@ -3,12 +3,12 @@ import { publicRoute } from "@/server/mobile/route";
 import { teacherCardJson } from "@/server/mobile/serialize";
 import { searchTeachers, type TeacherSearchParams } from "@/server/teachers";
 
-const PARAMS: (keyof TeacherSearchParams)[] = ["level", "subject", "service", "mode", "city", "district", "minPrice", "maxPrice", "rating", "gender", "time", "verified", "q", "sort", "page"];
+const PARAMS: (keyof TeacherSearchParams)[] = ["level", "subject", "service", "mode", "city", "district", "minPrice", "maxPrice", "rating", "gender", "time", "verified", "intro", "q", "sort", "page"];
 
 /**
  * Öğretmen arama (vitrindeki filtrelerle aynı). Parametreler:
  * level, subject, service, city, district (slug) · mode=online|yuz-yuze · minPrice, maxPrice (TL) ·
- * rating=4 · gender=kadin|erkek · time=hafta-ici-gunduz|hafta-ici-aksam|hafta-sonu · verified=1 · q · sort · page
+ * rating=4 · gender=kadin|erkek · time=hafta-ici-gunduz|hafta-ici-aksam|hafta-sonu · verified=1 · intro=1 (ücretsiz tanışma) · q · sort · page
  */
 export const GET = publicRoute(async ({ request }) => {
   const url = new URL(request.url);

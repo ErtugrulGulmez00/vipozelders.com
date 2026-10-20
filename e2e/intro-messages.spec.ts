@@ -46,7 +46,7 @@ test.afterAll(async () => {
   const threads = await sql<{ id: string }>(`SELECT id FROM "MessageThread" WHERE "teacherId" = ${TEACHER} AND "createdAt" >= $1::timestamp`, [startedAt]);
   const ids = [...bookings, ...threads].map((r) => r.id);
   await sql(`DELETE FROM "Notification" WHERE link LIKE ANY($1)`, [ids.map((id) => `%/${id}%`)]);
-  await sql(`DELETE FROM "Notification" WHERE "userId" = ${TEACHER} AND type IN ('booking.request', 'message.new') AND "createdAt" >= $1::timestamp`, [startedAt]);
+  await sql(`DELETE FROM "Notification" WHERE "userId" = ${TEACHER} AND type IN ('booking.request', 'message.new', 'message.warning') AND "createdAt" >= $1::timestamp`, [startedAt]);
   await sql(`DELETE FROM "Booking" WHERE id = ANY($1)`, [bookings.map((b) => b.id)]);
   await sql(`DELETE FROM "MessageThread" WHERE id = ANY($1)`, [threads.map((t) => t.id)]);
   await sql(`UPDATE "TeacherProfile" SET "offersIntro" = $1 WHERE "userId" = ${TEACHER}`, [previousIntro]);
@@ -89,4 +89,24 @@ test("veli ücretsiz tanışma ister ve öğretmene mesaj gönderir; öğretmen 
   await page.getByLabel("Mesaj").fill("Merhaba, tanışma görüşmesinde seviyeye bakalım.");
   await page.getByRole("button", { name: "Gönder", exact: true }).click();
   await expect(page.getByText("tanışma görüşmesinde seviyeye bakalım", { exact: false })).toBeVisible();
+
+  // Öğretmen platform dışına yönlendirirse mesaj işaretlenir, öğretmen uyarılır
+  await page.getByLabel("Mesaj").fill("İsterseniz WhatsApp'tan da yazabilirsiniz.");
+  await page.getByRole("button", { name: "Gönder", exact: true }).click();
+  await expect(page.getByText("WhatsApp'tan da yazabilirsiniz", { exact: false })).toBeVisible();
+
+  // Yönetici: mesaj denetimi
+  await login(page, "admin", "Yonetici123");
+  await page.goto("/yonetim/mesajlar");
+  const row = page.getByRole("row").filter({ hasText: "Ayşe" }).filter({ hasText: "işaretli" }).first();
+  await expect(row).toBeVisible();
+  await row.getByRole("link", { name: "Aç" }).click();
+  await expect(page.getByText("Başka uygulamaya yönlendirme").first()).toBeVisible();
+  await expect(page.getByText("Gizlenmeden önceki hâli", { exact: false })).toBeVisible();
+  await page.getByRole("button", { name: "Sorun yok, incelendi" }).click();
+  await expect(page.getByText("İncelendi olarak işaretlendi.")).toBeVisible();
+
+  // Öğretmen arama: ücretsiz tanışma süzgeci
+  await page.goto("/ogretmenler?intro=1");
+  await expect(page.getByRole("link", { name: /Ayşe Yılmaz/ }).first()).toBeVisible();
 });

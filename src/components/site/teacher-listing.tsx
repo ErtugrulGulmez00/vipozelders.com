@@ -8,7 +8,7 @@ import { searchTeachers, SORT_OPTIONS, TIME_OPTIONS, type TeacherSearchParams } 
 import { FilterPanel, SortSelect } from "./filter-panel";
 import { TeacherCard } from "./teacher-card";
 
-const KEYS: (keyof TeacherSearchParams)[] = ["level", "subject", "service", "mode", "city", "district", "minPrice", "maxPrice", "rating", "gender", "time", "verified", "q", "sort", "page"];
+const KEYS: (keyof TeacherSearchParams)[] = ["level", "subject", "service", "mode", "city", "district", "minPrice", "maxPrice", "rating", "gender", "time", "verified", "intro", "q", "sort", "page"];
 
 function pick(raw: Record<string, string | string[] | undefined>): TeacherSearchParams {
   const params: TeacherSearchParams = {};

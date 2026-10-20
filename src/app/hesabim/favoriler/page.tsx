@@ -6,6 +6,7 @@ import { EmptyState, PageHeader } from "@/components/ui/primitives";
 import { fullName } from "@/lib/text";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
+import { isNewTeacher } from "@/server/teachers";
 import { uploadUrl } from "@/server/storage";
 
 export const metadata: Metadata = { title: "Favori öğretmenler" };
@@ -50,6 +51,7 @@ export default async function FavoritesPage() {
                 offersOnline: teacher.offersOnline,
                 offersInPerson: teacher.offersInPerson,
                 offersIntro: teacher.offersIntro && teacher.offersOnline,
+                isNew: isNewTeacher(teacher),
                 verified: teacher.verificationStatus === "VERIFIED",
                 featured: teacher.isFeatured,
                 minHourlyPrice: Math.min(...teacher.offerings.map((o) => o.hourlyPrice)),

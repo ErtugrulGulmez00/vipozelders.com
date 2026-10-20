@@ -24,6 +24,7 @@ export function TeacherCard({ teacher }: { teacher: TeacherCardData }) {
           <div className="flex flex-wrap items-center gap-1.5">
             <h3 className="text-base font-bold text-slate-900 group-hover:text-brand-700">{teacher.name}</h3>
             {teacher.verified ? <BadgeCheck className="size-4 text-emerald-600" aria-label="Onaylı öğretmen" /> : null}
+            {teacher.isNew ? <Badge tone="sky">Yeni</Badge> : null}
             {teacher.featured ? (
               <Badge tone="amber" className="ml-auto">
                 <Sparkles className="size-3" aria-hidden /> Öne çıkan
