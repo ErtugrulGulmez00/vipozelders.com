@@ -92,11 +92,13 @@ export default async function ClassLogPage({ searchParams }: PageProps<"/kurum/s
                       <span className="font-medium text-slate-900">{s.group.name}</span> · {s.subject}
                     </Td>
                     <Td className="text-sm">
-                      {s.topic ?? (
+                      {s.topic ?? (!ctx.can("attendance.take") ? (
+                        <span className="text-xs text-slate-400">Konu girilmedi</span>
+                      ) : (
                         <Link href={`/kurum/yoklama/al?grup=${s.groupId}&tarih=${s.date.toISOString().slice(0, 10)}&baslangic=${s.startMinute}${s.slotId ? `&ders=${s.slotId}` : ""}`} className="text-xs font-semibold text-amber-700 hover:underline">
                           Konu gir
                         </Link>
-                      )}
+                      ))}
                     </Td>
                     <Td className="text-xs text-slate-600">{s.teacherId ? (teachers.get(s.teacherId) ?? "—") : "—"}</Td>
                     <Td className="text-right">{absent ? <Badge tone="amber">{absent} gelmedi</Badge> : <Badge tone="green">Tam</Badge>}</Td>

@@ -63,6 +63,9 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
         <NumberField name="approvalWindowHours" label="Öğretmen onay süresi" value={settings.approvalWindowHours} suffix="saat" />
         <NumberField name="approvalMinHoursBeforeStart" label="Onay en geç dersten kaç saat önce" value={settings.approvalMinHoursBeforeStart} suffix="saat" />
         <NumberField name="minNoticeHours" label="En erken randevu" hint="Şu andan itibaren" value={settings.minNoticeHours} suffix="saat" />
+        <div className="sm:col-span-2">
+          <Checkbox name="allowSameDayBooking" defaultChecked={settings.allowSameDayBooking} label="Aynı güne randevu alınabilsin (kapalıyken en erken yarına randevu alınır; öğretmenin onaylayacak zamanı olur)" />
+        </div>
         <NumberField name="maxAdvanceDays" label="En geç randevu" value={settings.maxAdvanceDays} suffix="gün ileri" />
         <NumberField name="classroomOpensMinutesBefore" label="Sanal sınıf dersten kaç dakika önce açılsın" value={settings.classroomOpensMinutesBefore} suffix="dakika" />
       </Section>

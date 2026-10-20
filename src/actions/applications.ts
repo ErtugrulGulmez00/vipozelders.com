@@ -14,9 +14,10 @@ export async function applyTeacherAction(_: ActionState, formData: FormData): Pr
   // Botlar gizli alanı doldurur; insanlar görmez.
   if (text(formData, "website")) return success("Başvurunuz alındı.");
   if ((await maintenanceState()).on) return failure("Site şu an bakımda; lütfen biraz sonra tekrar deneyin.");
+  if (formData.get("rules") !== "on") return failure("Devam etmek için platform kurallarını kabul edin.", { rules: "Onay gerekli." });
   if (formData.get("kvkk") !== "on") return failure("Devam etmek için aydınlatma metnini onaylayın.", { kvkk: "Onay gerekli." });
 
-  const raw = Object.fromEntries([...formData.entries()].filter(([key, value]) => value !== "" && !["kvkk", "website", "offersOnline", "offersInPerson"].includes(key)));
+  const raw = Object.fromEntries([...formData.entries()].filter(([key, value]) => value !== "" && !["kvkk", "rules", "website", "offersOnline", "offersInPerson"].includes(key)));
   const parsed = applicationSchema.safeParse({ ...raw, offersOnline: formData.get("offersOnline") === "on", offersInPerson: formData.get("offersInPerson") === "on" });
   if (!parsed.success) return failure("Lütfen işaretli alanları düzeltin.", zodFieldErrors(parsed.error.issues));
 

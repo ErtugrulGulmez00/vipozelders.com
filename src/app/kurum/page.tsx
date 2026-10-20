@@ -115,7 +115,7 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <Card>
-          <CardHeader title="Bugün gelmeyenler" action={<Link href="/kurum/yoklama/rapor" className="text-sm font-semibold text-brand-700 hover:underline">Rapor</Link>} />
+          <CardHeader title="Bugün gelmeyenler" action={ctx.can("attendance.take") ? <Link href="/kurum/yoklama/rapor" className="text-sm font-semibold text-brand-700 hover:underline">Rapor</Link> : undefined} />
           {absentList.length === 0 ? (
             <CardBody>
               <p className="text-sm text-slate-500">Bugün devamsızlık yok.</p>
@@ -199,7 +199,7 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         {ctx.can("attendance.take") ? (
           <Card>
-            <CardHeader title="Bugünkü dersler" description={formatDate(new Date())} action={<Link href="/kurum/yoklama" className="text-sm font-semibold text-brand-700 hover:underline">Yoklama ekranı</Link>} />
+            <CardHeader title="Bugünkü dersler" description={formatDate(new Date())} action={ctx.can("attendance.take") ? <Link href="/kurum/yoklama" className="text-sm font-semibold text-brand-700 hover:underline">Yoklama ekranı</Link> : undefined} />
             {lessons.length === 0 ? (
               <CardBody>
                 <p className="text-sm text-slate-500">
@@ -229,6 +229,8 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
                       <Badge tone={lesson.session.absent ? "amber" : "green"}>
                         {lesson.session.absent ? `${lesson.session.absent} gelmedi` : "Tam katılım"}
                       </Badge>
+                    ) : !ctx.can("attendance.take") ? (
+                      <Badge tone="slate">Yoklama alınmadı</Badge>
                     ) : (
                       <LinkButton
                         size="sm"

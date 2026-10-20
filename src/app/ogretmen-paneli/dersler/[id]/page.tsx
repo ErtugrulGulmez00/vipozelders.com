@@ -16,6 +16,7 @@ import { db } from "@/server/db";
 import { lessonCalendarEvent } from "@/server/lesson-calendar";
 import { loadSettings } from "@/server/settings";
 import { TeacherCancelForm } from "./cancel-form";
+import { PlatformRules } from "@/components/teacher/platform-rules";
 
 export const metadata: Metadata = { title: "Ders ayrıntısı" };
 
@@ -57,6 +58,7 @@ export default async function TeacherLessonPage({ params, searchParams }: PagePr
                   <p className="font-semibold text-slate-900">Sanal sınıf</p>
                   <p className="text-sm text-slate-600">{classroomOpen ? "Sınıf açık." : `Sınıf ${formatDateTime(opensAt)} saatinde açılacak.`}</p>
                 </div>
+                <PlatformRules className="w-full" />
                 {classroomOpen ? (
                   <LinkButton href={`/ders/${booking.id}`} size="lg">
                     <Video className="size-4" aria-hidden /> Derse katıl

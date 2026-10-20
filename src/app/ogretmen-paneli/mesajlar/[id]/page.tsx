@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ThreadView } from "@/components/panel/thread-view";
 import { requireRole } from "@/server/auth/current-user";
 import { loadThread } from "@/server/messages";
+import { PlatformRules } from "@/components/teacher/platform-rules";
 
 export const metadata: Metadata = { title: "Mesaj" };
 
@@ -17,6 +18,7 @@ export default async function TeacherThreadPage({ params }: PageProps<"/ogretmen
       <Link href="/ogretmen-paneli/mesajlar" className="text-sm text-brand-700 hover:underline">
         ← Mesajlar
       </Link>
+      <PlatformRules />
       <ThreadView thread={thread} viewerId={user.id} viewer="teacher" />
     </div>
   );

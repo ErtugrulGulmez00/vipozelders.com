@@ -14,6 +14,7 @@ import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { teacherBalances } from "@/server/ledger";
 import { profileChecklist } from "@/server/teachers";
+import { PlatformRules } from "@/components/teacher/platform-rules";
 
 export const metadata: Metadata = { title: "Öğretmen paneli" };
 
@@ -45,6 +46,7 @@ export default async function TeacherDashboard() {
         }
         actions={<LinkButton href={`/ogretmen/${profile.slug}`} variant="outline" target="_blank">Profilimi görüntüle</LinkButton>}
       />
+      <PlatformRules className="mb-6" />
 
       {profile.status !== "PUBLISHED" ? (
         <Card className="mb-6">

@@ -126,6 +126,7 @@ export async function getTeacherSlots(
     days,
     now,
     minNoticeHours: settings.minNoticeHours,
+    allowSameDay: settings.allowSameDayBooking,
     maxAdvanceDays: settings.maxAdvanceDays,
   });
 }
@@ -242,6 +243,7 @@ export async function createBookingHold(input: CreateBookingInput, now = new Dat
           bufferMinutes: teacher.bufferMinutes,
           now,
           minNoticeHours: settings.minNoticeHours,
+          allowSameDay: settings.allowSameDayBooking,
           maxAdvanceDays: settings.maxAdvanceDays,
         },
         input.startAt,

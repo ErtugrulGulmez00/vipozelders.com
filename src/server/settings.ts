@@ -25,6 +25,8 @@ export const settingsSchema = z.object({
   questionAnswerHours: z.number().int().min(1).max(72).default(24),
   approvalMinHoursBeforeStart: z.number().int().min(0).max(48).default(1),
   minNoticeHours: z.number().int().min(1).max(168).default(2),
+  // Aynı güne randevu: kapalıysa en erken yarına randevu alınır (öğretmen onayı için zaman kalır)
+  allowSameDayBooking: z.boolean().default(false),
   maxAdvanceDays: z.number().int().min(1).max(180).default(30),
   classroomOpensMinutesBefore: z.number().int().min(0).max(60).default(10),
 

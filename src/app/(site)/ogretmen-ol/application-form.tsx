@@ -4,6 +4,7 @@ import Link from "next/link";
 import { applyTeacherAction } from "@/actions/applications";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
+import { PlatformRules } from "@/components/teacher/platform-rules";
 
 export function ApplicationForm({ cities }: { cities: { id: number; name: string }[] }) {
   return (
@@ -62,6 +63,15 @@ export function ApplicationForm({ cities }: { cities: { id: number; name: string
       <Field label="Kendinizi kısaca tanıtın (isteğe bağlı)" htmlFor="a-message">
         <Textarea id="a-message" name="message" rows={4} maxLength={2000} placeholder="Hangi öğrencilerle çalıştınız, nasıl bir yöntem izliyorsunuz?" />
       </Field>
+      <PlatformRules />
+      <div>
+        <Checkbox
+          name="rules"
+          required
+          label="Öğrencilere ve velilere kişisel iletişim bilgisi vermeyeceğimi, dersleri ve ödemeleri platform dışına taşımayacağımı; aksi hâlde hesabımın kalıcı olarak kapatılacağını kabul ediyorum."
+        />
+        <FieldError name="rules" />
+      </div>
       <div>
         <Checkbox
           name="kvkk"

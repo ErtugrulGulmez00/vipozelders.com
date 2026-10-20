@@ -81,3 +81,13 @@ describe("boş saat üretimi", () => {
     expect(isSlotAvailable(query, zonedDateTime(MONDAY, 19 * 60 + 30))).toBe(false);
   });
 });
+
+describe("aynı gün randevu", () => {
+  it("kapalıyken bugünün saatleri gösterilmez, yarından itibaren açılır", () => {
+    // Şimdi Pazar 09:00; Pazar 18-20 arası müsait, erken haber süresi 2 saat
+    const sunday = base({ startDate: "2026-10-11", rules: [{ weekday: 7, startMinute: 18 * 60, endMinute: 20 * 60 }], minNoticeHours: 2 });
+    expect(times(sunday)).toEqual(["18:00", "19:00"]);
+    expect(times({ ...sunday, allowSameDay: false })).toEqual([]);
+    expect(times({ ...base({ minNoticeHours: 2 }), allowSameDay: false })).toEqual(["18:00", "19:00"]);
+  });
+});

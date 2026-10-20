@@ -41,7 +41,7 @@ export default async function ClassroomPage({ params, searchParams }: PageProps<
   }
 
   const { token, serverUrl } = await createClassroomToken(access, user, new Date(), { observer });
-  return <Classroom token={token} serverUrl={serverUrl} title={observer ? `İzleyici · ${title}` : title} endsAt={access.booking.endAt.getTime()} backHref={backHref} bookingId={bookingId} observer={observer} />;
+  return <Classroom token={token} serverUrl={serverUrl} title={observer ? `İzleyici · ${title}` : title} endsAt={access.booking.endAt.getTime()} backHref={backHref} bookingId={bookingId} observer={observer} teacherNotice={access.role === "teacher"} />;
 }
 
 function Message({ icon, title, children, backHref }: { icon: React.ReactNode; title: string; children?: React.ReactNode; backHref: string }) {

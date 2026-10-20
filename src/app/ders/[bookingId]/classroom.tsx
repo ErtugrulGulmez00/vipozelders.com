@@ -21,6 +21,7 @@ import { LogOut, MessageSquare, PenLine, Send, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { PlatformRules } from "@/components/teacher/platform-rules";
 import { cn } from "@/lib/cn";
 import { ReportButton } from "./report-dialog";
 
@@ -120,6 +121,7 @@ function Stage({
   endsAt,
   bookingId,
   observer,
+  teacherNotice,
   onReporting,
   onReported,
 }: {
@@ -127,6 +129,7 @@ function Stage({
   endsAt: number;
   bookingId: string;
   observer: boolean;
+  teacherNotice: boolean;
   onReporting: () => void;
   onReported: () => void;
 }) {
@@ -184,6 +187,7 @@ function Stage({
         </div>
         <StartAudio label="Sesi aç" className="rounded-lg bg-gold-400 px-3 py-1.5 text-xs font-semibold text-brand-950" />
       </header>
+      {teacherNotice ? <PlatformRules compact /> : null}
       {observer ? <p className="bg-brand-700 px-4 py-1.5 text-center text-xs text-white">İzleyici modundasınız: dersi görüyor ve duyuyorsunuz; kameranız ve mikrofonunuz kapalı, odada görünmüyorsunuz.</p> : null}
       <div className="relative flex min-h-0 flex-1 flex-col sm:flex-row">
         <div className="relative min-h-0 min-w-0 flex-1">
@@ -277,6 +281,7 @@ export function Classroom({
   backHref,
   bookingId,
   observer = false,
+  teacherNotice = false,
 }: {
   token: string;
   serverUrl: string;
@@ -285,6 +290,8 @@ export function Classroom({
   backHref: string;
   bookingId: string;
   observer?: boolean;
+  /** Öğretmene platform kuralları hatırlatması (üst şerit) */
+  teacherNotice?: boolean;
 }) {
   const router = useRouter();
   const reported = useRef(false);
@@ -297,6 +304,7 @@ export function Classroom({
           endsAt={endsAt}
           bookingId={bookingId}
           observer={observer}
+          teacherNotice={teacherNotice}
           onReporting={() => {
             reported.current = true;
           }}

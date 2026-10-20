@@ -1,6 +1,7 @@
 import { BarChart3, CalendarCheck, Eye, UserPlus, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { connection } from "next/server";
 import { Card, CardBody, CardHeader, PageHeader, StatCard } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
 import { addDaysToDateString, toLocalDateString, zonedDateTime } from "@/lib/dates";
@@ -15,6 +16,8 @@ const DEVICE: Record<string, string> = { mobile: "Telefon", tablet: "Tablet", de
 export default async function StatsPage({ searchParams }: PageProps<"/yonetim/istatistik">) {
   const { gun } = await searchParams;
   const days = RANGES.find((r) => String(r) === gun) ?? 30;
+  // Sayfa her istekte güncel hesaplanır (bugünün tarihi).
+  await connection();
   const now = new Date();
   const since = zonedDateTime(addDaysToDateString(toLocalDateString(now), -(days - 1)), 0);
   const [stats, signups, bookings, intros, threads] = await Promise.all([

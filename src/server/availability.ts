@@ -26,6 +26,8 @@ export type SlotQuery = {
   minNoticeHours: number;
   maxAdvanceDays: number;
   stepMinutes?: number;
+  /** false: bugüne randevu verilmez, en erken yarın (öğretmenin onaylayacak zamanı olsun). Belirtilmezse izinli. */
+  allowSameDay?: boolean;
 };
 
 export type Slot = { start: Date; end: Date; available: boolean };
@@ -93,7 +95,9 @@ function overlaps(start: number, end: number, busy: BusyRange[]): boolean {
  */
 export function generateSlots(query: SlotQuery): SlotDay[] {
   const step = query.stepMinutes ?? 60;
-  const earliest = query.now.getTime() + query.minNoticeHours * 3_600_000;
+  const tomorrow = zonedDateTime(addDaysToDateString(toLocalDateString(query.now), 1), 0).getTime();
+  const byNotice = query.now.getTime() + query.minNoticeHours * 3_600_000;
+  const earliest = query.allowSameDay === false ? Math.max(byNotice, tomorrow) : byNotice;
   const latestDate = addDaysToDateString(toLocalDateString(query.now), query.maxAdvanceDays);
   const durationMs = query.durationMinutes * 60_000;
   // Saat başı düzende 45 dakikalık ders kendiliğinden mola bırakır; tampon süre artık kullanılmaz.
