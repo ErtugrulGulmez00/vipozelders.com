@@ -13,10 +13,13 @@ export default defineConfig({
     timezoneId: "Europe/Istanbul",
     trace: "retain-on-failure",
   },
-  webServer: {
-    command: "npm run dev",
-    url: "http://localhost:3000/giris",
-    reuseExistingServer: true,
-    timeout: 180_000,
-  },
+  // E2E_BASE_URL verilirse (ör. "next start" ile açılmış derleme) geliştirme sunucusu başlatılmaz.
+  webServer: process.env.E2E_BASE_URL
+    ? undefined
+    : {
+        command: "npm run dev",
+        url: "http://localhost:3000/giris",
+        reuseExistingServer: true,
+        timeout: 180_000,
+      },
 });

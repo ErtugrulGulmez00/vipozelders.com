@@ -133,13 +133,15 @@ function Stage({
   onReporting: () => void;
   onReported: () => void;
 }) {
-  const tracks = useTracks(
+  const allTracks = useTracks(
     [
       { source: Track.Source.Camera, withPlaceholder: true },
       { source: Track.Source.ScreenShare, withPlaceholder: false },
     ],
     { onlySubscribed: false },
   );
+  // İzleyici (veli) görünmez katılır; kendi boş kamera kutusu gösterilmez.
+  const tracks = observer ? allTracks.filter((t) => !t.participant.isLocal) : allTracks;
   const state = useConnectionState();
   // Sohbet panel kapalıyken de dinlenir; aksi halde o sırada gelen mesajlar kaçırılır.
   const chat = useChat();
