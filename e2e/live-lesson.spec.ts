@@ -65,7 +65,7 @@ test("iki tarayıcı: veli kayıt olur, ders alır; öğretmen onaylar; canlı d
 
   // --- Öğretmen tarayıcısı: giriş yapıp panelde bekler
   await login(teacher, "ayse.yilmaz", "Ogretmen123");
-  await expect(teacher.getByText("Öğrenciyle kişisel iletişim ve platform dışı anlaşma yasaktır")).toBeVisible();
+  await expect(teacher.getByText("Ders, ödeme ve yazışmalar yalnızca Pi Kampüs üzerinden.")).toBeVisible();
 
   // --- Veli tarayıcısı: kayıt
   await student.goto("/kayit");

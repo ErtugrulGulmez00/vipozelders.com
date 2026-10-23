@@ -5,13 +5,11 @@ import {
   CalendarRange,
   Check,
   ClipboardCheck,
-  FileSpreadsheet,
   GraduationCap,
   LineChart,
   Megaphone,
   Receipt,
   ShieldCheck,
-  Smartphone,
   UserPlus,
   Users,
   Wallet,
@@ -46,10 +44,12 @@ const FEATURES = [
   { Icon: ShieldCheck, title: "Personel yetkileri", text: "Müdür, öğretmen ve muhasebe rolleri; herkes yalnızca kendi bölümünü görür. Tüm işlemler kayıt altında." },
 ];
 
-const FAQ = [
+const faq = (trialDays: number) => [
   { q: "Kurulum ne kadar sürer?", a: "Aynı gün. Öğrenci listenizi Excel'den aktarır, sınıflarınızı ve ders programınızı girersiniz; isterseniz ekibimiz kurulumu sizinle birlikte yapar." },
   { q: "Veriler güvende mi?", a: "Veriler şifreli bağlantıyla taşınır, T.C. kimlik numaraları veritabanında şifreli saklanır. Her personel yalnızca yetkili olduğu bölümleri görür ve yapılan işlemler kayıt altına alınır." },
-  { q: "Deneme süresi bitince ne olur?", a: "Kayıtlarınız silinmez; panel salt okunur olur. Aboneliğinizi başlatınca kaldığınız yerden devam edersiniz." },
+  ...(trialDays > 0
+    ? [{ q: "Ücretsiz deneme var mı?", a: `Evet, ${trialDays} gün ücretsiz deneyebilirsiniz; kart bilgisi istenmez. Süre bitince kayıtlarınız silinmez, panel salt okunur olur; aboneliğinizi başlatınca kaldığınız yerden devam edersiniz.` }]
+    : []),
   { q: "Veliler ne görür?", a: "Davet bağlantısıyla ücretsiz veli hesabına bağlanan veli; devamsızlığı, etütleri, yayınladığınız deneme sonuçlarını ve eksik konuları, ödeme planını ve duyuruları görür." },
   { q: "Velilere bildirim nasıl gidiyor?", a: "Devamsızlık, ödeme hatırlatma ve duyurular velilere e-posta ve veli portalı / uygulama bildirimi olarak gider; her planda ücretsizdir." },
   { q: "Telefondan kullanılır mı?", a: "Evet. Panel telefon ve tabletle uyumludur; öğretmenler yoklamayı sınıfta telefondan alabilir." },
@@ -58,6 +58,7 @@ const FAQ = [
 export default async function ForCentersPage() {
   const [settings, cities] = await Promise.all([getSiteSettings(), getCities()]);
   const plans = centerPlans(settings);
+  const trialDays = settings.centerTrialDays;
   return (
     <>
       <section className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 text-white">
@@ -72,7 +73,7 @@ export default async function ForCentersPage() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <a href="#basvuru" className={buttonClasses("gold", "lg")}>
-                Hemen başvurun
+                {trialDays > 0 ? `${trialDays} gün ücretsiz deneyin` : "Hemen başvurun"}
               </a>
               <a href="#planlar" className={buttonClasses("outline", "lg", "border-white/30 bg-white/10 text-white hover:bg-white/20")}>
                 Planlar ve fiyatlar
@@ -85,7 +86,7 @@ export default async function ForCentersPage() {
               </Link>
             </p>
             <ul className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-sm text-brand-100">
-              {["Kurulum aynı gün", "Birebir kurulum desteği", "Sınırsız personel"].map((t) => (
+              {[trialDays > 0 ? "Kart bilgisi gerekmez" : "Telefondan kullanım", "Birebir kurulum desteği", "Sınırsız personel"].map((t) => (
                 <li key={t} className="inline-flex items-center gap-1.5">
                   <Check className="size-4 text-gold-300" aria-hidden /> {t}
                 </li>
@@ -181,7 +182,7 @@ export default async function ForCentersPage() {
         <div className="mt-8 grid gap-4 md:grid-cols-3">
           {plans.map((plan) => (
             <div key={plan.plan} className={cn("relative flex flex-col rounded-2xl border bg-white p-6", plan.highlight ? "border-brand-500 shadow-lg ring-2 ring-brand-200" : "border-slate-200")}>
-              {plan.highlight ? <span className="absolute -top-3 left-6 rounded-full bg-brand-600 px-3 py-0.5 text-xs font-bold text-white">En çok tercih edilen</span> : null}
+              {plan.highlight ? <span className="absolute -top-3 left-6 rounded-full bg-brand-600 px-3 py-0.5 text-xs font-bold text-white">Önerilen</span> : null}
               <p className="text-lg font-bold text-slate-900">{plan.name}</p>
               <PlanPrice plan={plan} />
               <ul className="mt-5 flex-1 space-y-2 text-sm text-slate-700">
@@ -192,7 +193,7 @@ export default async function ForCentersPage() {
                 ))}
               </ul>
               <a href="#basvuru" className={buttonClasses(plan.highlight ? "primary" : "outline", "md", "mt-6 w-full")}>
-                {plan.priceTl !== null ? "Başvurun" : "İletişime geçin"}
+                {plan.priceTl === null ? "İletişime geçin" : trialDays > 0 ? "Ücretsiz deneyin" : "Başvurun"}
               </a>
             </div>
           ))}
@@ -204,25 +205,19 @@ export default async function ForCentersPage() {
           <div>
             <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">Sık sorulan sorular</h2>
             <div className="mt-6 space-y-3">
-              {FAQ.map((item) => (
+              {faq(trialDays).map((item) => (
                 <details key={item.q} className="group rounded-xl border border-slate-200 bg-slate-50 p-4 open:bg-white">
                   <summary className="cursor-pointer list-none font-semibold text-slate-900 [&::-webkit-details-marker]:hidden">{item.q}</summary>
                   <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.a}</p>
                 </details>
               ))}
             </div>
-            <div className="mt-8 flex flex-wrap items-center gap-3 rounded-2xl bg-brand-50 p-5 text-sm text-brand-900">
-              <Smartphone className="size-5" aria-hidden />
-              <span>Kurum rehberimize göz atın:</span>
-              <Link href="/kurumlar" className="font-semibold underline">
-                Pi Kampüs’teki kurumlar
-              </Link>
-              <FileSpreadsheet className="ml-auto size-5 opacity-60" aria-hidden />
-            </div>
           </div>
           <Card id="basvuru" className="h-fit scroll-mt-20 p-6">
             <h2 className="text-xl font-bold text-slate-900">Kurum başvurusu</h2>
-            <p className="mt-1 mb-5 text-sm text-slate-500">Ekibimiz sizi arayıp paneli birlikte kurar.</p>
+            <p className="mt-1 mb-5 text-sm text-slate-500">
+              Ekibimiz sizi arayıp paneli birlikte kurar.{trialDays > 0 ? ` İlk ${trialDays} gün ücretsizdir.` : ""}
+            </p>
             <CenterApplicationForm cities={cities.map((c) => ({ id: c.id, name: c.name }))} />
           </Card>
         </div>
@@ -231,7 +226,7 @@ export default async function ForCentersPage() {
   );
 }
 
-/** Plan fiyatı: indirimli aylık ve yıllık fiyat, varsa üstü çizili eski fiyatla. */
+/** Plan fiyatı: aylık ve yıllık fiyat. Liste fiyatı girilmişse "Lansman fiyatı" olarak belirtilir (üstü çizili eski fiyat gösterilmez). */
 function PlanPrice({ plan }: { plan: CenterPlanInfo }) {
   if (plan.priceTl === null) {
     return (
@@ -241,19 +236,17 @@ function PlanPrice({ plan }: { plan: CenterPlanInfo }) {
       </>
     );
   }
-  const discount = plan.listPriceTl && plan.listPriceTl > plan.priceTl ? Math.round((1 - plan.priceTl / plan.listPriceTl) * 100) : 0;
+  const launch = Boolean(plan.listPriceTl && plan.listPriceTl > plan.priceTl);
+  const yearlySaving = plan.yearlyPriceTl ? plan.priceTl * 12 - plan.yearlyPriceTl : 0;
   return (
     <div className="mt-3">
-      {discount ? <span className="inline-block rounded-full bg-rose-50 px-2 py-0.5 text-xs font-bold text-rose-600">%{discount} indirim</span> : null}
-      <p className="mt-1 flex items-baseline gap-2">
-        <span className="text-3xl font-black text-slate-900">{formatMoney(plan.priceTl * 100)}</span>
-        {discount ? <s className="text-base font-semibold text-slate-400">{formatMoney(plan.listPriceTl! * 100)}</s> : null}
-      </p>
+      {launch ? <span className="inline-block rounded-full bg-gold-50 px-2 py-0.5 text-xs font-bold text-gold-700">Lansman fiyatı</span> : null}
+      <p className="mt-1 text-3xl font-black text-slate-900">{formatMoney(plan.priceTl * 100)}</p>
       <p className="text-sm text-slate-500">aylık · KDV dahil</p>
       {plan.yearlyPriceTl ? (
         <p className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
           Yıllık: <span className="font-bold">{formatMoney(plan.yearlyPriceTl * 100)}</span>
-          {plan.yearlyListPriceTl && plan.yearlyListPriceTl > plan.yearlyPriceTl ? <s className="ml-1.5 text-emerald-600/70">{formatMoney(plan.yearlyListPriceTl * 100)}</s> : null}
+          {yearlySaving > 0 ? <span className="ml-1.5 text-emerald-700">({formatMoney(yearlySaving * 100)} tasarruf)</span> : null}
         </p>
       ) : null}
     </div>

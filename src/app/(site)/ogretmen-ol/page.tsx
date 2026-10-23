@@ -1,6 +1,8 @@
 import { BadgeCheck, CalendarClock, PenLine, ShieldCheck, Users, Wallet } from "lucide-react";
 import type { Metadata } from "next";
 import { Card } from "@/components/ui/primitives";
+import { formatMoney } from "@/lib/money";
+import { parsePayoutDays } from "@/server/pricing";
 import { getCities, getSiteSettings } from "@/server/site";
 import { ApplicationForm } from "./application-form";
 
@@ -12,11 +14,23 @@ export const metadata: Metadata = {
 export default async function BecomeTeacherPage() {
   const [settings, cities] = await Promise.all([getSiteSettings(), getCities()]);
   const commission = (settings.commissionRateBps / 100).toLocaleString("tr-TR");
+  const payoutDays = parsePayoutDays(settings.payoutDays);
+  const payoutText = payoutDays.length ? `Her ayın ${payoutDays.join(" ve ")}. günü IBAN'ınıza havale edilir.` : "IBAN'ınıza havale edilir.";
+  // Örnek: 60 dakikası 1.000 ₺ olan bir ders
+  const examplePrice = 100_000;
+  const exampleNet = Math.round(examplePrice * (1 - settings.commissionRateBps / 10_000));
+  const faq = [
+    { q: "Öğrenci bulabilecek miyim?", a: "Veliler sizi kademe, ders ve fiyata göre aramada bulur; profiliniz ne kadar dolu (fotoğraf, tanıtım, uygun saatler) olursa o kadar üstte çıkarsınız. Ayrıca soru havuzundan soru çözerek ve ücretsiz tanışma görüşmesi sunarak ilk öğrencilerinize daha hızlı ulaşırsınız." },
+    { q: "Ders vermezsem ücret öder miyim?", a: `Hayır. Üyelik, aylık ücret ya da ilan bedeli yoktur. Hizmet bedeli (%${commission}) yalnızca tamamlanan derslerden kesilir.` },
+    { q: "Soru çözerek de kazanabilir miyim?", a: `Evet. Onaylı öğretmenler soru havuzundaki soruları üstlenip çözebilir; çözülen soru başına ${formatMoney(settings.poolTeacherFeeTl * 100)} kazanırsınız.` },
+    { q: "Vergi durumum ne olacak?", a: "Özel ders gelirinizin vergilendirilmesi kendi statünüze bağlıdır (serbest meslek, şahıs şirketi ya da esnaf muafiyeti gibi). Hakedişleriniz adınıza dekontla ödenir; kendi durumunuz için mali müşavirinize danışmanızı öneririz." },
+    { q: "Devlet okulunda kadrolu öğretmenim, başvurabilir miyim?", a: "Kadrolu öğretmenlerin ücretli özel ders vermesi mevzuatla sınırlandırılmıştır. Başvuru sırasında statünüzü beyan edersiniz; mevzuatın size izin verdiğinden emin olmanız gerekir." },
+  ];
   const benefits = [
     { Icon: Wallet, title: "Kendi fiyatınız", text: `Her ders ve kademe için ücreti siz belirlersiniz. Platform hizmet bedeli yalnızca tamamlanan derslerden %${commission}.` },
     { Icon: CalendarClock, title: "Kendi takviminiz", text: "Haftalık müsait saatlerinizi girin; veliler yalnızca boş saatlerinizden randevu alır, onayı siz verirsiniz." },
     { Icon: PenLine, title: "Site içi sanal sınıf", text: "Kamera, ekran paylaşımı, sohbet ve ortak beyaz tahta. Ek program ya da bağlantı paylaşmak gerekmez." },
-    { Icon: ShieldCheck, title: "Ödemeniz güvencede", text: `Veli dersi rezervasyonda öder; ders tamamlanıp ${settings.disputeWindowHours} saatlik itiraz süresi dolunca hakedişiniz serbest kalır; ödeme kuruluşunun aktarım süresi nedeniyle ödemeden en erken ${settings.settlementDays} gün sonra ödenir.` },
+    { Icon: ShieldCheck, title: "Ödemeniz güvencede", text: `Veli dersi önceden öder, para bizde güvende bekler. Ders yapıldıktan sonra kazancınız en geç ${settings.settlementDays} gün içinde ödenebilir bakiyenize geçer. ${payoutText}` },
   ];
   const steps = ["Formu doldurun", "Kısa görüşme ve belge kontrolü", "Öğretmen hesabınız açılır", "Profilinizi tamamlayıp ders vermeye başlayın"];
 
@@ -45,6 +59,24 @@ export default async function BecomeTeacherPage() {
               </Card>
             ))}
           </div>
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+            <h2 className="font-semibold text-slate-900">Örnek kazanç</h2>
+            <dl className="mt-3 space-y-1.5 text-sm text-slate-700">
+              <div className="flex justify-between gap-3">
+                <dt>Velinin ödediği ders ücreti</dt>
+                <dd className="font-semibold">{formatMoney(examplePrice)}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt>Platform hizmet bedeli (%{commission})</dt>
+                <dd className="font-semibold">−{formatMoney(examplePrice - exampleNet)}</dd>
+              </div>
+              <div className="flex justify-between gap-3 border-t border-emerald-200 pt-1.5 text-base">
+                <dt className="font-semibold text-slate-900">Sizin kazancınız</dt>
+                <dd className="font-bold text-emerald-700">{formatMoney(exampleNet)}</dd>
+              </div>
+            </dl>
+            <p className="mt-2 text-xs text-slate-500">Haftada 10 ders verirseniz ayda yaklaşık {formatMoney(exampleNet * 40)} kazanırsınız. Ücretinizi kendiniz belirlersiniz.</p>
+          </div>
           <div>
             <h2 className="text-lg font-bold text-slate-900">Süreç nasıl işliyor?</h2>
             <ol className="mt-4 space-y-3">
@@ -63,6 +95,17 @@ export default async function BecomeTeacherPage() {
             <p className="mt-1">
               Hesabınız açıldıktan sonra öğretmen panelinden kimlik ve diploma yüklersiniz; yüz yüze ders verecekseniz e-Devlet’ten alınmış barkodlu adli sicil kaydı da istenir. Doğrulanan öğretmenler profilinde “Onaylı öğretmen” rozeti taşır.
             </p>
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Sık sorulan sorular</h2>
+            <div className="mt-4 space-y-3">
+              {faq.map((item) => (
+                <details key={item.q} className="rounded-xl border border-slate-200 bg-white p-4">
+                  <summary className="cursor-pointer list-none font-semibold text-slate-900 [&::-webkit-details-marker]:hidden">{item.q}</summary>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.a}</p>
+                </details>
+              ))}
+            </div>
           </div>
         </div>
 

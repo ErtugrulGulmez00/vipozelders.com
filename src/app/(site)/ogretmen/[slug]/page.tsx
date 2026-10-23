@@ -219,8 +219,11 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
       {/* Telefonda randevu kutusu sayfanın sonunda kalır; alttaki sabit çubuk oraya götürür. */}
       {!preview && teacher.offerings.length ? (
         <div className="fixed inset-x-0 bottom-0 z-30 flex items-center justify-between gap-3 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden">
-          <p className="text-sm text-slate-600">
-            <span className="text-lg font-bold text-slate-900">{formatMoney(Math.min(...teacher.offerings.map((o) => o.hourlyPrice)))}</span> / saat’ten başlayan
+          <p className="text-xs leading-tight text-slate-500">
+            Saatlik ücret
+            <span className="block text-sm text-slate-600">
+              <span className="text-lg font-bold text-slate-900">{formatMoney(Math.min(...teacher.offerings.map((o) => o.hourlyPrice)))}</span>’den başlıyor
+            </span>
           </p>
           <a href="#randevu" className={buttonClasses("primary", "md")}>
             Randevu al

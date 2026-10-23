@@ -46,7 +46,7 @@ export default async function TeacherDashboard() {
         }
         actions={<LinkButton href={`/ogretmen/${profile.slug}`} variant="outline" target="_blank">Profilimi görüntüle</LinkButton>}
       />
-      <PlatformRules className="mb-6" />
+      <PlatformRules collapsible className="mb-6" />
 
       {profile.status !== "PUBLISHED" ? (
         <Card className="mb-6">

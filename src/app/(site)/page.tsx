@@ -1,8 +1,10 @@
 import {
+  ArrowRight,
   BadgeCheck,
   BellRing,
   BookOpenCheck,
   Building2,
+  Camera,
   CalendarCheck,
   ClipboardCheck,
   CircleHelp,
@@ -22,7 +24,9 @@ import { SearchBox } from "@/components/site/search-box";
 import { TeacherCard } from "@/components/site/teacher-card";
 import { LinkButton } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/primitives";
+import { formatMoney } from "@/lib/money";
 import { LEVEL_GROUP_LABELS } from "@/server/catalog";
+import { parsePackages } from "@/server/credits";
 import { getCatalog, getSiteSettings } from "@/server/site";
 import { featuredTeachers } from "@/server/teachers";
 
@@ -34,6 +38,7 @@ const SERVICE_ICONS: Record<string, typeof GraduationCap> = {
 
 export default async function HomePage() {
   const [catalog, settings] = await Promise.all([getCatalog(), getSiteSettings()]);
+  const cheapestQuestion = Math.min(...parsePackages(settings.questionPackages).map((p) => Math.round(p.price / p.credits)));
   const groups = ["SCHOOL", "EXAM", "OTHER"].map((group) => ({ group, levels: catalog.levels.filter((l) => l.group === group) })).filter((g) => g.levels.length);
 
   return (
@@ -79,10 +84,31 @@ export default async function HomePage() {
                 </span>
                 <h3 className="mt-4 text-lg font-bold text-slate-900 group-hover:text-brand-700">{service.name}</h3>
                 {service.description ? <p className="mt-1 text-sm text-slate-600">{service.description}</p> : null}
+                <p className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-brand-700">
+                  Öğretmenleri ve fiyatları gör <ArrowRight className="size-4 transition group-hover:translate-x-0.5" aria-hidden />
+                </p>
               </Link>
             );
           })}
         </div>
+        {Number.isFinite(cheapestQuestion) ? (
+          <Link href="/soru-sor" className="group mt-4 flex flex-col gap-3 rounded-2xl border border-gold-300 bg-gold-50 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <span className="flex items-start gap-3">
+              <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-white text-gold-700 ring-1 ring-gold-300">
+                <Camera className="size-5" aria-hidden />
+              </span>
+              <span>
+                <span className="block font-bold text-slate-900">Takıldığınız sorunun fotoğrafını gönderin</span>
+                <span className="block text-sm text-slate-600">
+                  Branş öğretmeni {settings.questionAnswerHours} saat içinde çözsün; çözülmezse krediniz iade. Soru başına {formatMoney(cheapestQuestion)}’den başlayan fiyatlarla.
+                </span>
+              </span>
+            </span>
+            <span className="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-brand-700">
+              Soru sor <ArrowRight className="size-4 transition group-hover:translate-x-0.5" aria-hidden />
+            </span>
+          </Link>
+        ) : null}
       </section>
 
       <section className="bg-white py-16">
@@ -112,7 +138,7 @@ export default async function HomePage() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h2 className="text-2xl font-bold text-slate-900">Öne çıkan öğretmenler</h2>
-            <p className="mt-1 text-slate-500">Velilerin en çok tercih ettiği, yüksek puanlı öğretmenler.</p>
+            <p className="mt-1 text-slate-500">Profilini, fiyatını ve boş saatlerini inceleyip hemen randevu alabileceğiniz öğretmenler.</p>
           </div>
           <LinkButton href="/ogretmenler" variant="outline">
             Tüm öğretmenler
@@ -173,9 +199,6 @@ export default async function HomePage() {
             <div className="mt-6 flex flex-wrap gap-3">
               <LinkButton href="/kurumlar-icin" size="lg">
                 Kurum panelini inceleyin
-              </LinkButton>
-              <LinkButton href="/kurumlar" size="lg" variant="outline">
-                Kurum rehberi
               </LinkButton>
             </div>
           </div>

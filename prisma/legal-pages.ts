@@ -1,7 +1,5 @@
 // Yasal sayfa şablonları. {süslü} ifadeler sayfa gösterilirken site ayarlarıyla doldurulur.
-// UYARI: Bu metinler taslaktır; yayına almadan önce bir avukata kontrol ettirilmelidir.
-
-const DRAFT = "> TASLAK METİN: Bu sayfa şablondur. Yayına almadan önce şirket bilgilerinizi admin panelindeki Site Ayarları'ndan girin ve metni avukatınıza kontrol ettirin. Kontrol sonrası bu uyarı satırını silin.";
+// Metinler genel şablondur; şirketin durumuna göre bir avukata kontrol ettirilmesi önerilir (Yönetim → Sayfalar'dan düzenlenir).
 
 export const LEGAL_PAGES: { slug: string; title: string; sortOrder: number; showInFooter: boolean; content: string }[] = [
   {
@@ -9,18 +7,25 @@ export const LEGAL_PAGES: { slug: string; title: string; sortOrder: number; show
     title: "Hakkımızda",
     sortOrder: 1,
     showInFooter: true,
-    content: `{siteName}, okul öncesinden üniversite sınavına kadar her kademede öğrencileri doğru öğretmenle buluşturan bir sanal dershanedir.
+    content: `{siteName}, okul öncesinden üniversite sınavına kadar her kademede öğrencileri doğru öğretmenle buluşturan bir online eğitim platformudur. Veliler ve öğrenciler öğretmenleri inceler, boş saatlerinden randevu alır ve dersi sitemizdeki sanal sınıfta ya da yüz yüze yapar.
 
-## Ne yapıyoruz?
-- Özel ders, soru çözüm ve koçluk hizmetlerini tek çatı altında topluyoruz.
+## Ne sunuyoruz?
+- Özel ders: İlkokul, ortaokul, lise, LGS ve YKS hazırlıkta birebir dersler. Fiyatlar öğretmen profillerinde KDV dahil gösterilir.
+- Soru çözüm: Takıldığınız sorunun fotoğrafını yüklersiniz, branş öğretmeni {questionAnswerHours} saat içinde çözümü gönderir.
+- Koçluk: Sınav hazırlığında çalışma programı ve düzenli takip.
+- Kurum paneli: Etüt merkezi ve dershanelere öğrenci, yoklama, deneme ve tahsilat takibi için yazılım.
+
+## Nasıl güven sağlıyoruz?
 - Öğretmenlerimizin kimlik ve diploma bilgilerini kontrol ediyor, onaylı öğretmenleri rozetle gösteriyoruz.
-- Online dersleri sitemizdeki sanal sınıfta, yüz yüze dersleri ise öğretmenin hizmet verdiği ilçelerde planlıyoruz.
-- Ödemeyi güvenle alıyor, ders gerçekleşene kadar öğretmene aktarmıyoruz.
+- Ödemeyi 3D Secure ile alıyor, ders gerçekleşip itiraz süresi dolana kadar öğretmene aktarmıyoruz.
+- Öğretmen onaylamazsa ya da derse gelmezse ödemenin tamamını iade ediyoruz.
+- Yorumları yalnızca dersi gerçekten tamamlanmış öğrenciler ve veliler yazabilir.
 
 ## Şirket bilgileri
-{companyName}
-{companyAddress}
-{companyTaxInfo}
+Unvan: {companyName}
+Adres: {companyAddress}
+Vergi bilgileri: {companyTaxInfo}
+Telefon: {contactPhone}
 E-posta: {contactEmail}`,
   },
   {
@@ -64,30 +69,30 @@ Kamera ve mikrofonu olan bir bilgisayar, tablet ya da telefon ve güncel bir tar
 Yalnızca o öğretmenle en az bir dersi tamamlanmış öğrenciler ve veliler yorum yapabilir. Bu sayede tüm yorumlar gerçek derslere dayanır.
 
 ## Öğretmen olmak istiyorum, nasıl başvururum?
-{contactEmail} adresine özgeçmişinizi gönderin; ekibimiz sizinle iletişime geçecektir.`,
+"Öğretmen ol" sayfasındaki başvuru formunu doldurun; belgeleriniz incelendikten sonra ekibimiz sizinle iletişime geçer.`,
   },
   {
     slug: "iletisim",
     title: "İletişim",
     sortOrder: 4,
     showInFooter: true,
-    content: `Sorularınız, önerileriniz ve şikayetleriniz için bize ulaşabilirsiniz.
+    content: `Sorularınız, önerileriniz ve şikayetleriniz için bize ulaşabilirsiniz. Hafta içi 09.00–18.00 arasında yanıt veriyoruz.
 
-- E-posta: {contactEmail}
+## İletişim kanalları
 - Telefon: {contactPhone}
-- Adres: {companyAddress}
+- E-posta: {contactEmail}
 
-{companyName}
-{companyTaxInfo}`,
+## Şirket bilgileri
+- Unvan: {companyName}
+- Adres: {companyAddress}
+- Vergi dairesi ve vergi numarası: {companyTaxInfo}`,
   },
   {
     slug: "kvkk-aydinlatma-metni",
     title: "KVKK Aydınlatma Metni",
     sortOrder: 10,
     showInFooter: true,
-    content: `${DRAFT}
-
-6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca veri sorumlusu sıfatıyla {companyName} ("{siteName}") olarak kişisel verilerinizi aşağıda açıklanan kapsamda işlemekteyiz.
+    content: `6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca veri sorumlusu sıfatıyla {companyName} ("{siteName}") olarak kişisel verilerinizi aşağıda açıklanan kapsamda işlemekteyiz.
 
 ## İşlenen kişisel veriler
 - Kimlik ve iletişim: ad, soyad, e-posta, telefon
@@ -117,13 +122,12 @@ KVKK m.11 kapsamındaki haklarınız için {contactEmail} adresine başvurabilir
     title: "Gizlilik ve Çerez Politikası",
     sortOrder: 11,
     showInFooter: true,
-    content: `${DRAFT}
-
-## Çerezler
+    content: `## Çerezler
 Sitemizde oturumunuzu açık tutmak ve güvenliği sağlamak için zorunlu çerezler kullanılır. Bu çerezler olmadan giriş yapılamaz.
 
 - vd_session: Oturum çerezi (zorunlu, en fazla 30 gün)
 - vd_cookie_consent: Çerez tercihinizi hatırlar (zorunlu)
+- vd_center: Kurum paneli oturumu (yalnızca kurum personeli, zorunlu)
 
 İleride analiz veya pazarlama çerezleri eklenirse yalnızca açık onayınızla kullanılacaktır.
 
@@ -165,70 +169,89 @@ E-posta: {contactEmail}`,
     title: "Mesafeli Satış Sözleşmesi",
     sortOrder: 12,
     showInFooter: true,
-    content: `${DRAFT}
+    content: `## 1. Taraflar
+Satıcı / Aracı Hizmet Sağlayıcı: {companyName}
+Adres: {companyAddress}
+Vergi bilgileri: {companyTaxInfo}
+Telefon: {contactPhone} · E-posta: {contactEmail}
 
-## 1. Taraflar
-Satıcı/Aracı Hizmet Sağlayıcı: {companyName}, {companyAddress}, {contactEmail}
-Alıcı: Siteye üye olan ve randevu talebi oluşturan kişi.
+Alıcı: Siteye üye olan ve ödeme adımında bilgileri yer alan kişi (veli, yasal temsilci ya da 18 yaşını doldurmuş öğrenci).
 
 ## 2. Konu
-İşbu sözleşme, alıcının {siteName} üzerinden seçtiği öğretmenden aldığı eğitim hizmetinin (özel ders, soru çözüm, koçluk) satışı ve ifasına ilişkin tarafların hak ve yükümlülüklerini düzenler. Hizmetin içeriği, tarihi, saati, süresi ve bedeli sipariş özetinde belirtilir.
+İşbu sözleşme, alıcının {siteName} üzerinden satın aldığı eğitim hizmetlerinin satışı ve ifasına ilişkin tarafların hak ve yükümlülüklerini 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği uyarınca düzenler. Sözleşme konusu hizmetler:
+- Özel ders, soru çözüm dersi ve koçluk görüşmesi: seçilen öğretmen, hizmet türü, kademe, ders, süre, tarih, saat ve ders şekli (online / yüz yüze) ödeme adımındaki sipariş özetinde yer alır.
+- Soru kredisi paketi: paketteki soru sayısı ve bedeli ödeme adımında gösterilir. Her kredi bir sorunun branş öğretmeni tarafından çözülmesi hakkıdır.
 
 ## 3. Bedel ve ödeme
-Hizmet bedeli tüm vergiler dahil olarak sipariş özetinde gösterilir ve randevu talebi sırasında kredi/banka kartıyla tahsil edilir. Tahsil edilen tutar ders gerçekleşene ve itiraz süresi dolana kadar öğretmene aktarılmaz.
+Hizmet bedeli tüm vergiler dahil olarak sipariş özetinde gösterilir; ek ücret alınmaz. Ödeme kredi veya banka kartıyla, 3D Secure doğrulamalı olarak tek çekim alınır. Kart bilgileri {siteName} tarafından görülmez ve saklanmaz; yalnızca bankanın güvenli ödeme sayfasında girilir. Tahsil edilen ders bedeli, ders gerçekleşip itiraz süresi dolana kadar öğretmene aktarılmaz.
 
-## 4. Hizmetin ifası
-Online dersler sitedeki sanal sınıfta, yüz yüze dersler taraflarca belirlenen adreste, onaylanan tarih ve saatte yapılır.
+## 4. Hizmetin ifası (teslimat)
+Hizmet fiziksel olarak kargo ile teslim edilmez. Online dersler onaylanan tarih ve saatte sitedeki sanal sınıfta, yüz yüze dersler taraflarca belirlenen adreste yapılır. Soru kredileri ödeme onaylanır onaylanmaz hesaba tanımlanır ve {creditValidityMonths} ay içinde kullanılabilir. Ayrıntılar Teslimat ve Hizmet Bilgileri sayfasındadır.
 
-## 5. Cayma hakkı ve iptal
-Belirli bir tarih ve saatte ifa edilmesi kararlaştırılan hizmetlerde cayma hakkına ilişkin istisnalar saklıdır. İptal ve iade koşulları İptal ve İade Politikası'nda açıklanmıştır ve bu sözleşmenin ayrılmaz parçasıdır.
+## 5. Öğretmen onayı
+Ders talebi öğretmenin onayıyla kesinleşir. Öğretmen talebi reddederse ya da {approvalWindowHours} saat içinde yanıt vermezse ödenen tutarın tamamı kartınıza iade edilir.
 
-## 6. Uyuşmazlık
-Uyuşmazlıklarda Ticaret Bakanlığınca ilan edilen parasal sınırlar dahilinde tüketici hakem heyetleri ve tüketici mahkemeleri yetkilidir.`,
+## 6. Cayma hakkı ve iptal
+- Alıcı, hizmetin ifasına başlanmadan önce siparişini iptal edebilir. Dersten {fullRefundHours} saat öncesine kadar yapılan iptallerde bedelin tamamı, {partialRefundHours} saat öncesine kadar %{partialRefundPercent}'si iade edilir.
+- Mesafeli Sözleşmeler Yönetmeliği'nin 15. maddesi uyarınca, alıcının onayıyla ifasına başlanan hizmetlerde (başlamış ya da tamamlanmış ders, çözümü gönderilmiş soru) cayma hakkı kullanılamaz.
+- Kullanılmamış soru kredileri, satın alma tarihinden itibaren {creditRefundDays} gün içinde iade edilebilir; kullanılan krediler iade tutarından düşülür.
+- İptal ve iade koşullarının tamamı İptal ve İade Politikası'nda yer alır ve bu sözleşmenin ayrılmaz parçasıdır.
+
+## 7. İade yöntemi
+İadeler ödemenin yapıldığı karta, iptal ya da iade kararından itibaren en geç 14 gün içinde yapılır. Tutarın hesaba yansıma süresi bankaya göre değişebilir.
+
+## 8. Uyuşmazlık
+Uyuşmazlıklarda Ticaret Bakanlığınca her yıl ilan edilen parasal sınırlar dahilinde alıcının yerleşim yerindeki tüketici hakem heyetleri, bu sınırları aşan durumlarda tüketici mahkemeleri yetkilidir.
+
+## 9. Yürürlük
+Alıcı, ödeme adımında bu sözleşmeyi ve Ön Bilgilendirme Formu'nu okuyup onayladığında sözleşme kurulmuş sayılır.`,
   },
   {
     slug: "on-bilgilendirme-formu",
     title: "Ön Bilgilendirme Formu",
     sortOrder: 13,
     showInFooter: true,
-    content: `${DRAFT}
-
-## Satıcı / Aracı Hizmet Sağlayıcı
-{companyName}
-{companyAddress}
-{companyTaxInfo}
-E-posta: {contactEmail} · Telefon: {contactPhone}
+    content: `## Satıcı / Aracı Hizmet Sağlayıcı
+Unvan: {companyName}
+Adres: {companyAddress}
+Vergi bilgileri: {companyTaxInfo}
+Telefon: {contactPhone} · E-posta: {contactEmail}
 
 ## Hizmetin temel nitelikleri
-Hizmet türü (özel ders, soru çözüm, koçluk), kademe, ders, süre, tarih-saat, ders şekli (online/yüz yüze) ve öğretmen bilgisi randevu özetinde yer alır.
+- Ders: hizmet türü (özel ders, soru çözüm, koçluk), kademe, ders, süre, tarih-saat, ders şekli (online / yüz yüze) ve öğretmen bilgisi sipariş özetinde yer alır.
+- Soru kredisi: paketteki soru sayısı sipariş özetinde yer alır; her soru {questionAnswerHours} saat içinde çözülür, çözülmezse kredi iade edilir.
 
 ## Toplam bedel
-Tüm vergiler dahil toplam bedel randevu özetinde gösterilir. Ek bir ücret alınmaz.
+Tüm vergiler dahil toplam bedel sipariş özetinde gösterilir. Ek bir ücret ya da kargo bedeli alınmaz.
 
 ## Ödeme
 Kredi veya banka kartıyla, 3D Secure doğrulamalı olarak tek çekim.
 
-## İptal ve iade
+## Teslimat
+Hizmet elektronik ortamda ya da yüz yüze ifa edilir; kargo gönderimi yoktur. Online dersler sitedeki sanal sınıfta yapılır, soru kredileri ödeme onayı ile hesaba tanımlanır.
+
+## İptal, cayma ve iade
 - Öğretmen talebi onaylamazsa veya {approvalWindowHours} saat içinde yanıt vermezse: tam iade
 - Dersten {fullRefundHours} saat öncesine kadar iptal: tam iade
 - Dersten {partialRefundHours} saat öncesine kadar iptal: %{partialRefundPercent} iade
 - Daha geç iptal veya derse katılmama: iade yapılmaz
 - Öğretmen iptal ederse veya derse gelmezse: tam iade
+- Kullanılmamış soru kredileri: satın almadan itibaren {creditRefundDays} gün içinde iade
+- İfasına başlanan hizmetlerde cayma hakkı kullanılamaz (Mesafeli Sözleşmeler Yönetmeliği m.15).
 
 ## Şikayet
-Şikayetlerinizi {contactEmail} adresine iletebilir, tüketici hakem heyetlerine başvurabilirsiniz.`,
+Şikayetlerinizi {contactEmail} adresine ya da {contactPhone} numarasına iletebilir, tüketici hakem heyetlerine ve tüketici mahkemelerine başvurabilirsiniz.`,
   },
   {
     slug: "iptal-ve-iade-politikasi",
     title: "İptal ve İade Politikası",
     sortOrder: 14,
     showInFooter: true,
-    content: `${DRAFT}
-
-## Öğretmen onayı
+    content: `## Öğretmen onayı
 Ödemeniz alındıktan sonra öğretmenin talebinizi onaylaması gerekir. Talep reddedilirse veya öğretmen {approvalWindowHours} saat içinde yanıt vermezse ödediğiniz tutarın tamamı otomatik olarak kartınıza iade edilir.
 
 ## Sizin iptaliniz
+Randevunuzu Hesabım sayfasından iptal edebilirsiniz.
 - Dersin başlamasına {fullRefundHours} saat veya daha fazla varsa: tam iade
 - {fullRefundHours} saatten az, {partialRefundHours} saatten fazla varsa: %{partialRefundPercent} iade
 - {partialRefundHours} saatten az kaldıysa veya derse katılmadıysanız: iade yapılmaz
@@ -236,20 +259,51 @@ Kredi veya banka kartıyla, 3D Secure doğrulamalı olarak tek çekim.
 ## Öğretmenin iptali veya katılmaması
 Öğretmen dersi iptal ederse veya derse katılmazsa ödediğiniz tutarın tamamı iade edilir.
 
+## Soru kredileri
+- Gönderdiğiniz soru {questionAnswerHours} saat içinde çözülmezse krediniz hesabınıza geri yüklenir.
+- Kullanılmamış kredileriniz satın alma tarihinden itibaren {creditRefundDays} gün içinde Hesabım sayfasından iade edilebilir; kullanılan krediler düşülür.
+- Krediler satın almadan itibaren {creditValidityMonths} ay geçerlidir.
+
+## Cayma hakkı
+İfasına sizin onayınızla başlanan hizmetlerde (başlamış ya da tamamlanmış ders, çözümü gönderilmiş soru) Mesafeli Sözleşmeler Yönetmeliği'nin 15. maddesi uyarınca cayma hakkı kullanılamaz. Bunun dışındaki iptallerde yukarıdaki kurallar uygulanır.
+
 ## Sorun bildirme
 Ders bitiminden itibaren {disputeWindowHours} saat içinde "Sorun bildir" ile başvurabilirsiniz. İnceleme sonuçlanana kadar öğretmene ödeme yapılmaz.
 
 ## İade süresi
-İadeler kartınıza yapılır; tutarın hesabınıza yansıma süresi bankanıza göre değişebilir.`,
+İadeler ödemenin yapıldığı karta en geç 14 gün içinde yapılır; tutarın hesabınıza yansıma süresi bankanıza göre değişebilir. Sorularınız için: {contactEmail} · {contactPhone}`,
+  },
+  {
+    slug: "teslimat-ve-hizmet-bilgileri",
+    title: "Teslimat ve Hizmet Bilgileri",
+    sortOrder: 14,
+    showInFooter: true,
+    content: `{siteName} üzerinden satılan tüm hizmetler eğitim hizmetidir; fiziksel ürün satışı ve kargo gönderimi yapılmaz. Hizmetler aşağıdaki şekilde teslim edilir.
+
+## Online özel ders, soru çözüm dersi ve koçluk
+- Ödemeniz alındıktan sonra öğretmen talebinizi en geç {approvalWindowHours} saat içinde onaylar; onay e-posta ve site bildirimiyle size iletilir.
+- Ders, onaylanan tarih ve saatte sitedeki sanal sınıfta yapılır. "Derse Katıl" düğmesi ders saatinden {classroomOpensMinutesBefore} dakika önce Hesabım sayfasında açılır; program kurmanız gerekmez.
+- Ders süresi sipariş özetinde yazan süre kadardır.
+
+## Yüz yüze ders
+Ders, öğretmenin hizmet verdiği ilçede, randevuda belirtilen adreste yapılır. Adresiniz yalnızca öğretmen onay verdikten sonra öğretmenle paylaşılır.
+
+## Soru kredisi
+- Krediler ödeme onaylanır onaylanmaz hesabınıza tanımlanır ve {creditValidityMonths} ay geçerlidir.
+- Gönderdiğiniz soru {questionAnswerHours} saat içinde branş öğretmeni tarafından çözülür; çözüm Hesabım sayfasında görünür ve size bildirilir. Süresinde çözülmezse krediniz iade edilir.
+
+## Teslim edilemeyen hizmet
+Öğretmen onay vermezse, dersi iptal ederse ya da derse gelmezse ödediğiniz tutarın tamamı kartınıza iade edilir. Ayrıntılar İptal ve İade Politikası sayfasındadır.
+
+## İletişim
+{companyName} · {contactPhone} · {contactEmail}`,
   },
   {
     slug: "kullanim-sartlari",
     title: "Kullanım Şartları",
     sortOrder: 15,
     showInFooter: true,
-    content: `${DRAFT}
-
-## Üyelik
+    content: `## Üyelik
 Üyelik ücretsizdir. 18 yaşından küçükler adına hesap veli veya yasal temsilci tarafından açılır. Hesap bilgilerinin gizliliğinden kullanıcı sorumludur.
 
 ## Platform dışı ödeme yasağı
@@ -269,9 +323,7 @@ Yorumlar gerçek ders deneyimine dayanmalıdır. Hakaret, kişisel veri veya rek
     title: "Öğretmen Hizmet Sözleşmesi",
     sortOrder: 16,
     showInFooter: false,
-    content: `${DRAFT}
-
-## Hizmet
+    content: `## Hizmet
 Öğretmen, {siteName} üzerinden öğrencilere eğitim hizmeti verir; ders ücretlerini ve müsaitlik takvimini kendisi belirler.
 
 ## Komisyon ve ödeme

@@ -96,7 +96,7 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
       <CenterFlash code={durum} />
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatCard label="Aktif öğrenci" value={activeStudents} hint={`Plan sınırı ${ctx.center.studentLimit}`} icon={<Users className="size-5" />} />
+        <StatCard label="Aktif öğrenci" value={activeStudents} hint={ctx.can("subscription.view") ? `Plan sınırı ${ctx.center.studentLimit}` : undefined} icon={<Users className="size-5" />} />
         <StatCard
           label="Bugünkü dersler"
           value={lessons.length}

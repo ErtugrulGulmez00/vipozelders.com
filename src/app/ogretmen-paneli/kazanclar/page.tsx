@@ -56,12 +56,26 @@ export default async function EarningsPage() {
               <EmptyState title="Henüz hareket yok" description="İlk dersinizi onayladığınızda burada görünecek." />
             </CardBody>
           ) : (
-            <Table>
+            <>
+            <ul className="divide-y divide-slate-100 sm:hidden">
+              {entries.map((e) => (
+                <li key={e.id} className="flex items-start justify-between gap-3 px-4 py-3">
+                  <div className="min-w-0">
+                    <p className="text-sm text-slate-800">{e.description}</p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      {formatCompact(e.createdAt)} · {BUCKET_LABEL[e.bucket]}
+                    </p>
+                  </div>
+                  <span className={`shrink-0 font-semibold ${e.amount < 0 ? "text-slate-400" : "text-emerald-700"}`}>{formatMoney(e.amount)}</span>
+                </li>
+              ))}
+            </ul>
+            <Table className="hidden sm:table">
               <thead>
                 <tr>
                   <Th>Tarih</Th>
                   <Th>Açıklama</Th>
-                  <Th>Kova</Th>
+                  <Th>Durum</Th>
                   <Th className="text-right">Tutar</Th>
                 </tr>
               </thead>
@@ -76,6 +90,7 @@ export default async function EarningsPage() {
                 ))}
               </tbody>
             </Table>
+            </>
           )}
           {payouts.length ? (
             <CardBody className="border-t border-slate-100">

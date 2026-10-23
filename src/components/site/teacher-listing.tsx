@@ -37,6 +37,8 @@ export async function TeacherListing({
   if (preset?.subject && !result.resolved.subject) notFound();
 
   const districts = result.resolved.city ? await loadDistricts(result.resolved.city.id) : [];
+  // Sonuç yoksa veli boş sayfayla kalmasın: önce aynı dersin, yoksa tüm öğretmenler önerilir.
+  const fallback = result.items.length ? null : await similarTeachers(params);
   const { level, subject, service, city, district } = result.resolved;
   const title = [
     district ? `${district.name}` : city ? city.name : null,
@@ -76,17 +78,43 @@ export async function TeacherListing({
             ))}
           </div>
         ) : (
-          <EmptyState
-            icon={<SearchX className="size-8" />}
-            title="Bu filtrelere uygun öğretmen bulamadık"
-            description="Filtrelerden birkaçını kaldırmayı ya da online dersleri de dahil etmeyi deneyin."
-            action={<LinkButton href="/ogretmenler" variant="outline">Filtreleri temizle</LinkButton>}
-          />
+          <>
+            <EmptyState
+              icon={<SearchX className="size-8" />}
+              title="Bu filtrelere uygun öğretmen henüz yok"
+              description="Yeni öğretmenlerimiz her hafta katılıyor. Filtrelerden birkaçını kaldırabilir ya da takıldığınız soruyu hemen branş öğretmenlerimize sorabilirsiniz."
+              action={
+                <div className="flex flex-wrap justify-center gap-2">
+                  <LinkButton href="/ogretmenler" variant="outline">Filtreleri temizle</LinkButton>
+                  <LinkButton href="/soru-sor" variant="ghost">Soru sor</LinkButton>
+                </div>
+              }
+            />
+            {fallback?.items.length ? (
+              <div className="mt-8">
+                <h2 className="text-lg font-bold text-slate-900">{fallback.title}</h2>
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  {fallback.items.map((teacher) => (
+                    <TeacherCard key={teacher.userId} teacher={teacher} />
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </>
         )}
         <Pagination page={result.page} pageCount={result.pageCount} hrefFor={hrefFor} />
       </section>
     </div>
   );
+}
+
+async function similarTeachers(params: TeacherSearchParams) {
+  if (params.subject) {
+    const sameSubject = await searchTeachers({ subject: params.subject });
+    if (sameSubject.items.length) return { title: `${sameSubject.resolved.subject?.name ?? "Bu ders"} dersi veren öğretmenlerimiz`, items: sameSubject.items.slice(0, 4) };
+  }
+  const all = await searchTeachers({});
+  return { title: "Öğretmenlerimize göz atın", items: all.items.slice(0, 4) };
 }
 
 export function TeacherListingSkeleton() {

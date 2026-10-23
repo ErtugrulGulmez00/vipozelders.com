@@ -73,6 +73,32 @@ export async function portalChildren(userId: string) {
   });
 }
 
+/** Veli portalı kartları için kısa özet: son 30 gün devamsızlık, son yayınlanan deneme neti, sıradaki ödenmemiş taksit. */
+export async function portalChildSummaries(studentIds: string[]) {
+  if (!studentIds.length) return new Map<string, { absent: number; sessions: number; lastNet: number | null; nextDue: { date: Date; amount: number } | null }>();
+  const since = dateStringToDbDate(addDaysToDateString(toLocalDateString(new Date()), -30));
+  const [attendance, results, installments] = await Promise.all([
+    db.centerAttendance.groupBy({ by: ["studentId", "status"], where: { studentId: { in: studentIds }, session: { date: { gte: since } } }, _count: true }),
+    db.centerExamResult.findMany({ where: { studentId: { in: studentIds }, exam: { isPublished: true } }, select: { studentId: true, net: true }, orderBy: { exam: { date: "desc" } }, distinct: ["studentId"] }),
+    db.centerInstallment.findMany({ where: { studentId: { in: studentIds }, plan: { isCancelled: false } }, select: { studentId: true, dueDate: true, amount: true, paidAmount: true }, orderBy: [{ dueDate: "asc" }, { order: "asc" }] }),
+  ]);
+  return new Map(
+    studentIds.map((id) => {
+      const rows = attendance.filter((a) => a.studentId === id);
+      const next = installments.find((i) => i.studentId === id && i.paidAmount < i.amount);
+      return [
+        id,
+        {
+          absent: rows.filter((r) => r.status === "ABSENT").reduce((t, r) => t + r._count, 0),
+          sessions: rows.reduce((t, r) => t + r._count, 0),
+          lastNet: results.find((r) => r.studentId === id)?.net ?? null,
+          nextDue: next ? { date: next.dueDate, amount: next.amount - next.paidAmount } : null,
+        },
+      ];
+    }),
+  );
+}
+
 /** Veli portalındaki öğrenci sayfası verisi; yalnızca bağlantının sahibi görebilir. */
 export async function portalChildDetail(userId: string, guardianId: string) {
   const guardian = await db.centerGuardian.findFirst({

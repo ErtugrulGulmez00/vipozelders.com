@@ -1,8 +1,10 @@
 "use client";
 
+import { Lock } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { createBookingAction } from "@/actions/student";
+import { CardLogos } from "@/components/site/card-logos";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
 import { Checkbox, Field, Input, Label, Select, Textarea } from "@/components/ui/form";
 import { cn } from "@/lib/cn";
@@ -149,7 +151,11 @@ export function BookingForm({
                 <Link href="/sayfa/mesafeli-satis-sozlesmesi" target="_blank" className="font-medium text-brand-700 underline">
                   Mesafeli Satış Sözleşmesi
                 </Link>
-                ’ni okudum ve onaylıyorum.
+                ’ni okudum ve onaylıyorum. İptal ve iade koşulları:{" "}
+                <Link href="/sayfa/iptal-ve-iade-politikasi" target="_blank" className="font-medium text-brand-700 underline">
+                  İptal ve İade Politikası
+                </Link>
+                .
               </>
             }
           />
@@ -160,6 +166,11 @@ export function BookingForm({
       <SubmitButton size="lg" className="w-full" pendingText={intro ? "Gönderiliyor…" : "Ödeme sayfası hazırlanıyor…"}>
         {intro ? "Tanışma talebini gönder" : "Ödemeye geç"}
       </SubmitButton>
+      {intro ? null : (
+        <p className="flex flex-wrap items-center justify-center gap-2 text-xs text-slate-500">
+          <Lock className="size-3.5" aria-hidden /> Kart bilgileriniz yalnızca bankanın 3D Secure sayfasında girilir. <CardLogos />
+        </p>
+      )}
     </ActionForm>
   );
 }

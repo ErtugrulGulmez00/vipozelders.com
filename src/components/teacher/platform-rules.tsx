@@ -1,4 +1,4 @@
-import { ShieldAlert } from "lucide-react";
+import { ChevronDown, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/cn";
 
 /** Öğretmenler için platform kuralı: kişisel bilgi paylaşımı ve öğrenciyi platform dışına yönlendirme yasaktır. */
@@ -9,8 +9,29 @@ export const PLATFORM_RULES = [
   "Bu kurallara uymayan öğretmenin hesabı uyarı yapılmadan kalıcı olarak kapatılır (platformdan çıkarılır) ve bekleyen hakedişleri incelemeye alınır.",
 ];
 
-/** Panelde ve ders öncesinde gösterilen uyarı kutusu. compact: sanal sınıf üst şeridi gibi dar alanlar. */
-export function PlatformRules({ compact = false, className }: { compact?: boolean; className?: string }) {
+/**
+ * Panelde ve ders öncesinde gösterilen uyarı kutusu. compact: sanal sınıf üst şeridi gibi dar alanlar.
+ * collapsible: her gün açılan özet ekranında tek satır; ayrıntı tıklayınca açılır.
+ */
+export function PlatformRules({ compact = false, collapsible = false, className }: { compact?: boolean; collapsible?: boolean; className?: string }) {
+  if (collapsible) {
+    return (
+      <details className={cn("group rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-900", className)}>
+        <summary className="flex cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
+          <ShieldAlert className="size-4 shrink-0 text-amber-600" aria-hidden />
+          <span className="flex-1">
+            <strong>Platform kuralı:</strong> Ders, ödeme ve yazışmalar yalnızca Pi Kampüs üzerinden.
+          </span>
+          <ChevronDown className="size-4 shrink-0 transition group-open:rotate-180" aria-hidden />
+        </summary>
+        <ul className="mt-2 list-disc space-y-1 pl-6">
+          {PLATFORM_RULES.map((rule) => (
+            <li key={rule}>{rule}</li>
+          ))}
+        </ul>
+      </details>
+    );
+  }
   if (compact) {
     return (
       <p className={cn("flex items-start gap-2 bg-rose-700 px-4 py-2 text-xs text-white", className)}>

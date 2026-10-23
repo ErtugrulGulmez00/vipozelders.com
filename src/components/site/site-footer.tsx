@@ -1,6 +1,7 @@
-import { CreditCard, Lock, ShieldCheck } from "lucide-react";
+import { Lock, Mail, MapPin, Phone, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { getCatalog, getFooterPages, getSiteSettings } from "@/server/site";
+import { CardLogos } from "./card-logos";
 import { Logo } from "./logo";
 
 export async function SiteFooter() {
@@ -11,8 +12,27 @@ export async function SiteFooter() {
         <div className="space-y-3">
           <Logo light />
           <p className="text-sm leading-relaxed text-slate-400">{settings.siteTagline}</p>
-          {settings.contactEmail ? <p className="text-sm">{settings.contactEmail}</p> : null}
-          {settings.contactPhone ? <p className="text-sm">{settings.contactPhone}</p> : null}
+          <address className="space-y-1.5 text-sm not-italic">
+            {settings.companyName ? <p className="font-medium text-slate-200">{settings.companyName}</p> : null}
+            {settings.companyAddress ? (
+              <p className="flex gap-2">
+                <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden /> <span className="whitespace-pre-line">{settings.companyAddress}</span>
+              </p>
+            ) : null}
+            {settings.contactPhone ? (
+              <p className="flex gap-2">
+                <Phone className="mt-0.5 size-4 shrink-0" aria-hidden />
+                <a href={`tel:${settings.contactPhone.replace(/[^d+]/g, "")}`} className="hover:text-white">{settings.contactPhone}</a>
+              </p>
+            ) : null}
+            {settings.contactEmail ? (
+              <p className="flex gap-2">
+                <Mail className="mt-0.5 size-4 shrink-0" aria-hidden />
+                <a href={`mailto:${settings.contactEmail}`} className="hover:text-white">{settings.contactEmail}</a>
+              </p>
+            ) : null}
+            {settings.companyTaxInfo ? <p className="text-xs text-slate-400">{settings.companyTaxInfo}</p> : null}
+          </address>
         </div>
         <div>
           <h2 className="mb-3 text-sm font-semibold text-white">Kademeler</h2>
@@ -47,11 +67,6 @@ export async function SiteFooter() {
               </Link>
             </li>
             <li>
-              <Link href="/kurumlar" className="hover:text-white">
-                Kurum rehberi
-              </Link>
-            </li>
-            <li>
               <Link href="/kurum-giris" className="hover:text-white">
                 Kurum paneli girişi
               </Link>
@@ -83,9 +98,7 @@ export async function SiteFooter() {
             <span className="inline-flex items-center gap-1.5 rounded-md bg-white/5 px-2.5 py-1">
               <ShieldCheck className="size-3.5" aria-hidden /> 3D Secure
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-md bg-white/5 px-2.5 py-1">
-              <CreditCard className="size-3.5" aria-hidden /> Visa · Mastercard · Troy
-            </span>
+            <CardLogos />
           </div>
         </div>
       </div>
