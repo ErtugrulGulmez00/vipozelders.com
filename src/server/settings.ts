@@ -8,7 +8,7 @@ import { db } from "./db";
 export const settingsSchema = z.object({
   siteName: z.string().min(1).default("Pi Kampüs"),
   siteTagline: z.string().default("Okul öncesinden üniversite sınavına, doğru öğretmen bir tık uzağında."),
-  contactEmail: z.string().default("destek@example.com"),
+  contactEmail: z.string().default("info@pikampus.com"),
   contactPhone: z.string().default(""),
   companyName: z.string().default(""),
   companyAddress: z.string().default(""),
