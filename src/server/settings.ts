@@ -9,7 +9,7 @@ export const settingsSchema = z.object({
   siteName: z.string().min(1).default("Pi Kampüs"),
   siteTagline: z.string().default("Okul öncesinden üniversite sınavına, doğru öğretmen bir tık uzağında."),
   contactEmail: z.string().default("info@pikampus.com"),
-  contactPhone: z.string().default(""),
+  contactPhone: z.string().default("+90 505 043 47 96"),
   companyName: z.string().default(""),
   companyAddress: z.string().default(""),
   companyTaxInfo: z.string().default(""),
