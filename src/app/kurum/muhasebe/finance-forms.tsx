@@ -71,7 +71,7 @@ export function PaymentForm({ studentId, suggested, payerName, today, guardiansR
           <Input name="note" placeholder="Örn: Ekim taksiti, kitap ücreti" />
         </Field>
       </div>
-      {guardiansReachable ? <Checkbox name="notify" defaultChecked label="Veliye ödeme bilgisi (SMS / e-posta) gönder" /> : null}
+      {guardiansReachable ? <Checkbox name="notify" defaultChecked label="Veliye ödeme bilgisi (WhatsApp) gönder" /> : null}
       <SubmitButton size="lg">Tahsilatı kaydet ve makbuz oluştur</SubmitButton>
     </ActionForm>
   );
@@ -167,10 +167,7 @@ export function OverdueReminderForm({ rows }: { rows: { studentId: string; name:
         </table>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-4">
-          <Checkbox name="sms" defaultChecked label="SMS" />
-          <Checkbox name="email" defaultChecked label="E-posta" />
-        </div>
+        <p className="text-xs text-slate-500">Hatırlatma velilere WhatsApp ve site/uygulama bildirimiyle gider.</p>
         <SubmitButton disabled={!selected.size} confirmMessage={`${selected.size} öğrencinin velisine hatırlatma gönderilsin mi?`}>
           Seçilenlere hatırlatma gönder ({selected.size})
         </SubmitButton>

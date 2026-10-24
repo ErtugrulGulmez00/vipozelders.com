@@ -28,7 +28,7 @@ export type GuardianView = {
   phone: string | null;
   email: string | null;
   isPrimary: boolean;
-  notifySms: boolean;
+  notifyWhatsapp: boolean;
   notifyEmail: boolean;
   linked: boolean;
   inviteExpiresAt: string | null;
@@ -58,8 +58,8 @@ function GuardianFields({ guardian }: { guardian?: GuardianView }) {
         <FieldError name="email" />
       </Field>
       <div className="space-y-2 sm:col-span-2">
-        <Checkbox name="notifySms" defaultChecked={guardian?.notifySms ?? true} label="SMS bildirimleri" />
-        <Checkbox name="notifyEmail" defaultChecked={guardian?.notifyEmail ?? true} label="E-posta bildirimleri" />
+        <Checkbox name="notifyWhatsapp" defaultChecked={guardian?.notifyWhatsapp ?? true} label="WhatsApp bildirimleri" />
+        <Checkbox name="notifyEmail" defaultChecked={guardian?.notifyEmail ?? true} label="Duyurular e-postayla da gönderilebilsin" />
         <Checkbox name="isPrimary" defaultChecked={guardian?.isPrimary} label="Birincil veli (listelerde görünen)" />
       </div>
     </div>
@@ -87,7 +87,7 @@ export function GuardianCard({ studentId, guardian, canEdit }: { studentId: stri
             {guardian.email ? ` · ${guardian.email}` : ""}
           </p>
           <p className="mt-1 text-xs text-slate-500">
-            {guardian.notifySms ? "SMS açık" : "SMS kapalı"} · {guardian.notifyEmail ? "E-posta açık" : "E-posta kapalı"} ·{" "}
+            {guardian.notifyWhatsapp ? "WhatsApp açık" : "WhatsApp kapalı"} · {guardian.notifyEmail ? "E-posta açık" : "E-posta kapalı"} ·{" "}
             {guardian.linked ? <span className="font-semibold text-brand-700">Veli portalına bağlı</span> : guardian.inviteExpiresAt ? "Davet gönderildi" : "Portala bağlı değil"}
           </p>
         </div>
@@ -218,8 +218,8 @@ export function GuardianMessageForm({ studentId }: { studentId: string }) {
       <FieldError name="text" />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex gap-4">
-          <Checkbox name="sms" defaultChecked label="SMS" />
-          <Checkbox name="email" defaultChecked label="E-posta" />
+          <Checkbox name="whatsapp" defaultChecked label="WhatsApp" />
+          <Checkbox name="email" label="E-posta" />
         </div>
         <SubmitButton size="sm">Gönder</SubmitButton>
       </div>

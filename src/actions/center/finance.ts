@@ -103,10 +103,7 @@ export async function remindOverdueAction(_: ActionState, formData: FormData): P
   if (!auth.ok) return auth.state;
   const studentIds = list(formData, "studentIds");
   if (!studentIds.length) return failure("Hatırlatma gönderilecek öğrencileri seçin.");
-  const sms = bool(formData, "sms");
-  const email = bool(formData, "email");
-  if (!sms && !email) return failure("SMS ya da e-posta seçin.");
-  const count = await remindOverdue(auth.ctx, studentIds, { sms, email });
+  const count = await remindOverdue(auth.ctx, studentIds);
   refresh();
   return success(`${count} öğrencinin velisine hatırlatma sıraya alındı.`);
 }

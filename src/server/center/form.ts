@@ -99,7 +99,7 @@ export function parseGuardianForm(fd: FormData, prefix = ""): GuardianInput | nu
     phone: guardianPhone,
     email: guardianEmail,
     isPrimary: bool(fd, key("isPrimary")),
-    notifySms: hasPrefs ? bool(fd, key("notifySms")) : true,
+    notifyWhatsapp: hasPrefs ? bool(fd, key("notifyWhatsapp")) : true,
     notifyEmail: hasPrefs ? bool(fd, key("notifyEmail")) : true,
   };
 }

@@ -4,7 +4,7 @@ import { deleteAnnouncementAction, sendAnnouncementAction } from "@/actions/cent
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
 
-export function AnnouncementForm({ groups, smsConfigured }: { groups: { id: string; name: string; count: number }[]; smsConfigured: boolean }) {
+export function AnnouncementForm({ groups }: { groups: { id: string; name: string; count: number }[] }) {
   return (
     <ActionForm action={sendAnnouncementAction} resetOnSuccess className="space-y-3">
       <Field label="Kime">
@@ -26,9 +26,13 @@ export function AnnouncementForm({ groups, smsConfigured }: { groups: { id: stri
         <FieldError name="body" />
       </Field>
       <div className="space-y-2 rounded-xl bg-slate-50 p-3 text-sm">
-        <p className="text-slate-600">Veli portalına bağlı velilere her zaman site bildirimi gider.</p>
-        <Checkbox name="sendEmail" defaultChecked label="E-posta da gönder" />
-        <Checkbox name="sendSms" label={smsConfigured ? "SMS de gönder (kısa tutun; ilk 300 karakter)" : "SMS de gönder (SMS sağlayıcı tanımlı değil; yalnızca kayda geçer)"} />
+        <p className="text-slate-600">Veli portalına bağlı velilere her zaman site/uygulama bildirimi gider.</p>
+        <Checkbox name="sendWhatsapp" defaultChecked label="WhatsApp ile gönder" />
+        <Checkbox name="sendEmail" label="E-posta da gönder" />
+        <p className="text-xs text-slate-500">
+          WhatsApp yalnızca bilgilendirme içindir (toplantı, tatil, program değişikliği…). Kampanya, indirim ya da reklam göndermeyin: WhatsApp bu tür mesajları
+          şikâyet üzerine engelleyebilir. Her veli için aylık WhatsApp hakkınızdan bir mesaj düşer.
+        </p>
       </div>
       <SubmitButton confirmMessage="Duyuru gönderilsin mi?">Duyuruyu yayınla</SubmitButton>
     </ActionForm>

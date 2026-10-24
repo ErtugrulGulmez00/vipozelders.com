@@ -17,6 +17,8 @@ export const settingsSchema = z.object({
   // Meta onaylı bildirim şablonu (LetsBot panelinden; boşsa düz metin: yalnızca son 24 saatte yazmış kişiye ulaşır)
   whatsappTemplateName: z.string().default(""),
   whatsappTemplateLanguage: z.string().default("tr"),
+  // Kurum Paneli: kurum başına aylık WhatsApp mesajı sınırı (dolunca yalnızca site/uygulama bildirimi gider)
+  centerWhatsappMonthlyLimit: z.number().int().min(0).max(1_000_000).default(3000),
   companyName: z.string().default(""),
   companyAddress: z.string().default(""),
   companyTaxInfo: z.string().default(""),

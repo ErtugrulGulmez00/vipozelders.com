@@ -111,7 +111,6 @@ nano .env
 | `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | LiveKit Cloud projesi |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `EMAIL_FROM` | E-posta hesabınız |
 | `STORAGE_DIR` | `/home/vipozelders/storage` (yüklenen fotoğraf ve belgeler) |
-| `NETGSM_USERCODE`, `NETGSM_PASSWORD`, `NETGSM_HEADER` | Kurum paneli SMS’leri (devamsızlık, ödeme hatırlatma, duyuru). Netgsm panelinden API alt kullanıcısı ve onaylı SMS başlığı. Boşsa SMS’ler yalnızca kayda geçer. |
 
 Kurulum:
 
@@ -178,7 +177,7 @@ Caddy SSL sertifikasını kendisi alır ve yeniler.
 - **LiveKit Cloud → Settings → Webhooks:** `https://alanadiniz.com/api/livekit/webhook` (yoklama kaydı için)
 - **Mobil uygulama push bildirimleri (uygulama yayına girince):** Firebase konsolu → Proje ayarları → Hizmet hesapları → “Yeni özel anahtar oluştur” ile JSON dosyasını indirin, sunucuya kopyalayın (ör. `/home/vipozelders/firebase.json`, yalnızca uygulama kullanıcısı okuyabilsin: `chmod 600`) ve `.env` içine `FCM_SERVICE_ACCOUNT_FILE=/home/vipozelders/firebase.json` yazıp servisi yeniden başlatın.
 - **Yönetim → Site ayarları:** site adı, iletişim bilgileri, ticari unvan, komisyon ve kurallar; “Kurum paneli abonelikleri” bölümünde plan fiyatları, öğrenci sınırları, deneme süresi ve havale/EFT bilgileri
-- **Netgsm (kurum paneli SMS’leri):** Netgsm’de kurumsal hesap açıp SMS başlığınızı onaylatın, API erişimi için alt kullanıcı oluşturun ve bilgileri `.env`’e yazın. Devamsızlık ve ödeme hatırlatmaları bilgilendirme iletisidir (İYS onayı gerekmez); kampanya duyurusu gönderecekseniz İYS kaydını yapın. Gönderim sonuçları her kurumun “SMS / e-posta geçmişi” ekranında görünür.
+- **Kurum paneli veli mesajları:** SMS yok; WhatsApp (LetsBot) ile gider. Kurum başına aylık sınır: Yönetim → Site ayarları → “Kurum başına aylık WhatsApp sınırı”. Gönderim sonuçları her kurumun “Mesaj geçmişi” ekranında görünür.
 - **Yönetim → Sayfalar:** yasal metinleri avukatınıza kontrol ettirip “TASLAK” satırlarını silin
 
 ### 7. Yedekleme

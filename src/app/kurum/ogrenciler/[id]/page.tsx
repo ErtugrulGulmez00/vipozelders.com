@@ -201,7 +201,7 @@ async function GeneralTab({
                   phone: g.phone,
                   email: g.email,
                   isPrimary: g.isPrimary,
-                  notifySms: g.notifySms,
+                  notifyWhatsapp: g.notifyWhatsapp,
                   notifyEmail: g.notifyEmail,
                   linked: Boolean(g.userId),
                   inviteExpiresAt: g.inviteExpiresAt?.toISOString() ?? null,

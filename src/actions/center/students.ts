@@ -104,7 +104,7 @@ export async function deleteGuardianAction(_: ActionState, formData: FormData): 
   });
 }
 
-/** Veli portalı daveti: bağlantı ekranda kalır (WhatsApp ile de paylaşılabilir), istenirse SMS/e-posta gider. */
+/** Veli portalı daveti: bağlantı ekranda kalır (WhatsApp ile de paylaşılabilir), istenirse WhatsApp ile gider. */
 export async function inviteGuardianAction(_: ActionState, formData: FormData): Promise<ActionState> {
   const auth = await centerAction("students.edit");
   if (!auth.ok) return auth.state;
@@ -141,29 +141,30 @@ export async function deleteNoteAction(_: ActionState, formData: FormData): Prom
   });
 }
 
-/** Öğrencinin velilerine elle mesaj (SMS ve/veya e-posta). */
+/** Öğrencinin velilerine elle mesaj (WhatsApp ve/veya e-posta). */
 export async function messageStudentGuardiansAction(_: ActionState, formData: FormData): Promise<ActionState> {
   const auth = await centerAction("messages.send");
   if (!auth.ok) return auth.state;
   const text = str(formData, "text", 600);
   if (text.length < 5) return failure("Mesajı yazın.", { text: "Mesaj çok kısa." });
-  const sms = bool(formData, "sms");
+  const whatsapp = bool(formData, "whatsapp");
   const email = bool(formData, "email");
-  if (!sms && !email) return failure("SMS ya da e-posta seçin.");
+  if (!whatsapp && !email) return failure("WhatsApp ya da e-posta seçin.");
   const counts = await messageGuardians({
     centerId: auth.ctx.center.id,
     centerName: auth.ctx.center.name,
     studentId: str(formData, "studentId"),
     kind: "custom",
     force: true,
-    channels: { sms, email },
-    sms: text,
+    channels: { whatsapp, email },
+    whatsappTitle: "Kurumdan mesaj",
+    whatsapp: text,
     email: { subject: "Kurumdan mesaj", title: "Kurumdan mesajınız var", lines: text.split(/\r?\n/).filter(Boolean) },
     notification: { title: `${auth.ctx.center.name} size mesaj gönderdi`, body: text.slice(0, 180) },
   });
-  if (counts.sms + counts.email + counts.app === 0) return failure("Velilerin telefon ya da e-posta bilgisi yok.");
+  if (counts.whatsapp + counts.email + counts.app === 0) return failure("Velilerin telefon ya da e-posta bilgisi yok (ya da aylık WhatsApp sınırı doldu).");
   refresh();
-  return success(`Mesaj sıraya alındı: ${counts.sms} SMS, ${counts.email} e-posta${counts.app ? `, ${counts.app} site bildirimi` : ""}.`);
+  return success(`Mesaj sıraya alındı: ${counts.whatsapp} WhatsApp, ${counts.email} e-posta${counts.app ? `, ${counts.app} site bildirimi` : ""}.`);
 }
 
 export async function importStudentsAction(_: ActionState, formData: FormData): Promise<ActionState> {

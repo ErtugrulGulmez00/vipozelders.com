@@ -101,7 +101,7 @@ export function AttendanceSheet({
       </ul>
       <div className="flex flex-wrap items-center justify-between gap-3">
         {notifyAvailable ? (
-          <Checkbox name="notify" defaultChecked label="Gelmeyen öğrencilerin velilerine SMS / e-posta / site bildirimi gönder (her öğrenci için bir kez)" />
+          <Checkbox name="notify" defaultChecked label="Gelmeyen öğrencilerin velilerine WhatsApp ve site/uygulama bildirimi gönder (her öğrenci için bir kez)" />
         ) : (
           <p className="text-sm text-slate-500">Devamsızlık bildirimi kurum ayarlarında kapalı.</p>
         )}

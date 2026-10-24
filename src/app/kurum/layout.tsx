@@ -56,7 +56,7 @@ export default async function CenterLayout({ children }: { children: React.React
     { href: "/kurum/denemeler", label: "Denemeler", icon: <BookOpenCheck />, permission: "exams.manage" },
     { href: "/kurum/muhasebe", label: "Muhasebe", icon: <Wallet />, permission: "finance.view" },
     { href: "/kurum/duyurular", label: "Duyurular", icon: <Megaphone />, permission: "messages.send" },
-    { href: "/kurum/mesajlar", label: "SMS / e-posta geçmişi", icon: <MessagesSquare />, permission: "messages.send" },
+    { href: "/kurum/mesajlar", label: "Mesaj geçmişi", icon: <MessagesSquare />, permission: "messages.send" },
     { href: "/kurum/on-kayit", label: "Ön kayıtlar", icon: <UserPlus />, permission: "leads.manage", badge: newLeads || undefined },
     { href: "/kurum/personel", label: "Personel", icon: <UserRound />, permission: "staff.manage" },
     { href: "/kurum/ayarlar", label: "Kurum ayarları", icon: <Settings />, permission: "settings.manage" },

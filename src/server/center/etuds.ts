@@ -104,8 +104,8 @@ export async function completeEtud(ctx: CenterContext, etudId: string, attendanc
       centerName: ctx.center.name,
       studentId: student.id,
       kind: "etud_absence",
-      sms: `Sayın veli, öğrenciniz ${name} ${when} ${etud.subject} etüdüne katılmamıştır.`,
-      email: { subject: `Etüt devamsızlığı: ${name}`, title: "Öğrenciniz etüde katılmadı", lines: [`${name}, ${when} saatindeki ${etud.subject} etüdüne katılmamıştır.`] },
+      whatsappTitle: "Etüt devamsızlığı",
+      whatsapp: `Sayın veli, öğrenciniz ${name} ${when} saatindeki ${etud.subject} etüdüne katılmamıştır.`,
       notification: { title: `${student.firstName} etüde katılmadı`, body: `${when} · ${etud.subject}` },
     });
     notified++;

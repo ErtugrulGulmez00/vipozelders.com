@@ -10,6 +10,7 @@ import { formatCompact, formatDate } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
+import { centerWhatsappUsage } from "@/server/center/messages";
 import { centerPlans } from "@/server/center/plans";
 import { getSiteSettings } from "@/server/site";
 import { AddOwnerForm, CenterAdminForm, SubscriptionPaymentForm } from "../center-admin-forms";
@@ -29,12 +30,12 @@ export default async function AdminCenterPage({ params }: PageProps<"/yonetim/ku
     },
   });
   if (!center) notFound();
-  const [students, groups, exams, payments, sms, settings] = await Promise.all([
+  const [students, groups, exams, payments, whatsapp, settings] = await Promise.all([
     db.centerStudent.count({ where: { centerId: id, status: "ACTIVE" } }),
     db.centerGroup.count({ where: { centerId: id, isActive: true } }),
     db.centerExam.count({ where: { centerId: id } }),
     db.centerPayment.count({ where: { centerId: id, cancelledAt: null } }),
-    db.centerMessage.count({ where: { centerId: id, channel: "SMS" } }),
+    centerWhatsappUsage(id),
     getSiteSettings(),
   ]);
   const access = centerAccess(center);
@@ -61,7 +62,7 @@ export default async function AdminCenterPage({ params }: PageProps<"/yonetim/ku
         <StatCard label="Sınıf" value={groups} />
         <StatCard label="Deneme" value={exams} />
         <StatCard label="Tahsilat kaydı" value={payments} />
-        <StatCard label="SMS" value={sms} />
+        <StatCard label="WhatsApp (bu ay)" value={`${whatsapp.used}/${whatsapp.limit}`} />
       </div>
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         <Card>

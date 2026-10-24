@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import { Badge, Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/components/ui/primitives";
 import { formatCompact } from "@/lib/dates";
 import { requireCenter } from "@/server/center/context";
-import { smsConfigured } from "@/server/center/sms";
 import { db } from "@/server/db";
 import { AnnouncementForm, DeleteAnnouncementButton } from "./announcement-forms";
 
@@ -21,12 +20,12 @@ export default async function AnnouncementsPage() {
   ]);
   return (
     <>
-      <PageHeader title="Duyurular" description="Tüm kuruma ya da bir sınıfa duyuru; velilere site bildirimi, e-posta ve SMS" />
+      <PageHeader title="Duyurular" description="Tüm kuruma ya da bir sınıfa duyuru; velilere WhatsApp ve site/uygulama bildirimi, isterseniz e-posta" />
       <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr] lg:items-start">
         <Card>
           <CardHeader title="Yeni duyuru" />
           <CardBody>
-            <AnnouncementForm groups={groups.map((g) => ({ id: g.id, name: g.name, count: g._count.students }))} smsConfigured={smsConfigured()} />
+            <AnnouncementForm groups={groups.map((g) => ({ id: g.id, name: g.name, count: g._count.students }))} />
           </CardBody>
         </Card>
         <div className="space-y-3">
@@ -45,7 +44,7 @@ export default async function AnnouncementsPage() {
                     </div>
                     <div className="flex items-center gap-1.5">
                       {a.sendEmail ? <Badge tone="sky">E-posta</Badge> : null}
-                      {a.sendSms ? <Badge tone="violet">SMS</Badge> : null}
+                      {a.sendWhatsapp ? <Badge tone="green">WhatsApp</Badge> : null}
                       <DeleteAnnouncementButton announcementId={a.id} />
                     </div>
                   </div>

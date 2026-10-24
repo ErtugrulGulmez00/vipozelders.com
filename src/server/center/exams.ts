@@ -338,8 +338,8 @@ export async function importOpticResults(ctx: CenterContext, examId: string, tem
   await recomputeExam(examId);
   return summary;
 }
-/** Sonuçları velilere açar; ilk yayında hesabı bağlı velilere bildirim (isteğe bağlı e-posta/SMS) gider. */
-export async function publishExam(ctx: CenterContext, examId: string, publish: boolean, channels: { email: boolean; sms: boolean }) {
+/** Sonuçları velilere açar; ilk yayında hesabı bağlı velilere bildirim, isteğe bağlı tüm velilere WhatsApp gider. */
+export async function publishExam(ctx: CenterContext, examId: string, publish: boolean, channels: { whatsapp: boolean }) {
   const exam = await getExamOrThrow(ctx, examId);
   await db.centerExam.update({ where: { id: examId }, data: { isPublished: publish } });
   if (!publish || exam.isPublished) return 0;
@@ -353,10 +353,8 @@ export async function publishExam(ctx: CenterContext, examId: string, publish: b
       centerName: ctx.center.name,
       studentId: r.student.id,
       kind: "exam_result",
-      sms: channels.sms ? `${name} ${summary}. Ayrıntılar veli portalında.` : null,
-      email: channels.email
-        ? { subject: `Deneme sonucu: ${exam.name}`, title: `${r.student.firstName} için deneme sonucu`, lines: [`${name} · ${summary}.`, `Sınav tarihi: ${formatDate(exam.date)}.`, "Ders ve konu bazında ayrıntıları veli portalından görebilirsiniz."], action: { label: "Sonucu görüntüle", url: "/hesabim/kurum" } }
-        : null,
+      whatsappTitle: "Deneme sonucu",
+      whatsapp: channels.whatsapp ? `${name} · ${summary} (sınav tarihi ${formatDate(exam.date)}). Ders ve konu bazında ayrıntılar veli portalında.` : null,
       notification: { title: `Deneme sonucu: ${exam.name}`, body: `${r.student.firstName} · ${summary}` },
     });
   }

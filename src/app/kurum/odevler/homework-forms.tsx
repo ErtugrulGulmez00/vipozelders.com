@@ -76,7 +76,7 @@ export function HomeworkForm({ groups, students, today, nextWeek }: { groups: { 
       <Field label="Açıklama (isteğe bağlı)">
         <Textarea name="description" rows={2} />
       </Field>
-      <Checkbox name="notifyEmail" label="Velilere e-postayla da bildir (portala bağlı velilere bildirim her zaman gider)" />
+      <Checkbox name="notifyWhatsapp" label="Velilere WhatsApp ile de bildir (portala bağlı velilere bildirim her zaman gider; aylık WhatsApp hakkından düşer)" />
       <SubmitButton>Ödevi ver</SubmitButton>
     </ActionForm>
   );

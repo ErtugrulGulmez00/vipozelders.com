@@ -64,7 +64,7 @@ const TASKS = {
   refunds: () => processPendingRefunds(),
   payoutDay: sendPayoutDayReminder,
   statsPrune: pruneStats,
-  // Kurum paneli: taksit hatırlatmaları önce kuyruğa girer, aynı turda SMS ve e-postayla gönderilir.
+  // Kurum paneli: taksit hatırlatmaları WhatsApp kuyruğuna girer; mesaj geçmişinin durumu kuyruklardan eşitlenir.
   centerReminders: sendCenterPaymentReminders,
   centerExpiry: sendCenterExpiryNotices,
   centerMessages: () => processCenterMessages(),
@@ -75,7 +75,7 @@ const TASKS = {
 
 export type SchedulerSummary = Partial<Record<keyof typeof TASKS, number | string>>;
 
-/** Süresi dolan ödemeler/onaylar, biten dersler, hakedişler, hatırlatmalar, iadeler, kurum SMS/hatırlatmaları, e-postalar, push bildirimleri. */
+/** Süresi dolan ödemeler/onaylar, biten dersler, hakedişler, hatırlatmalar, iadeler, kurum hatırlatmaları, e-postalar, push ve WhatsApp bildirimleri. */
 export async function runScheduledTasks(now = new Date()): Promise<SchedulerSummary | null> {
   if (!(await acquireLease("scheduler", 55_000, now))) return null;
   const summary: SchedulerSummary = {};

@@ -15,12 +15,12 @@ export async function sendAnnouncementAction(_: ActionState, formData: FormData)
       body: requiredText(formData, "body", "Duyuru metni", 5, 2000),
       groupId: opt(formData, "groupId"),
       sendEmail: bool(formData, "sendEmail"),
-      sendSms: bool(formData, "sendSms"),
+      sendWhatsapp: bool(formData, "sendWhatsapp"),
     });
-    await centerAudit(auth.ctx, "announcement.send", "CenterAnnouncement", announcement.id, { students: totals.students, sms: totals.sms });
+    await centerAudit(auth.ctx, "announcement.send", "CenterAnnouncement", announcement.id, { students: totals.students, whatsapp: totals.whatsapp });
     refresh();
     return success(
-      `Duyuru yayınlandı (${totals.students} öğrenci). Velilere ${totals.sms} SMS, ${totals.email} e-posta ve ${totals.app} site bildirimi sıraya alındı.`,
+      `Duyuru yayınlandı (${totals.students} öğrenci). Velilere ${totals.whatsapp} WhatsApp, ${totals.email} e-posta ve ${totals.app} site/uygulama bildirimi sıraya alındı.`,
     );
   });
 }
@@ -31,7 +31,7 @@ export async function deleteAnnouncementAction(_: ActionState, formData: FormDat
   return guard(async () => {
     await deleteAnnouncement(auth.ctx, str(formData, "announcementId"));
     refresh();
-    return success("Duyuru kaldırıldı (gönderilmiş SMS/e-postalar geri alınamaz).");
+    return success("Duyuru kaldırıldı (gönderilmiş WhatsApp/e-postalar geri alınamaz).");
   });
 }
 

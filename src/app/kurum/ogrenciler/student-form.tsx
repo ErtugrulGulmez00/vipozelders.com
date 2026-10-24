@@ -57,8 +57,8 @@ function GuardianFields({ prefix, title, required }: { prefix: string; title: st
         <FieldError name={`${prefix}Email`} />
       </Field>
       <div className="flex flex-col justify-end gap-2 sm:col-span-2">
-        <Checkbox name={`${prefix}NotifySms`} defaultChecked label="SMS bildirimleri gönderilsin" />
-        <Checkbox name={`${prefix}NotifyEmail`} defaultChecked label="E-posta bildirimleri gönderilsin" />
+        <Checkbox name={`${prefix}NotifyWhatsapp`} defaultChecked label="WhatsApp bildirimleri gönderilsin" />
+        <Checkbox name={`${prefix}NotifyEmail`} defaultChecked label="Duyurular e-postayla da gönderilebilsin" />
       </div>
     </Section>
   );

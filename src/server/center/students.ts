@@ -16,7 +16,7 @@ export type GuardianInput = {
   phone: string | null;
   email: string | null;
   isPrimary: boolean;
-  notifySms: boolean;
+  notifyWhatsapp: boolean;
   notifyEmail: boolean;
 };
 
@@ -289,7 +289,7 @@ export async function createStudentAccount(ctx: CenterContext, studentId: string
     },
   });
   await db.centerGuardian.create({
-    data: { centerId: ctx.center.id, studentId, fullName: `${student.firstName} ${student.lastName}`, relation: "Öğrenci", isStudentAccount: true, notifySms: false, notifyEmail: false, userId: user.id, linkedAt: new Date() },
+    data: { centerId: ctx.center.id, studentId, fullName: `${student.firstName} ${student.lastName}`, relation: "Öğrenci", isStudentAccount: true, notifyWhatsapp: false, notifyEmail: false, userId: user.id, linkedAt: new Date() },
   });
   return { username, temporaryPassword };
 }

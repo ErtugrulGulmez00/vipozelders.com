@@ -971,8 +971,10 @@ enum ExpenseCategory {
 }
 
 enum MessageChannel {
+  // Eski kayıtlar; kurum tarafında artık SMS gönderilmiyor
   SMS
   EMAIL
+  WHATSAPP
 }
 
 enum MessageStatus {
@@ -1165,7 +1167,8 @@ model CenterGuardian {
   phone            String?
   email            String?
   isPrimary        Boolean       @default(false)
-  notifySms        Boolean       @default(true)
+  notifyWhatsapp   Boolean       @default(true)
+  // E-posta yalnızca kurumun "e-postayla da gönder" seçtiği duyuru ve mesajlarda gider
   notifyEmail      Boolean       @default(true)
   // Veli portalı: davetle sitedeki veli hesabına bağlanır
   userId           String?
@@ -1173,7 +1176,7 @@ model CenterGuardian {
   inviteTokenHash  String?       @unique
   inviteExpiresAt  DateTime?
   linkedAt         DateTime?
-  // Öğrencinin kendi giriş hesabı (veli değil): portalı görür, soru sorar; SMS/e-posta almaz
+  // Öğrencinin kendi giriş hesabı (veli değil): portalı görür, soru sorar; WhatsApp/e-posta almaz
   isStudentAccount Boolean       @default(false)
   createdAt        DateTime      @default(now())
 
@@ -1497,8 +1500,8 @@ model CenterAnnouncement {
   // Boşsa tüm kurum
   groupId     String?
   group       CenterGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
-  sendEmail   Boolean      @default(false)
-  sendSms     Boolean      @default(false)
+  sendEmail    Boolean      @default(false)
+  sendWhatsapp Boolean      @default(false)
   createdById String?
   createdAt   DateTime     @default(now())
 

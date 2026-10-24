@@ -41,8 +41,8 @@ export async function centerBackupWorkbook(centerId: string): Promise<Buffer> {
     },
     {
       name: "Veliler",
-      headers: ["Öğrenci No", "Öğrenci", "Veli", "Yakınlık", "Telefon", "E-posta", "Birincil", "SMS", "E-posta bildirimi", "Portala bağlı"],
-      rows: students.flatMap((s) => s.guardians.map((g) => [s.studentNumber, name(s), g.fullName, g.relation, g.phone, g.email, g.isPrimary ? "Evet" : "", g.notifySms ? "Açık" : "Kapalı", g.notifyEmail ? "Açık" : "Kapalı", g.userId ? "Evet" : ""])),
+      headers: ["Öğrenci No", "Öğrenci", "Veli", "Yakınlık", "Telefon", "E-posta", "Birincil", "WhatsApp", "E-posta", "Portala bağlı"],
+      rows: students.flatMap((s) => s.guardians.map((g) => [s.studentNumber, name(s), g.fullName, g.relation, g.phone, g.email, g.isPrimary ? "Evet" : "", g.notifyWhatsapp ? "Açık" : "Kapalı", g.notifyEmail ? "Açık" : "Kapalı", g.userId ? "Evet" : ""])),
     },
     {
       name: "Sınıflar",

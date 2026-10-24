@@ -198,7 +198,7 @@ export async function seedDemoCenter(): Promise<boolean> {
                 ? [{ centerId: center.id, fullName: `${parent.firstName} ${parent.lastName}`, relation: "Anne", phone: parent.phone, email: parent.email, isPrimary: true, userId: parent.id, linkedAt: now }]
                 : [
                     { centerId: center.id, fullName: `${pick(MOTHERS)} ${last}`, relation: "Anne", phone: motherPhone, email: rand() > 0.5 ? `veli${number}@${DEMO_EMAIL_DOMAIN}` : null, isPrimary: true },
-                    ...(rand() > 0.4 ? [{ centerId: center.id, fullName: `${pick(FATHERS)} ${last}`, relation: "Baba", phone: fatherPhone, notifySms: rand() > 0.3 }] : []),
+                    ...(rand() > 0.4 ? [{ centerId: center.id, fullName: `${pick(FATHERS)} ${last}`, relation: "Baba", phone: fatherPhone, notifyWhatsapp: rand() > 0.3 }] : []),
                   ],
           },
           groups: { create: { groupId: groups[key].id } },
@@ -242,14 +242,14 @@ export async function seedDemoCenter(): Promise<boolean> {
         await db.centerMessage.create({
           data: {
             centerId: center.id,
-            channel: "SMS",
+            channel: "WHATSAPP",
             to: s.phone,
-            body: `Başarı Etüt Merkezi: Sayın veli, öğrenciniz ${s.name} ${d}.${mo}.${y} ${Math.floor(slot.start / 60)}:${String(slot.start % 60).padStart(2, "0")} ${slot.subject} dersine katılmamıştır.`,
+            body: `Sayın veli, öğrenciniz ${s.name} ${d}.${mo}.${y} ${Math.floor(slot.start / 60)}:${String(slot.start % 60).padStart(2, "0")} ${slot.subject} dersine katılmamıştır.`,
             kind: "absence",
             studentId: s.id,
-            status: "SKIPPED",
-            error: "SMS sağlayıcısı tanımlı değil; mesaj yalnızca kayıt altına alındı.",
+            status: "SENT",
             createdAt: zonedDateTime(date, slot.start + 6),
+            sentAt: zonedDateTime(date, slot.start + 7),
           },
         });
       }

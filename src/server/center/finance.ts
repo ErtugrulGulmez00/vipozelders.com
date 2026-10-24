@@ -116,8 +116,8 @@ export async function recordPayment(ctx: CenterContext, input: PaymentInput) {
       centerName: ctx.center.name,
       studentId: student.id,
       kind: "payment_receipt",
-      sms: `${name} için ${formatMoney(payment.amount)} ödemeniz alınmıştır. Makbuz no: ${payment.receiptNo}. Teşekkür ederiz.`,
-      email: { subject: `Ödemeniz alındı (makbuz ${payment.receiptNo})`, title: "Ödemeniz alındı", lines: [`${name} için ${formatMoney(payment.amount)} tutarındaki ödemeniz ${formatDate(payment.paidAt)} tarihinde alınmıştır.`, `Makbuz no: ${payment.receiptNo}`] },
+      whatsappTitle: "Ödemeniz alındı",
+      whatsapp: `${name} için ${formatMoney(payment.amount)} tutarındaki ödemeniz ${formatDate(payment.paidAt)} tarihinde alınmıştır. Makbuz no: ${payment.receiptNo}. Teşekkür ederiz.`,
       notification: { title: "Ödemeniz alındı", body: `${formatMoney(payment.amount)} · makbuz ${payment.receiptNo}` },
     });
   }
@@ -191,7 +191,7 @@ export async function overdueByStudent(centerId: string, today = toLocalDateStri
 }
 
 /** Seçilen öğrencilerin velilerine geciken ödeme hatırlatması. */
-export async function remindOverdue(ctx: CenterContext, studentIds: string[], channels: { sms: boolean; email: boolean }) {
+export async function remindOverdue(ctx: CenterContext, studentIds: string[]) {
   const today = toLocalDateString(new Date());
   const rows = (await overdueByStudent(ctx.center.id, today)).filter((r) => studentIds.includes(r.studentId));
   for (const row of rows) {
@@ -200,9 +200,8 @@ export async function remindOverdue(ctx: CenterContext, studentIds: string[], ch
       centerName: ctx.center.name,
       studentId: row.studentId,
       kind: "payment_overdue",
-      channels,
-      sms: `Sayın veli, ${row.name} için vadesi geçmiş ${formatMoney(row.amount)} ödemeniz bulunmaktadır. Bilgi için kurumumuzu arayabilirsiniz.${ctx.center.phone ? ` ${ctx.center.phone}` : ""}`,
-      email: { subject: "Geciken ödeme hatırlatması", title: "Ödeme hatırlatması", lines: [`${row.name} için vadesi geçmiş ${formatMoney(row.amount)} tutarında ödemeniz bulunmaktadır (${row.installments} taksit).`, "Ödemenizi yaptıysanız bu mesajı dikkate almayın."] },
+      whatsappTitle: "Ödeme hatırlatması",
+      whatsapp: `Sayın veli, ${row.name} için vadesi geçmiş ${formatMoney(row.amount)} tutarında ödemeniz bulunmaktadır (${row.installments} taksit). Ödemenizi yaptıysanız bu mesajı dikkate almayın.${ctx.center.phone ? ` Tel: ${ctx.center.phone}` : ""}`,
       notification: { title: "Geciken ödeme", body: `${row.name} · ${formatMoney(row.amount)}` },
     });
     await db.centerInstallment.updateMany({ where: { studentId: row.studentId, dueDate: { lt: dateStringToDbDate(today) } }, data: { remindedAt: new Date() } });
@@ -244,14 +243,10 @@ export async function sendCenterPaymentReminders(now = new Date()): Promise<numb
       centerName: center.name,
       studentId: inst.studentId,
       kind: upcoming ? "payment_reminder" : "payment_overdue",
-      sms: upcoming
-        ? `Sayın veli, ${name} için ${dueText} vadeli ${formatMoney(open)} taksit ödemenizi hatırlatırız.`
-        : `Sayın veli, ${name} için ${dueText} vadeli ${formatMoney(open)} taksit ödemeniz gecikmiştir.${center.phone ? ` Bilgi: ${center.phone}` : ""}`,
-      email: {
-        subject: upcoming ? "Taksit hatırlatması" : "Geciken taksit",
-        title: upcoming ? "Yaklaşan taksit ödemesi" : "Geciken taksit ödemesi",
-        lines: [`${name} için ${dueText} vadeli ${formatMoney(open)} tutarında taksitiniz ${upcoming ? "yaklaşıyor" : "gecikmiştir"}.`, "Ödemenizi yaptıysanız bu mesajı dikkate almayın."],
-      },
+      whatsappTitle: upcoming ? "Taksit hatırlatması" : "Geciken taksit",
+      whatsapp: upcoming
+        ? `Sayın veli, ${name} için ${dueText} vadeli ${formatMoney(open)} taksit ödemenizi hatırlatırız. Ödemenizi yaptıysanız bu mesajı dikkate almayın.`
+        : `Sayın veli, ${name} için ${dueText} vadeli ${formatMoney(open)} taksit ödemeniz gecikmiştir. Ödemenizi yaptıysanız bu mesajı dikkate almayın.${center.phone ? ` Tel: ${center.phone}` : ""}`,
       notification: { title: upcoming ? "Yaklaşan taksit" : "Geciken taksit", body: `${name} · ${dueText} · ${formatMoney(open)}` },
     });
     await db.centerInstallment.update({ where: { id: inst.id }, data: { remindedAt: now } });

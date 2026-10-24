@@ -117,7 +117,7 @@ test("kurum başvurusu → kurum paneli → yoklama, deneme, makbuz → veli por
   const [student] = await sql<{ id: string; studentNumber: string }>(`SELECT s.id, s."studentNumber" FROM "CenterStudent" s JOIN "Center" c ON c.id = s."centerId" WHERE c.name = $1`, [centerName]);
   expect(student.studentNumber).toBe("1001");
 
-  // 6) Yoklama: gelmedi → veliye SMS ve e-posta kuyruğa girer
+  // 6) Yoklama: gelmedi → veliye WhatsApp kuyruğa girer (e-posta yalnızca seçilen duyurularda)
   await page.goto("/kurum/yoklama");
   await page.getByRole("link", { name: "Yoklama al" }).first().click();
   await expect(page.getByRole("heading", { name: `${groupName} · Matematik` })).toBeVisible();
@@ -126,16 +126,12 @@ test("kurum başvurusu → kurum paneli → yoklama, deneme, makbuz → veli por
   await expect(page.getByText("Yoklama kaydedildi: 0 geldi, 1 gelmedi.", { exact: false })).toBeVisible();
   await expect(page.getByText("1 öğrencinin velisine bildirim gönderildi", { exact: false })).toBeVisible();
   const messages = await sql<{ channel: string; to: string }>(`SELECT channel, "to" FROM "CenterMessage" WHERE "studentId" = $1 AND kind = 'absence' ORDER BY channel`, [student.id]);
-  // Enum sırası: SMS, EMAIL
-  expect(messages).toEqual([
-    { channel: "SMS", to: "05332223344" },
-    { channel: "EMAIL", to: parentEmail },
-  ]);
+  expect(messages).toEqual([{ channel: "WHATSAPP", to: "05332223344" }]);
   // Aynı yoklama yeniden kaydedilirse veliye ikinci mesaj gitmez
   await page.reload();
   await page.getByRole("button", { name: "Yoklamayı kaydet" }).click();
   await expect(page.getByText("Yoklama kaydedildi", { exact: false })).toBeVisible();
-  expect((await sql(`SELECT 1 FROM "CenterMessage" WHERE "studentId" = $1 AND kind = 'absence'`, [student.id])).length).toBe(2);
+  expect((await sql(`SELECT 1 FROM "CenterMessage" WHERE "studentId" = $1 AND kind = 'absence'`, [student.id])).length).toBe(1);
 
   // 7) Deneme: serbest sınav, 4 yanlış 1 doğruyu götürür; 15 D 3 Y → 14,25 net
   await page.goto("/kurum/denemeler");

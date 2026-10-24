@@ -152,15 +152,11 @@ export async function saveAttendance(ctx: CenterContext, input: AttendanceSheetI
         centerName: ctx.center.name,
         studentId: record.student.id,
         kind: "absence",
-        sms: `Sayın veli, öğrenciniz ${name} ${when} ${session.subject} dersine katılmamıştır.${ctx.center.phone ? ` Bilgi: ${ctx.center.phone}` : ""}`,
-        email: {
-          subject: `Devamsızlık bilgisi: ${name}`,
-          title: "Öğrenciniz derse katılmadı",
-          lines: [`${name}, ${when} saatindeki ${session.subject} dersine (${group.name}) katılmamıştır.`, "Bir bilginiz yoksa lütfen kurumumuzla iletişime geçin."],
-        },
+        whatsappTitle: "Devamsızlık",
+        whatsapp: `Sayın veli, öğrenciniz ${name} ${when} saatindeki ${session.subject} dersine (${group.name}) katılmamıştır. Bir bilginiz yoksa lütfen kurumumuzla iletişime geçin.${ctx.center.phone ? ` Tel: ${ctx.center.phone}` : ""}`,
         notification: { title: `${record.student.firstName} derse katılmadı`, body: `${when} · ${session.subject} (${group.name})` },
       });
-      if (counts.sms + counts.email + counts.app > 0) notified++;
+      if (counts.whatsapp + counts.email + counts.app > 0) notified++;
       await db.centerAttendance.update({ where: { id: record.id }, data: { notifiedAt: new Date() } });
     }
   }

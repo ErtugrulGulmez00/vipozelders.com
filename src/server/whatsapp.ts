@@ -9,8 +9,8 @@ import { loadSettings } from "./settings";
 
 const LETSBOT = "https://letsbot.net/api/v1";
 const GRAPH = "https://graph.facebook.com/v21.0";
-/** Dakikada en fazla gönderim (numaranın spam sayılmaması için) */
-const PER_MINUTE = 20;
+/** Dakikada en fazla gönderim (kurum duyurularında yüzlerce veli olabilir) */
+const PER_MINUTE = 60;
 const MAX_ATTEMPTS = 3;
 
 export function letsbotConfigured(): boolean {
@@ -137,8 +137,9 @@ export async function sendPendingWhatsApps(now = new Date()): Promise<number> {
   const template = settings.whatsappTemplateName.trim();
   let sent = 0;
   for (const message of pending) {
-    // Bir saatten eski bildirim artık anlamını yitirmiştir (ör. "1 saat sonra dersiniz var")
-    if (now.getTime() - message.createdAt.getTime() > 3_600_000) {
+    // Bir saatten eski bildirim artık anlamını yitirmiştir (ör. "1 saat sonra dersiniz var"); kurum mesajları 12 saat bekleyebilir
+    const maxAge = message.type?.startsWith("center.") ? 12 * 3_600_000 : 3_600_000;
+    if (now.getTime() - message.createdAt.getTime() > maxAge) {
       await db.whatsAppMessage.update({ where: { id: message.id }, data: { status: "FAILED", error: "Süresi geçti, gönderilmedi" } });
       continue;
     }

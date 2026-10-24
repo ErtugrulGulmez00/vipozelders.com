@@ -83,7 +83,7 @@ export const MESSAGE_STATUS: Record<string, { label: string; tone: Tone }> = {
   QUEUED: { label: "Sırada", tone: "amber" },
   SENT: { label: "Gönderildi", tone: "green" },
   FAILED: { label: "Gönderilemedi", tone: "rose" },
-  SKIPPED: { label: "Kaydedildi (sağlayıcı yok)", tone: "slate" },
+  SKIPPED: { label: "Gönderilmedi", tone: "slate" },
 };
 
 export const MESSAGE_KIND_LABEL: Record<string, string> = {

@@ -6,27 +6,28 @@ import { messageGuardians } from "./messages";
 
 // Duyurular (tüm kurum ya da bir sınıf) ve ön kayıt adayları.
 
-export async function sendAnnouncement(ctx: CenterContext, input: { title: string; body: string; groupId: string | null; sendEmail: boolean; sendSms: boolean }) {
+export async function sendAnnouncement(ctx: CenterContext, input: { title: string; body: string; groupId: string | null; sendEmail: boolean; sendWhatsapp: boolean }) {
   if (input.groupId && !(await db.centerGroup.findFirst({ where: { id: input.groupId, centerId: ctx.center.id } }))) throw new CenterError("Sınıf bulunamadı.");
   const announcement = await db.centerAnnouncement.create({
-    data: { centerId: ctx.center.id, title: input.title, body: input.body, groupId: input.groupId, sendEmail: input.sendEmail, sendSms: input.sendSms, createdById: ctx.user.id },
+    data: { centerId: ctx.center.id, title: input.title, body: input.body, groupId: input.groupId, sendEmail: input.sendEmail, sendWhatsapp: input.sendWhatsapp, createdById: ctx.user.id },
   });
   const students = await db.centerStudent.findMany({
     where: { centerId: ctx.center.id, status: "ACTIVE", ...(input.groupId ? { groups: { some: { groupId: input.groupId } } } : {}) },
     select: { id: true },
   });
-  const totals = { students: students.length, sms: 0, email: 0, app: 0 };
+  const totals = { students: students.length, whatsapp: 0, email: 0, app: 0 };
   for (const student of students) {
     const counts = await messageGuardians({
       centerId: ctx.center.id,
       centerName: ctx.center.name,
       studentId: student.id,
       kind: "announcement",
-      sms: input.sendSms ? `${input.title}: ${input.body}`.slice(0, 300) : null,
+      whatsappTitle: `Duyuru: ${input.title}`,
+      whatsapp: input.sendWhatsapp ? input.body.slice(0, 900) : null,
       email: input.sendEmail ? { subject: input.title, title: input.title, lines: input.body.split(/\r?\n/).filter(Boolean) } : null,
       notification: { title: `Duyuru: ${input.title}`, body: input.body.slice(0, 200) },
     });
-    totals.sms += counts.sms;
+    totals.whatsapp += counts.whatsapp;
     totals.email += counts.email;
     totals.app += counts.app;
   }

@@ -148,10 +148,9 @@ export function PublishExamForm({ examId, isPublished }: { examId: string; isPub
         <p className="text-sm text-slate-600">Sonuçlar veli portalında görünüyor.</p>
       ) : (
         <>
-          <p className="text-sm text-slate-600">Yayınlayınca hesabını bağlamış velilere site bildirimi gider; isterseniz e-posta ve SMS de gönderilir.</p>
+          <p className="text-sm text-slate-600">Yayınlayınca hesabını bağlamış velilere site/uygulama bildirimi gider; isterseniz tüm velilere WhatsApp ile de sonuç özeti gönderilir.</p>
           <div className="flex gap-4">
-            <Checkbox name="email" defaultChecked label="E-posta" />
-            <Checkbox name="sms" label="SMS" />
+            <Checkbox name="whatsapp" defaultChecked label="WhatsApp ile de gönder" />
           </div>
         </>
       )}

@@ -53,6 +53,7 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
         <Field label="Şablon dili">
           <Input name="whatsappTemplateLanguage" defaultValue={settings.whatsappTemplateLanguage} placeholder="tr" />
         </Field>
+        <NumberField name="centerWhatsappMonthlyLimit" label="Kurum başına aylık WhatsApp sınırı" hint="Dolunca kurumun velilerine yalnızca site/uygulama bildirimi gider. 0: kurumlara WhatsApp kapalı." value={settings.centerWhatsappMonthlyLimit} suffix="mesaj" />
         <Field label="Ticari unvan" hint="Örn: VIP Eğitim Teknolojileri Ltd. Şti.">
           <Input name="companyName" defaultValue={settings.companyName} />
         </Field>
