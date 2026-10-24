@@ -48,12 +48,11 @@ export default async function TeacherSubscriptionsPage() {
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
         <StatCard label="Aktif abone" value={active.filter((s) => s.startsAt && s.startsAt <= now).length} icon={<Repeat className="size-5" />} />
         <StatCard label="Toplam dönem" value={totals._count} />
-        <StatCard label="Toplam hakediş" value={formatMoney(totals._sum.teacherAmount ?? 0)} hint="Erken biten dönemlerde kalan günler veliye iade edilir" />
+        <StatCard label="Toplam hakediş" value={formatMoney(totals._sum.teacherAmount ?? 0)} hint="Dönem bitince ödenebilir bakiyeye geçer" />
       </div>
 
       <Alert tone="info" className="mb-6" title="Nasıl işler?">
-        Abone günde en fazla belirlediğiniz sayıda soru gönderir; sorular Soru havuzu sayfanızda “Abone” etiketiyle en üstte görünür. Her soruyu belirlediğiniz sürede cevaplayın:{" "}
-        {settings.subscriptionMissLimit} soru süresinde cevaplanmazsa abonelik biter ve kalan günlerin ücreti veliye iade edilir.
+        Abone günde en fazla belirlediğiniz sayıda soru gönderir; sorular Soru havuzu sayfanızda “Abone” etiketiyle en üstte görünür. Her soruyu belirlediğiniz sürede cevaplayın; sorular düzenli cevaplanmazsa abonelik yönetim tarafından sonlandırılabilir.
       </Alert>
 
       {plans.map((plan) => (

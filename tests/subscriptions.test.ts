@@ -9,9 +9,7 @@ import {
   createSubscription,
   endSubscriptionEarly,
   processSubscriptions,
-  proRataSplit,
   questionsToday,
-  refundSubscription,
   saveQuestionPlan,
   startSubscriptionCheckout,
   SubscriptionError,
@@ -103,41 +101,23 @@ describe("abone sorusu", () => {
     expect((await teacherBalances(f.teacher.id)).pending).toBe(85000);
   });
 
-  it("öğretmen sınır kadar soruyu süresinde cevaplamazsa abonelik biter, kalan günler iade edilir", async () => {
+  it("cevaplanmayan sorular sayılır; abonelik sürer, iade yapılmaz, sınırda yöneticiye uyarı gider", async () => {
     const settings = await loadSettings();
     const f = await planFixture({ dailyLimit: 10, answerHours: 2 });
+    await db.user.create({ data: { role: "ADMIN", username: `yonetici.${f.plan.id}`, firstName: "Test", lastName: "Yönetici", passwordHash: "x" } });
     const { sub } = await subscribe(f.student.id, f.plan.id);
     const asked = hoursAfter(NOW, 3 * DAY);
     for (let i = 0; i < settings.subscriptionMissLimit; i++) await askSubscriptionQuestion(f.student.id, sub.id, { note: null, image: photo() }, asked);
-    const late = hoursAfter(asked, 3);
-    await expireUnansweredQuestions(late);
-    const ended = await db.questionSubscription.findUniqueOrThrow({ where: { id: sub.id } });
-    expect(ended.status).toBe("CANCELLED");
-    expect(ended.missedCount).toBe(settings.subscriptionMissLimit);
-    const { refund, teacherEarned } = proRataSplit(sub, late);
-    expect(ended.refundedAmount).toBe(refund);
-    expect(refund).toBeGreaterThan(80000);
-    expect((await teacherBalances(f.teacher.id)).pending).toBe(teacherEarned);
-    const refunds = await db.refund.findMany({ where: { payment: { subscriptionId: sub.id } } });
-    expect(refunds.map((r) => r.amount)).toEqual([refund]);
+    await expireUnansweredQuestions(hoursAfter(asked, 3));
+    const after = await db.questionSubscription.findUniqueOrThrow({ where: { id: sub.id } });
+    expect(after).toMatchObject({ status: "ACTIVE", missedCount: settings.subscriptionMissLimit, refundedAmount: 0 });
+    expect(await db.refund.count({ where: { payment: { subscriptionId: sub.id } } })).toBe(0);
+    expect((await teacherBalances(f.teacher.id)).pending).toBe(85000);
+    expect(await db.notification.count({ where: { type: "admin.subscription_misses", link: { contains: sub.code } } })).toBeGreaterThan(0);
   });
 });
 
-describe("iade ve dönem sonu", () => {
-  it("soru sorulmadıysa ilk günlerde tam iade; soru sorulduysa iade yok", async () => {
-    const f = await planFixture();
-    const { sub } = await subscribe(f.student.id, f.plan.id);
-    const amount = await refundSubscription(sub.id, f.student.id, hoursAfter(NOW, DAY));
-    expect(amount).toBe(100000);
-    expect((await teacherBalances(f.teacher.id)).pending).toBe(0);
-    expect((await db.questionSubscription.findUniqueOrThrow({ where: { id: sub.id } })).status).toBe("REFUNDED");
-
-    const g = await planFixture();
-    const second = await subscribe(g.student.id, g.plan.id);
-    await askSubscriptionQuestion(g.student.id, second.sub.id, { note: null, image: photo() }, hoursAfter(NOW, 1));
-    await expect(refundSubscription(second.sub.id, g.student.id, hoursAfter(NOW, 2))).rejects.toThrow(/soru gönderdiğiniz/);
-  });
-
+describe("dönem sonu ve erken bitirme", () => {
   it("dönem bitince kapanır; itiraz ve aktarım süresi dolunca hakediş ödenebilir bakiyeye geçer", async () => {
     const settings = await loadSettings();
     const f = await planFixture();

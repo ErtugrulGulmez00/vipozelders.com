@@ -196,7 +196,7 @@ Ders talebi öğretmenin onayıyla kesinleşir. Öğretmen talebi reddederse ya 
 - Alıcı, hizmetin ifasına başlanmadan önce siparişini iptal edebilir. Dersten {fullRefundHours} saat öncesine kadar yapılan iptallerde bedelin tamamı, {partialRefundHours} saat öncesine kadar %{partialRefundPercent}'si iade edilir.
 - Mesafeli Sözleşmeler Yönetmeliği'nin 15. maddesi uyarınca, alıcının onayıyla ifasına başlanan hizmetlerde (başlamış ya da tamamlanmış ders, çözümü gönderilmiş soru) cayma hakkı kullanılamaz.
 - Kullanılmamış soru kredileri, satın alma tarihinden itibaren {creditRefundDays} gün içinde iade edilebilir; kullanılan krediler iade tutarından düşülür.
-- Soru aboneliği, ödemeden itibaren {subscriptionRefundDays} gün içinde ve hiç soru gönderilmediyse tam iade edilir. Soru gönderilmesiyle hizmetin ifasına başlanmış olur. Öğretmen {subscriptionMissLimit} soruyu süresinde cevaplamazsa abonelik sona erer ve kalan günlerin bedeli iade edilir.
+- Soru aboneliği, alıcının açık onayıyla ödeme anında ifasına başlanan bir hizmettir; Mesafeli Sözleşmeler Yönetmeliği'nin 15. maddesi uyarınca cayma hakkı bulunmaz ve bedeli iade edilmez. Öğretmen hizmeti veremez hâle gelirse (ör. hesabının kapanması) kalan günlerin bedeli iade edilir.
 - İptal ve iade koşullarının tamamı İptal ve İade Politikası'nda yer alır ve bu sözleşmenin ayrılmaz parçasıdır.
 
 ## 7. İade yöntemi
@@ -240,7 +240,7 @@ Hizmet elektronik ortamda ya da yüz yüze ifa edilir; kargo gönderimi yoktur. 
 - Daha geç iptal veya derse katılmama: iade yapılmaz
 - Öğretmen iptal ederse veya derse gelmezse: tam iade
 - Kullanılmamış soru kredileri: satın almadan itibaren {creditRefundDays} gün içinde iade
-- Soru aboneliği: ödemeden itibaren {subscriptionRefundDays} gün içinde ve hiç soru gönderilmediyse tam iade; öğretmen {subscriptionMissLimit} soruyu süresinde cevaplamazsa kalan günlerin bedeli iade
+- Soru aboneliği: ödemeyle hemen başlar, cayma hakkı ve iade yoktur; öğretmen hizmeti veremez hâle gelirse kalan günlerin bedeli iade edilir
 - İfasına başlanan hizmetlerde cayma hakkı kullanılamaz (Mesafeli Sözleşmeler Yönetmeliği m.15).
 
 ## Şikayet
@@ -269,8 +269,8 @@ Randevunuzu Hesabım sayfasından iptal edebilirsiniz.
 - Krediler satın almadan itibaren {creditValidityMonths} ay geçerlidir.
 
 ## Soru aboneliği
-- Aboneliğinizi ödemeden itibaren {subscriptionRefundDays} gün içinde ve hiç soru göndermediyseniz Hesabım → Soru aboneliklerim sayfasından iptal edip bedelin tamamını geri alabilirsiniz. Soru gönderdikten sonra iade yapılmaz.
-- Öğretmeniniz {subscriptionMissLimit} soruyu belirtilen sürede cevaplamazsa abonelik sona erer ve kalan günlerin bedeli kartınıza iade edilir.
+- Abonelik ödemeyle birlikte hemen başlar; ödeme adımında onayladığınız üzere cayma hakkı ve iadesi yoktur.
+- Öğretmeniniz hizmeti veremez hâle gelirse (ör. hesabının kapanması) abonelik sonlandırılır ve kalan günlerin bedeli kartınıza iade edilir.
 - Abonelik kendiliğinden yenilenmez; dönem bitmeden size hatırlatma gönderilir.
 
 ## Cayma hakkı

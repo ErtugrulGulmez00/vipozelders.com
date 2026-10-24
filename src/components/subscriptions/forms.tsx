@@ -2,7 +2,7 @@
 
 import { Lock } from "lucide-react";
 import Link from "next/link";
-import { adminEndSubscriptionAction, askSubscriptionQuestionAction, refundSubscriptionAction, saveQuestionPlanAction, subscribeAction } from "@/actions/subscriptions";
+import { adminEndSubscriptionAction, askSubscriptionQuestionAction, saveQuestionPlanAction, subscribeAction } from "@/actions/subscriptions";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
 import { CardLogos } from "@/components/site/card-logos";
 import { FileInput } from "@/components/ui/file-input";
@@ -78,6 +78,10 @@ export function SubscribeForm({ planId, label }: { planId: string; label: string
           }
         />
         <FieldError name="consent" />
+        <div className="mt-3 border-t border-slate-100 pt-3">
+          <Checkbox name="immediate" required label="Aboneliğin ödemeyle birlikte hemen başladığını ve bu nedenle cayma hakkımın ve iade hakkımın bulunmadığını kabul ediyorum." />
+          <FieldError name="immediate" />
+        </div>
       </div>
       <SubmitButton size="lg" className="w-full" pendingText="Ödeme sayfası hazırlanıyor…">
         {label}
@@ -102,17 +106,6 @@ export function SubscriptionAskForm({ subscriptionId, left }: { subscriptionId: 
       </Field>
       <SubmitButton size="lg" className="w-full sm:w-auto" pendingText="Soru yükleniyor…" disabled={left <= 0}>
         Soruyu gönder (bugün kalan {left})
-      </SubmitButton>
-    </ActionForm>
-  );
-}
-
-export function RefundSubscriptionForm({ id, amountText }: { id: string; amountText: string }) {
-  return (
-    <ActionForm action={refundSubscriptionAction}>
-      <input type="hidden" name="id" value={id} />
-      <SubmitButton variant="outline" size="sm" pendingText="İade ediliyor…" confirmMessage={`Abonelik iptal edilip ${amountText} iade edilsin mi?`}>
-        İptal et ve iade al ({amountText})
       </SubmitButton>
     </ActionForm>
   );

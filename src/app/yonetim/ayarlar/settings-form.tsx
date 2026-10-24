@@ -108,8 +108,7 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
         <NumberField name="subscriptionDays" label="Dönem uzunluğu" value={settings.subscriptionDays} suffix="gün" />
         <NumberField name="subscriptionMinPriceTl" label="En düşük dönem ücreti" value={settings.subscriptionMinPriceTl} suffix="TL" />
         <NumberField name="subscriptionMaxPriceTl" label="En yüksek dönem ücreti" value={settings.subscriptionMaxPriceTl} suffix="TL" />
-        <NumberField name="subscriptionRefundDays" label="Tam iade süresi" hint="Ödemeden sonra bu süre içinde ve hiç soru sorulmadıysa tam iade." value={settings.subscriptionRefundDays} suffix="gün" />
-        <NumberField name="subscriptionMissLimit" label="Cevaplanmayan soru sınırı" hint="Bu sayıya ulaşılırsa abonelik biter, kalan günlerin ücreti iade edilir." value={settings.subscriptionMissLimit} suffix="soru" />
+        <NumberField name="subscriptionMissLimit" label="Cevaplanmayan soru uyarısı" hint="Bir abonelikte bu kadar soru süresinde cevaplanmazsa size uyarı gelir." value={settings.subscriptionMissLimit} suffix="soru" />
         <NumberField name="subscriptionReminderDays" label="Yenileme hatırlatması" hint="Dönem bitmeden bu kadar gün önce (0: gönderilmez)." value={settings.subscriptionReminderDays} suffix="gün" />
       </Section>
 

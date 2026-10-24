@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { RefundSubscriptionForm, SubscriptionAskForm } from "@/components/subscriptions/forms";
+import { SubscriptionAskForm } from "@/components/subscriptions/forms";
 import { LinkButton } from "@/components/ui/button";
 import { Alert, Badge, Card, CardBody, CardHeader, DescriptionList, EmptyState } from "@/components/ui/primitives";
 import { formatCompact, formatDate } from "@/lib/dates";
@@ -10,8 +10,7 @@ import { formatMoney } from "@/lib/money";
 import { fullName } from "@/lib/text";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
-import { loadSettings } from "@/server/settings";
-import { isRunning, questionsToday, refundPreviewFor } from "@/server/subscriptions";
+import { isRunning, questionsToday } from "@/server/subscriptions";
 
 export const metadata: Metadata = { title: "Soru aboneliği" };
 
@@ -28,12 +27,10 @@ export default async function MySubscriptionPage({ params }: PageProps<"/hesabim
   });
   if (!sub || sub.studentId !== user.id) notFound();
   const now = new Date();
-  const settings = await loadSettings();
   const running = isRunning(sub, now);
   const queued = sub.status === "ACTIVE" && Boolean(sub.startsAt && sub.startsAt > now);
-  const [today, refund, next] = await Promise.all([
+  const [today, next] = await Promise.all([
     running ? questionsToday(sub.id, now) : Promise.resolve(0),
-    refundPreviewFor(sub, settings, now),
     // Bu dönemden sonra başlayacak (yenilenmiş) dönem
     sub.endsAt ? db.questionSubscription.findFirst({ where: { studentId: user.id, teacherId: sub.teacherId, levelId: sub.levelId, subjectId: sub.subjectId, status: "ACTIVE", startsAt: { gte: sub.endsAt } }, select: { id: true, startsAt: true } }) : null,
   ]);
@@ -71,9 +68,7 @@ export default async function MySubscriptionPage({ params }: PageProps<"/hesabim
                 {sub.status === "ENDED" ? "Yeniden abone ol" : "Şimdiden yenile"} ({formatMoney(sub.plan.price)})
               </LinkButton>
             ) : null}
-            {refund.allowed ? <RefundSubscriptionForm id={sub.id} amountText={formatMoney(refund.amount)} /> : null}
           </div>
-          {sub.status === "ACTIVE" && !refund.allowed ? <p className="text-xs text-slate-500">İade: {refund.reason}</p> : null}
         </CardBody>
       </Card>
 

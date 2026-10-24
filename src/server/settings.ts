@@ -56,9 +56,7 @@ export const settingsSchema = z.object({
   subscriptionDays: z.number().int().min(7).max(90).default(30),
   subscriptionMinPriceTl: z.number().int().min(1).max(100_000).default(100),
   subscriptionMaxPriceTl: z.number().int().min(1).max(100_000).default(10_000),
-  // Ödemeden sonra bu kadar gün içinde, hiç soru sorulmadıysa tam iade
-  subscriptionRefundDays: z.number().int().min(0).max(30).default(3),
-  // Süresinde cevaplanmayan soru bu sayıya ulaşınca abonelik biter, kalan günler iade edilir
+  // Süresinde cevaplanmayan soru bu sayıya ulaşınca yönetici uyarılır (iade yapılmaz)
   subscriptionMissLimit: z.number().int().min(1).max(50).default(3),
   // Dönem bitmeden kaç gün önce yenileme hatırlatması gider
   subscriptionReminderDays: z.number().int().min(0).max(14).default(3),

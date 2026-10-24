@@ -58,7 +58,7 @@ export default async function SubscribePage({ params }: PageProps<"/abonelik/[pl
           <li className="flex gap-2"><CalendarRange className="size-4 shrink-0 text-brand-600" aria-hidden /> {settings.subscriptionDays} gün geçerli</li>
           <li className="flex gap-2"><MessageCircleQuestion className="size-4 shrink-0 text-brand-600" aria-hidden /> Günde {plan.dailyLimit} soruya kadar</li>
           <li className="flex gap-2"><Clock className="size-4 shrink-0 text-brand-600" aria-hidden /> Her soru {plan.answerHours} saat içinde çözülür</li>
-          <li className="flex gap-2"><ShieldCheck className="size-4 shrink-0 text-brand-600" aria-hidden /> İlk {settings.subscriptionRefundDays} gün, soru sormadıysanız tam iade</li>
+          <li className="flex gap-2"><ShieldCheck className="size-4 shrink-0 text-brand-600" aria-hidden /> Otomatik çekim yok, kendiliğinden yenilenmez</li>
         </ul>
         {plan.description ? <p className="mb-5 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">{plan.description}</p> : null}
         <DescriptionList
@@ -69,7 +69,7 @@ export default async function SubscribePage({ params }: PageProps<"/abonelik/[pl
           ]}
         />
         <p className="mt-4 text-xs text-slate-500">
-          Öğretmeniniz {settings.subscriptionMissLimit} soruyu süresinde cevaplamazsa abonelik sona erer ve kalan günlerin ücreti kartınıza iade edilir.
+          Abonelik ödemeyle hemen başlar; bedeli iade edilmez. Öğretmen hizmeti veremez hâle gelirse (ör. hesabı kapanırsa) kalan günlerin ücreti kartınıza iade edilir.
         </p>
       </Card>
 

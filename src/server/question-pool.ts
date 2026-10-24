@@ -9,7 +9,7 @@ import { notify, notifyRole } from "./notifications";
 import { settledReleaseAt } from "./pricing";
 import { loadSettings, type SiteSettings } from "./settings";
 import { deleteUpload, saveUpload, UploadError } from "./storage";
-import { endSubscriptionForMisses, registerMiss } from "./subscriptions";
+import { registerMiss } from "./subscriptions";
 
 // Soru havuzu: öğrenci 1 kredi karşılığı soru gönderir; kademe ve derse uygun öğretmenler görür, biri üstlenir
 // (kilit), çözer. Öğretmenin payı itiraz süresi ve ödeme kuruluşu aktarım süresi dolunca serbest kalır.
@@ -265,12 +265,11 @@ export async function resolvePoolDispute(adminId: string, id: string, upheld: bo
   if (!q || q.status !== "DISPUTED") throw new PoolError("Bu soruda açık itiraz yok.");
   const text = note.trim().slice(0, 500) || (upheld ? "İtiraz haklı bulundu." : "Çözüm yeterli bulundu.");
   const settings = await loadSettings();
-  let missLimitReached = false;
   await db.$transaction(async (tx) => {
     if (upheld) {
       await move(tx, id, ["DISPUTED"], { status: "REFUNDED", resolutionNote: text, resolvedAt: now });
       await returnCredit(tx, q, `${q.code} itiraz sonucu iade`);
-      if (q.subscriptionId) missLimitReached = await registerMiss(tx, q.subscriptionId, settings);
+      if (q.subscriptionId) await registerMiss(tx, q.subscriptionId, settings);
       if (q.claimedById) await addLedgerEntry(tx, { teacherId: q.claimedById, poolQuestionId: id, bucket: "PENDING", amount: -q.teacherFee, description: `${q.code} itiraz haklı bulundu` });
     } else {
       await move(tx, id, ["DISPUTED"], { status: "ANSWERED", resolutionNote: text, resolvedAt: now });
@@ -279,7 +278,6 @@ export async function resolvePoolDispute(adminId: string, id: string, upheld: bo
     await notify({ userId: q.studentId, type: "pool.dispute_resolved", title: `${q.code}: itirazınız sonuçlandı`, body: upheld ? `${q.subscriptionId ? "İtirazınız haklı bulundu." : "Krediniz iade edildi."} ${text}` : `Çözüm yeterli bulundu. ${text}`, link: `/hesabim/sorularim/${id}` }, tx);
     if (q.claimedById) await notify({ userId: q.claimedById, type: "pool.dispute_resolved", title: `${q.code}: itiraz sonuçlandı`, body: upheld ? `İtiraz haklı bulundu; bu sorudan hakediş oluşmadı. ${text}` : `Çözümünüz yeterli bulundu. ${text}`, link: `/ogretmen-paneli/soru-havuzu/${id}`, email: false }, tx);
   });
-  if (missLimitReached && q.subscriptionId) await endSubscriptionForMisses(q.subscriptionId, now);
 }
 
 // ---------------------------------------------------------------------------
@@ -299,18 +297,16 @@ export async function expireUnansweredQuestions(now = new Date()): Promise<numbe
   let count = 0;
   for (const q of due) {
     try {
-      let missLimitReached = false;
       await db.$transaction(async (tx) => {
         await move(tx, q.id, ["OPEN", "CLAIMED"], { status: "EXPIRED", claimExpiresAt: null });
         if (q.subscriptionId) {
-          missLimitReached = await registerMiss(tx, q.subscriptionId, settings);
-          await notify({ userId: q.studentId, type: "pool.expired", title: `${q.code}: öğretmeniniz süresinde cevaplamadı`, body: "Bu soru günlük hakkınızdan düşülmedi; tekrar gönderebilirsiniz. Cevaplanmayan sorular sınırı aşarsa kalan günlerin ücreti size iade edilir.", link: `/hesabim/sorularim/${q.id}` }, tx);
+          await registerMiss(tx, q.subscriptionId, settings);
+          await notify({ userId: q.studentId, type: "pool.expired", title: `${q.code}: öğretmeniniz süresinde cevaplamadı`, body: "Bu soru günlük hakkınızdan düşülmedi; tekrar gönderebilirsiniz. Ekibimize de bildirildi.", link: `/hesabim/sorularim/${q.id}` }, tx);
         } else {
           await returnCredit(tx, q, `${q.code} süresinde çözülmedi`);
           await notify({ userId: q.studentId, type: "pool.expired", title: `${q.code}: sorunuz süresinde çözülemedi`, body: "Krediniz iade edildi; isterseniz soruyu tekrar gönderebilirsiniz.", link: `/hesabim/sorularim/${q.id}` }, tx);
         }
       });
-      if (missLimitReached && q.subscriptionId) await endSubscriptionForMisses(q.subscriptionId, now);
       count++;
     } catch {
       continue;

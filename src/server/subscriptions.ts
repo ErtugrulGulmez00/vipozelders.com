@@ -6,7 +6,7 @@ import { newCode } from "./credits";
 import { db, type DbTransaction } from "./db";
 import { appUrl } from "./email";
 import { addLedgerEntry } from "./ledger";
-import { notify } from "./notifications";
+import { notify, notifyRole } from "./notifications";
 import { getPaymentProvider, getProviderById, PAYMENT_PROVIDERS, processRefund, salesOpen } from "./payments/service";
 import { settledReleaseAt, splitCommission } from "./pricing";
 import { loadSettings, type SiteSettings } from "./settings";
@@ -15,7 +15,7 @@ import { deleteUpload, saveUpload, UploadError } from "./storage";
 // Aylık soru aboneliği: öğretmen kademe + ders için plan açar (dönem ücreti, günlük soru sınırı, cevap süresi).
 // Veli dönemi peşin öder; sorular soru havuzu kaydı olarak doğrudan öğretmene düşer (CLAIMED, ücret 0).
 // Öğretmen payı ödemede bekleyen hakedişe yazılır, dönem bitip itiraz ve aktarım süresi dolunca serbest kalır.
-// Süresinde cevaplanmayan soru sınırı aşılırsa abonelik erken biter, kalan günlerin parası iade edilir.
+// Dönem bedeli iade edilmez (abonelik ödemeyle hemen başlar). Yönetici gerekirse erken bitirip kalan günleri iade eder.
 
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
@@ -299,43 +299,11 @@ export async function askSubscriptionQuestion(studentId: string, subscriptionId:
 // İade ve erken bitiş
 // ---------------------------------------------------------------------------
 
-/** Veli iadesi: ödemeden sonraki ilk günlerde ve hiç soru sorulmadıysa tam iade. */
-export async function refundPreviewFor(sub: QuestionSubscription, settings: SiteSettings, now = new Date(), tx: Tx = db) {
-  if (sub.status !== "ACTIVE" || !sub.paidAt) return { allowed: false as const, reason: "Bu abonelik iade edilemez." };
-  if (now.getTime() - sub.paidAt.getTime() > settings.subscriptionRefundDays * DAY) return { allowed: false as const, reason: `İade süresi (ödemeden sonraki ${settings.subscriptionRefundDays} gün) doldu.` };
-  const asked = await tx.poolQuestion.count({ where: { subscriptionId: sub.id } });
-  if (asked) return { allowed: false as const, reason: "Bu dönemde soru gönderdiğiniz için iade yapılamaz." };
-  return { allowed: true as const, amount: sub.price - sub.refundedAmount };
-}
-
 async function createRefund(tx: DbTransaction, subscriptionId: string, amount: number, reason: string) {
   if (amount <= 0) return null;
   const payment = await tx.payment.findFirst({ where: { subscriptionId, status: "SUCCEEDED" }, orderBy: { createdAt: "desc" } });
   if (!payment) throw new SubscriptionError("Ödeme kaydı bulunamadı.");
   return (await tx.refund.create({ data: { paymentId: payment.id, amount, reason } })).id;
-}
-
-export async function refundSubscription(subscriptionId: string, studentId: string, now = new Date()) {
-  const settings = await loadSettings();
-  let refundId: string | null = null;
-  let amount = 0;
-  await db.$transaction(async (tx) => {
-    const sub = await tx.questionSubscription.findUnique({ where: { id: subscriptionId } });
-    if (!sub || sub.studentId !== studentId) throw new SubscriptionError("Abonelik bulunamadı.");
-    const preview = await refundPreviewFor(sub, settings, now, tx);
-    if (!preview.allowed) throw new SubscriptionError(preview.reason);
-    amount = preview.amount;
-    const marked = await tx.questionSubscription.updateMany({
-      where: { id: sub.id, status: "ACTIVE" },
-      data: { status: "REFUNDED", refundedAmount: { increment: amount }, cancelledAt: now, cancelReason: "Veli iade istedi", earningsReleasedAt: now },
-    });
-    if (marked.count !== 1) throw new SubscriptionError("Aboneliğin durumu değişmiş. Sayfayı yenileyin.");
-    await addLedgerEntry(tx, { teacherId: sub.teacherId, subscriptionId: sub.id, bucket: "PENDING", amount: -sub.teacherAmount, description: `${sub.code} abonelik iade edildi` });
-    refundId = await createRefund(tx, sub.id, amount, "Soru aboneliği iadesi (soru sorulmadı)");
-    await notify({ userId: sub.teacherId, type: "subscription.refunded", title: "Bir abonelik iade edildi", body: `${sub.code} · ${sub.levelName} ${sub.subjectName}. Veli soru göndermeden iade istedi; bu dönemden hakediş oluşmadı.`, link: "/ogretmen-paneli/soru-aboneligi", email: false }, tx);
-  });
-  if (refundId) await processRefund(refundId);
-  return amount;
 }
 
 /**
@@ -377,30 +345,15 @@ export async function endSubscriptionEarly(subscriptionId: string, reason: strin
 }
 
 /**
- * Süresinde cevaplanmayan ya da itirazı haklı bulunan soru sayılır (transaction içinde). Sınıra ulaşıldıysa
- * true döner; çağıran transaction bittikten sonra endSubscriptionForMisses çağırır.
+ * Süresinde cevaplanmayan ya da itirazı haklı bulunan soru sayılır (transaction içinde). İade yapılmaz;
+ * sınıra ulaşılınca yönetici uyarılır, gerekirse aboneliği Yönetim → Soru havuzu'ndan erken bitirir.
  */
-export async function registerMiss(tx: DbTransaction, subscriptionId: string, settings: SiteSettings): Promise<boolean> {
+export async function registerMiss(tx: DbTransaction, subscriptionId: string, settings: SiteSettings) {
   const sub = await tx.questionSubscription.update({ where: { id: subscriptionId }, data: { missedCount: { increment: 1 } } });
-  if (sub.status !== "ACTIVE") return false;
-  if (sub.missedCount < settings.subscriptionMissLimit) {
-    await notify({ userId: sub.teacherId, type: "subscription.missed", title: "Abone sorusu süresinde cevaplanmadı", body: `${sub.code}: ${sub.missedCount}/${settings.subscriptionMissLimit}. Sınıra ulaşılırsa abonelik sona erer ve kalan günlerin ücreti veliye iade edilir.`, link: "/ogretmen-paneli/soru-aboneligi" }, tx);
-    return false;
-  }
-  return true;
-}
-
-/** Cevaplanmayan soru sınırı aşıldı: bu dönem ve aynı öğretmenden sıradaki dönemler biter. */
-export async function endSubscriptionForMisses(subscriptionId: string, now = new Date()) {
-  const settings = await loadSettings();
-  const sub = await db.questionSubscription.findUnique({ where: { id: subscriptionId } });
-  if (!sub || sub.status !== "ACTIVE") return;
-  const reason = `Öğretmen ${settings.subscriptionMissLimit} soruyu süresinde cevaplamadı`;
-  const queued = await db.questionSubscription.findMany({ where: { studentId: sub.studentId, teacherId: sub.teacherId, status: "ACTIVE", startsAt: { gt: now } }, select: { id: true } });
-  for (const id of [sub.id, ...queued.map((q) => q.id)]) {
-    await endSubscriptionEarly(id, reason, null, now).catch((error: unknown) => {
-      if (!(error instanceof SubscriptionError)) throw error;
-    });
+  if (sub.status !== "ACTIVE") return;
+  await notify({ userId: sub.teacherId, type: "subscription.missed", title: "Abone sorusu süresinde cevaplanmadı", body: `${sub.code}: abonenizin sorusu süresinde cevaplanmadı (${sub.missedCount}). Sorular düzenli cevaplanmazsa abonelik yönetim tarafından sonlandırılabilir.`, link: "/ogretmen-paneli/soru-aboneligi" }, tx);
+  if (sub.missedCount === settings.subscriptionMissLimit) {
+    await notifyRole("ADMIN", { type: "admin.subscription_misses", title: `Abonelikte cevaplanmayan soru: ${sub.code}`, body: `${sub.levelName} ${sub.subjectName}: ${sub.missedCount} soru süresinde cevaplanmadı. Gerekirse aboneliği erken bitirin (kalan günler veliye iade edilir).`, link: `/yonetim/soru-havuzu?abonelik=${sub.code}`, email: true }, tx);
   }
 }
 
