@@ -29,11 +29,13 @@ Sonuç `0` değilse kullanıcıya sor, ders bitince al.
 
 ## Canlıya alma
 
-```powershell
-ssh -o BatchMode=yes root@194.62.52.232 "sudo -iu vipozelders bash update.sh 2>&1 | tail -3 && systemctl restart vipozelders && sleep 5 && systemctl is-active vipozelders"
+Önce yerelde `npm run build` geçmeli (tip denetimi ve testler derleme hatasını yakalamaz; ör. `connection()` eksik sayfanın önceden hazırlanması).
+
+```bash
+ssh -o BatchMode=yes root@194.62.52.232 "sudo -iu vipozelders bash update.sh > /tmp/update.log 2>&1; tail -3 /tmp/update.log; grep -q BUILD_OK /tmp/update.log && systemctl restart vipozelders && sleep 5 && systemctl is-active vipozelders"
 ```
 
-`update.sh`: git pull → `npm install` (npm ci değil; Windows'ta üretilen kilit dosyası) → `prisma migrate deploy` → `next build`. Başarıda `BUILD_OK <commit>` ve `active` görünür. `BUILD_OK` yoksa servis eski derlemeyle çalışmaya devam eder; çıktıyı oku, kullanıcıya bildir.
+`update.sh`: git pull → `npm install` (npm ci değil; Windows'ta üretilen kilit dosyası) → `prisma migrate deploy` → `next build`. Başarıda `BUILD_OK <commit>` ve `active` görünür. **Servis yalnızca `BUILD_OK` varsa yeniden başlatılır**: derleme yarıda kaldıysa `.next` bozuk olabilir, yeniden başlatma siteyi düşürür (502). `BUILD_OK` yoksa servisi başlatma; hatayı düzelt, yeniden derle, kullanıcıya bildir.
 
 ## Sonra
 
