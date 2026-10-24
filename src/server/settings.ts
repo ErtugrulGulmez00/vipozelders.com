@@ -11,7 +11,7 @@ export const settingsSchema = z.object({
   contactEmail: z.string().default("info@pikampus.com"),
   contactPhone: z.string().default("+90 505 043 47 96"),
   // Sağ alttaki WhatsApp destek düğmesinin numarası (boşsa düğme gösterilmez)
-  supportWhatsapp: z.string().default("+90 505 043 47 96"),
+  supportWhatsapp: z.string().default("+90 850 308 84 43"),
   // Önemli bildirimler (ders talebi, onay, 1 saat kala hatırlatma…) WhatsApp ile de gönderilsin (LetsBot)
   whatsappNotifications: z.boolean().default(true),
   companyName: z.string().default(""),
