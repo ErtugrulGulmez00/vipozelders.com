@@ -98,6 +98,21 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
         </div>
       </Section>
 
+      <Section title="Aylık soru aboneliği" description="Öğretmen kademe + ders için dönemlik soru çözüm aboneliği satar; abonenin soruları doğrudan o öğretmene gider. Otomatik çekim yoktur, dönem bitmeden veliye yenileme hatırlatması gider.">
+        <div className="sm:col-span-2">
+          <Checkbox name="subscriptionsEnabled" defaultChecked={settings.subscriptionsEnabled} label="Soru aboneliği satışı açık" />
+        </div>
+        <Field label="Abonelik komisyonu (%)">
+          <Input name="subscriptionCommissionBps" inputMode="decimal" defaultValue={String(settings.subscriptionCommissionBps / 100)} required />
+        </Field>
+        <NumberField name="subscriptionDays" label="Dönem uzunluğu" value={settings.subscriptionDays} suffix="gün" />
+        <NumberField name="subscriptionMinPriceTl" label="En düşük dönem ücreti" value={settings.subscriptionMinPriceTl} suffix="TL" />
+        <NumberField name="subscriptionMaxPriceTl" label="En yüksek dönem ücreti" value={settings.subscriptionMaxPriceTl} suffix="TL" />
+        <NumberField name="subscriptionRefundDays" label="Tam iade süresi" hint="Ödemeden sonra bu süre içinde ve hiç soru sorulmadıysa tam iade." value={settings.subscriptionRefundDays} suffix="gün" />
+        <NumberField name="subscriptionMissLimit" label="Cevaplanmayan soru sınırı" hint="Bu sayıya ulaşılırsa abonelik biter, kalan günlerin ücreti iade edilir." value={settings.subscriptionMissLimit} suffix="soru" />
+        <NumberField name="subscriptionReminderDays" label="Yenileme hatırlatması" hint="Dönem bitmeden bu kadar gün önce (0: gönderilmez)." value={settings.subscriptionReminderDays} suffix="gün" />
+      </Section>
+
       <Section title="Kurum paneli abonelikleri" description="Etüt merkezi ve dershanelere satılan paneller. Fiyatlar KDV dahil; “Kurumlar için” sayfasında görünür. “Eski fiyat” üstü çizili gösterilir; 0 yazarsanız gösterilmez.">
         <NumberField name="centerTrialDays" label="Yeni kuruma tanınan ilk kullanım süresi" hint="Sitede ilan edilmez; kurum hesabı açılırken uygulanır." value={settings.centerTrialDays} suffix="gün" />
         <div className="hidden sm:block" />

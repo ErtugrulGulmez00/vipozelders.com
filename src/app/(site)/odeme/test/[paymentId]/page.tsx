@@ -16,7 +16,7 @@ export const instant = false;
 export default async function MockPaymentPage({ params }: PageProps<"/odeme/test/[paymentId]">) {
   const user = await requireUser();
   const { paymentId } = await params;
-  const payment = await db.payment.findUnique({ where: { id: paymentId }, include: { booking: true, creditPurchase: true } });
+  const payment = await db.payment.findUnique({ where: { id: paymentId }, include: { booking: true, creditPurchase: true, subscription: true } });
   const subject = payment ? paymentSubject(payment) : null;
   if (!payment || !subject || subject.ownerId !== user.id || payment.provider !== "mock") redirect("/hesabim");
   if (payment.status !== "INITIATED") redirect(`/odeme/sonuc/${subject.resultId}`);
@@ -38,8 +38,8 @@ export default async function MockPaymentPage({ params }: PageProps<"/odeme/test
         </div>
         <DescriptionList
           items={[
-            { label: subject.kind === "credits" ? "Paket" : "Ders", value: subject.title },
-            { label: subject.kind === "credits" ? "Açıklama" : "Zaman", value: subject.detail },
+            { label: subject.kind === "booking" ? "Ders" : "Paket", value: subject.title },
+            { label: subject.kind === "booking" ? "Zaman" : "Açıklama", value: subject.detail },
             { label: "Tutar", value: <strong>{formatMoney(payment.amount)}</strong> },
           ]}
         />

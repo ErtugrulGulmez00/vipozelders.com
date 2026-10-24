@@ -80,6 +80,7 @@ model User {
   creditPurchases   CreditPurchase[]
   creditEntries     CreditLedger[]
   poolQuestions     PoolQuestion[]
+  questionSubscriptions QuestionSubscription[]
   classroomReports  ClassroomReport[]
   threadsAsStudent  MessageThread[]    @relation("ThreadStudent")
   threadsAsTeacher  MessageThread[]    @relation("ThreadTeacher")
@@ -190,6 +191,7 @@ model Level {
   offerings     TeacherOffering[]
   bookings      Booking[]
   poolQuestions PoolQuestion[]
+  questionPlans QuestionPlan[]
 }
 
 model Grade {
@@ -212,6 +214,7 @@ model Subject {
   offerings     TeacherOffering[]
   bookings      Booking[]
   poolQuestions PoolQuestion[]
+  questionPlans QuestionPlan[]
 }
 
 model LevelSubject {
@@ -337,6 +340,8 @@ model TeacherProfile {
   ledgerEntries          LedgerEntry[]
   payouts                Payout[]
   poolQuestions          PoolQuestion[]
+  questionPlans          QuestionPlan[]
+  questionSubscriptions  QuestionSubscription[]
 
   @@index([status])
 }
@@ -626,6 +631,8 @@ model Payment {
   booking           Booking?        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   creditPurchaseId  String?
   creditPurchase    CreditPurchase? @relation(fields: [creditPurchaseId], references: [id], onDelete: Cascade)
+  subscriptionId    String?
+  subscription      QuestionSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   provider          String
   providerToken     String?         @unique
   providerPaymentId String?
@@ -681,6 +688,8 @@ model LedgerEntry {
   booking        Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
   poolQuestionId String?
   poolQuestion   PoolQuestion?  @relation(fields: [poolQuestionId], references: [id], onDelete: SetNull)
+  subscriptionId String?
+  subscription   QuestionSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
   payoutId       String?
   payout         Payout?        @relation(fields: [payoutId], references: [id], onDelete: SetNull)
   bucket         LedgerBucket
@@ -1816,8 +1825,11 @@ model PoolQuestion {
   code               String             @unique
   studentId          String
   student            User               @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  purchaseId         String
-  purchase           CreditPurchase     @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  // Havuz sorusu krediden (purchaseId), abonelik sorusu abonelikten (subscriptionId) gelir; biri dolu olur.
+  purchaseId         String?
+  purchase           CreditPurchase?    @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  subscriptionId     String?
+  subscription       QuestionSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   levelId            Int
   level              Level              @relation(fields: [levelId], references: [id])
   subjectId          Int
@@ -1864,6 +1876,93 @@ model PoolQuestion {
   @@index([status, levelId, subjectId])
   @@index([studentId])
   @@index([claimedById, status])
+  @@index([subscriptionId, createdAt])
+}
+
+// ---------------------------------------------------------------------------
+// Aylık soru çözüm aboneliği: öğretmen kademe + ders için plan açar; veli 30 günlük dönem satın alır,
+// sorular doğrudan o öğretmene gider. Hakediş dönem bitince (itiraz/aktarım süresi sonrası) serbest kalır.
+// ---------------------------------------------------------------------------
+
+model QuestionPlan {
+  id          String         @id @default(cuid())
+  teacherId   String
+  teacher     TeacherProfile @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+  levelId     Int
+  level       Level          @relation(fields: [levelId], references: [id])
+  subjectId   Int
+  subject     Subject        @relation(fields: [subjectId], references: [id])
+  // Dönem ücreti (kuruş, KDV dahil)
+  price       Int
+  // Günde en fazla soru
+  dailyLimit  Int            @default(10)
+  // Soru başına cevap süresi (saat)
+  answerHours Int            @default(12)
+  description String?
+  isActive    Boolean        @default(true)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  subscriptions QuestionSubscription[]
+
+  @@unique([teacherId, levelId, subjectId])
+}
+
+enum SubscriptionStatus {
+  PENDING_PAYMENT
+  // Ödendi; dönem başladı ya da (yenilemede) önceki dönem bitince başlayacak
+  ACTIVE
+  ENDED
+  // Öğretmen kaynaklı ya da yönetici kararıyla erken bitti (kalan günler iade)
+  CANCELLED
+  REFUNDED
+  FAILED
+  EXPIRED
+}
+
+model QuestionSubscription {
+  id                 String             @id @default(cuid())
+  code               String             @unique
+  planId             String?
+  plan               QuestionPlan?      @relation(fields: [planId], references: [id], onDelete: SetNull)
+  studentId          String
+  student            User               @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacherId          String
+  teacher            TeacherProfile     @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+  // Satın alındığı andaki plan bilgileri (plan sonradan değişse de bu dönem etkilenmez)
+  levelId            Int
+  subjectId          Int
+  levelName          String
+  subjectName        String
+  price              Int
+  commissionRateBps  Int
+  commissionAmount   Int
+  teacherAmount      Int
+  dailyLimit         Int
+  answerHours        Int
+  days               Int                @default(30)
+  status             SubscriptionStatus @default(PENDING_PAYMENT)
+  paidAt             DateTime?
+  startsAt           DateTime?
+  endsAt             DateTime?
+  // Süresinde cevaplanmayan ya da itirazı haklı bulunan soru sayısı
+  missedCount        Int                @default(0)
+  refundedAmount     Int                @default(0)
+  cancelledAt        DateTime?
+  cancelReason       String?
+  renewalReminderAt  DateTime?
+  earningsReleaseAt  DateTime?
+  earningsReleasedAt DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  payments      Payment[]
+  questions     PoolQuestion[]
+  ledgerEntries LedgerEntry[]
+
+  @@index([studentId, status])
+  @@index([teacherId, status])
+  @@index([status, endsAt])
 }
 
 // ---------------------------------------------------------------------------

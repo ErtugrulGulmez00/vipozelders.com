@@ -87,6 +87,29 @@ export const POOL_STATUS: Record<string, { label: string; tone: Tone }> = {
   CANCELLED: { label: "Geri çekildi · kredi iade", tone: "slate" },
 };
 
+// Abonelik sorularında kredi yoktur; iade yerine bu etiketler gösterilir.
+const SUBSCRIPTION_POOL_STATUS: Record<string, { label: string; tone: Tone }> = {
+  EXPIRED: { label: "Süresinde cevaplanmadı", tone: "slate" },
+  REJECTED: { label: "Geri çevrildi", tone: "rose" },
+  REFUNDED: { label: "İtiraz haklı bulundu", tone: "slate" },
+  CANCELLED: { label: "Abonelik bitti", tone: "slate" },
+};
+
+/** Soru durumu etiketi (abonelik sorusu için kredi iadesi yazmaz). */
+export function poolStatus(question: { status: string; subscriptionId?: string | null }) {
+  return (question.subscriptionId ? SUBSCRIPTION_POOL_STATUS[question.status] : undefined) ?? POOL_STATUS[question.status] ?? { label: question.status, tone: "slate" as Tone };
+}
+
+export const SUBSCRIPTION_STATUS: Record<string, { label: string; tone: Tone }> = {
+  PENDING_PAYMENT: { label: "Ödeme bekleniyor", tone: "amber" },
+  ACTIVE: { label: "Aktif", tone: "green" },
+  ENDED: { label: "Süresi doldu", tone: "slate" },
+  CANCELLED: { label: "Erken bitti · kalan günler iade", tone: "rose" },
+  REFUNDED: { label: "İade edildi", tone: "slate" },
+  FAILED: { label: "Ödeme başarısız", tone: "rose" },
+  EXPIRED: { label: "Ödenmedi", tone: "slate" },
+};
+
 export const CREDIT_PURCHASE_STATUS: Record<string, { label: string; tone: Tone }> = {
   PENDING_PAYMENT: { label: "Ödeme bekleniyor", tone: "amber" },
   PAID: { label: "Aktif", tone: "green" },

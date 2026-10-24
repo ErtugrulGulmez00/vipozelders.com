@@ -1,9 +1,9 @@
-import type { Booking, CreditPurchase } from "@/generated/prisma/client";
+import type { Booking, CreditPurchase, QuestionSubscription } from "@/generated/prisma/client";
 import { formatLessonRange } from "@/lib/dates";
 
-/** Ödemenin neye ait olduğu: ders randevusu ya da soru kredisi paketi. Ödeme ve sonuç sayfaları bunu gösterir. */
+/** Ödemenin neye ait olduğu: ders randevusu, soru kredisi paketi ya da soru aboneliği. Ödeme ve sonuç sayfaları bunu gösterir. */
 export type PaymentSubject = {
-  kind: "booking" | "credits";
+  kind: "booking" | "credits" | "subscription";
   ownerId: string;
   /** /odeme/sonuc/[id] sayfasının kimliği */
   resultId: string;
@@ -13,8 +13,8 @@ export type PaymentSubject = {
   holdExpiresAt: Date | null;
 };
 
-export function paymentSubject(payment: { booking: Booking | null; creditPurchase: CreditPurchase | null }): PaymentSubject | null {
-  const { booking, creditPurchase } = payment;
+export function paymentSubject(payment: { booking: Booking | null; creditPurchase: CreditPurchase | null; subscription?: QuestionSubscription | null }): PaymentSubject | null {
+  const { booking, creditPurchase, subscription } = payment;
   if (booking) {
     return {
       kind: "booking",
@@ -34,6 +34,17 @@ export function paymentSubject(payment: { booking: Booking | null; creditPurchas
       code: creditPurchase.code,
       title: `${creditPurchase.credits} soru kredisi`,
       detail: "Soru çözüm paketi",
+      holdExpiresAt: null,
+    };
+  }
+  if (subscription) {
+    return {
+      kind: "subscription",
+      ownerId: subscription.studentId,
+      resultId: subscription.id,
+      code: subscription.code,
+      title: `${subscription.levelName} ${subscription.subjectName} soru aboneliği`,
+      detail: `${subscription.days} gün · günde ${subscription.dailyLimit} soruya kadar`,
       holdExpiresAt: null,
     };
   }

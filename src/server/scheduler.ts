@@ -19,6 +19,7 @@ import { sendPayoutDayReminder } from "./payout-reminder";
 import { pruneStats } from "./stats";
 import { sendPendingPushes } from "./push";
 import { expireUnansweredQuestions, releaseExpiredClaims, releasePoolEarnings } from "./question-pool";
+import { processSubscriptions } from "./subscriptions";
 
 const HOLDER = `${hostname()}-${process.pid}-${randomUUID().slice(0, 8)}`;
 
@@ -49,6 +50,8 @@ const TASKS = {
   poolEarnings: releasePoolEarnings,
   creditPurchases: expireStalePurchases,
   creditExpiry: expireCredits,
+  // Soru aboneliği: dönem sonu, hakediş, yenileme hatırlatması
+  subscriptions: processSubscriptions,
   refunds: () => processPendingRefunds(),
   payoutDay: sendPayoutDayReminder,
   statsPrune: pruneStats,

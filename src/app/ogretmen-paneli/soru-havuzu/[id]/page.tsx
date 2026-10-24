@@ -40,8 +40,10 @@ export default async function TeacherPoolQuestionPage({ params }: PageProps<"/og
       ) : null}
 
       {mine && question.status === "CLAIMED" && question.claimExpiresAt ? (
-        <Alert tone={question.claimExpiresAt.getTime() - now.getTime() < 10 * 60_000 ? "warning" : "info"}>
-          Soru sizde: {formatDateTime(question.claimExpiresAt)} saatine kadar çözümü gönderin; gönderilmezse havuza geri döner.
+        <Alert tone={question.claimExpiresAt.getTime() - now.getTime() < (question.subscriptionId ? 60 : 10) * 60_000 ? "warning" : "info"}>
+          {question.subscriptionId
+            ? `Abonenizin sorusu: ${formatDateTime(question.claimExpiresAt)} saatine kadar çözümü gönderin; gönderilmezse cevaplanmamış soru sayılır.`
+            : `Soru sizde: ${formatDateTime(question.claimExpiresAt)} saatine kadar çözümü gönderin; gönderilmezse havuza geri döner.`}
         </Alert>
       ) : null}
 
@@ -53,7 +55,7 @@ export default async function TeacherPoolQuestionPage({ params }: PageProps<"/og
 
       {mine && question.status === "CLAIMED" ? (
         <Card>
-          <CardHeader title="Çözümü gönderin" action={<ReleaseClaimForm id={question.id} />} />
+          <CardHeader title="Çözümü gönderin" action={question.subscriptionId ? undefined : <ReleaseClaimForm id={question.id} />} />
           <CardBody className="space-y-5">
             <AnswerForm id={question.id} />
             <div className="border-t border-slate-100 pt-4">
@@ -72,7 +74,7 @@ export default async function TeacherPoolQuestionPage({ params }: PageProps<"/og
         </Card>
       ) : null}
 
-      {mine && question.releaseAt && ["ANSWERED", "DISPUTED"].includes(question.status) ? (
+      {mine && question.releaseAt && question.teacherFee > 0 && ["ANSWERED", "DISPUTED"].includes(question.status) ? (
         <p className="text-sm text-slate-500">
           {formatMoney(question.teacherFee)} hakedişiniz {formatDateTime(question.releaseAt)} sonrasında ödenebilir bakiyenize geçer (itiraz süresi ve ödeme kuruluşu aktarım süresi).
         </p>

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { LinkButton } from "@/components/ui/button";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/primitives";
 import { formatCompact } from "@/lib/dates";
-import { POOL_STATUS } from "@/lib/labels";
+import { poolStatus } from "@/lib/labels";
 import { requireRole } from "@/server/auth/current-user";
 import { creditBalance } from "@/server/credits";
 import { db } from "@/server/db";
@@ -39,7 +39,7 @@ export default async function MyQuestionsPage() {
       ) : (
         <Card className="divide-y divide-slate-100">
           {questions.map((q) => {
-            const status = POOL_STATUS[q.status];
+            const status = poolStatus(q);
             return (
               <Link key={q.id} href={`/hesabim/sorularim/${q.id}`} className="flex flex-wrap items-center justify-between gap-2 px-5 py-4 hover:bg-slate-50">
                 <div>
@@ -51,7 +51,7 @@ export default async function MyQuestionsPage() {
                     {q.followUpText && !q.followUpAnswer ? " · ek sorunuz bekliyor" : ""}
                   </p>
                 </div>
-                <Badge tone={status?.tone}>{status?.label ?? q.status}</Badge>
+                <Badge tone={status.tone}>{status.label}</Badge>
               </Link>
             );
           })}

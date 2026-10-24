@@ -1,4 +1,4 @@
-import { BadgeCheck, BookOpen, Clock, GraduationCap, Heart, Home, MapPin, Monitor, Sparkles, Users } from "lucide-react";
+import { BadgeCheck, BookOpen, Clock, GraduationCap, Heart, Home, MapPin, Monitor, Repeat, Sparkles, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -18,6 +18,8 @@ import { fullName, initials, shortName } from "@/lib/text";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { uploadUrl } from "@/server/storage";
+import { loadSettings } from "@/server/settings";
+import { publicPlans } from "@/server/subscriptions";
 import { getTeacherMeta, getTeacherProfileBySlug, isTeacherPublic, type PublicTeacher } from "@/server/teachers";
 
 export async function generateMetadata({ params }: PageProps<"/ogretmen/[slug]">): Promise<Metadata> {
@@ -177,6 +179,10 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
           ) : null}
         </Card>
 
+        <Suspense fallback={null}>
+          <SubscriptionPlans teacherId={teacher.userId} firstName={teacher.user.firstName} />
+        </Suspense>
+
         <Reviews teacher={teacher} />
       </div>
 
@@ -231,6 +237,44 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
         </div>
       ) : null}
     </div>
+  );
+}
+
+/** Öğretmenin aylık soru aboneliği planları (varsa). */
+async function SubscriptionPlans({ teacherId, firstName }: { teacherId: string; firstName: string }) {
+  const [plans, settings] = await Promise.all([publicPlans(teacherId), loadSettings()]);
+  if (!plans.length) return null;
+  return (
+    <Card className="border-violet-200 p-6">
+      <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+        <Repeat className="size-5 text-violet-600" aria-hidden /> Aylık soru aboneliği
+      </h2>
+      <p className="mt-1 text-sm text-slate-600">Sorularınızın fotoğrafını doğrudan {firstName} öğretmene gönderin; belirlenen sürede adım adım çözülsün.</p>
+      <div className="mt-4 divide-y divide-slate-100">
+        {plans.map((plan) => (
+          <div key={plan.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+            <div>
+              <p className="font-semibold text-slate-900">
+                {plan.level.name} · {plan.subject.name}
+              </p>
+              <p className="text-sm text-slate-500">
+                Günde {plan.dailyLimit} soruya kadar · {plan.answerHours} saatte cevap
+              </p>
+              {plan.description ? <p className="mt-1 text-sm text-slate-600">{plan.description}</p> : null}
+            </div>
+            <div className="flex items-center gap-3">
+              <p className="text-right">
+                <span className="text-lg font-bold text-slate-900">{formatMoney(plan.price)}</span>
+                <span className="text-sm text-slate-500"> / {settings.subscriptionDays} gün</span>
+              </p>
+              <Link href={`/abonelik/${plan.id}`} className={buttonClasses("primary", "sm")}>
+                Abone ol
+              </Link>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 }
 

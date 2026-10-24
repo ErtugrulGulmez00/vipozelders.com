@@ -4,7 +4,7 @@ import Link from "next/link";
 import { AnswersPoolToggle, ClaimForm } from "@/components/panel/pool-forms";
 import { Alert, Badge, Card, CardBody, CardHeader, EmptyState, PageHeader, Stars } from "@/components/ui/primitives";
 import { formatCompact, formatDateTime } from "@/lib/dates";
-import { POOL_STATUS } from "@/lib/labels";
+import { poolStatus } from "@/lib/labels";
 import { formatMoney } from "@/lib/money";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
@@ -20,7 +20,8 @@ export default async function TeacherPoolPage() {
     loadSettings(),
     teacherPoolFeed(user.id),
   ]);
-  const active = feed.mine.filter((q) => q.status === "CLAIMED");
+  // Abone soruları en üstte, en yakın son süreye göre
+  const active = feed.mine.filter((q) => q.status === "CLAIMED").sort((a, b) => Number(Boolean(b.subscriptionId)) - Number(Boolean(a.subscriptionId)) || (a.claimExpiresAt?.getTime() ?? 0) - (b.claimExpiresAt?.getTime() ?? 0));
   const history = feed.mine.filter((q) => q.status !== "CLAIMED");
   const solved = history.filter((q) => ["ANSWERED", "CLOSED"].includes(q.status));
 
@@ -65,6 +66,7 @@ export default async function TeacherPoolPage() {
               <li key={q.id}>
                 <Link href={`/ogretmen-paneli/soru-havuzu/${q.id}`} className="flex flex-wrap items-center justify-between gap-2 px-5 py-4 hover:bg-slate-50">
                   <span className="font-medium text-slate-900">
+                    {q.subscriptionId ? <Badge tone="violet" className="mr-2">Abone</Badge> : null}
                     {q.levelName} · {q.subjectName}
                   </span>
                   <span className="text-sm text-amber-700">Son: {q.claimExpiresAt ? formatDateTime(q.claimExpiresAt) : "—"}</span>
@@ -104,15 +106,16 @@ export default async function TeacherPoolPage() {
           <CardHeader title="Geçmiş" />
           <ul className="divide-y divide-slate-100">
             {history.map((q) => {
-              const status = POOL_STATUS[q.status];
+              const status = poolStatus(q);
               return (
                 <li key={q.id}>
                   <Link href={`/ogretmen-paneli/soru-havuzu/${q.id}`} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3 hover:bg-slate-50">
                     <span className="text-sm text-slate-800">
+                      {q.subscriptionId ? <Badge tone="violet" className="mr-2">Abone</Badge> : null}
                       {q.levelName} · {q.subjectName} <span className="text-xs text-slate-400">{q.code}</span>
                       {q.followUpText && !q.followUpAnswer ? <span className="ml-2 text-xs font-semibold text-amber-700">ek soru bekliyor</span> : null}
                     </span>
-                    <Badge tone={status?.tone}>{status?.label ?? q.status}</Badge>
+                    <Badge tone={status.tone}>{status.label}</Badge>
                   </Link>
                 </li>
               );

@@ -1,7 +1,7 @@
 import type { PoolQuestion } from "@/generated/prisma/client";
 import { Badge, Card, CardBody, CardHeader, Stars } from "@/components/ui/primitives";
 import { formatCompact } from "@/lib/dates";
-import { POOL_STATUS } from "@/lib/labels";
+import { poolStatus } from "@/lib/labels";
 import { uploadUrl } from "@/server/storage";
 
 function Photo({ fileKey, alt }: { fileKey: string | null; alt: string }) {
@@ -17,7 +17,7 @@ function Photo({ fileKey, alt }: { fileKey: string | null; alt: string }) {
 
 /** Havuz sorusu: soru, çözüm ve ek soru/cevap. Öğrenci adı hiçbir görünümde yer almaz. */
 export function PoolQuestionView({ question, viewer }: { question: PoolQuestion; viewer: "student" | "teacher" | "admin" }) {
-  const status = POOL_STATUS[question.status];
+  const status = poolStatus(question);
   const video = uploadUrl(question.answerVideoKey);
   return (
     <Card>

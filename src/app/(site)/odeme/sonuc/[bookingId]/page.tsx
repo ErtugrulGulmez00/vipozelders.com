@@ -27,7 +27,11 @@ export default async function PaymentResultPage({ params }: PageProps<"/odeme/so
       include: { payments: { orderBy: { createdAt: "desc" }, take: 1 }, teacher: { select: { slug: true } } },
     });
   let booking = await load();
-  if (!booking) return <CreditPurchaseResult purchaseId={bookingId} userId={user.id} />;
+  if (!booking) {
+    const subscription = await db.questionSubscription.findUnique({ where: { id: bookingId }, select: { id: true } });
+    if (subscription) return <SubscriptionResult subscriptionId={bookingId} userId={user.id} />;
+    return <CreditPurchaseResult purchaseId={bookingId} userId={user.id} />;
+  }
   if (booking.studentId !== user.id) redirect("/hesabim");
   let payment = booking.payments[0];
 
@@ -178,6 +182,74 @@ async function CreditPurchaseResult({ purchaseId, userId }: { purchaseId: string
       <LinkButton href="/soru-sor" size="lg" className="mt-6">
         <RotateCcw className="size-4" aria-hidden /> Paket seçimine dön
       </LinkButton>
+    </Result>
+  );
+}
+
+/** Soru aboneliği ödemesinin sonucu. */
+async function SubscriptionResult({ subscriptionId, userId }: { subscriptionId: string; userId: string }) {
+  const load = () => db.questionSubscription.findUnique({ where: { id: subscriptionId }, include: { payments: { orderBy: { createdAt: "desc" }, take: 1 } } });
+  let sub = await load();
+  if (!sub || sub.studentId !== userId) redirect("/hesabim");
+  let payment = sub.payments[0];
+  if (payment?.status === "INITIATED" && REMOTE_PROVIDERS.has(payment.provider) && payment.providerToken) {
+    await completeCheckout(payment.providerToken).catch((error: unknown) => console.error("[ödeme sonucu]", error));
+    sub = (await load())!;
+    payment = sub.payments[0];
+  }
+  const details = (
+    <DescriptionList
+      items={[
+        { label: "Abonelik no", value: sub.code },
+        { label: "Abonelik", value: `${sub.levelName} ${sub.subjectName} · günde ${sub.dailyLimit} soru` },
+        { label: "Tutar", value: formatMoney(sub.price) },
+        ...(sub.startsAt && sub.endsAt ? [{ label: "Dönem", value: `${formatDateTime(sub.startsAt)} – ${formatDateTime(sub.endsAt)}` }] : []),
+      ]}
+    />
+  );
+  if (sub.status === "ACTIVE") {
+    // Yenilemede yeni dönem mevcut dönem bitince başlar
+    const queued = Boolean(sub.startsAt && sub.startsAt > new Date());
+    return (
+      <Result icon={<CheckCircle2 className="size-12 text-emerald-500" />} title={queued ? "Aboneliğiniz yenilendi" : "Aboneliğiniz başladı"}>
+        <p className="text-slate-600">
+          {queued
+            ? `Yeni dönem ${formatDateTime(sub.startsAt!)} tarihinde başlayacak; o zamana kadar mevcut aboneliğinizden soru göndermeye devam edebilirsiniz.`
+            : "Sorularınızın fotoğrafını abonelik sayfanızdan doğrudan öğretmeninize gönderebilirsiniz."}
+        </p>
+        <Card className="mt-6 p-5 text-left">{details}</Card>
+        <LinkButton href={queued ? "/hesabim/abonelikler" : `/hesabim/abonelikler/${sub.id}`} size="lg" className="mt-6">
+          {queued ? "Aboneliklerim" : "Soru gönder"}
+        </LinkButton>
+      </Result>
+    );
+  }
+  if (sub.status === "PENDING_PAYMENT" && payment?.status === "INITIATED" && REMOTE_PROVIDERS.has(payment.provider)) {
+    return (
+      <Result icon={<LoaderCircle className="size-12 animate-spin text-brand-500" />} title="Ödemeniz kontrol ediliyor">
+        <AutoRefresh />
+        <p className="text-slate-600">Bankanızdan gelen sonuç bekleniyor. Bu sayfa birkaç saniyede bir kendiliğinden yenilenir.</p>
+        <Card className="mt-6 p-5 text-left">{details}</Card>
+      </Result>
+    );
+  }
+  if (sub.status === "REFUNDED" || sub.status === "CANCELLED" || sub.status === "ENDED") {
+    return (
+      <Result icon={<Clock className="size-12 text-slate-400" />} title="Abonelik sona erdi">
+        <p className="text-slate-600">{sub.refundedAmount ? `${formatMoney(sub.refundedAmount)} kartınıza iade edildi.` : "Bu abonelik dönemi tamamlandı."}</p>
+        <Card className="mt-6 p-5 text-left">{details}</Card>
+      </Result>
+    );
+  }
+  return (
+    <Result icon={<XCircle className="size-12 text-rose-500" />} title="Ödeme tamamlanamadı">
+      <p className="text-slate-600">{payment?.failureReason ?? "Ödeme işlemi tamamlanmadı."} Kartınızdan para çekilmedi; tekrar deneyebilirsiniz.</p>
+      <Card className="mt-6 p-5 text-left">{details}</Card>
+      {sub.planId ? (
+        <LinkButton href={`/abonelik/${sub.planId}`} size="lg" className="mt-6">
+          <RotateCcw className="size-4" aria-hidden /> Tekrar dene
+        </LinkButton>
+      ) : null}
     </Result>
   );
 }

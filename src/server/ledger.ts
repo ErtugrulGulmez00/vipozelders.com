@@ -5,7 +5,7 @@ type Tx = DbTransaction | typeof db;
 
 export async function addLedgerEntry(
   tx: Tx,
-  entry: { teacherId: string; bookingId?: string | null; poolQuestionId?: string | null; payoutId?: string | null; bucket: LedgerBucket; amount: number; description: string },
+  entry: { teacherId: string; bookingId?: string | null; poolQuestionId?: string | null; subscriptionId?: string | null; payoutId?: string | null; bucket: LedgerBucket; amount: number; description: string },
 ) {
   if (entry.amount === 0) return;
   await tx.ledgerEntry.create({ data: entry });

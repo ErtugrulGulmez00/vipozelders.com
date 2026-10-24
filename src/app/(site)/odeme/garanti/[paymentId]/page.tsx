@@ -16,7 +16,7 @@ export const instant = false;
 export default async function GarantiPaymentPage({ params }: PageProps<"/odeme/garanti/[paymentId]">) {
   const user = await requireUser();
   const { paymentId } = await params;
-  const payment = await db.payment.findUnique({ where: { id: paymentId }, include: { booking: true, creditPurchase: true } });
+  const payment = await db.payment.findUnique({ where: { id: paymentId }, include: { booking: true, creditPurchase: true, subscription: true } });
   if (!payment || payment.provider !== "garanti") redirect("/hesabim");
   const raw = garantiRaw(payment.raw);
   const subject = paymentSubject(payment);

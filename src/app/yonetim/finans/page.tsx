@@ -21,9 +21,9 @@ export default async function FinancePage() {
   const [totals, refunds, refundIssues, balanceGroups, payments, pendingTotal] = await Promise.all([
     db.payment.aggregate({ where: { status: { in: ["SUCCEEDED", "PARTIALLY_REFUNDED", "REFUNDED"] } }, _sum: { amount: true } }),
     db.refund.aggregate({ where: { status: "SUCCEEDED" }, _sum: { amount: true } }),
-    db.refund.findMany({ where: { status: { in: ["PENDING", "FAILED"] } }, include: { payment: { include: { booking: true, creditPurchase: true } } }, orderBy: { createdAt: "asc" } }),
+    db.refund.findMany({ where: { status: { in: ["PENDING", "FAILED"] } }, include: { payment: { include: { booking: true, creditPurchase: true, subscription: true } } }, orderBy: { createdAt: "asc" } }),
     db.ledgerEntry.groupBy({ by: ["teacherId"], where: { bucket: "AVAILABLE" }, _sum: { amount: true } }),
-    db.payment.findMany({ where: { status: { not: "INITIATED" } }, orderBy: { createdAt: "desc" }, take: 30, include: { booking: true, creditPurchase: true } }),
+    db.payment.findMany({ where: { status: { not: "INITIATED" } }, orderBy: { createdAt: "desc" }, take: 30, include: { booking: true, creditPurchase: true, subscription: true } }),
     db.ledgerEntry.aggregate({ where: { bucket: "PENDING" }, _sum: { amount: true } }),
   ]);
   const withBalance = balanceGroups.filter((g) => (g._sum.amount ?? 0) > 0);
@@ -85,7 +85,7 @@ export default async function FinancePage() {
               {refundIssues.map((r) => (
                 <tr key={r.id}>
                   <Td>
-                    <PaymentLink booking={r.payment.booking} purchase={r.payment.creditPurchase} />
+                    <PaymentLink booking={r.payment.booking} purchase={r.payment.creditPurchase} subscription={r.payment.subscription} />
                   </Td>
                   <Td>{formatMoney(r.amount)}</Td>
                   <Td>
@@ -146,7 +146,7 @@ export default async function FinancePage() {
               <tr key={p.id}>
                 <Td className="whitespace-nowrap text-xs">{formatCompact(p.createdAt)}</Td>
                 <Td>
-                  <PaymentLink booking={p.booking} purchase={p.creditPurchase} />
+                  <PaymentLink booking={p.booking} purchase={p.creditPurchase} subscription={p.subscription} />
                 </Td>
                 <Td className="text-xs">{p.provider}</Td>
                 <Td>{formatMoney(p.amount)}</Td>
@@ -167,7 +167,7 @@ export default async function FinancePage() {
   );
 }
 
-function PaymentLink({ booking, purchase }: { booking: { id: string; code: string } | null; purchase: { code: string; credits: number } | null }) {
+function PaymentLink({ booking, purchase, subscription }: { booking: { id: string; code: string } | null; purchase: { code: string; credits: number } | null; subscription: { code: string; levelName: string; subjectName: string } | null }) {
   if (booking) {
     return (
       <Link href={`/yonetim/randevular/${booking.id}`} className="font-semibold text-brand-700 hover:underline">
@@ -179,6 +179,13 @@ function PaymentLink({ booking, purchase }: { booking: { id: string; code: strin
     return (
       <Link href={`/yonetim/soru-havuzu?paket=${purchase.code}`} className="font-semibold text-brand-700 hover:underline">
         {purchase.code} <span className="font-normal text-slate-500">· {purchase.credits} kredi</span>
+      </Link>
+    );
+  }
+  if (subscription) {
+    return (
+      <Link href={`/yonetim/soru-havuzu?abonelik=${subscription.code}`} className="font-semibold text-brand-700 hover:underline">
+        {subscription.code} <span className="font-normal text-slate-500">· {subscription.levelName} {subscription.subjectName} aboneliği</span>
       </Link>
     );
   }

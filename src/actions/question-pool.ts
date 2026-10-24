@@ -144,7 +144,7 @@ export async function releasePoolClaimAction(_: ActionState, formData: FormData)
 export async function rejectPoolQuestionAction(_: ActionState, formData: FormData): Promise<ActionState> {
   const user = await actionUser("TEACHER");
   if (!user) return failure("Oturumunuz kapanmış.");
-  return run(() => rejectPoolQuestion(user.id, text(formData, "id"), text(formData, "reason")), "Soru geri çevrildi; öğrencinin kredisi iade edildi.");
+  return run(() => rejectPoolQuestion(user.id, text(formData, "id"), text(formData, "reason")), "Soru geri çevrildi; öğrenciye bildirildi.");
 }
 
 export async function answerPoolQuestionAction(_: ActionState, formData: FormData): Promise<ActionState> {

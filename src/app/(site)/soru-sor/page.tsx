@@ -1,4 +1,4 @@
-import { Camera, Clock, MessageCircleQuestion, ShieldCheck } from "lucide-react";
+import { Camera, Clock, MessageCircleQuestion, Repeat, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LinkButton } from "@/components/ui/button";
@@ -6,6 +6,7 @@ import { Alert, Card } from "@/components/ui/primitives";
 import { formatMoney } from "@/lib/money";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { creditBalance, parsePackages, singleQuestionPrice } from "@/server/credits";
+import { db } from "@/server/db";
 import { salesOpen } from "@/server/payments/service";
 import { poolSubjects } from "@/server/question-pool";
 import { loadSettings } from "@/server/settings";
@@ -26,7 +27,13 @@ export default async function AskQuestionPage() {
     return { ...p, unit, saving: single > 0 ? Math.max(0, Math.round((1 - unit / single) * 100)) : 0 };
   });
   const student = user?.role === "STUDENT" ? user : null;
-  const balance = student ? await creditBalance(student.id) : 0;
+  const now = new Date();
+  const [balance, subscriptions] = student
+    ? await Promise.all([
+        creditBalance(student.id),
+        db.questionSubscription.findMany({ where: { studentId: student.id, status: "ACTIVE", startsAt: { lte: now }, endsAt: { gt: now } }, include: { teacher: { select: { user: { select: { firstName: true, lastName: true } } } } } }),
+      ])
+    : [0, []];
   const open = salesOpen();
 
   return (
@@ -52,6 +59,22 @@ export default async function AskQuestionPage() {
           </li>
         ))}
       </ul>
+
+      {subscriptions.length ? (
+        <Card className="mt-10 border-violet-200 p-5 sm:p-6">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-slate-900">
+            <Repeat className="size-5 text-violet-600" aria-hidden /> Soru aboneliğiniz var
+          </h2>
+          <p className="mt-1 text-sm text-slate-600">Abonelik sorularınız kredi harcamaz; doğrudan öğretmeninize gider.</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {subscriptions.map((sub) => (
+              <LinkButton key={sub.id} href={`/hesabim/abonelikler/${sub.id}`} variant="outline">
+                {sub.teacher.user.firstName} {sub.teacher.user.lastName.charAt(0)}. · {sub.levelName} {sub.subjectName}
+              </LinkButton>
+            ))}
+          </div>
+        </Card>
+      ) : null}
 
       {student && balance > 0 ? (
         <Card className="mt-10 p-5 sm:p-6">

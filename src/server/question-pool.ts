@@ -9,10 +9,13 @@ import { notify, notifyRole } from "./notifications";
 import { settledReleaseAt } from "./pricing";
 import { loadSettings, type SiteSettings } from "./settings";
 import { deleteUpload, saveUpload, UploadError } from "./storage";
+import { endSubscriptionForMisses, registerMiss } from "./subscriptions";
 
 // Soru havuzu: öğrenci 1 kredi karşılığı soru gönderir; kademe ve derse uygun öğretmenler görür, biri üstlenir
 // (kilit), çözer. Öğretmenin payı itiraz süresi ve ödeme kuruluşu aktarım süresi dolunca serbest kalır.
 // Çözülmeyen, geri çevrilen ya da itirazı haklı bulunan sorunun kredisi iade edilir.
+// Abonelik soruları (subscriptionId) aynı kayıttır ama havuza düşmez: doğrudan abone olunan öğretmendedir,
+// kredi harcanmaz; süresinde cevaplanmaz ya da itirazı haklı bulunursa abonelikte "kaçırılan soru" sayılır.
 
 const HOUR = 3_600_000;
 const IMAGE_MAX = 8 * 1024 * 1024;
@@ -34,6 +37,7 @@ async function upload(file: File, kind: "image" | "video") {
 const hasFile = (file: File | null | undefined): file is File => Boolean(file && file.size > 0);
 
 async function returnCredit(tx: DbTransaction, question: Pick<PoolQuestion, "id" | "studentId" | "purchaseId">, note: string) {
+  if (!question.purchaseId) return;
   await tx.creditLedger.create({ data: { studentId: question.studentId, purchaseId: question.purchaseId, questionId: question.id, kind: "RETURN", amount: 1, note } });
 }
 
@@ -191,7 +195,7 @@ export async function claimPoolQuestion(teacherId: string, id: string, now = new
   if (!(await teacherCanSee(teacherId, q))) throw new PoolError("Bu soru sizin ders verdiğiniz kademe ve derste değil.");
   const standing = await teacherPoolStanding(teacherId, now);
   if (standing.blocked) throw new PoolError("Puanınız ya da haklı bulunan itirazlar nedeniyle soru havuzuna erişiminiz geçici olarak kapalı. Destek ekibiyle görüşün.");
-  const active = await db.poolQuestion.count({ where: { claimedById: teacherId, status: "CLAIMED" } });
+  const active = await db.poolQuestion.count({ where: { claimedById: teacherId, status: "CLAIMED", subscriptionId: null } });
   if (active >= MAX_ACTIVE_CLAIMS) throw new PoolError(`Aynı anda en fazla ${MAX_ACTIVE_CLAIMS} soru üstlenebilirsiniz; önce elinizdekileri çözün.`);
   const claimExpiresAt = new Date(Math.min(now.getTime() + settings.poolClaimMinutes * 60_000, q.expiresAt.getTime()));
   await db.$transaction((tx) => move(tx, id, ["OPEN"], { status: "CLAIMED", claimedById: teacherId, claimedAt: now, claimExpiresAt }));
@@ -200,6 +204,7 @@ export async function claimPoolQuestion(teacherId: string, id: string, now = new
 export async function releasePoolClaim(teacherId: string, id: string) {
   const q = await teacherQuestion(teacherId, id);
   if (q.status !== "CLAIMED" || q.claimedById !== teacherId) throw new PoolError("Bu soru sizde değil.");
+  if (q.subscriptionId) throw new PoolError("Abonenizin sorusu havuza bırakılamaz; çözülemiyorsa gerekçesiyle geri çevirin.");
   await db.$transaction((tx) => move(tx, id, ["CLAIMED"], { status: "OPEN", claimedById: null, claimedAt: null, claimExpiresAt: null }));
 }
 
@@ -211,7 +216,7 @@ export async function rejectPoolQuestion(teacherId: string, id: string, reason: 
   await db.$transaction(async (tx) => {
     await move(tx, id, ["CLAIMED"], { status: "REJECTED", rejectReason: text });
     await returnCredit(tx, q, `${q.code} geri çevrildi`);
-    await notify({ userId: q.studentId, type: "pool.rejected", title: `${q.code}: soru çözülemedi, krediniz iade edildi`, body: `Öğretmenin notu: “${text}”. Soruyu net ve tek soru olacak şekilde tekrar gönderebilirsiniz.`, link: `/hesabim/sorularim/${id}` }, tx);
+    await notify({ userId: q.studentId, type: "pool.rejected", title: q.subscriptionId ? `${q.code}: öğretmeniniz soruyu geri çevirdi` : `${q.code}: soru çözülemedi, krediniz iade edildi`, body: `Öğretmenin notu: “${text}”. Soruyu net ve tek soru olacak şekilde tekrar gönderebilirsiniz${q.subscriptionId ? "; günlük hakkınızdan düşülmedi" : ""}.`, link: `/hesabim/sorularim/${id}` }, tx);
   });
 }
 
@@ -224,13 +229,14 @@ export async function answerPoolQuestion(teacherId: string, id: string, input: {
   const imageKey = hasFile(input.image) ? await upload(input.image, "image") : null;
   const videoKey = hasFile(input.video) ? await upload(input.video, "video") : null;
   const disputeUntil = new Date(now.getTime() + settings.disputeWindowHours * HOUR);
-  const releaseAt = settledReleaseAt(disputeUntil, q.purchase.paidAt, settings.settlementDays);
+  // Abonelik sorusunun ayrı ücreti yok (teacherFee 0); öğretmen payı abonelik döneminden gelir.
+  const releaseAt = q.purchase ? settledReleaseAt(disputeUntil, q.purchase.paidAt, settings.settlementDays) : disputeUntil;
   try {
     await db.$transaction(async (tx) => {
       await move(tx, id, ["CLAIMED"], { status: "ANSWERED", answerText: text, answerImageKey: imageKey, answerVideoKey: videoKey, answeredAt: now, disputeUntil, releaseAt, claimExpiresAt: null });
       await addLedgerEntry(tx, { teacherId, poolQuestionId: id, bucket: "PENDING", amount: q.teacherFee, description: `${q.code} soru çözümü` });
       await notify({ userId: q.studentId, type: "pool.answered", title: `${q.code}: sorunuzun çözümü geldi`, body: `${q.levelName} ${q.subjectName}. Anlamadığınız yeri bir kez sorabilir, ${formatDateTime(disputeUntil)} saatine kadar sorun bildirebilirsiniz.`, link: `/hesabim/sorularim/${id}` }, tx);
-      await notify({ userId: teacherId, type: "pool.paid", title: "Çözüm gönderildi", body: `${q.code} · ${formatMoney(q.teacherFee)} hakedişiniz ${formatDateTime(releaseAt)} sonrasında serbest kalacak.`, link: "/ogretmen-paneli/kazanclar", email: false }, tx);
+      if (q.teacherFee > 0) await notify({ userId: teacherId, type: "pool.paid", title: "Çözüm gönderildi", body: `${q.code} · ${formatMoney(q.teacherFee)} hakedişiniz ${formatDateTime(releaseAt)} sonrasında serbest kalacak.`, link: "/ogretmen-paneli/kazanclar", email: false }, tx);
     });
   } catch (error) {
     await deleteUpload(imageKey);
@@ -258,18 +264,22 @@ export async function resolvePoolDispute(adminId: string, id: string, upheld: bo
   const q = await db.poolQuestion.findUnique({ where: { id } });
   if (!q || q.status !== "DISPUTED") throw new PoolError("Bu soruda açık itiraz yok.");
   const text = note.trim().slice(0, 500) || (upheld ? "İtiraz haklı bulundu." : "Çözüm yeterli bulundu.");
+  const settings = await loadSettings();
+  let missLimitReached = false;
   await db.$transaction(async (tx) => {
     if (upheld) {
       await move(tx, id, ["DISPUTED"], { status: "REFUNDED", resolutionNote: text, resolvedAt: now });
       await returnCredit(tx, q, `${q.code} itiraz sonucu iade`);
+      if (q.subscriptionId) missLimitReached = await registerMiss(tx, q.subscriptionId, settings);
       if (q.claimedById) await addLedgerEntry(tx, { teacherId: q.claimedById, poolQuestionId: id, bucket: "PENDING", amount: -q.teacherFee, description: `${q.code} itiraz haklı bulundu` });
     } else {
       await move(tx, id, ["DISPUTED"], { status: "ANSWERED", resolutionNote: text, resolvedAt: now });
     }
     await tx.auditLog.create({ data: { actorId: adminId, action: upheld ? "pool.dispute_upheld" : "pool.dispute_rejected", entityType: "PoolQuestion", entityId: id, details: { note: text } } });
-    await notify({ userId: q.studentId, type: "pool.dispute_resolved", title: `${q.code}: itirazınız sonuçlandı`, body: upheld ? `Krediniz iade edildi. ${text}` : `Çözüm yeterli bulundu. ${text}`, link: `/hesabim/sorularim/${id}` }, tx);
+    await notify({ userId: q.studentId, type: "pool.dispute_resolved", title: `${q.code}: itirazınız sonuçlandı`, body: upheld ? `${q.subscriptionId ? "İtirazınız haklı bulundu." : "Krediniz iade edildi."} ${text}` : `Çözüm yeterli bulundu. ${text}`, link: `/hesabim/sorularim/${id}` }, tx);
     if (q.claimedById) await notify({ userId: q.claimedById, type: "pool.dispute_resolved", title: `${q.code}: itiraz sonuçlandı`, body: upheld ? `İtiraz haklı bulundu; bu sorudan hakediş oluşmadı. ${text}` : `Çözümünüz yeterli bulundu. ${text}`, link: `/ogretmen-paneli/soru-havuzu/${id}`, email: false }, tx);
   });
+  if (missLimitReached && q.subscriptionId) await endSubscriptionForMisses(q.subscriptionId, now);
 }
 
 // ---------------------------------------------------------------------------
@@ -285,14 +295,22 @@ export async function releaseExpiredClaims(now = new Date()): Promise<number> {
 /** Süresinde çözülmeyen soruların kredisi iade edilir. */
 export async function expireUnansweredQuestions(now = new Date()): Promise<number> {
   const due = await db.poolQuestion.findMany({ where: { status: { in: ["OPEN", "CLAIMED"] }, expiresAt: { lte: now } }, take: 200 });
+  const settings = await loadSettings();
   let count = 0;
   for (const q of due) {
     try {
+      let missLimitReached = false;
       await db.$transaction(async (tx) => {
         await move(tx, q.id, ["OPEN", "CLAIMED"], { status: "EXPIRED", claimExpiresAt: null });
-        await returnCredit(tx, q, `${q.code} süresinde çözülmedi`);
-        await notify({ userId: q.studentId, type: "pool.expired", title: `${q.code}: sorunuz süresinde çözülemedi`, body: "Krediniz iade edildi; isterseniz soruyu tekrar gönderebilirsiniz.", link: `/hesabim/sorularim/${q.id}` }, tx);
+        if (q.subscriptionId) {
+          missLimitReached = await registerMiss(tx, q.subscriptionId, settings);
+          await notify({ userId: q.studentId, type: "pool.expired", title: `${q.code}: öğretmeniniz süresinde cevaplamadı`, body: "Bu soru günlük hakkınızdan düşülmedi; tekrar gönderebilirsiniz. Cevaplanmayan sorular sınırı aşarsa kalan günlerin ücreti size iade edilir.", link: `/hesabim/sorularim/${q.id}` }, tx);
+        } else {
+          await returnCredit(tx, q, `${q.code} süresinde çözülmedi`);
+          await notify({ userId: q.studentId, type: "pool.expired", title: `${q.code}: sorunuz süresinde çözülemedi`, body: "Krediniz iade edildi; isterseniz soruyu tekrar gönderebilirsiniz.", link: `/hesabim/sorularim/${q.id}` }, tx);
+        }
       });
+      if (missLimitReached && q.subscriptionId) await endSubscriptionForMisses(q.subscriptionId, now);
       count++;
     } catch {
       continue;

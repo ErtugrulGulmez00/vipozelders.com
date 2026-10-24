@@ -21,13 +21,14 @@ export default async function MyQuestionPage({ params }: PageProps<"/hesabim/sor
 
   return (
     <div className="space-y-5">
-      <Link href="/hesabim/sorularim" className="text-sm text-brand-700 hover:underline">
-        ← Sorularım
+      <Link href={question.subscriptionId ? `/hesabim/abonelikler/${question.subscriptionId}` : "/hesabim/sorularim"} className="text-sm text-brand-700 hover:underline">
+        {question.subscriptionId ? "← Aboneliğim" : "← Sorularım"}
       </Link>
 
       {question.status === "OPEN" || question.status === "CLAIMED" ? (
-        <Alert tone="info" title={question.status === "CLAIMED" ? "Bir öğretmen sorunuzu çözüyor" : "Sorunuz öğretmen bekliyor"}>
-          Çözüm en geç {formatDateTime(question.expiresAt)} saatine kadar gelecek; gelmezse krediniz otomatik iade edilir. Çözüm gelince bildirim alacaksınız.
+        <Alert tone="info" title={question.subscriptionId ? "Öğretmeniniz sorunuzu çözüyor" : question.status === "CLAIMED" ? "Bir öğretmen sorunuzu çözüyor" : "Sorunuz öğretmen bekliyor"}>
+          Çözüm en geç {formatDateTime(question.expiresAt)} saatine kadar gelecek;{" "}
+          {question.subscriptionId ? "gelmezse cevaplanmamış soru sayılır ve günlük hakkınızdan düşülmez." : "gelmezse krediniz otomatik iade edilir."} Çözüm gelince bildirim alacaksınız.
         </Alert>
       ) : null}
 

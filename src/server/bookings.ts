@@ -17,6 +17,7 @@ import { addLedgerEntry, pendingForBooking, resetPendingForBooking } from "./led
 import { notify, notifyRole } from "./notifications";
 import { getPaymentProvider, getProviderById, PAYMENT_PROVIDERS, processRefund, requestRefund, salesOpen } from "./payments/service";
 import { completeCreditCheckout } from "./credits";
+import { completeSubscriptionCheckout } from "./subscriptions";
 import { approvalDeadline, INTRO_MINUTES, lessonPrice, settledReleaseAt, splitCommission, splitRetained, studentCancellationRefund } from "./pricing";
 import { appUrl } from "./email";
 import { loadSettings } from "./settings";
@@ -380,13 +381,16 @@ export type CheckoutOutcome = "paid" | "failed" | "refunded" | "already" | "pend
 
 /**
  * Ödeme kuruluşundan dönüşte (veya test ödeme sayfasından) ödemeyi sonuçlandırır. Tekrar çağrılabilir.
- * Dönen bookingId sonuç sayfasının kimliğidir: kredi paketi ödemesinde paketin kimliği.
+ * Dönen bookingId sonuç sayfasının kimliğidir: kredi paketi ve abonelik ödemesinde onların kimliği.
  */
 export async function completeCheckout(token: string, now = new Date()): Promise<{ bookingId: string; outcome: CheckoutOutcome }> {
   const found = await db.payment.findUnique({ where: { providerToken: token } });
   if (!found) throw new BookingError("Ödeme kaydı bulunamadı.");
   if (found.creditPurchaseId) {
     return { bookingId: found.creditPurchaseId, outcome: await completeCreditCheckout(found, now) };
+  }
+  if (found.subscriptionId) {
+    return { bookingId: found.subscriptionId, outcome: await completeSubscriptionCheckout(found, now) };
   }
   if (!found.bookingId) throw new BookingError("Ödeme kaydı bulunamadı.");
   const payment = { ...found, bookingId: found.bookingId };
