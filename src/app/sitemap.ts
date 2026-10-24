@@ -7,20 +7,21 @@ import { db } from "@/server/db";
 async function sitemapData() {
   "use cache";
   cacheLife("hours");
-  const [catalog, teachers, pages, centers, groups] = await Promise.all([
+  const [catalog, teachers, pages, centers, groups, posts] = await Promise.all([
     loadCatalog(),
     db.teacherProfile.findMany({ where: { status: "PUBLISHED", user: { status: "ACTIVE" } }, select: { slug: true, updatedAt: true } }),
     db.page.findMany({ where: { isPublished: true }, select: { slug: true, updatedAt: true } }),
     listPublicCenters(null),
     // Kayıt alan, herkese açık grup dersleri
     db.groupCourse.findMany({ where: { status: "OPEN", isPublic: true, teacher: { status: "PUBLISHED" } }, select: { code: true, updatedAt: true } }),
+    db.blogPost.findMany({ where: { isPublished: true }, select: { slug: true, updatedAt: true } }),
   ]);
-  return { catalog, teachers, pages, centers, groups };
+  return { catalog, teachers, pages, centers, groups, posts };
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
-  const { catalog, teachers, pages, centers, groups } = await sitemapData();
+  const { catalog, teachers, pages, centers, groups, posts } = await sitemapData();
   const subjectSlug = new Map(catalog.subjects.map((s) => [s.id, s.slug]));
 
   return [
@@ -29,6 +30,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/soru-sor`, changeFrequency: "weekly", priority: 0.8 },
     { url: `${base}/grup-dersleri`, changeFrequency: "daily", priority: 0.8 },
     ...groups.map((g) => ({ url: `${base}/grup-dersleri/${g.code}`, lastModified: g.updatedAt, changeFrequency: "daily" as const, priority: 0.6 })),
+    { url: `${base}/rehber`, changeFrequency: "weekly", priority: 0.7 },
+    ...posts.map((p) => ({ url: `${base}/rehber/${p.slug}`, lastModified: p.updatedAt, changeFrequency: "monthly" as const, priority: 0.6 })),
     { url: `${base}/ogretmen-ol`, changeFrequency: "monthly", priority: 0.5 },
     { url: `${base}/kurumlar-icin`, changeFrequency: "monthly", priority: 0.6 },
     { url: `${base}/kurumlar`, changeFrequency: "weekly", priority: 0.5 },

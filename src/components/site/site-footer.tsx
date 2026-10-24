@@ -81,6 +81,11 @@ export async function SiteFooter() {
         <div>
           <h2 className="mb-3 text-sm font-semibold text-white">Kurumsal</h2>
           <ul className="space-y-2 text-sm">
+            <li>
+              <Link href="/rehber" className="hover:text-white">
+                Rehber (blog)
+              </Link>
+            </li>
             {pages.map((page) => (
               <li key={page.slug}>
                 <Link href={`/sayfa/${page.slug}`} className="hover:text-white">
