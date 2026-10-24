@@ -14,6 +14,8 @@ import { createSession, destroySession, requestMeta, revokeOtherSessions } from 
 import { consumeUserToken } from "@/server/auth/tokens";
 import { checkUserTotp, endTwoFactorChallenge, pendingTwoFactor, startTwoFactorChallenge } from "@/server/auth/two-factor";
 import { db } from "@/server/db";
+import { referrerForCode } from "@/server/discounts";
+import { cookies } from "next/headers";
 
 const text = (formData: FormData, key: string) => String(formData.get(key) ?? "").trim();
 
@@ -104,6 +106,9 @@ export async function registerAction(_: ActionState, formData: FormData): Promis
   }
   if (ipAddress) await recordLoginAttempt(`register:${ipAddress}`, null, false);
 
+  // Davet kodu: formdan ya da davet bağlantısıyla bırakılan çerezden
+  const inviteCode = text(formData, "davet") || (await cookies()).get("vd_davet")?.value || null;
+  const referredById = await referrerForCode(inviteCode);
   try {
     const user = await registerStudent({
       firstName: input.firstName,
@@ -113,7 +118,9 @@ export async function registerAction(_: ActionState, formData: FormData): Promis
       password: input.password,
       accountType: input.accountType,
       marketingConsent: input.marketing === "on",
+      referredById,
     });
+    if (referredById) (await cookies()).delete("vd_davet");
     await createSession(user.id);
   } catch (error) {
     if (error instanceof AccountError) return failure(error.message, { email: error.message });

@@ -59,6 +59,11 @@ model User {
   totpLastStep       Int?
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
+  // Arkadaşını getir: kişisel davet kodu, davet eden ve davet ödülünün verildiği an
+  referralCode       String?    @unique
+  referredById       String?
+  referredBy         User?      @relation("Referrals", fields: [referredById], references: [id], onDelete: SetNull)
+  referralRewardedAt DateTime?
 
   sessions          Session[]
   tokens            UserToken[]
@@ -83,6 +88,8 @@ model User {
   questionSubscriptions QuestionSubscription[]
   groupEnrollments  GroupEnrollment[]
   lessonRequests    LessonRequest[]
+  referrals         User[]             @relation("Referrals")
+  couponRedemptions CouponRedemption[]
   classroomReports  ClassroomReport[]
   threadsAsStudent  MessageThread[]    @relation("ThreadStudent")
   threadsAsTeacher  MessageThread[]    @relation("ThreadTeacher")
@@ -551,6 +558,9 @@ model Booking {
   commissionRateBps  Int
   commissionAmount   Int
   teacherAmount      Int
+  // İndirim (kupon ya da davet); fiyat indirimli tutardır, indirim platformun hizmet bedelinden düşülür
+  discountAmount     Int                @default(0)
+  couponCode         String?
   refundedAmount     Int              @default(0)
   status             BookingStatus    @default(PENDING_PAYMENT)
   holdExpiresAt      DateTime?
@@ -1776,6 +1786,9 @@ model CreditPurchase {
   price          Int
   // Satın alma anındaki tek soru fiyatı (kısmi iadede kullanılan kredi bu fiyattan düşülür)
   singlePrice    Int
+  // İndirim (kupon ya da davet); fiyat indirimli tutardır, indirim platformun hizmet bedelinden düşülür
+  discountAmount     Int                @default(0)
+  couponCode         String?
   status         CreditPurchaseStatus @default(PENDING_PAYMENT)
   paidAt         DateTime?
   expiresAt      DateTime?
@@ -1947,6 +1960,9 @@ model QuestionSubscription {
   commissionRateBps  Int
   commissionAmount   Int
   teacherAmount      Int
+  // İndirim (kupon ya da davet); fiyat indirimli tutardır, indirim platformun hizmet bedelinden düşülür
+  discountAmount     Int                @default(0)
+  couponCode         String?
   dailyLimit         Int
   answerHours        Int
   days               Int                @default(30)
@@ -2191,6 +2207,9 @@ model GroupEnrollment {
   price             Int
   commissionAmount  Int
   teacherAmount     Int
+  // İndirim (kupon ya da davet); fiyat indirimli tutardır, indirim platformun hizmet bedelinden düşülür
+  discountAmount     Int                @default(0)
+  couponCode         String?
   holdExpiresAt     DateTime?
   paidAt            DateTime?
   refundedAmount    Int                   @default(0)
@@ -2262,4 +2281,55 @@ model BlogPost {
   updatedAt   DateTime  @updatedAt
 
   @@index([isPublished, publishedAt])
+}
+
+// ---------------------------------------------------------------------------
+// İndirim kodları ve kullanımları. İndirim platformun hizmet bedelinden karşılanır; öğretmen payı değişmez.
+// ---------------------------------------------------------------------------
+
+enum CouponKind {
+  PERCENT
+  AMOUNT
+}
+
+model Coupon {
+  id             String             @id @default(cuid())
+  code           String             @unique
+  description    String?
+  kind           CouponKind
+  // PERCENT: yüzde (1–100); AMOUNT: kuruş
+  value          Int
+  // Yüzdelik indirimde en fazla indirim (kuruş)
+  maxDiscount    Int?
+  // En az sepet tutarı (kuruş)
+  minAmount      Int?
+  // Geçerli satış türleri: booking | credits | subscription | group (boşsa hepsi)
+  targets        String[]
+  maxUses        Int?
+  perUserLimit   Int                @default(1)
+  firstOrderOnly Boolean            @default(false)
+  startsAt       DateTime?
+  endsAt         DateTime?
+  isActive       Boolean            @default(true)
+  createdAt      DateTime           @default(now())
+
+  redemptions CouponRedemption[]
+}
+
+model CouponRedemption {
+  id         String   @id @default(cuid())
+  couponId   String?
+  coupon     Coupon?  @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // coupon | referral
+  source     String
+  amount     Int
+  targetType String
+  targetId   String
+  createdAt  DateTime @default(now())
+
+  @@unique([targetType, targetId])
+  @@index([couponId])
+  @@index([userId])
 }

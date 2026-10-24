@@ -129,6 +129,14 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
         <NumberField name="groupMaxPriceTl" label="En yüksek kişi başı ücret" value={settings.groupMaxPriceTl} suffix="TL" />
       </Section>
 
+      <Section title="Arkadaşını getir" description="Her veli/öğrencinin kişisel davet bağlantısı olur. Davetle kayıt olan yeni üyeye ilk siparişinde indirim, davet edene ilk ödeme yapıldığında soru kredisi verilir. İndirim platformun hizmet bedelinden karşılanır.">
+        <div className="sm:col-span-2">
+          <Checkbox name="referralEnabled" defaultChecked={settings.referralEnabled} label="Arkadaşını getir açık" />
+        </div>
+        <NumberField name="referralDiscountPercent" label="Yeni üyeye ilk sipariş indirimi" value={settings.referralDiscountPercent} suffix="%" />
+        <NumberField name="referralRewardCredits" label="Davet edene ödül" value={settings.referralRewardCredits} suffix="soru kredisi" />
+      </Section>
+
       <Section title="Kurum paneli abonelikleri" description="Etüt merkezi ve dershanelere satılan paneller. Fiyatlar KDV dahil; “Kurumlar için” sayfasında görünür. “Eski fiyat” üstü çizili gösterilir; 0 yazarsanız gösterilmez.">
         <NumberField name="centerTrialDays" label="Yeni kuruma tanınan ilk kullanım süresi" hint="Sitede ilan edilmez; kurum hesabı açılırken uygulanır." value={settings.centerTrialDays} suffix="gün" />
         <div className="hidden sm:block" />

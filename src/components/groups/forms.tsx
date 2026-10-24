@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { adminCancelGroupCourseAction, cancelEnrollmentAction, cancelGroupCourseAction, createGroupCourseAction, enrollInGroupAction, inviteToGroupAction } from "@/actions/groups";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
 import { CardLogos } from "@/components/site/card-logos";
+import { CouponField } from "@/components/forms/coupon-field";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
 import { WEEKDAY_SHORT } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
@@ -152,6 +153,7 @@ export function EnrollForm({ courseId, label, defaultName }: { courseId: string;
         <Input name="learnerName" required maxLength={80} defaultValue={defaultName} />
         <FieldError name="learnerName" />
       </Field>
+      <CouponField target="group" refId={courseId} />
       <div className="rounded-xl border border-slate-200 p-4">
         <Checkbox
           name="consent"

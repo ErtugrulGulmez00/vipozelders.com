@@ -19,6 +19,7 @@ import { getPaymentProvider, getProviderById, PAYMENT_PROVIDERS, processRefund, 
 import { completeCreditCheckout } from "./credits";
 import { completeSubscriptionCheckout } from "./subscriptions";
 import { completeGroupCheckout, groupBusy } from "./groups";
+import { DiscountError, recordPaidOrder, resolveDiscount } from "./discounts";
 import { approvalDeadline, INTRO_MINUTES, lessonPrice, settledReleaseAt, splitCommission, splitRetained, studentCancellationRefund } from "./pricing";
 import { appUrl } from "./email";
 import { loadSettings } from "./settings";
@@ -155,6 +156,8 @@ export type CreateBookingInput = {
   studentNote?: string | null;
   /** Ücretsiz 15 dakikalık tanışma görüşmesi: ödeme yok, doğrudan öğretmen onayına düşer. */
   intro?: boolean;
+  /** İndirim kodu (boşsa uygunsa davet indirimi) */
+  couponCode?: string | null;
 };
 
 /** Bir öğrencinin aynı anda bekleyen/onaylı en fazla tanışma görüşmesi. */
@@ -224,9 +227,19 @@ export async function createBookingHold(input: CreateBookingInput, now = new Dat
     throw new BookingError("Öğretmenin ödeme hesabı henüz tamamlanmadığı için şu an randevu alınamıyor.");
   }
 
-  const price = intro ? 0 : lessonPrice(offering.hourlyPrice, input.durationMinutes);
+  const listPrice = intro ? 0 : lessonPrice(offering.hourlyPrice, input.durationMinutes);
   const commissionRateBps = teacher.commissionRateBps ?? settings.commissionRateBps;
-  const { commissionAmount, teacherAmount } = splitCommission(price, commissionRateBps);
+  const split = splitCommission(listPrice, commissionRateBps);
+  // İndirim platformun hizmet bedelinden düşer; öğretmen payı değişmez.
+  const discount = intro
+    ? { amount: 0, couponCode: null }
+    : await resolveDiscount(input.studentId, input.couponCode, "booking", listPrice, split.commissionAmount, now).catch((error: unknown) => {
+        if (error instanceof DiscountError) throw new BookingError(error.message);
+        throw error;
+      });
+  const price = listPrice - discount.amount;
+  const commissionAmount = split.commissionAmount - discount.amount;
+  const teacherAmount = split.teacherAmount;
   const endAt = new Date(input.startAt.getTime() + input.durationMinutes * 60_000);
   const blockEndAt = endAt;
 
@@ -297,6 +310,8 @@ export async function createBookingHold(input: CreateBookingInput, now = new Dat
           commissionRateBps,
           commissionAmount,
           teacherAmount,
+          discountAmount: discount.amount,
+          couponCode: discount.couponCode,
           status: intro ? "PENDING_APPROVAL" : "PENDING_PAYMENT",
           isIntro: intro,
           holdExpiresAt: intro ? null : new Date(now.getTime() + settings.paymentHoldMinutes * 60_000),
@@ -481,6 +496,7 @@ export async function completeCheckout(token: string, now = new Date()): Promise
       booking.studentId,
       "Ödeme alındı",
     );
+    await recordPaidOrder(tx, { userId: booking.studentId, targetType: "booking", targetId: booking.id, discountAmount: booking.discountAmount, couponCode: booking.couponCode });
     await notify(
       {
         userId: booking.teacherId,

@@ -53,7 +53,7 @@ export default async function PaymentResultPage({ params }: PageProps<"/odeme/so
         { label: "Randevu no", value: booking.code },
         { label: "Ders", value: `${booking.levelName} ${booking.subjectName} · ${booking.serviceName}` },
         { label: "Zaman", value: booking.mode === "QUESTION" ? "Fotoğrafla soru (saat yok)" : formatLessonRange(booking.startAt, booking.endAt) },
-        { label: "Tutar", value: formatMoney(booking.price) },
+        { label: "Tutar", value: booking.discountAmount ? `${formatMoney(booking.price)} (${formatMoney(booking.discountAmount)} indirim uygulandı)` : formatMoney(booking.price) },
       ]}
     />
   );

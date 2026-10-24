@@ -63,7 +63,7 @@ export async function subscribeAction(_: ActionState, formData: FormData): Promi
   if (formData.get("immediate") !== "on") return failure("Aboneliğin hemen başladığını ve iade olmadığını onaylayın.", { immediate: "Onay gerekli." });
   let redirectUrl: string;
   try {
-    const sub = await createSubscription(user.id, text(formData, "planId"));
+    const sub = await createSubscription(user.id, text(formData, "planId"), text(formData, "couponCode") || null);
     const { ipAddress } = await requestMeta();
     redirectUrl = await startSubscriptionCheckout(sub.id, user.id, ipAddress ?? "127.0.0.1");
   } catch (error) {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { askPoolQuestionAction, buyCreditsAction } from "@/actions/question-pool";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
+import { CouponField } from "@/components/forms/coupon-field";
 import { CardLogos } from "@/components/site/card-logos";
 import { FileInput } from "@/components/ui/file-input";
 import { Checkbox, Field, Select, Textarea } from "@/components/ui/form";
@@ -35,6 +36,7 @@ export function BuyCreditsForm({ packages, disabled }: { packages: Package[]; di
           </label>
         ))}
       </div>
+      <CouponField target="credits" credits={selected} />
       <div className="rounded-xl border border-slate-200 bg-white p-4">
         <Checkbox
           name="consent"

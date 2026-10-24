@@ -10,6 +10,7 @@ import { addLedgerEntry } from "./ledger";
 import { notify, notifyRole } from "./notifications";
 import { getPaymentProvider, getProviderById, PAYMENT_PROVIDERS, processRefund, salesOpen } from "./payments/service";
 import { settledReleaseAt, splitCommission } from "./pricing";
+import { DiscountError, recordPaidOrder, resolveDiscount } from "./discounts";
 import { loadSettings } from "./settings";
 import { teacherPlanPairs } from "./subscriptions";
 import { videoConfigured } from "./video-config";
@@ -196,7 +197,7 @@ export async function inviteToGroup(teacherId: string, courseId: string, emailOr
 }
 
 /** Öğrencinin bu derse kayıt olabilmesi (yer ayırır, ödeme bekler). */
-export async function enrollInGroup(studentId: string, courseId: string, learnerName: string | null, now = new Date()) {
+export async function enrollInGroup(studentId: string, courseId: string, learnerName: string | null, now = new Date(), couponCode?: string | null) {
   if (!salesOpen()) throw new GroupError("Online ödeme altyapımız çok yakında açılıyor; şu an grup dersi satışı yapılamıyor.");
   const settings = await loadSettings();
   if (!settings.groupsEnabled) throw new GroupError("Grup dersi şu an kapalı.");
@@ -215,12 +216,18 @@ export async function enrollInGroup(studentId: string, courseId: string, learner
     if ((await seatsTaken(courseId, now, tx)) - (existing?.status === "PENDING_PAYMENT" && existing.holdExpiresAt && existing.holdExpiresAt > now ? 1 : 0) >= course.capacity) {
       throw new GroupError("Kontenjan doldu.");
     }
-    const { commissionAmount, teacherAmount } = splitCommission(course.price, course.commissionRateBps);
+    const split = splitCommission(course.price, course.commissionRateBps);
+    const discount = await resolveDiscount(studentId, couponCode, "group", course.price, split.commissionAmount, now).catch((error: unknown) => {
+      if (error instanceof DiscountError) throw new GroupError(error.message);
+      throw error;
+    });
     const data = {
       status: "PENDING_PAYMENT" as const,
-      price: course.price,
-      commissionAmount,
-      teacherAmount,
+      price: course.price - discount.amount,
+      commissionAmount: split.commissionAmount - discount.amount,
+      teacherAmount: split.teacherAmount,
+      discountAmount: discount.amount,
+      couponCode: discount.couponCode,
       learnerName: learnerName?.trim().slice(0, 80) || null,
       holdExpiresAt: new Date(now.getTime() + settings.paymentHoldMinutes * 60_000),
       cancelledAt: null,
@@ -311,6 +318,7 @@ export async function completeGroupCheckout(
     }
     await tx.groupEnrollment.update({ where: { id: enrollment.id }, data: { status: "PAID", paidAt: now, holdExpiresAt: null } });
     await addLedgerEntry(tx, { teacherId: course.teacherId, groupEnrollmentId: enrollment.id, bucket: "PENDING", amount: enrollment.teacherAmount, description: `${enrollment.code} grup dersi (oturumlar yapıldıkça serbest kalır)` });
+    await recordPaidOrder(tx, { userId: enrollment.studentId, targetType: "group", targetId: enrollment.id, discountAmount: enrollment.discountAmount, couponCode: enrollment.couponCode });
     const paid = await paidCount(course.id, tx);
     await notify({ userId: enrollment.studentId, type: "group.enrolled", title: "Grup dersine kaydınız tamamlandı", body: `${course.title}. ${paid >= course.minParticipants ? "Ders açılıyor; oturum saatlerinde “Derse katıl” düğmesi açılır." : `Ders en az ${course.minParticipants} kişi olunca açılır; ${formatDateTime(course.enrollDeadline)} tarihine kadar dolmazsa ücretin tamamı iade edilir.`}`, link: `/hesabim/grup-derslerim/${enrollment.id}` }, tx);
     await notify({ userId: course.teacherId, type: "group.enrolled", title: `Grup dersinize yeni kayıt (${paid}/${course.capacity})`, body: `${course.title}${paid === course.minParticipants ? " · en az katılımcı sayısına ulaşıldı" : ""}.`, link: `/ogretmen-paneli/grup-dersleri/${course.id}`, email: false }, tx);

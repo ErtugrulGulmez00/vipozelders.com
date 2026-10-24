@@ -100,6 +100,8 @@ export type StudentRegistration = {
   password: string;
   accountType: AccountType;
   marketingConsent: boolean;
+  /** Davet eden kullanıcı (arkadaşını getir) */
+  referredById?: string | null;
 };
 
 export async function registerStudent(input: StudentRegistration) {
@@ -115,6 +117,7 @@ export async function registerStudent(input: StudentRegistration) {
       firstName: input.firstName.trim(),
       lastName: input.lastName.trim(),
       passwordHash: await hashPassword(input.password),
+      referredById: input.referredById ?? null,
       studentProfile: {
         create: { accountType: input.accountType, kvkkConsentAt: new Date(), marketingConsent: input.marketingConsent },
       },

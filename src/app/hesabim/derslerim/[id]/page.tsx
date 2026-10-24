@@ -140,7 +140,7 @@ export default async function StudentBookingPage({ params, searchParams }: PageP
                       ]
                     : []),
                   ...(booking.studentNote && booking.mode !== "QUESTION" ? [{ label: "Notunuz", value: booking.studentNote }] : []),
-                  { label: "Ücret", value: formatMoney(booking.price) },
+                  { label: "Ücret", value: booking.discountAmount ? `${formatMoney(booking.price)} (${formatMoney(booking.discountAmount)} indirimli)` : formatMoney(booking.price) },
                   ...(booking.refundedAmount ? [{ label: "İade", value: formatMoney(booking.refundedAmount) }] : []),
                 ]}
               />

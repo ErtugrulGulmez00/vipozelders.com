@@ -71,6 +71,11 @@ export const settingsSchema = z.object({
   groupMinPriceTl: z.number().int().min(1).max(100_000).default(100),
   groupMaxPriceTl: z.number().int().min(1).max(100_000).default(20_000),
 
+  // Arkadaşını getir: davetle gelen yeni üyenin ilk siparişine indirim (%), davet edene soru kredisi
+  referralEnabled: z.boolean().default(true),
+  referralDiscountPercent: z.number().int().min(0).max(50).default(10),
+  referralRewardCredits: z.number().int().min(0).max(50).default(3),
+
   // Yorumlar
   reviewWindowDays: z.number().int().min(1).max(365).default(30),
 

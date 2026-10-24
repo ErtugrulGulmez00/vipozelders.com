@@ -5,6 +5,7 @@ import { db, type DbTransaction } from "./db";
 import { appUrl } from "./email";
 import { notify } from "./notifications";
 import { getPaymentProvider, getProviderById, processRefund, salesOpen } from "./payments/service";
+import { DiscountError, recordPaidOrder, resolveDiscount } from "./discounts";
 import { loadSettings, type SiteSettings } from "./settings";
 
 // Soru kredisi: 1 kredi = 1 soru. Krediler paket (satın alma) bazında tutulur; her paketin son kullanma tarihi vardır.
@@ -91,7 +92,7 @@ export async function spendCredit(tx: DbTransaction, studentId: string, now = ne
 // Satın alma ve ödeme
 // ---------------------------------------------------------------------------
 
-export async function createCreditPurchase(studentId: string, credits: number) {
+export async function createCreditPurchase(studentId: string, credits: number, couponCode?: string | null) {
   if (!salesOpen()) throw new CreditError("Online ödeme altyapımız çok yakında açılıyor; şu an kredi satışı yapılamıyor.");
   const settings = await loadSettings();
   const packages = parsePackages(settings.questionPackages);
@@ -100,7 +101,14 @@ export async function createCreditPurchase(studentId: string, credits: number) {
   const student = await db.user.findUnique({ where: { id: studentId }, select: { role: true, email: true } });
   if (student?.role !== "STUDENT") throw new CreditError("Kredi yalnızca veli/öğrenci hesabıyla alınabilir.");
   if (!student.email) throw new CreditError("Ödeme için hesabınızda e-posta adresi olmalı.");
-  return db.creditPurchase.create({ data: { code: newCode("KR"), studentId, credits: pack.credits, price: pack.price, singlePrice: singleQuestionPrice(packages) } });
+  // Kredi satışı platformundur: indirim tutarın tamamından düşebilir (en az 1 ₺ ödenir).
+  const discount = await resolveDiscount(studentId, couponCode, "credits", pack.price, pack.price).catch((error: unknown) => {
+    if (error instanceof DiscountError) throw new CreditError(error.message);
+    throw error;
+  });
+  return db.creditPurchase.create({
+    data: { code: newCode("KR"), studentId, credits: pack.credits, price: pack.price - discount.amount, singlePrice: singleQuestionPrice(packages), discountAmount: discount.amount, couponCode: discount.couponCode },
+  });
 }
 
 /** Kredi paketi için ödeme sayfasını başlatır (ders ödemesiyle aynı sağlayıcı). */
@@ -167,6 +175,7 @@ export async function completeCreditCheckout(
     expiresAt.setMonth(expiresAt.getMonth() + settings.creditValidityMonths);
     await tx.creditPurchase.update({ where: { id: purchase.id }, data: { status: "PAID", paidAt: now, expiresAt } });
     await tx.creditLedger.create({ data: { studentId: purchase.studentId, purchaseId: purchase.id, kind: "PURCHASE", amount: purchase.credits, note: `${purchase.code} satın alındı` } });
+    await recordPaidOrder(tx, { userId: purchase.studentId, targetType: "credits", targetId: purchase.id, discountAmount: purchase.discountAmount, couponCode: purchase.couponCode });
     await notify(
       { userId: purchase.studentId, type: "credits.purchased", title: `${purchase.credits} soru kredisi hesabınızda`, body: `${formatMoney(purchase.price)} ödemeniz alındı. Sorularınızı “Soru sor” sayfasından gönderebilirsiniz.`, link: "/soru-sor" },
       tx,

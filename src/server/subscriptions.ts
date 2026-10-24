@@ -9,6 +9,7 @@ import { addLedgerEntry } from "./ledger";
 import { notify, notifyRole } from "./notifications";
 import { getPaymentProvider, getProviderById, PAYMENT_PROVIDERS, processRefund, salesOpen } from "./payments/service";
 import { settledReleaseAt, splitCommission } from "./pricing";
+import { DiscountError, recordPaidOrder, resolveDiscount } from "./discounts";
 import { loadSettings, type SiteSettings } from "./settings";
 import { deleteUpload, saveUpload, UploadError } from "./storage";
 
@@ -100,7 +101,7 @@ export async function publicPlans(teacherId: string) {
 // Veli: satın alma ve ödeme
 // ---------------------------------------------------------------------------
 
-export async function createSubscription(studentId: string, planId: string) {
+export async function createSubscription(studentId: string, planId: string, couponCode?: string | null) {
   if (!salesOpen()) throw new SubscriptionError("Online ödeme altyapımız çok yakında açılıyor; şu an abonelik satışı yapılamıyor.");
   const settings = await loadSettings();
   if (!settings.subscriptionsEnabled) throw new SubscriptionError("Soru aboneliği şu an kapalı.");
@@ -111,7 +112,11 @@ export async function createSubscription(studentId: string, planId: string) {
   if (student?.role !== "STUDENT") throw new SubscriptionError("Abonelik yalnızca veli/öğrenci hesabıyla alınabilir.");
   if (!student.email) throw new SubscriptionError("Ödeme için hesabınızda e-posta adresi olmalı.");
   if (getPaymentProvider().requiresSubMerchant && !plan.teacher.subMerchantKey) throw new SubscriptionError("Öğretmenin ödeme hesabı henüz tamamlanmadığı için şu an abone olunamıyor.");
-  const { commissionAmount, teacherAmount } = splitCommission(plan.price, settings.subscriptionCommissionBps);
+  const split = splitCommission(plan.price, settings.subscriptionCommissionBps);
+  const discount = await resolveDiscount(studentId, couponCode, "subscription", plan.price, split.commissionAmount).catch((error: unknown) => {
+    if (error instanceof DiscountError) throw new SubscriptionError(error.message);
+    throw error;
+  });
   return db.questionSubscription.create({
     data: {
       code: newCode("AB"),
@@ -122,10 +127,12 @@ export async function createSubscription(studentId: string, planId: string) {
       subjectId: plan.subjectId,
       levelName: plan.level.name,
       subjectName: plan.subject.name,
-      price: plan.price,
+      price: plan.price - discount.amount,
       commissionRateBps: settings.subscriptionCommissionBps,
-      commissionAmount,
-      teacherAmount,
+      commissionAmount: split.commissionAmount - discount.amount,
+      teacherAmount: split.teacherAmount,
+      discountAmount: discount.amount,
+      couponCode: discount.couponCode,
       dailyLimit: plan.dailyLimit,
       answerHours: plan.answerHours,
       days: settings.subscriptionDays,
@@ -205,6 +212,7 @@ export async function completeSubscriptionCheckout(
     const endsAt = new Date(startsAt.getTime() + sub.days * DAY);
     await tx.questionSubscription.update({ where: { id: sub.id }, data: { status: "ACTIVE", paidAt: now, startsAt, endsAt } });
     await addLedgerEntry(tx, { teacherId: sub.teacherId, subscriptionId: sub.id, bucket: "PENDING", amount: sub.teacherAmount, description: `${sub.code} soru aboneliği (dönem bitince serbest kalır)` });
+    await recordPaidOrder(tx, { userId: sub.studentId, targetType: "subscription", targetId: sub.id, discountAmount: sub.discountAmount, couponCode: sub.couponCode });
     const renewal = Boolean(previous);
     await notify(
       {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { adminEndSubscriptionAction, askSubscriptionQuestionAction, saveQuestionPlanAction, subscribeAction } from "@/actions/subscriptions";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
 import { CardLogos } from "@/components/site/card-logos";
+import { CouponField } from "@/components/forms/coupon-field";
 import { FileInput } from "@/components/ui/file-input";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
 
@@ -56,6 +57,7 @@ export function SubscribeForm({ planId, label }: { planId: string; label: string
   return (
     <ActionForm action={subscribeAction} className="space-y-4">
       <input type="hidden" name="planId" value={planId} />
+      <CouponField target="subscription" refId={planId} />
       <div className="rounded-xl border border-slate-200 p-4">
         <Checkbox
           name="consent"

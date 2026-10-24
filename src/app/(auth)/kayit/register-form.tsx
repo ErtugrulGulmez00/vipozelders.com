@@ -7,10 +7,13 @@ import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-
 import { Checkbox, Field, Input, Label } from "@/components/ui/form";
 
 export function RegisterForm() {
-  const next = useSearchParams().get("next") ?? "";
+  const params = useSearchParams();
+  const next = params.get("next") ?? "";
+  const invite = params.get("davet") ?? "";
   return (
     <ActionForm action={registerAction} className="space-y-4">
       <input type="hidden" name="next" value={next} />
+      <input type="hidden" name="davet" value={invite} />
       <fieldset>
         <legend className="mb-1.5 text-sm font-medium text-slate-700">Hesabı kim kullanacak?</legend>
         <div className="grid grid-cols-2 gap-2">

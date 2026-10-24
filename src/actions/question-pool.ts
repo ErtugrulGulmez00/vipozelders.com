@@ -51,7 +51,7 @@ export async function buyCreditsAction(_: ActionState, formData: FormData): Prom
   if (formData.get("consent") !== "on") return failure("Ön bilgilendirme formunu ve mesafeli satış sözleşmesini onaylayın.", { consent: "Onay gerekli." });
   let redirectUrl: string;
   try {
-    const purchase = await createCreditPurchase(user.id, Number(formData.get("credits")));
+    const purchase = await createCreditPurchase(user.id, Number(formData.get("credits")), text(formData, "couponCode") || null);
     const { ipAddress } = await requestMeta();
     redirectUrl = await startCreditCheckout(purchase.id, user.id, ipAddress ?? "127.0.0.1");
   } catch (error) {

@@ -87,7 +87,7 @@ export async function enrollInGroupAction(_: ActionState, formData: FormData): P
   if (!learnerName) return failure("Dersin kimin için olduğunu yazın.", { learnerName: "Ad gerekli." });
   let redirectUrl: string;
   try {
-    const enrollment = await enrollInGroup(user.id, text(formData, "courseId"), learnerName);
+    const enrollment = await enrollInGroup(user.id, text(formData, "courseId"), learnerName, new Date(), text(formData, "couponCode") || null);
     const { ipAddress } = await requestMeta();
     redirectUrl = await startGroupCheckout(enrollment.id, user.id, ipAddress ?? "127.0.0.1");
   } catch (error) {
