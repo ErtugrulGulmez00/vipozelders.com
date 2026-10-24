@@ -41,6 +41,9 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
         <Field label="İletişim telefonu">
           <Input name="contactPhone" defaultValue={settings.contactPhone} />
         </Field>
+        <Field label="WhatsApp destek numarası" hint="Sitenin sağ altındaki WhatsApp düğmesi bu numaraya yazar. Boş bırakırsanız düğme gösterilmez.">
+          <Input name="supportWhatsapp" defaultValue={settings.supportWhatsapp} placeholder="+90 5xx xxx xx xx" />
+        </Field>
         <Field label="Ticari unvan" hint="Örn: VIP Eğitim Teknolojileri Ltd. Şti.">
           <Input name="companyName" defaultValue={settings.companyName} />
         </Field>

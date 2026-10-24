@@ -5,6 +5,7 @@ import { CookieNotice } from "@/components/site/cookie-notice";
 import { PageViewTracker } from "@/components/site/page-view-tracker";
 import { SiteFooter } from "@/components/site/site-footer";
 import { SiteHeader } from "@/components/site/site-header";
+import { WhatsAppButton } from "@/components/site/whatsapp-button";
 import { getSiteSettings } from "@/server/site";
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
@@ -24,6 +25,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <main className="flex-1">{children}</main>
       <SiteFooter />
       <CookieNotice />
+      {settings.supportWhatsapp ? <WhatsAppButton number={settings.supportWhatsapp} siteName={settings.siteName} /> : null}
       {/* Adres bilgisi istemcide okunur; sayfanın önceden hazırlanmasını bekletmesin */}
       <Suspense fallback={null}>
         <PageViewTracker />

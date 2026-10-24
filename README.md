@@ -13,7 +13,7 @@
 - **Mobil uygulama** ([piakademi-mobil/](piakademi-mobil/README.md), Flutter, Android ve iOS): veli/öğrenci (öğretmen arama, randevu, ödeme, sanal sınıf, fotoğrafla soru, Kurumum), öğretmen (talepler, dersler, takvim, kazanç, yorumlar) ve push bildirimleri
 - **Mobil API** (`/api/mobil/v1`): uygulamanın kullandığı JSON uç noktaları (Bearer oturum, randevu, ödeme ve sınıf için WebView bağlantısı, push bildirimi). Sözleşme: [docs/flutter-uygulama-promptu.md](docs/flutter-uygulama-promptu.md)
 
-Teknoloji: Next.js 16 (App Router, Cache Components) · TypeScript · Tailwind CSS 4 · PostgreSQL 18 + Prisma 7 · LiveKit (sanal sınıf) · PayTR (ödeme; iyzico da hazır).
+Teknoloji: Next.js 16 (App Router, Cache Components) · TypeScript · Tailwind CSS 4 · PostgreSQL 18 + Prisma 7 · LiveKit (sanal sınıf) · Garanti BBVA sanal POS (ödeme; PayTR yedek).
 
 ---
 
@@ -152,17 +152,6 @@ PayTR'ye geçiş (iFrame API):
 Nasıl çalışır: veli ödeme adımında sitenin içinde PayTR'nin 3D Secure formunu görür (`/odeme/paytr/...`), kart bilgisi bizim sunucumuza hiç gelmez. Taksit kapalıdır; tahsil edilen tutar ders ücretine eşittir. İadeler (red, süre aşımı, iptal) PayTR iade servisiyle otomatik yapılır, başarısız olursa arka plan görevi 5 kez yeniden dener. PayTR ile hakedişler öğretmenlere yönetim panelindeki **Finans** bölümünden havale kaydıyla ödenir.
 
 > PayTR bağlantısı resmi dokümana göre yazıldı ve imza/iade hesapları otomatik testlerle doğrulandı, ancak gerçek PayTR test hesabıyla henüz denenmedi. Canlıya geçmeden önce test modunda yukarıdaki senaryoları mutlaka deneyin.
-
-### iyzico (alternatif)
-
-iyzico'ya geçiş:
-
-1. [iyzico sandbox](https://sandbox-merchant.iyzipay.com) hesabı açıp API anahtarlarını alın.
-2. `.env`: `PAYMENT_PROVIDER="iyzico"`, `IYZICO_API_KEY`, `IYZICO_SECRET_KEY`, `IYZICO_BASE_URL="https://sandbox-api.iyzipay.com"`.
-3. `APP_URL` iyzico'nun erişebileceği bir adres olmalı (ödeme dönüşü `/api/odeme/iyzico/donus` adresine gelir).
-4. **Pazaryeri modu** (önerilen): `IYZICO_MARKETPLACE="true"`. Her öğretmen “Kazançlarım” sayfasında IBAN ve T.C. kimlik numarasını girince iyzico alt üye işyeri olarak kaydedilir; ders tamamlanıp itiraz süresi dolunca hakediş iyzico tarafından öğretmene aktarılır. Pazaryeri kapalıysa hakedişler yönetim panelinde “Finans” bölümünden havale kaydıyla ödenir.
-
-> iyzico bağlantısı resmi `iyzipay` SDK'sıyla yazıldı ve imza doğrulaması yapıyor, ancak sandbox anahtarlarıyla henüz uçtan uca denenmedi. Canlıya geçmeden önce sandbox'ta başarılı ödeme, red sonrası iade ve kısmi iade senaryolarını mutlaka deneyin.
 
 ---
 

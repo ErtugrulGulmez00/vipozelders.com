@@ -68,7 +68,7 @@ describe("mobil oturum", () => {
     expect(await consumeUserToken(token, "MOBILE_WEB_LOGIN")).toBe(student.id);
     expect(await consumeUserToken(token, "MOBILE_WEB_LOGIN")).toBeNull(); // ikinci kez kullanılamaz
 
-    // Dış ödeme sayfaları (ör. iyzico) olduğu gibi açılır
+    // Dış ödeme sayfaları (ör. banka) olduğu gibi açılır
     expect(await paymentLink(student.id, "https://sandbox-cpp.iyzipay.com/?token=x")).toBe("https://sandbox-cpp.iyzipay.com/?token=x");
   });
 

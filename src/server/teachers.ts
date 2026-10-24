@@ -36,6 +36,8 @@ export type TeacherSearchParams = {
   verified?: string;
   /** "1": yalnızca ücretsiz tanışma sunanlar */
   intro?: string;
+  /** "1": aylık soru aboneliği satanlar */
+  abonelik?: string;
   q?: string;
   sort?: string;
   page?: string;
@@ -126,6 +128,7 @@ export async function searchTeachers(params: TeacherSearchParams) {
   if (minRating) and.push({ ratingAvg: { gte: minRating }, ratingCount: { gt: 0 } });
   if (params.verified === "1") and.push({ verificationStatus: "VERIFIED" });
   if (params.intro === "1") and.push({ offersIntro: true, offersOnline: true });
+  if (params.abonelik === "1") and.push({ questionPlans: { some: { isActive: true } } });
   if (params.time === "hafta-ici-gunduz") and.push({ availabilityRules: { some: { weekday: { lte: 5 }, startMinute: { lt: 17 * 60 } } } });
   if (params.time === "hafta-ici-aksam") and.push({ availabilityRules: { some: { weekday: { lte: 5 }, endMinute: { gt: 17 * 60 } } } });
   if (params.time === "hafta-sonu") and.push({ availabilityRules: { some: { weekday: { gte: 6 } } } });

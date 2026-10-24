@@ -32,7 +32,7 @@ export function FilterPanel({
   const submit = () => formRef.current?.requestSubmit();
   const level = catalog.levels.find((l) => l.slug === values.level);
   const subjects = level ? catalog.subjects.filter((s) => level.subjectIds.includes(s.id)) : catalog.subjects;
-  const activeCount = ["level", "subject", "service", "mode", "city", "district", "minPrice", "maxPrice", "rating", "gender", "time", "verified", "intro", "q"].filter((k) => values[k]).length;
+  const activeCount = ["level", "subject", "service", "mode", "city", "district", "minPrice", "maxPrice", "rating", "gender", "time", "verified", "intro", "abonelik", "q"].filter((k) => values[k]).length;
 
   return (
     // Telefonda filtreler bir düğmenin arkasında kapalı gelir (sonuçlar hemen görünsün); geniş ekranda hep açık.
@@ -178,6 +178,7 @@ export function FilterPanel({
         </div>
         <Checkbox name="verified" value="1" defaultChecked={values.verified === "1"} label="Yalnızca onaylı öğretmenler" />
         <Checkbox name="intro" value="1" defaultChecked={values.intro === "1"} label="Ücretsiz tanışma görüşmesi sunanlar" />
+        <Checkbox name="abonelik" value="1" defaultChecked={values.abonelik === "1"} label="Aylık soru aboneliği verenler" />
         <noscript>
           <button type="submit" className="w-full rounded-lg bg-brand-600 py-2 text-sm font-semibold text-white">
             Filtrele

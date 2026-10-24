@@ -1,13 +1,12 @@
 import { db, type DbTransaction } from "../db";
 import { garantiProvider } from "./garanti";
-import { iyzicoProvider } from "./iyzico";
 import { mockProvider } from "./mock";
 import { paytrProvider } from "./paytr";
 import type { PaymentProvider } from "./types";
 
-export const PAYMENT_PROVIDERS: Record<string, PaymentProvider> = { mock: mockProvider, iyzico: iyzicoProvider, paytr: paytrProvider, garanti: garantiProvider };
+export const PAYMENT_PROVIDERS: Record<string, PaymentProvider> = { mock: mockProvider, paytr: paytrProvider, garanti: garantiProvider };
 
-/** Yeni ödemeler için kullanılan sağlayıcı (.env → PAYMENT_PROVIDER=garanti | paytr | iyzico | mock). */
+/** Yeni ödemeler için kullanılan sağlayıcı (.env → PAYMENT_PROVIDER=garanti | paytr | mock). */
 export function getPaymentProvider(): PaymentProvider {
   return PAYMENT_PROVIDERS[process.env.PAYMENT_PROVIDER ?? ""] ?? mockProvider;
 }
@@ -72,7 +71,7 @@ export async function processRefund(refundId: string): Promise<boolean> {
       providerPaymentId: refund.payment.providerPaymentId ?? "",
       providerItemId: refund.payment.providerItemId,
       amount: refund.amount,
-      // iyzico iade isteğinde işlemi başlatan IP'yi ister; sunucunun genel IP'si yeterlidir.
+      // Bazı sağlayıcılar iade isteğinde sunucunun genel IP'sini ister.
       ipAddress: process.env.SERVER_PUBLIC_IP ?? "127.0.0.1",
       reference: refund.id,
     });

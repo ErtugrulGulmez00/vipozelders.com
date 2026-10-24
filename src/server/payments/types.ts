@@ -1,4 +1,4 @@
-// Ödeme sağlayıcısı soyutlaması. Geliştirmede "mock", canlıda "garanti" (Garanti BBVA sanal POS), "paytr" ya da "iyzico".
+// Ödeme sağlayıcısı soyutlaması. Geliştirmede "mock", canlıda "garanti" (Garanti BBVA sanal POS), ya da "paytr".
 
 export type CheckoutRequest = {
   paymentId: string;
@@ -30,7 +30,7 @@ export type CheckoutResult =
 
 export type ProviderCallResult = { ok: true; reference?: string } | { ok: false; error: string };
 
-export type PaymentProviderId = "mock" | "iyzico" | "paytr" | "garanti";
+export type PaymentProviderId = "mock" | "paytr" | "garanti";
 
 export interface PaymentProvider {
   readonly id: PaymentProviderId;

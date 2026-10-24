@@ -5,6 +5,7 @@ import {
   BookOpenCheck,
   Building2,
   Camera,
+  Repeat,
   CalendarCheck,
   ClipboardCheck,
   CircleHelp,
@@ -14,6 +15,7 @@ import {
   MonitorPlay,
   ShieldCheck,
   Target,
+  Users,
   Wallet,
 } from "lucide-react";
 import Link from "next/link";
@@ -109,6 +111,40 @@ export default async function HomePage() {
             </span>
           </Link>
         ) : null}
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          {settings.groupsEnabled ? (
+            <Link href="/grup-dersleri" className="group flex gap-3 rounded-2xl border border-sky-200 bg-sky-50 p-5">
+              <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-white text-sky-700 ring-1 ring-sky-200">
+                <Users className="size-5" aria-hidden />
+              </span>
+              <span>
+                <span className="block font-bold text-slate-900">Grup dersleri: sanal dershane</span>
+                <span className="block text-sm text-slate-600">
+                  {settings.groupMinParticipants}–{settings.groupMaxCapacity} kişilik online sınıflar, birebir dersten çok daha uygun. En az kişi dolmazsa ücretin tamamı iade.
+                </span>
+                <span className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-brand-700">
+                  Programları gör <ArrowRight className="size-4 transition group-hover:translate-x-0.5" aria-hidden />
+                </span>
+              </span>
+            </Link>
+          ) : null}
+          {settings.subscriptionsEnabled ? (
+            <Link href="/ogretmenler?abonelik=1" className="group flex gap-3 rounded-2xl border border-violet-200 bg-violet-50 p-5">
+              <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-white text-violet-700 ring-1 ring-violet-200">
+                <Repeat className="size-5" aria-hidden />
+              </span>
+              <span>
+                <span className="block font-bold text-slate-900">Aylık soru aboneliği</span>
+                <span className="block text-sm text-slate-600">
+                  Kendi öğretmeninize {settings.subscriptionDays} gün boyunca her gün soru gönderin; otomatik çekim yok, kendiliğinden yenilenmez.
+                </span>
+                <span className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-brand-700">
+                  Abonelik veren öğretmenler <ArrowRight className="size-4 transition group-hover:translate-x-0.5" aria-hidden />
+                </span>
+              </span>
+            </Link>
+          ) : null}
+        </div>
       </section>
 
       <section className="bg-white py-16">
