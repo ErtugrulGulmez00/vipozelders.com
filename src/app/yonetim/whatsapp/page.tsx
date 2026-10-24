@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { Alert, Badge, Card, CardBody, CardHeader, EmptyState, PageHeader, StatCard } from "@/components/ui/primitives";
 import { formatCompact } from "@/lib/dates";
 import { db } from "@/server/db";
@@ -11,6 +12,8 @@ export const metadata: Metadata = { title: "WhatsApp" };
 const STATUS = { PENDING: { label: "Sırada", tone: "amber" }, SENT: { label: "Gönderildi", tone: "green" }, FAILED: { label: "Gönderilemedi", tone: "rose" } } as const;
 
 export default async function WhatsAppAdminPage() {
+  // LetsBot durumu her açılışta sorgulanır (derlemede önceden hazırlanmaz)
+  await connection();
   const since = new Date();
   since.setHours(since.getHours() - 24);
   const [settings, session, counts, recent] = await Promise.all([
