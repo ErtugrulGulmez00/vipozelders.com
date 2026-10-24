@@ -4,6 +4,7 @@ import { fullName, shortName } from "@/lib/text";
 import { previewStudentCancellation } from "../bookings";
 import { db } from "../db";
 import { questionThread, threadOpen } from "../question-bookings";
+import { rescheduleAllowed } from "../reschedule";
 import { reviewEligibility } from "../reviews";
 import { loadSettings } from "../settings";
 import { CANCELLED_STATUSES, PAST_STATUSES } from "../student-queries";
@@ -73,6 +74,8 @@ export async function bookingDetail(user: MobileUser, bookingId: string, now = n
       district: { include: { city: true } },
       payments: { orderBy: { createdAt: "asc" }, include: { refunds: { orderBy: { createdAt: "asc" } } } },
       events: { orderBy: { createdAt: "asc" } },
+      package: { select: { code: true } },
+      rescheduleRequests: { where: { status: "PENDING" }, orderBy: { createdAt: "desc" }, take: 1 },
     },
   });
   const isStudent = user.role === "STUDENT";
@@ -91,12 +94,26 @@ export async function bookingDetail(user: MobileUser, bookingId: string, now = n
 
   const isQuestion = booking.mode === "QUESTION";
   const question = isQuestion ? await questionJson(booking, user.id) : null;
+  // Erteleme: onaylı derste bir taraf yeni saat önerir, karşı taraf kabul eder
+  const allowed = await rescheduleAllowed(booking, now);
+  const pending = booking.rescheduleRequests[0];
+  const reschedule = {
+    allowed: allowed.ok && !pending,
+    reason: allowed.ok ? null : allowed.reason,
+    count: booking.rescheduleCount,
+    pending: pending ? { id: pending.id, newStartAt: pending.newStartAt, note: pending.note, mine: pending.requestedById === user.id, createdAt: pending.createdAt } : null,
+  };
   const base = {
     ...bookingSummaryJson(booking, user.role),
     learnerGrade: booking.learnerGrade,
     inPersonPlace: booking.inPersonPlace,
     note: booking.studentNote,
     price: booking.price,
+    discountAmount: booking.discountAmount,
+    couponCode: booking.couponCode,
+    // Paketten alınan ders (ödemesiz; iade pakete döner)
+    packageCode: booking.package?.code ?? null,
+    reschedule,
     refundedAmount: booking.refundedAmount,
     holdExpiresAt: booking.status === "PENDING_PAYMENT" ? booking.holdExpiresAt : null,
     rejectionReason: booking.rejectionReason,

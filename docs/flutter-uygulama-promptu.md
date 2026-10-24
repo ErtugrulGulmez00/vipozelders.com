@@ -99,7 +99,7 @@ Sayfalı listelerde `?sayfa=N` gönderilir; yanıttaki `nextPage` null ise son s
 | --- | --- | --- |
 | `POST /oturum` | `{identifier, password, deviceName?}` | `{token, user: Me}` |
 | `DELETE /oturum?cihaz=<fcmToken>` | — | 204 |
-| `POST /kayit` | `{firstName, lastName, email, phone?, password, accountType: "PARENT"\|"STUDENT", kvkk: true, terms: true, marketing?, deviceName?}` | 201 `{token, user: Me}` |
+| `POST /kayit` | `{firstName, lastName, email, phone?, password, accountType: "PARENT"\|"STUDENT", kvkk: true, terms: true, marketing?, deviceName?, referralCode?}` | 201 `{token, user: Me}` |
 | `POST /sifremi-unuttum` | `{email}` | `{message}` (bağlantı e-postayla gelir, web'de açılır) |
 | `GET /ben` | — | `Me` |
 | `PATCH /ben` | `{firstName?, lastName?, phone?, accountType?, cityId?, marketingConsent?}` (öğretmen yalnızca `phone`) | `Me` |
@@ -232,7 +232,7 @@ Fotoğrafla soruda öğretmen onaylamaz (`canApprove` false): `canSolve` iken ç
 | İstek | Gövde | Yanıt |
 | --- | --- | --- |
 | `GET /krediler` | — | `{balance, salesOpen, rules: {validityMonths, refundDays, answerHours, disputeHours, singlePrice}, packages: [{credits, price, unitPrice, savingPercent}], subjects: [{levelId, subjectId, levelName, subjectName}], purchases: [{id, code, credits, price, refundedAmount, status, statusLabel, paidAt, expiresAt, remaining, expired, refund: {allowed, amount, reason}}], entries: [{id, kind, kindLabel, amount, note, createdAt}]}` |
-| `POST /krediler` | `{credits, consent: true}` | 201 `{purchase, payment: {url, returnUrlPrefix}}` — ödeme randevudaki gibi WebView'da |
+| `POST /krediler` | `{credits, consent: true, couponCode?}` | 201 `{purchase, payment: {url, returnUrlPrefix}}` — ödeme randevudaki gibi WebView'da |
 | `GET /krediler/{id}` | — | satın alma + `payment: {status, failureReason}` (ödeme dönüşünde 3 sn'de bir sorgulanır; `PAID` olunca krediler hesapta) |
 | `POST /krediler/{id}/iade` | — | `{amount, message}` (süre içinde, kullanılmayan krediler) |
 | `GET /sorular?sayfa=` | — | `{items: PoolQuestion[], nextPage}` |
@@ -252,6 +252,54 @@ Fotoğrafla soruda öğretmen onaylamaz (`canApprove` false): `canSolve` iken ç
 | `POST /ogretmenler/{slug}/mesaj` (veli) | `{body}` | 201 konuşma (yoksa açılır) |
 
 Öğretmen velinin soyadını yalnızca baş harfiyle görür. Cevapsız en çok 3 mesaj ve günde en çok 5 yeni konuşma kuralı `RULE_VIOLATION` döner.
+
+### İndirim kodu, arkadaşını getir, öğretmen talebi
+
+| İstek | Gövde | Yanıt |
+| --- | --- | --- |
+| `POST /indirim-kodu` (veli) | `{target: "booking"\|"credits"\|"subscription"\|"group", code, ref?, duration?, credits?}` (booking: ref = offeringId + duration · subscription: ref = planId · group: ref = courseId · credits: credits) | `{ok: true, discount, finalPrice, label, text}` ya da `{ok: false, error}` — kayıt oluşturmaz; kod satın almada `couponCode` olarak gönderilir ve yeniden doğrulanır |
+| `GET /davet` (veli) | — | `{enabled, code, url, discountPercent, rewardCredits, invited, rewarded, shareText}` |
+| `POST /ogretmen-talebi` | `{name, phone, email?, levelId?, subjectId?, mode: "online"\|"yuz-yuze"\|"farketmez", cityName?, preferredTimes?, note?}` (misafir de gönderebilir) | 201 `{ok, message}` |
+
+Kod girilmezse ve kullanıcı davetle geldiyse ilk siparişinde davet indirimi kendiliğinden uygulanır. İndirim platformun hizmet bedelinden düşer (öğretmen payı değişmez). Kodlarda I/İ ayrımı yapılmaz.
+
+### Paket ders, düzenli ders, erteleme
+
+| İstek | Gövde | Yanıt |
+| --- | --- | --- |
+| `POST /paketler` (veli) | `{offeringId, durationMinutes, lessons, consent: true}` · düzenli ders: `{offeringId, durationMinutes, recurring: {startAt, weeks, learnerName, learnerGrade?, note?}, consent: true}` | 201 `{package, payment}` (ödeme WebView'da; dönüşte `GET /paketler/{id}` `PAID`) |
+| `GET /paketler` | — | `{items: [{id, code, teacher: {name, slug, photoUrl}, offeringId, levelName, subjectName, serviceName, durationMinutes, lessonCount, listUnitPrice, unitPrice, discountPercent, price, refundedAmount, status, statusLabel, recurring, paidAt, expiresAt, active, left, refund: {allowed, amount, reason}, bookings: [{id, startAt, endAt, status, statusLabel}]}]}` |
+| `GET /paketler/{id}` · `POST /paketler/{id}` | — | paket + `payment` · kalan derslerin iadesi `{amount, message}` |
+| `POST /rezervasyonlar` + `packageId` | paketten ders: `consent` gerekmez | 201 `{booking, payment: null}`, durum `PENDING_APPROVAL` |
+| `POST /ogretmen/paketler/{packageId}` (öğretmen) | — | `{approved, failed}`: düzenli dersin bekleyen tüm talepleri onaylanır |
+| `POST /rezervasyonlar/{id}/erteleme` | `{action: "request", newStartAt, note?}` · `{action: "accept"\|"decline"\|"cancel", requestId}` | `BookingDetail` |
+
+Profilde (`GET /ogretmenler/{slug}`) `packageOffers: [{lessons, percent}]` (indirim: ders sayısını aşmayan en büyük paket), oturum açmış veli için `myPackages: [{id, code, offeringId, durationMinutes, left, expiresAt}]` ("Paketimden kullan": aynı ders ve sürede) döner. `BookingDetail`'de `discountAmount`, `couponCode`, `packageCode`, `reschedule: {allowed, reason, count, pending: {id, newStartAt, note, mine} | null}`; `BookingSummary`'de `packageId`. Erteleme onaylı derste, dersten `rules.rescheduleMinHours` saat önce ve ders başına `rules.rescheduleMaxPerBooking` kez yapılabilir.
+
+### Aylık soru aboneliği
+
+| İstek | Gövde | Yanıt |
+| --- | --- | --- |
+| `POST /abonelikler` (veli) | `{planId, couponCode?, consent: true}` (yenileme de aynı uç: yeni dönem mevcut dönemin bitişinden başlar) | 201 `{subscription, payment}` (dönüşte `GET /abonelikler/{id}` `ACTIVE`) |
+| `GET /abonelikler` | — | `{items: [{id, code, planId, teacher, levelName, subjectName, price, discountAmount, dailyLimit, answerHours, days, status, statusLabel, running, startsAt, endsAt, paidAt, refundedAmount, usedToday}]}` (süren dönem üstte) |
+| `POST /abonelikler/{id}` | multipart/form-data: `image`, `note?` | 201 `PoolQuestion` (kredi harcamaz; günlük sınır) |
+
+Profilde `questionPlans: [{id, levelName, subjectName, price, dailyLimit, answerHours, days, description}]`. Abonelik soruları öğretmenin `/ogretmen/soru-havuzu` `mine` listesine `subscription: true` olarak gelir; havuza bırakılamaz (`canRelease: false`), yalnızca çözülür ya da geri çevrilir.
+
+### Grup dersi
+
+| İstek | Gövde | Yanıt |
+| --- | --- | --- |
+| `GET /grup-dersleri` | — | `{enabled, items: GroupCourse[]}` (kayıtları süren herkese açık dersler) |
+| `GET /grup-dersleri?kapsam=benim` | — | veli: kayıtları (`{id, code, status, statusLabel, price, …, course}`) · öğretmen: kendi dersleri |
+| `GET /grup-dersleri/{code}` | — | ders + `description, teacher, sessions: [{id, index, startAt, endAt, status, statusLabel, canJoin, opensAt}], enrollment, actions: {canEnroll, canCancel}` |
+| `POST /grup-dersleri/{code}` (veli) | `{learnerName?, couponCode?, consent: true}` | 201 `{enrollment, payment}` (dönüşte `GET /grup-kayitlari/{id}` `PAID`) |
+| `GET /grup-kayitlari/{id}` · `DELETE /grup-kayitlari/{id}` | — | kayıt durumu · iptal (ilk oturumdan önce tam iade) |
+| `GET /grup-oturumlari/{sessionId}/sinif` | — | `{url, opensAt, closesAt}` (WebView) ya da 409 `CLASSROOM_CLOSED` |
+
+`GroupCourse`: `{id, code, title, levelName, subjectName, price, capacity, minParticipants, seatsTaken, enrollDeadline, sessionCount, firstStartAt, lastEndAt, durationMinutes, status, statusLabel, teacher?}`. Profilde `groupCourses`. En az katılımcıya kayıt bitişinde ulaşılmazsa ders iptal olur, herkese tam iade. Ders açma öğretmenin web panelindedir (`POST /web-oturum` `/ogretmen-paneli/grup-dersleri`).
+
+`GET /katalog` `rules`: `packagesEnabled, packageMaxLessons, packageValidityMonths, rescheduleMinHours, rescheduleMaxPerBooking, subscriptionsEnabled, subscriptionDays, groupsEnabled, referralEnabled, referralDiscountPercent` da gelir. Bildirim hedefleri: `packages`, `subscriptions`, `myGroups`, `group` (id: kod), `invite`.
 
 ### Kurum (veli portalı)
 
@@ -288,7 +336,7 @@ Fotoğrafla soruda öğretmen onaylamaz (`canApprove` false): `canSolve` iken ç
 | `PUT /ogretmen/soru-havuzu` | `{answersPool}` | havuz |
 | `GET /ogretmen/soru-havuzu/{id}` | — | soru + `answer`, `rating`, `releaseAt`, `actions: {canClaim, canRelease, canReject, canAnswer, canAnswerFollowUp}` |
 | `POST /ogretmen/soru-havuzu/{id}` | `{action: "claim" \| "release"}` · `{action: "reject", reason}` · `{action: "followUpAnswer", body}` · çözüm: multipart/form-data `body` (en az 20 karakter), `image?`, `video?` | soru (`release` sonrası `{ok: true}`) |
-| `POST /web-oturum` | `{path}` (`/ogretmen-paneli/profil`, `/dersler-ve-fiyatlar`, `/belgeler`, `/kazanclar`) | `{url}` — web paneli sayfasını WebView'da oturum açık açan tek kullanımlık bağlantı |
+| `POST /web-oturum` | `{path}` (`/ogretmen-paneli/profil`, `/dersler-ve-fiyatlar`, `/belgeler`, `/kazanclar`, `/grup-dersleri`, `/soru-aboneligi`) | `{url}` — web paneli sayfasını WebView'da oturum açık açan tek kullanımlık bağlantı |
 
 ## 6. Ödeme (Garanti BBVA / PayTR, WebView)
 

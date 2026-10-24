@@ -25,6 +25,9 @@ const createSchema = z.object({
   note: z.string().trim().max(1000).optional(),
   // Ücretsiz 15 dk tanışma görüşmesi: ödeme yok, doğrudan öğretmen onayına düşer (consent gerekmez)
   intro: z.boolean().optional(),
+  // İndirim kodu (boşsa uygunsa davet indirimi); paketten ders: packageId (ödeme yok, öğretmen onayına düşer)
+  couponCode: z.string().trim().max(30).optional(),
+  packageId: z.string().optional(),
   consent: z.boolean().optional(),
 });
 
@@ -37,7 +40,8 @@ export const POST = withUser(async ({ request, user }) => {
   if ((await maintenanceState()).on) throw new ApiError(503, "MAINTENANCE", "Site şu an bakımda; randevu alma birazdan yeniden açılacak.");
   const input = await readBody(request, createSchema);
   const intro = Boolean(input.intro);
-  if (!intro && input.consent !== true) {
+  const packageId = intro ? null : (input.packageId ?? null);
+  if (!intro && !packageId && input.consent !== true) {
     throw new ApiError(422, "VALIDATION", "Lütfen işaretli alanları kontrol edin.", { consent: "Ön bilgilendirme formunu ve mesafeli satış sözleşmesini onaylayın." });
   }
   const booking = await createBookingHold({
@@ -53,8 +57,10 @@ export const POST = withUser(async ({ request, user }) => {
     address: input.address ?? null,
     studentNote: input.note ?? null,
     intro,
+    couponCode: input.couponCode ?? null,
+    packageId,
   });
-  if (intro) return json({ booking: await bookingDetail(user, booking.id), payment: null }, 201);
+  if (intro || packageId) return json({ booking: await bookingDetail(user, booking.id), payment: null }, 201);
   const redirectUrl = await startCheckout(booking.id, user.id, clientIp(request) ?? "127.0.0.1");
   return json(
     {

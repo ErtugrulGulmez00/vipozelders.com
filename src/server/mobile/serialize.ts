@@ -117,6 +117,13 @@ export function notificationTarget(link: string | null): { screen: string; id?: 
   const thread = /^\/(?:hesabim|ogretmen-paneli)\/mesajlar\/([a-z0-9]+)/i.exec(link);
   if (thread) return { screen: "thread", id: thread[1] };
   if (/^\/(?:hesabim|ogretmen-paneli)\/mesajlar/.test(link)) return { screen: "messages" };
+  // Paket, abonelik, grup dersi, davet
+  if (link.startsWith("/hesabim/paketlerim")) return { screen: "packages" };
+  if (link.startsWith("/hesabim/abonelikler")) return { screen: "subscriptions" };
+  if (link.startsWith("/hesabim/grup-derslerim") || link.startsWith("/ogretmen-paneli/grup-dersleri")) return { screen: "myGroups" };
+  const group = /^\/grup-dersleri\/([A-Za-z0-9-]+)/.exec(link);
+  if (group) return { screen: "group", id: group[1] };
+  if (link.startsWith("/hesabim/davet")) return { screen: "invite" };
   return null;
 }
 
@@ -151,5 +158,7 @@ export function bookingSummaryJson(booking: BookingWithPeople, viewer: "STUDENT"
         ? { name: fullName(booking.teacher.user), photoUrl: absoluteUpload(booking.teacher.photoKey), teacherSlug: booking.teacher.slug }
         : { name: shortName(booking.student), photoUrl: null, teacherSlug: null },
     isIntro: booking.isIntro,
+    // Paketten (ya da düzenli dersten) alınan ders; öğretmen paketin taleplerini toplu onaylayabilir
+    packageId: booking.packageId,
   };
 }

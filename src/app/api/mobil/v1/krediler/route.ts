@@ -21,10 +21,11 @@ export const POST = withUser(async ({ request, user }) => {
     request,
     z.object({
       credits: z.number().int().positive(),
+      couponCode: z.string().trim().max(30).optional(),
       consent: z.literal(true, { error: "Ön bilgilendirme formunu ve mesafeli satış sözleşmesini onaylayın." }),
     }),
   );
-  const purchase = await createCreditPurchase(user.id, input.credits);
+  const purchase = await createCreditPurchase(user.id, input.credits, input.couponCode ?? null);
   const redirectUrl = await startCreditCheckout(purchase.id, user.id, clientIp(request) ?? "127.0.0.1");
   return json({ purchase: purchaseJson(purchase), payment: { url: await paymentLink(user.id, redirectUrl), returnUrlPrefix: paymentReturnPrefix() } }, 201);
 });

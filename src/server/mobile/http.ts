@@ -3,9 +3,13 @@ import { zodFieldErrors } from "@/lib/action-state";
 import { AccountError } from "../accounts";
 import { BookingError } from "../bookings";
 import { CreditError } from "../credits";
+import { GroupError } from "../groups";
+import { LessonRequestError } from "../lesson-requests";
 import { MessageError } from "../messages";
+import { PackageError } from "../packages";
 import { PoolError } from "../question-pool";
 import { ReviewError } from "../reviews";
+import { SubscriptionError } from "../subscriptions";
 import { ProfileError } from "../teacher-profile";
 
 // Mobil API'nin ortak yanıt biçimi. Hatalar her zaman { error: { code, message, fields? } } döner;
@@ -41,9 +45,15 @@ export function errorJson(error: unknown): Response {
     error instanceof AccountError ||
     error instanceof CreditError ||
     error instanceof PoolError ||
-    error instanceof MessageError
+    error instanceof MessageError ||
+    error instanceof PackageError ||
+    error instanceof SubscriptionError ||
+    error instanceof GroupError
   ) {
     return json({ error: { code: "RULE_VIOLATION", message: error.message } }, 422);
+  }
+  if (error instanceof LessonRequestError) {
+    return json({ error: { code: "VALIDATION", message: error.message, ...(error.fieldErrors ? { fields: error.fieldErrors } : {}) } }, 422);
   }
   if (error instanceof ProfileError) {
     return json({ error: { code: "RULE_VIOLATION", message: error.message, ...(error.fieldErrors ? { fields: error.fieldErrors } : {}) } }, 422);

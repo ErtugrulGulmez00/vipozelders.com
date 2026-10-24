@@ -107,6 +107,8 @@ test("öğretmen başvurusu → hesap açılır → belge yüklenir ve onaylanı
   await page.getByLabel("Yeni şifre (tekrar)").fill("YeniSifre123");
   await page.getByRole("button", { name: "Şifremi kaydet" }).click();
   await expect(page).toHaveURL(/\/ogretmen-paneli$/);
+  // Belgeler menüde "Profilim" altında sekme
+  await page.getByRole("link", { name: "Profilim" }).first().click();
   await page.getByRole("link", { name: "Belgelerim" }).first().click();
   await expect(page.getByText("Henüz belge yüklemediniz")).toBeVisible();
   await page.getByLabel("Belge türü").selectOption({ label: "Kimlik" });

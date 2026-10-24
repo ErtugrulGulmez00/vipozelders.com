@@ -22,8 +22,12 @@ const MIN_PAYABLE = 100;
 
 export const TARGET_LABELS: Record<DiscountTarget, string> = { booking: "Birebir ders", credits: "Soru kredisi", subscription: "Soru aboneliği", group: "Grup dersi" };
 
+/**
+ * Kodlar büyük harfle saklanır ve karşılaştırılır. "hosgeldin" Türkçe kurala göre "HOSGELDİN" olur, İngilizce klavyeyle
+ * yazılan "HOSGELDIN" ile eşleşmez; bu yüzden noktalı/noktasız I ayrımı yapılmaz (İ ve ı → I).
+ */
 export function normalizeCode(code: string) {
-  return code.trim().toLocaleUpperCase("tr-TR").replace(/\s+/g, "");
+  return code.trim().toLocaleUpperCase("tr-TR").replace(/\s+/g, "").replace(/[İı]/g, "I");
 }
 
 /** Kullanıcının daha önce ödenmiş bir siparişi var mı (ilk sipariş indirimleri için)? */

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { normalizePhone } from "@/lib/text";
 import { AccountError, registerStudent } from "@/server/accounts";
+import { referrerForCode } from "@/server/discounts";
 import { passwordProblem } from "@/server/auth/password";
 import { countRecentAttempts, recordLoginAttempt } from "@/server/auth/rate-limit";
 import { maintenanceState } from "@/server/maintenance";
@@ -20,6 +21,8 @@ const registerSchema = z.object({
   terms: z.literal(true, { error: "Devam etmek için kullanım şartlarını kabul edin." }),
   marketing: z.boolean().optional(),
   deviceName: z.string().max(120).optional(),
+  // Arkadaşını getir: davet eden kullanıcının kodu
+  referralCode: z.string().trim().max(20).optional(),
 });
 
 /** Veli/öğrenci kaydı; başarılıysa doğrudan oturum açılır. */
@@ -51,6 +54,7 @@ export const POST = publicRoute(async ({ request }) => {
       password: input.password,
       accountType: input.accountType,
       marketingConsent: input.marketing ?? false,
+      referredById: await referrerForCode(input.referralCode),
     });
     userId = user.id;
   } catch (error) {

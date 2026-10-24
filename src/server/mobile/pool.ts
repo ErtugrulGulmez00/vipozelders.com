@@ -1,5 +1,5 @@
 import type { CreditPurchase, PoolQuestion } from "@/generated/prisma/client";
-import { CREDIT_ENTRY_KIND, CREDIT_PURCHASE_STATUS, POOL_STATUS } from "@/lib/labels";
+import { CREDIT_ENTRY_KIND, CREDIT_PURCHASE_STATUS, poolStatus } from "@/lib/labels";
 import { creditLots, parsePackages, refundPreview, singleQuestionPrice } from "../credits";
 import { db } from "../db";
 import { salesOpen } from "../payments/service";
@@ -12,8 +12,9 @@ import { absoluteUpload } from "./serialize";
 
 const MAX_ACTIVE_CLAIMS = 3;
 
-function statusOf(status: string) {
-  return { status, statusLabel: POOL_STATUS[status]?.label ?? status };
+/** Durum ve etiketi; abonelik sorusunda kredi iadesi yazılmaz. subscription: soru aylık abonelikten. */
+function statusOf(q: Pick<PoolQuestion, "status" | "subscriptionId">) {
+  return { status: q.status, statusLabel: poolStatus(q).label, subscription: Boolean(q.subscriptionId) };
 }
 
 /** Kredi paketleri, bakiye, satın almalar ve hareketler (Kredilerim + Soru sor ekranı). */
@@ -96,7 +97,7 @@ function questionSummary(q: PoolQuestion) {
     subjectName: q.subjectName,
     note: q.note,
     imageUrl: absoluteUpload(q.imageKey),
-    ...statusOf(q.status),
+    ...statusOf(q),
     createdAt: q.createdAt,
     expiresAt: q.expiresAt,
     answeredAt: q.answeredAt,
@@ -156,7 +157,7 @@ function teacherQuestionSummary(q: PoolQuestion, teacherId: string) {
     subjectName: q.subjectName,
     note: q.note,
     imageUrl: absoluteUpload(q.imageKey),
-    ...statusOf(q.status),
+    ...statusOf(q),
     mine: q.claimedById === teacherId,
     fee: q.teacherFee,
     createdAt: q.createdAt,
@@ -196,7 +197,8 @@ export async function teacherQuestionJson(teacherId: string, id: string, now = n
     releaseAt: mine ? q.releaseAt : null,
     actions: {
       canClaim: q.status === "OPEN" && q.expiresAt > now,
-      canRelease: claimed,
+      // Abonenin sorusu havuza bırakılamaz (yalnızca geri çevrilebilir)
+      canRelease: claimed && !q.subscriptionId,
       canReject: claimed,
       canAnswer: claimed,
       canAnswerFollowUp: mine && Boolean(q.followUpText) && !q.followUpAnswer,
