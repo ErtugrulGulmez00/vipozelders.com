@@ -1,5 +1,5 @@
 import { db, type DbTransaction } from "./db";
-import { renderEmail } from "./email";
+import { appUrl, renderEmail } from "./email";
 import { loadSettings } from "./settings";
 
 export type NotifyInput = {
@@ -12,13 +12,38 @@ export type NotifyInput = {
   emailLines?: string[];
   /** false ise yalnızca site içi bildirim */
   email?: boolean;
+  /** false ise WhatsApp gönderilmez (önemli bildirim türlerinde varsayılan olarak gider) */
+  whatsapp?: boolean;
 };
+
+// WhatsApp ile de gönderilen önemli bildirimler (zamana bağlı, kaçırılmaması gerekenler)
+const WHATSAPP_TYPES = new Set([
+  "booking.request",
+  "booking.confirmed",
+  "booking.rejected",
+  "booking.cancelled",
+  "booking.expired",
+  "booking.no_show_teacher",
+  "booking.reschedule_request",
+  "booking.rescheduled",
+  "reminder.1h",
+  "question.solved",
+  "pool.answered",
+  "subscription.question",
+  "subscription.renewal",
+  "group.confirmed",
+  "group.cancelled",
+  "group.reminder",
+  "group.invited",
+  "message.new",
+  "admin.lesson_request",
+]);
 
 /** Site içi bildirim oluşturur ve kullanıcının e-postası varsa e-posta kuyruğuna ekler. */
 export async function notify(input: NotifyInput, tx: DbTransaction | typeof db = db) {
   const user = await tx.user.findUnique({
     where: { id: input.userId },
-    select: { email: true, firstName: true },
+    select: { email: true, firstName: true, phone: true, whatsappOptOut: true },
   });
   if (!user) return;
 
@@ -44,6 +69,14 @@ export async function notify(input: NotifyInput, tx: DbTransaction | typeof db =
     await tx.emailMessage.create({
       data: { userId: input.userId, to: user.email, subject: `${input.title} · ${settings.siteName}`, html, text },
     });
+  }
+
+  if (input.whatsapp !== false && WHATSAPP_TYPES.has(input.type) && user.phone && !user.whatsappOptOut) {
+    const settings = await loadSettings();
+    if (settings.whatsappNotifications) {
+      const body = [`*${settings.siteName}* · ${input.title}`, input.body, input.link ? appUrl(input.link) : null].filter(Boolean).join("\n");
+      await tx.whatsAppMessage.create({ data: { userId: input.userId, to: user.phone, body: body.slice(0, 1500), type: input.type } });
+    }
   }
 }
 

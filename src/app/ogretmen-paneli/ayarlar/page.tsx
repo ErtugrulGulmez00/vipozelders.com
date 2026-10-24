@@ -3,14 +3,17 @@ import { updateTeacherContactAction } from "@/actions/teacher";
 import { ActionForm, SubmitButton } from "@/components/forms/action-form";
 import { AccountDeletionForm } from "@/components/panel/account-deletion-form";
 import { PasswordForm } from "@/components/panel/password-form";
+import { WhatsAppPreference } from "@/components/panel/whatsapp-pref";
 import { Field, Input } from "@/components/ui/form";
 import { Card, CardBody, CardHeader, DescriptionList, PageHeader } from "@/components/ui/primitives";
 import { requireRole } from "@/server/auth/current-user";
+import { db } from "@/server/db";
 
 export const metadata: Metadata = { title: "Hesap ayarları" };
 
 export default async function TeacherSettingsPage() {
   const user = await requireRole("TEACHER");
+  const prefs = await db.user.findUniqueOrThrow({ where: { id: user.id }, select: { whatsappOptOut: true, phone: true } });
   return (
     <>
       <PageHeader title="Hesap ayarları" />
@@ -31,6 +34,12 @@ export default async function TeacherSettingsPage() {
               </Field>
               <SubmitButton variant="outline">Kaydet</SubmitButton>
             </ActionForm>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardHeader title="WhatsApp bildirimleri" />
+          <CardBody>
+            <WhatsAppPreference on={!prefs.whatsappOptOut} phone={prefs.phone} />
           </CardBody>
         </Card>
         <Card>

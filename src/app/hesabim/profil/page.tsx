@@ -9,6 +9,7 @@ import { db } from "@/server/db";
 import { getCities } from "@/server/site";
 import { AccountDeletionForm } from "@/components/panel/account-deletion-form";
 import { PasswordForm } from "@/components/panel/password-form";
+import { WhatsAppPreference } from "@/components/panel/whatsapp-pref";
 
 export const metadata: Metadata = { title: "Hesap ayarları" };
 
@@ -93,6 +94,12 @@ export default async function StudentProfilePage() {
                 </Field>
                 <SubmitButton variant="secondary">Ekle</SubmitButton>
               </ActionForm>
+            </CardBody>
+          </Card>
+          <Card>
+            <CardHeader title="WhatsApp bildirimleri" />
+            <CardBody>
+              <WhatsAppPreference on={!profile.whatsappOptOut} phone={profile.phone} />
             </CardBody>
           </Card>
           <Card>

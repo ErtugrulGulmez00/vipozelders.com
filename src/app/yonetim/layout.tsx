@@ -1,4 +1,4 @@
-import { BarChart3, Inbox, Newspaper, Tag, Bell, Bug, Building2, CreditCard, CalendarDays, FileText, FolderTree, GraduationCap, History, LayoutDashboard, Mail, MessageCircleQuestion, MessageCircleWarning, MessageSquareQuote, Settings, ShieldAlert, ShieldCheck, UserPlus, Users, Wallet } from "lucide-react";
+import { BarChart3, MessageCircle, Inbox, Newspaper, Tag, Bell, Bug, Building2, CreditCard, CalendarDays, FileText, FolderTree, GraduationCap, History, LayoutDashboard, Mail, MessageCircleQuestion, MessageCircleWarning, MessageSquareQuote, Settings, ShieldAlert, ShieldCheck, UserPlus, Users, Wallet } from "lucide-react";
 import { PanelShell } from "@/components/panel/panel-shell";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
@@ -47,6 +47,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         { href: "/yonetim/rehber", label: "Rehber yazıları", icon: <Newspaper /> },
         { href: "/yonetim/bildirimler", label: "Bildirimler", icon: <Bell />, badge: unread || undefined },
         { href: "/yonetim/e-postalar", label: "E-posta kutusu", icon: <Mail /> },
+        { href: "/yonetim/whatsapp", label: "WhatsApp", icon: <MessageCircle /> },
         { href: "/yonetim/hatalar", label: "Hatalar", icon: <Bug />, badge: openErrors || undefined },
         { href: "/yonetim/islem-kayitlari", label: "İşlem kayıtları", icon: <History /> },
         { href: "/yonetim/ayarlar", label: "Site ayarları", icon: <Settings /> },

@@ -64,6 +64,8 @@ model User {
   referredById       String?
   referredBy         User?      @relation("Referrals", fields: [referredById], references: [id], onDelete: SetNull)
   referralRewardedAt DateTime?
+  // WhatsApp bildirimi almak istemiyor (Hesap ayarları)
+  whatsappOptOut     Boolean    @default(false)
 
   sessions          Session[]
   tokens            UserToken[]
@@ -91,6 +93,7 @@ model User {
   referrals         User[]             @relation("Referrals")
   couponRedemptions CouponRedemption[]
   lessonPackages    LessonPackage[]
+  whatsappMessages  WhatsAppMessage[]
   classroomReports  ClassroomReport[]
   threadsAsStudent  MessageThread[]    @relation("ThreadStudent")
   threadsAsTeacher  MessageThread[]    @relation("ThreadTeacher")
@@ -2419,5 +2422,24 @@ model RescheduleRequest {
   createdAt     DateTime         @default(now())
 
   @@index([bookingId, status])
+  @@index([status, createdAt])
+}
+
+// WhatsApp bildirim kuyruğu (LetsBot). Önemli bildirimler e-postanın yanında WhatsApp ile de gider;
+// zamanlayıcı dakikada sınırlı sayıda gönderir (numaranın engellenmemesi için).
+model WhatsAppMessage {
+  id         String      @id @default(cuid())
+  userId     String?
+  user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  to         String
+  body       String
+  type       String?
+  status     EmailStatus @default(PENDING)
+  attempts   Int         @default(0)
+  error      String?
+  providerId String?
+  createdAt  DateTime    @default(now())
+  sentAt     DateTime?
+
   @@index([status, createdAt])
 }

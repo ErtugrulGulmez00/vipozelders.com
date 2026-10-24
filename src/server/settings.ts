@@ -12,6 +12,8 @@ export const settingsSchema = z.object({
   contactPhone: z.string().default("+90 505 043 47 96"),
   // Sağ alttaki WhatsApp destek düğmesinin numarası (boşsa düğme gösterilmez)
   supportWhatsapp: z.string().default("+90 505 043 47 96"),
+  // Önemli bildirimler (ders talebi, onay, 1 saat kala hatırlatma…) WhatsApp ile de gönderilsin (LetsBot)
+  whatsappNotifications: z.boolean().default(true),
   companyName: z.string().default(""),
   companyAddress: z.string().default(""),
   companyTaxInfo: z.string().default(""),
