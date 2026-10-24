@@ -102,7 +102,7 @@ Sayfalı listelerde `?sayfa=N` gönderilir; yanıttaki `nextPage` null ise son s
 | `POST /kayit` | `{firstName, lastName, email, phone?, password, accountType: "PARENT"\|"STUDENT", kvkk: true, terms: true, marketing?, deviceName?, referralCode?}` | 201 `{token, user: Me}` |
 | `POST /sifremi-unuttum` | `{email}` | `{message}` (bağlantı e-postayla gelir, web'de açılır) |
 | `GET /ben` | — | `Me` |
-| `PATCH /ben` | `{firstName?, lastName?, phone?, accountType?, cityId?, marketingConsent?}` (öğretmen yalnızca `phone`) | `Me` |
+| `PATCH /ben` | `{firstName?, lastName?, phone?, accountType?, cityId?, marketingConsent?, whatsappNotifications?}` (öğretmen yalnızca `phone` ve `whatsappNotifications`) | `Me` |
 | `POST /ben/sifre` | `{currentPassword, newPassword}` (en az 8 karakter, harf ve rakam) | `{message}` |
 | `POST /ben/silme-talebi` | `{reason?}` | 202 `{message}` |
 
@@ -110,7 +110,7 @@ Sayfalı listelerde `?sayfa=N` gönderilir; yanıttaki `nextPage` null ise son s
 
 ```json
 { "id": "cmv47…", "role": "STUDENT", "firstName": "Fatma", "lastName": "Demirtaş", "email": "veli@ornek.com", "username": null, "phone": "05321112233",
-  "emailVerified": true, "mustChangePassword": false, "unreadNotifications": 3, "unreadMessages": 1, "questionCredits": 9,
+  "emailVerified": true, "mustChangePassword": false, "unreadNotifications": 3, "unreadMessages": 1, "questionCredits": 9, "whatsappNotifications": true,
   "student": { "accountType": "PARENT", "city": { "id": 34, "name": "İstanbul" }, "marketingConsent": false },
   "teacher": null }
 ```
@@ -299,7 +299,7 @@ Profilde `questionPlans: [{id, levelName, subjectName, price, dailyLimit, answer
 
 `GroupCourse`: `{id, code, title, levelName, subjectName, price, capacity, minParticipants, seatsTaken, enrollDeadline, sessionCount, firstStartAt, lastEndAt, durationMinutes, status, statusLabel, teacher?}`. Profilde `groupCourses`. En az katılımcıya kayıt bitişinde ulaşılmazsa ders iptal olur, herkese tam iade. Ders açma öğretmenin web panelindedir (`POST /web-oturum` `/ogretmen-paneli/grup-dersleri`).
 
-`GET /katalog` `rules`: `packagesEnabled, packageMaxLessons, packageValidityMonths, rescheduleMinHours, rescheduleMaxPerBooking, subscriptionsEnabled, subscriptionDays, groupsEnabled, referralEnabled, referralDiscountPercent` da gelir. Bildirim hedefleri: `packages`, `subscriptions`, `myGroups`, `group` (id: kod), `invite`.
+`GET /katalog` `rules`: `packagesEnabled, packageMaxLessons, packageValidityMonths, rescheduleMinHours, rescheduleMaxPerBooking, subscriptionsEnabled, subscriptionDays, groupsEnabled, referralEnabled, referralDiscountPercent, whatsappNotifications` da gelir; `site.supportWhatsapp` WhatsApp destek numarasıdır (boşsa null). Önemli bildirimler (ders talebi ve onayı, 1 saat kala hatırlatma, çözüm geldi, saat değişikliği) telefon numarasına WhatsApp ile de gider; kullanıcı `PATCH /ben {whatsappNotifications: false}` ile kapatır. Bildirim hedefleri: `packages`, `subscriptions`, `myGroups`, `group` (id: kod), `invite`.
 
 ### Kurum (veli portalı)
 

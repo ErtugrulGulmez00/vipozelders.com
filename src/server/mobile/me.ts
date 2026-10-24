@@ -33,6 +33,8 @@ export async function meJson(userId: string) {
     unreadMessages,
     // Soru kredisi bakiyesi (yalnızca veli/öğrenci)
     questionCredits: credits,
+    // Önemli bildirimleri WhatsApp ile de almak istiyor (PATCH /ben whatsappNotifications)
+    whatsappNotifications: !user.whatsappOptOut,
     student: user.studentProfile
       ? {
           accountType: user.studentProfile.accountType,

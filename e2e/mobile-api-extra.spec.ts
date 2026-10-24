@@ -32,6 +32,7 @@ function client(request: APIRequestContext, token?: string) {
     get: (path: string) => request.get(path.startsWith("http") ? path : `${API}${path}`, { headers }),
     post: (path: string, data?: unknown) => request.post(`${API}${path}`, { headers, data: data ?? {} }),
     put: (path: string, data: unknown) => request.put(`${API}${path}`, { headers, data }),
+    patch: (path: string, data: unknown) => request.patch(`${API}${path}`, { headers, data }),
     delete: (path: string) => request.delete(`${API}${path}`, { headers }),
     multipart: (path: string, form: Record<string, string | { name: string; mimeType: string; buffer: Buffer }>) => request.post(`${API}${path}`, { headers, multipart: form }),
   };
@@ -84,6 +85,12 @@ test("mobil API: fotoğrafla soru → ödeme → öğretmen çözümü → özel
   expect(profile.offerings.find((o: { id: string }) => o.id === offeringId).questionPrice).toBe(15000);
 
   const { api: student } = await register(request, "soru");
+
+  // WhatsApp bildirim tercihi: varsayılan açık, PATCH /ben ile kapanır
+  expect((await (await student.get("/ben")).json()).whatsappNotifications).toBe(true);
+  const optOut = await student.patch("/ben", { whatsappNotifications: false });
+  expect((await optOut.json()).whatsappNotifications).toBe(false);
+  expect("supportWhatsapp" in catalog.site).toBe(true);
 
   // Alan hataları: fotoğraf ve onay zorunlu
   const noImage = await student.multipart("/rezervasyonlar/soru", { offeringId, learnerName: "Ali", consent: "true" });

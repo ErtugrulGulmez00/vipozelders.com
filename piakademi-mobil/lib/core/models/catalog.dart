@@ -62,19 +62,30 @@ class Catalog {
 }
 
 class SiteInfo {
-  const SiteInfo({required this.name, required this.tagline, this.contactEmail, this.contactPhone, required this.url});
+  const SiteInfo({required this.name, required this.tagline, this.contactEmail, this.contactPhone, this.supportWhatsapp, required this.url});
 
   final String name;
   final String tagline;
   final String? contactEmail;
   final String? contactPhone;
+
+  /// WhatsApp destek numarası (boşsa düğme gösterilmez)
+  final String? supportWhatsapp;
   final String url;
+
+  /// wa.me bağlantısı; numara geçersizse null
+  String? get whatsappLink {
+    final digits = (supportWhatsapp ?? '').replaceAll(RegExp(r'\D'), '').replaceFirst(RegExp(r'^0'), '90');
+    if (digits.length < 10) return null;
+    return 'https://wa.me/$digits?text=${Uri.encodeComponent('Merhaba, $name hakkında bilgi almak istiyorum.')}';
+  }
 
   factory SiteInfo.fromJson(Json json) => SiteInfo(
         name: asString(json['name'], 'Pi Kampüs'),
         tagline: asString(json['tagline']),
         contactEmail: asStringOrNull(json['contactEmail']),
         contactPhone: asStringOrNull(json['contactPhone']),
+        supportWhatsapp: asStringOrNull(json['supportWhatsapp']),
         url: asString(json['url']),
       );
 }
@@ -112,6 +123,7 @@ class Rules {
     this.groupsEnabled = false,
     this.referralEnabled = false,
     this.referralDiscountPercent = 0,
+    this.whatsappNotifications = false,
   });
 
   final int paymentHoldMinutes;
@@ -138,6 +150,9 @@ class Rules {
   final bool referralEnabled;
   final int referralDiscountPercent;
 
+  /// Önemli bildirimler WhatsApp ile de gider (kullanıcı kapatabilir)
+  final bool whatsappNotifications;
+
   factory Rules.fromJson(Json json) => Rules(
         paymentHoldMinutes: asInt(json['paymentHoldMinutes'], 15),
         approvalWindowHours: asInt(json['approvalWindowHours'], 12),
@@ -160,6 +175,7 @@ class Rules {
         groupsEnabled: asBool(json['groupsEnabled']),
         referralEnabled: asBool(json['referralEnabled']),
         referralDiscountPercent: asInt(json['referralDiscountPercent']),
+        whatsappNotifications: asBool(json['whatsappNotifications']),
       );
 }
 

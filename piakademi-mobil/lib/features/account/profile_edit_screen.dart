@@ -30,6 +30,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   late String _accountType = _me.student?.accountType ?? 'PARENT';
   late int? _cityId = _me.student?.cityId;
   late bool _marketing = _me.student?.marketingConsent ?? false;
+  late bool _whatsapp = _me.whatsappNotifications;
   bool _busy = false;
   ApiException? _error;
 
@@ -48,7 +49,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       _error = null;
     });
     final Json changes = _me.isTeacher
-        ? {'phone': _phone.text.trim().isEmpty ? null : _phone.text.trim()}
+        ? {'phone': _phone.text.trim().isEmpty ? null : _phone.text.trim(), 'whatsappNotifications': _whatsapp}
         : {
             'firstName': _firstName.text.trim(),
             'lastName': _lastName.text.trim(),
@@ -56,6 +57,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             'accountType': _accountType,
             'cityId': _cityId,
             'marketingConsent': _marketing,
+            'whatsappNotifications': _whatsapp,
           };
     try {
       final me = await ref.read(apiProvider).updateMe(changes);
@@ -122,6 +124,16 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               decoration: InputDecoration(labelText: 'Cep telefonu', hintText: '05XX XXX XX XX', errorText: _error?.field('phone')),
               validator: phoneProblem,
             ),
+            if (catalog?.rules.whatsappNotifications ?? false) ...[
+              const SizedBox(height: 12),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _whatsapp,
+                onChanged: (v) => setState(() => _whatsapp = v),
+                title: const Text('WhatsApp bildirimleri'),
+                subtitle: const Text('Ders talebi ve onayı, 1 saat kala hatırlatma, çözüm geldi, saat değişikliği gibi önemli bildirimler telefon numaranıza WhatsApp ile de gelsin.'),
+              ),
+            ],
             if (!teacher) ...[
               const SizedBox(height: 20),
               Text('Hesap tipi', style: Theme.of(context).textTheme.titleSmall),

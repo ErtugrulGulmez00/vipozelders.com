@@ -11,7 +11,7 @@ import { SORT_OPTIONS, TIME_OPTIONS } from "@/server/teachers";
 export const GET = publicRoute(async () => {
   const [catalog, cities, pages, settings, maintenance] = await Promise.all([getCatalog(), getCities(), getFooterPages(), loadSettings(), maintenanceState()]);
   return json({
-    site: { name: settings.siteName, tagline: settings.siteTagline, contactEmail: settings.contactEmail, contactPhone: settings.contactPhone, url: appUrl() },
+    site: { name: settings.siteName, tagline: settings.siteTagline, contactEmail: settings.contactEmail, contactPhone: settings.contactPhone, supportWhatsapp: settings.supportWhatsapp || null, url: appUrl() },
     maintenance: { on: maintenance.on, message: maintenance.on ? maintenance.message : null },
     rules: {
       paymentHoldMinutes: settings.paymentHoldMinutes,
@@ -36,6 +36,8 @@ export const GET = publicRoute(async () => {
       groupsEnabled: settings.groupsEnabled,
       referralEnabled: settings.referralEnabled,
       referralDiscountPercent: settings.referralDiscountPercent,
+      // Önemli bildirimler WhatsApp ile de gider (kullanıcı hesap ayarından kapatabilir)
+      whatsappNotifications: settings.whatsappNotifications,
     },
     levels: catalog.levels.map((l) => ({ id: l.id, name: l.name, slug: l.slug, group: l.group, grades: l.grades, subjectIds: l.subjectIds })),
     subjects: catalog.subjects.map((s) => ({ id: s.id, name: s.name, slug: s.slug })),

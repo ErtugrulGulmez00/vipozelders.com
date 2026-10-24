@@ -18,6 +18,7 @@ class Me {
     this.unreadNotifications = 0,
     this.unreadMessages = 0,
     this.questionCredits,
+    this.whatsappNotifications = true,
     this.student,
     this.teacher,
   });
@@ -38,6 +39,9 @@ class Me {
 
   /// Soru kredisi bakiyesi (yalnızca veli/öğrenci)
   final int? questionCredits;
+
+  /// Önemli bildirimleri WhatsApp ile de almak istiyor
+  final bool whatsappNotifications;
   final StudentInfo? student;
   final TeacherInfo? teacher;
 
@@ -66,6 +70,7 @@ class Me {
       unreadNotifications: asInt(json['unreadNotifications']),
       unreadMessages: asInt(json['unreadMessages']),
       questionCredits: asIntOrNull(json['questionCredits']),
+      whatsappNotifications: asBool(json['whatsappNotifications'], true),
       student: json['student'] is Map ? StudentInfo.fromJson(asJson(json['student'])) : null,
       teacher: json['teacher'] is Map ? TeacherInfo.fromJson(asJson(json['teacher'])) : null,
     );
@@ -84,6 +89,7 @@ class Me {
         unreadNotifications: unreadNotifications ?? this.unreadNotifications,
         unreadMessages: unreadMessages ?? this.unreadMessages,
         questionCredits: questionCredits ?? this.questionCredits,
+        whatsappNotifications: whatsappNotifications,
         student: student,
         teacher: teacher,
       );

@@ -227,11 +227,14 @@ class InfoLinks extends StatelessWidget {
     final legal = catalog.pages.where((p) => !_support.contains(p.slug)).toList();
     final email = catalog.site.contactEmail;
     final phone = catalog.site.contactPhone;
+    final whatsapp = catalog.site.whatsappLink;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const MenuTitle('Destek'),
         for (final page in support) MenuTile(icon: Icons.help_outline_rounded, title: page.title, onTap: () => context.push(Routes.page(page.slug))),
+        if (whatsapp != null)
+          MenuTile(icon: Icons.chat_outlined, title: 'WhatsApp ile yazın', subtitle: catalog.site.supportWhatsapp, onTap: () => openExternal(context, whatsapp)),
         if (email != null && email.isNotEmpty && !email.endsWith('example.com'))
           MenuTile(icon: Icons.mail_outline_rounded, title: 'E-posta ile yazın', subtitle: email, onTap: () => openExternal(context, 'mailto:$email')),
         if (phone != null && phone.isNotEmpty) MenuTile(icon: Icons.call_outlined, title: 'Bizi arayın', subtitle: phone, onTap: () => openExternal(context, 'tel:$phone')),

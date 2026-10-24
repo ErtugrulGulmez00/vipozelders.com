@@ -14,9 +14,10 @@ const updateSchema = z.object({
   accountType: z.enum(["PARENT", "STUDENT"]).optional(),
   cityId: z.number().int().min(1).max(81).nullable().optional(),
   marketingConsent: z.boolean().optional(),
+  whatsappNotifications: z.boolean().optional(),
 });
 
-/** Profil güncelleme. Öğretmenler yalnızca telefonunu değiştirebilir (profil web panelinden düzenlenir). */
+/** Profil güncelleme. Öğretmenler yalnızca telefonunu ve WhatsApp tercihini değiştirebilir (profil web panelinden düzenlenir). */
 export const PATCH = withUser(async ({ request, user }) => {
   const input = await readBody(request, updateSchema);
   let phone: string | null | undefined;
@@ -25,8 +26,12 @@ export const PATCH = withUser(async ({ request, user }) => {
     if (input.phone && !phone) throw new ApiError(422, "VALIDATION", "Telefon numarası 05XX XXX XX XX biçiminde olmalı.", { phone: "Geçersiz numara." });
   }
 
+  const whatsapp = input.whatsappNotifications !== undefined ? { whatsappOptOut: !input.whatsappNotifications } : {};
+
   if (user.role === "TEACHER") {
-    if (phone !== undefined) await db.user.update({ where: { id: user.id }, data: { phone } });
+    if (phone !== undefined || input.whatsappNotifications !== undefined) {
+      await db.user.update({ where: { id: user.id }, data: { ...(phone !== undefined ? { phone } : {}), ...whatsapp } });
+    }
     return json(await meJson(user.id));
   }
 
@@ -36,6 +41,7 @@ export const PATCH = withUser(async ({ request, user }) => {
       ...(input.firstName ? { firstName: input.firstName } : {}),
       ...(input.lastName ? { lastName: input.lastName } : {}),
       ...(phone !== undefined ? { phone } : {}),
+      ...whatsapp,
       studentProfile: {
         update: {
           ...(input.accountType ? { accountType: input.accountType } : {}),
