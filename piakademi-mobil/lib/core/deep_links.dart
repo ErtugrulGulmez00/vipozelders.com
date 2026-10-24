@@ -47,7 +47,7 @@ class DeepLinks {
     final normalized = Uri(path: path.isEmpty ? '/' : path, queryParameters: uri.queryParameters.isEmpty ? null : uri.queryParameters);
     final mapped = mapWebPath(normalized);
     if (mapped != null) return mapped;
-    if (RegExp(r'^/(kurum-davet|ogretmen|ogretmenler|ders|kurum|soru-sor|sorularim|mesajlar)(/|$)').hasMatch(normalized.path)) return normalized.toString();
+    if (RegExp(r'^/(kurum-davet|ogretmen|ogretmenler|ders|kurum|soru-sor|sorularim|mesajlar|grup-dersleri|rehber)(/|$)').hasMatch(normalized.path)) return normalized.toString();
     return null;
   }
 

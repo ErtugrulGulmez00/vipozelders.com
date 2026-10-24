@@ -102,6 +102,16 @@ class Rules {
     this.disputeWindowHours = 48,
     this.reviewWindowDays = 30,
     this.questionAnswerHours = 24,
+    this.packagesEnabled = false,
+    this.packageMaxLessons = 20,
+    this.packageValidityMonths = 6,
+    this.rescheduleMinHours = 24,
+    this.rescheduleMaxPerBooking = 2,
+    this.subscriptionsEnabled = false,
+    this.subscriptionDays = 30,
+    this.groupsEnabled = false,
+    this.referralEnabled = false,
+    this.referralDiscountPercent = 0,
   });
 
   final int paymentHoldMinutes;
@@ -116,6 +126,18 @@ class Rules {
   final int reviewWindowDays;
   final int questionAnswerHours;
 
+  // Paket ders, erteleme, soru aboneliği, grup dersi, arkadaşını getir
+  final bool packagesEnabled;
+  final int packageMaxLessons;
+  final int packageValidityMonths;
+  final int rescheduleMinHours;
+  final int rescheduleMaxPerBooking;
+  final bool subscriptionsEnabled;
+  final int subscriptionDays;
+  final bool groupsEnabled;
+  final bool referralEnabled;
+  final int referralDiscountPercent;
+
   factory Rules.fromJson(Json json) => Rules(
         paymentHoldMinutes: asInt(json['paymentHoldMinutes'], 15),
         approvalWindowHours: asInt(json['approvalWindowHours'], 12),
@@ -128,6 +150,16 @@ class Rules {
         disputeWindowHours: asInt(json['disputeWindowHours'], 48),
         reviewWindowDays: asInt(json['reviewWindowDays'], 30),
         questionAnswerHours: asInt(json['questionAnswerHours'], 24),
+        packagesEnabled: asBool(json['packagesEnabled']),
+        packageMaxLessons: asInt(json['packageMaxLessons'], 20),
+        packageValidityMonths: asInt(json['packageValidityMonths'], 6),
+        rescheduleMinHours: asInt(json['rescheduleMinHours'], 24),
+        rescheduleMaxPerBooking: asInt(json['rescheduleMaxPerBooking'], 2),
+        subscriptionsEnabled: asBool(json['subscriptionsEnabled']),
+        subscriptionDays: asInt(json['subscriptionDays'], 30),
+        groupsEnabled: asBool(json['groupsEnabled']),
+        referralEnabled: asBool(json['referralEnabled']),
+        referralDiscountPercent: asInt(json['referralDiscountPercent']),
       );
 }
 

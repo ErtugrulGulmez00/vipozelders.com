@@ -18,9 +18,11 @@ import '../shared/data.dart';
 /// Sanal sınıf: sitedeki sınıf sayfası (görüntü, ses, sohbet, beyaz tahta) tam ekran WebView'da açılır.
 /// Giriş adresi her seferinde yeniden alınır (5 dakika geçerli, tek kullanımlık).
 class ClassroomScreen extends ConsumerStatefulWidget {
-  const ClassroomScreen({super.key, required this.bookingId});
+  const ClassroomScreen({super.key, required this.bookingId, this.groupSession = false});
 
+  /// Randevu kimliği; [groupSession] açıkken grup dersi oturumunun kimliği.
   final String bookingId;
+  final bool groupSession;
 
   @override
   ConsumerState<ClassroomScreen> createState() => _ClassroomScreenState();
@@ -57,7 +59,8 @@ class _ClassroomScreenState extends ConsumerState<ClassroomScreen> {
       if (denied && mounted) setState(() => _permissionsDenied = true);
     }
     try {
-      final access = await ref.read(apiProvider).classroom(widget.bookingId);
+      final api = ref.read(apiProvider);
+      final access = widget.groupSession ? await api.groupClassroom(widget.bookingId) : await api.classroom(widget.bookingId);
       if (!mounted) return;
       if (kIsWeb) {
         await launchUrl(Uri.parse(access.url), webOnlyWindowName: '_blank');
@@ -103,7 +106,11 @@ class _ClassroomScreenState extends ConsumerState<ClassroomScreen> {
   /// Sınıftaki "Dersten çık" ders sayfasına yönlendirir; uygulama bunu yakalayıp WebView'ı kapatır.
   bool _isExit(String url) {
     final path = Uri.tryParse(url)?.path ?? '';
-    return path.startsWith('/hesabim/derslerim/') || path.startsWith('/ogretmen-paneli/dersler/') || path == '/giris';
+    return path.startsWith('/hesabim/derslerim/') ||
+        path.startsWith('/ogretmen-paneli/dersler/') ||
+        path.startsWith('/hesabim/grup-derslerim') ||
+        path.startsWith('/ogretmen-paneli/grup-dersleri') ||
+        path == '/giris';
   }
 
   void _leave() {

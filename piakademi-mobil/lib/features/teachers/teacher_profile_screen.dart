@@ -19,6 +19,7 @@ import '../../core/widgets/rating.dart';
 import '../../core/widgets/states.dart';
 import '../shared/data.dart';
 import '../shared/widgets.dart';
+import 'teacher_offers.dart';
 
 class TeacherProfileScreen extends ConsumerWidget {
   const TeacherProfileScreen({super.key, required this.slug});
@@ -161,6 +162,7 @@ class _ProfileViewState extends ConsumerState<_ProfileView> {
                 ],
                 const SizedBox(height: 12),
                 _Offerings(teacher: t, onBook: canBook ? (offering, question) => context.push(question ? Routes.question(t.slug, offeringId: offering.id) : Routes.booking(t.slug, offeringId: offering.id)) : null),
+                TeacherOffers(teacher: t, canBuy: canBook),
                 const SizedBox(height: 12),
                 _Modes(teacher: t),
                 const SizedBox(height: 12),

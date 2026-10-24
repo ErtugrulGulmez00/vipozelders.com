@@ -1,3 +1,4 @@
+import 'commerce.dart';
 import 'json.dart';
 
 /// Ders (randevu) durumları.
@@ -50,6 +51,7 @@ class BookingSummary {
     this.approvalDeadline,
     this.isTest = false,
     this.isIntro = false,
+    this.packageId,
     required this.counterpart,
   });
 
@@ -73,6 +75,9 @@ class BookingSummary {
 
   /// Ücretsiz 15 dk tanışma görüşmesi (ödemesiz)
   final bool isIntro;
+
+  /// Paketten (ya da düzenli dersten) alınan ders
+  final String? packageId;
   final Counterpart counterpart;
 
   bool get isQuestion => mode == 'QUESTION';
@@ -96,6 +101,7 @@ class BookingSummary {
         approvalDeadline: asDate(json['approvalDeadline']),
         isTest: asBool(json['isTest']),
         isIntro: asBool(json['isIntro']),
+        packageId: asStringOrNull(json['packageId']),
         counterpart: Counterpart.fromJson(asJson(json['counterpart'])),
       );
 }
@@ -362,6 +368,10 @@ class BookingDetail {
     this.note,
     required this.price,
     this.refundedAmount = 0,
+    this.discountAmount = 0,
+    this.couponCode,
+    this.packageCode,
+    this.reschedule = const RescheduleInfo(),
     this.holdExpiresAt,
     this.rejectionReason,
     this.cancelReason,
@@ -384,6 +394,12 @@ class BookingDetail {
   final String? note;
   final int price;
   final int refundedAmount;
+  final int discountAmount;
+  final String? couponCode;
+
+  /// Paketten alınan ders (ödemesiz; iade pakete döner)
+  final String? packageCode;
+  final RescheduleInfo reschedule;
   final DateTime? holdExpiresAt;
   final String? rejectionReason;
   final String? cancelReason;
@@ -415,6 +431,10 @@ class BookingDetail {
         note: asStringOrNull(json['note']),
         price: asInt(json['price']),
         refundedAmount: asInt(json['refundedAmount']),
+        discountAmount: asInt(json['discountAmount']),
+        couponCode: asStringOrNull(json['couponCode']),
+        packageCode: asStringOrNull(json['packageCode']),
+        reschedule: RescheduleInfo.fromJson(json['reschedule']),
         holdExpiresAt: asDate(json['holdExpiresAt']),
         rejectionReason: asStringOrNull(json['rejectionReason']),
         cancelReason: asStringOrNull(json['cancelReason']),

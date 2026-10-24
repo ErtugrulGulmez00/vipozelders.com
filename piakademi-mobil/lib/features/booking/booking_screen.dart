@@ -16,6 +16,8 @@ import '../../core/widgets/avatar.dart';
 import '../../core/widgets/cards.dart';
 import '../../core/widgets/feedback.dart';
 import '../../core/widgets/states.dart';
+import '../../core/models/commerce.dart';
+import '../shared/coupon_field.dart';
 import '../shared/data.dart';
 import '../shared/widgets.dart';
 import '../teachers/pickers.dart';
@@ -103,6 +105,10 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
   String? _grade;
   bool _consent = false;
   bool _busy = false;
+  // İndirim kodu ve "Paketimden kullan"
+  String? _couponCode;
+  CouponCheck? _coupon;
+  bool _usePackage = true;
   ApiException? _error;
   final _scroll = ScrollController();
 
@@ -131,6 +137,12 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
 
   static int _defaultDuration(Offering o) => o.durations.any((d) => d.minutes == 60) ? 60 : o.durations.first.minutes;
 
+  /// Seçilen ders ve sürede kullanılabilir paket (aynı ders ve sürede kullanılır).
+  MyPackage? get _package => widget.intro ? null : t.myPackages.where((p) => p.offeringId == _offering.id && p.durationMinutes == _duration && p.left > 0).firstOrNull;
+  bool get _fromPackage => _package != null && _usePackage;
+
+  int get _payable => _fromPackage || widget.intro ? 0 : (_coupon?.finalPrice ?? _price);
+
   int get _price => widget.intro ? 0 : _offering.durations.firstWhere((d) => d.minutes == _duration, orElse: () => _offering.durations.first).price;
 
   List<Grade> get _grades => widget.catalog.levels.where((l) => l.id == _offering.level.id).expand((l) => l.grades).toList();
@@ -153,7 +165,7 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
       if (_place == 'STUDENT_HOME' && (_district == null || _address.text.trim().isEmpty)) return 'Yüz yüze ders için ilçe ve adres gerekli.';
     }
     if (_learner.text.trim().length < 2) return 'Dersin kimin için olduğunu yazın.';
-    if (!widget.intro && !_consent) return 'Ön bilgilendirme formunu ve mesafeli satış sözleşmesini onaylayın.';
+    if (!widget.intro && !_fromPackage && !_consent) return 'Ön bilgilendirme formunu ve mesafeli satış sözleşmesini onaylayın.';
     return null;
   }
 
@@ -182,6 +194,8 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
               address: _mode == 'IN_PERSON' && _place == 'STUDENT_HOME' ? _address.text.trim() : null,
               note: _note.text.trim(),
               intro: widget.intro,
+              couponCode: _fromPackage ? null : _couponCode,
+              packageId: _fromPackage ? _package!.id : null,
             ),
           );
       bumpBookings(ref);
@@ -189,7 +203,7 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
       final payment = result.payment;
       if (payment == null) {
         // Ücretsiz tanışma: ödeme yok, öğretmenin onayı beklenir.
-        showSnack(context, 'Tanışma isteğiniz öğretmene iletildi; onaylayınca bildirim alacaksınız.');
+        showSnack(context, widget.intro ? 'Tanışma isteğiniz öğretmene iletildi; onaylayınca bildirim alacaksınız.' : 'Ders talebiniz paketinizden öğretmene iletildi; onaylayınca bildirim alacaksınız.');
         context.pushReplacement(Routes.lesson(result.booking.id));
       } else {
         context.pushReplacement(Routes.payment(result.booking.id), extra: payment);
@@ -311,7 +325,7 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
               ],
               ],
               _StepTitle(number: widget.intro ? 2 : 4, title: 'Gün ve saat'),
-              _SlotPicker(
+              SlotPicker(
                 slug: t.slug,
                 duration: _duration,
                 weekStart: _weekStart,
@@ -356,6 +370,17 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
                   hintText: 'Örn: ${_offering.subject.name} dersinde hangi konularda zorlanıyor, hedefi ne?',
                 ),
               ),
+              if (_package != null) ...[
+                const SizedBox(height: 16),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: _usePackage,
+                  onChanged: (v) => setState(() => _usePackage = v),
+                  secondary: const Icon(Icons.inventory_2_outlined),
+                  title: const Text('Paketimden kullan', style: TextStyle(fontWeight: FontWeight.w700)),
+                  subtitle: Text('${_package!.code} · ${_package!.left} ders kaldı. Ödeme yapılmaz, talep öğretmen onayına gider.'),
+                ),
+              ],
               _StepTitle(number: widget.intro ? 4 : 6, title: 'Özet'),
               _Summary(
                 teacher: t,
@@ -363,11 +388,25 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
                 duration: _duration,
                 mode: _mode,
                 slot: _slot,
-                price: _price,
+                price: _payable,
                 intro: widget.intro,
+                fromPackage: _fromPackage,
               ),
               const SizedBox(height: 12),
-              if (!widget.intro) ...[
+              if (!widget.intro && !_fromPackage) ...[
+                const SizedBox(height: 4),
+                CouponField(
+                  target: 'booking',
+                  refId: _offering.id,
+                  duration: _duration,
+                  onChanged: (code, check) => setState(() {
+                    _couponCode = code;
+                    _coupon = check;
+                  }),
+                ),
+                const SizedBox(height: 8),
+              ],
+              if (!widget.intro && !_fromPackage) ...[
               NoticeBox(
                 tone: Tone.sky,
                 icon: Icons.verified_user_outlined,
@@ -402,13 +441,13 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(widget.intro ? 'Ücretsiz' : formatMoney(_price), style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800)),
-                      Text(widget.intro ? 'Tanışma · ${durationLabel(_duration)}' : 'KDV dahil · ${durationLabel(_duration)}', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+                      Text(widget.intro ? 'Ücretsiz' : _fromPackage ? 'Paketten' : formatMoney(_payable), style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800)),
+                      Text(widget.intro ? 'Tanışma · ${durationLabel(_duration)}' : _fromPackage ? 'Paketinizden · ${durationLabel(_duration)}' : 'KDV dahil · ${durationLabel(_duration)}', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
                     ],
                   ),
                 ),
                 Expanded(
-                  child: BusyButton(busy: _busy, onPressed: _submit, label: widget.intro ? 'Tanışma iste' : 'Ödemeye geç', icon: widget.intro ? Icons.send_rounded : Icons.lock_rounded),
+                  child: BusyButton(busy: _busy, onPressed: _submit, label: widget.intro ? 'Tanışma iste' : _fromPackage ? 'Ders iste' : 'Ödemeye geç', icon: widget.intro || _fromPackage ? Icons.send_rounded : Icons.lock_rounded),
                 ),
               ],
             ),
@@ -506,8 +545,9 @@ class _InPersonDetails extends ConsumerWidget {
   }
 }
 
-class _SlotPicker extends ConsumerWidget {
-  const _SlotPicker({
+class SlotPicker extends ConsumerWidget {
+  const SlotPicker({
+    super.key,
     required this.slug,
     required this.duration,
     required this.weekStart,
@@ -646,7 +686,7 @@ class _SlotPicker extends ConsumerWidget {
 }
 
 class _Summary extends StatelessWidget {
-  const _Summary({required this.teacher, required this.offering, required this.duration, required this.mode, required this.slot, required this.price, this.intro = false});
+  const _Summary({required this.teacher, required this.offering, required this.duration, required this.mode, required this.slot, required this.price, this.intro = false, this.fromPackage = false});
 
   final TeacherProfile teacher;
   final Offering offering;
@@ -655,6 +695,7 @@ class _Summary extends StatelessWidget {
   final Slot? slot;
   final int price;
   final bool intro;
+  final bool fromPackage;
 
   @override
   Widget build(BuildContext context) {
@@ -669,8 +710,8 @@ class _Summary extends StatelessWidget {
           const Divider(height: 20),
           Row(
             children: [
-              Expanded(child: Text(intro ? 'Ücret' : 'Toplam (KDV dahil)', style: const TextStyle(fontWeight: FontWeight.w600))),
-              Text(intro ? 'Ücretsiz' : formatMoney(price), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+              Expanded(child: Text(intro || fromPackage ? 'Ücret' : 'Toplam (KDV dahil)', style: const TextStyle(fontWeight: FontWeight.w600))),
+              Text(intro ? 'Ücretsiz' : fromPackage ? 'Paketten' : formatMoney(price), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
             ],
           ),
         ],

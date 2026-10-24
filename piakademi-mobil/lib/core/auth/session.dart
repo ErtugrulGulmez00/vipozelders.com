@@ -82,6 +82,7 @@ class SessionController extends Notifier<SessionState> {
     required String password,
     required String accountType,
     required bool marketing,
+    String? referralCode,
   }) async {
     final result = await _api.register(
       firstName: firstName,
@@ -94,6 +95,7 @@ class SessionController extends Notifier<SessionState> {
       terms: true,
       marketing: marketing,
       deviceName: deviceName(),
+      referralCode: referralCode,
     );
     return _signIn(result);
   }

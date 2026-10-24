@@ -1,3 +1,4 @@
+import 'commerce.dart';
 import 'json.dart';
 
 /// Arama sonucundaki öğretmen kartı.
@@ -219,6 +220,10 @@ class TeacherProfile {
     this.offerings = const [],
     this.reviews = const [],
     this.isFavorite = false,
+    this.packageOffers = const [],
+    this.questionPlans = const [],
+    this.groupCourses = const [],
+    this.myPackages = const [],
   });
 
   final String userId;
@@ -250,6 +255,14 @@ class TeacherProfile {
   final List<Review> reviews;
   final bool isFavorite;
 
+  /// Paket indirimleri (ör. 5 derste %5), aylık soru abonelikleri, kayıt açık grup dersleri
+  final List<PackageOffer> packageOffers;
+  final List<QuestionPlan> questionPlans;
+  final List<GroupCourse> groupCourses;
+
+  /// Velinin bu öğretmendeki kalan dersli paketleri ("Paketimden kullan")
+  final List<MyPackage> myPackages;
+
   int? get minHourlyPrice => offerings.isEmpty ? null : offerings.map((o) => o.hourlyPrice).reduce((a, b) => a < b ? a : b);
   bool get acceptsQuestions => offerings.any((o) => o.acceptsQuestions);
 
@@ -280,6 +293,10 @@ class TeacherProfile {
         offerings: asList(json['offerings'], Offering.fromJson),
         reviews: asList(json['reviews'], Review.fromJson),
         isFavorite: asBool(json['isFavorite']),
+        packageOffers: asList(json['packageOffers'], PackageOffer.fromJson),
+        questionPlans: asList(json['questionPlans'], QuestionPlan.fromJson),
+        groupCourses: asList(json['groupCourses'], GroupCourse.fromJson),
+        myPackages: asList(json['myPackages'], MyPackage.fromJson),
       );
 
   TeacherProfile copyWith({bool? isFavorite}) => TeacherProfile(
@@ -309,6 +326,10 @@ class TeacherProfile {
         offerings: offerings,
         reviews: reviews,
         isFavorite: isFavorite ?? this.isFavorite,
+        packageOffers: packageOffers,
+        questionPlans: questionPlans,
+        groupCourses: groupCourses,
+        myPackages: myPackages,
       );
 }
 

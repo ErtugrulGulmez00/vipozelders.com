@@ -15,7 +15,7 @@ import '../shared/widgets.dart';
 /// Sitedeki yasal/bilgi sayfaları uygulama içinde açılır (KVKK, sözleşmeler, SSS).
 /// Site içindeki diğer bağlantılar tarayıcıda açılır.
 class WebPageScreen extends ConsumerStatefulWidget {
-  const WebPageScreen({super.key, required this.url, this.title, this.panelPath});
+  const WebPageScreen({super.key, required this.url, this.title, this.panelPath, this.guide = false});
 
   factory WebPageScreen.page({Key? key, required String slug}) => WebPageScreen(key: key, url: '${AppConfig.siteUrl}/sayfa/$slug', title: null);
 
@@ -28,11 +28,16 @@ class WebPageScreen extends ConsumerStatefulWidget {
   final String? title;
   final String? panelPath;
 
+  /// Rehber (blog): /rehber ve yazıları uygulama içinde gezilir.
+  final bool guide;
+
   @override
   ConsumerState<WebPageScreen> createState() => _WebPageScreenState();
 }
 
 class _WebPageScreenState extends ConsumerState<WebPageScreen> {
+  String get _url => widget.guide ? '${AppConfig.siteUrl}/rehber' : widget.url;
+
   WebViewController? _controller;
   int _progress = 0;
   bool _failed = false;
@@ -44,7 +49,7 @@ class _WebPageScreenState extends ConsumerState<WebPageScreen> {
   }
 
   Future<void> _load() async {
-    final start = Uri.parse(widget.url);
+    final start = Uri.parse(widget.guide ? '${AppConfig.siteUrl}/rehber' : widget.url);
     final panel = widget.panelPath != null;
     Uri entry = start;
     if (panel) {
@@ -67,6 +72,7 @@ class _WebPageScreenState extends ConsumerState<WebPageScreen> {
           final uri = Uri.tryParse(request.url);
           // Yalnızca aynı sayfa içinde kalınır; diğer bağlantılar tarayıcıda açılır.
           if (uri != null && uri.path == start.path && uri.host == start.host) return NavigationDecision.navigate;
+          if (widget.guide && uri != null && uri.host == start.host && uri.path.startsWith('/rehber')) return NavigationDecision.navigate;
           // Panel sayfasında giriş bağlantısı ve panelin kendi sayfaları uygulamada kalır.
           if (panel && uri != null && uri.host == entry.host && (uri.path.startsWith('/ogretmen-paneli') || uri.path.startsWith('/api/mobil/v1/web-giris'))) {
             return NavigationDecision.navigate;
@@ -88,11 +94,11 @@ class _WebPageScreenState extends ConsumerState<WebPageScreen> {
       appBar: AppBar(
         leading: const AppBackButton(),
         title: Text(title),
-        actions: [IconButton(tooltip: 'Tarayıcıda aç', onPressed: () => openExternal(context, widget.url), icon: const Icon(Icons.open_in_new_rounded))],
+        actions: [IconButton(tooltip: 'Tarayıcıda aç', onPressed: () => openExternal(context, _url), icon: const Icon(Icons.open_in_new_rounded))],
         bottom: _progress > 0 && _progress < 100 ? PreferredSize(preferredSize: const Size.fromHeight(3), child: LinearProgressIndicator(value: _progress / 100, minHeight: 3)) : null,
       ),
       body: kIsWeb
-          ? Center(child: FilledButton(onPressed: () => openExternal(context, widget.url), child: const Text('Sayfayı aç')))
+          ? Center(child: FilledButton(onPressed: () => openExternal(context, _url), child: const Text('Sayfayı aç')))
           : _failed
               ? ErrorView(
                   error: const ApiException(code: ApiException.network, message: 'Sayfa yüklenemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.'),
@@ -102,7 +108,7 @@ class _WebPageScreenState extends ConsumerState<WebPageScreen> {
                     if (widget.panelPath != null || _controller == null) {
                       _load();
                     } else {
-                      _controller!.loadRequest(Uri.parse(widget.url));
+                      _controller!.loadRequest(Uri.parse(_url));
                     }
                   },
                 )

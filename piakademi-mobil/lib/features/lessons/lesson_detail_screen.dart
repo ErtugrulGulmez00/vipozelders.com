@@ -20,6 +20,7 @@ import '../../core/widgets/states.dart';
 import '../shared/data.dart';
 import 'lesson_actions.dart';
 import 'question_thread.dart';
+import 'reschedule_card.dart';
 
 /// Ders (ya da fotoğrafla soru) ayrıntısı. Düğmeler sunucunun döndürdüğü `actions` alanına göre gösterilir.
 class LessonDetailScreen extends ConsumerWidget {
@@ -92,6 +93,10 @@ class _DetailBody extends ConsumerWidget {
           _RequestCard(booking: booking, actions: actions),
           const SizedBox(height: 12),
         ],
+        if (booking.reschedule.allowed || booking.reschedule.hasPending) ...[
+          RescheduleCard(booking: booking, teacherSlug: asTeacher ? ref.watch(sessionProvider.select((s) => s.me?.teacher?.slug)) : s.counterpart.teacherSlug),
+          const SizedBox(height: 12),
+        ],
         if (s.isQuestion && booking.question != null && s.status != BookingStatus.pendingPayment) ...[
           QuestionThreadView(booking: booking, asTeacher: asTeacher),
           const SizedBox(height: 12),
@@ -120,7 +125,8 @@ class _DetailBody extends ConsumerWidget {
                   value: booking.location?.text.isNotEmpty ?? false ? booking.location!.text : 'Öğretmenin yeri (onay sonrası paylaşılır)',
                 ),
               if (booking.note != null && !s.isQuestion) InfoRow(label: asTeacher ? 'Öğrencinin notu' : 'Notunuz', value: booking.note!),
-              InfoRow(label: s.isQuestion ? 'Soru ücreti' : 'Ders ücreti', value: s.isIntro ? 'Ücretsiz tanışma' : formatMoney(booking.price)),
+              InfoRow(label: s.isQuestion ? 'Soru ücreti' : 'Ders ücreti', value: s.isIntro ? 'Ücretsiz tanışma' : booking.packageCode != null ? 'Paketten (${booking.packageCode})' : formatMoney(booking.price)),
+              if (booking.discountAmount > 0) InfoRow(label: 'İndirim', value: '${formatMoney(booking.discountAmount)}${booking.couponCode != null ? ' (${booking.couponCode})' : ''}'),
               if (asTeacher && booking.teacherAmount != null) InfoRow(label: 'Kazancınız', value: formatMoney(booking.teacherAmount!)),
               if (booking.refundedAmount > 0) InfoRow(label: 'İade', value: formatMoney(booking.refundedAmount)),
               if (upcomingConfirmed) ...[
@@ -214,7 +220,7 @@ class _DetailBody extends ConsumerWidget {
         title: s.isQuestion ? 'Çözüm bekleniyor' : 'Öğretmen onayı bekleniyor',
         message: s.isQuestion
             ? 'Öğretmeniniz çözümü ${deadline != null ? 'en geç ${formatDateTime(deadline)} saatine kadar' : 'kısa süre içinde'} gönderecek. Gelmezse ödemenizin tamamı otomatik iade edilir.'
-            : 'Öğretmeniniz ${deadline != null ? '${formatDateTime(deadline)} saatine kadar' : 'kısa süre içinde'} yanıt verecek.${s.isIntro ? '' : ' Onaylanmazsa ödemenizin tamamı otomatik iade edilir.'}',
+            : 'Öğretmeniniz ${deadline != null ? '${formatDateTime(deadline)} saatine kadar' : 'kısa süre içinde'} yanıt verecek.${s.isIntro ? '' : booking.packageCode != null ? ' Onaylanmazsa ders paketinize geri eklenir.' : ' Onaylanmazsa ödemenizin tamamı otomatik iade edilir.'}',
       ));
     }
     if (s.status == BookingStatus.disputed && booking.disputeReason != null) {

@@ -393,6 +393,22 @@ class _Services extends StatelessWidget {
             ),
           ),
         ),
+        if (catalog.rules.groupsEnabled)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            child: Card(
+              margin: EdgeInsets.zero,
+              clipBehavior: Clip.antiAlias,
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                leading: CircleAvatar(backgroundColor: scheme.primaryContainer, child: Icon(Icons.groups_2_rounded, color: scheme.primary)),
+                title: const Text('Grup dersleri', style: TextStyle(fontWeight: FontWeight.w700)),
+                subtitle: const Text('4–10 kişilik canlı dersler, kişi başı uygun ücret'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => context.push(Routes.groups),
+              ),
+            ),
+          ),
         SizedBox(
           height: 150,
           child: ListView.separated(

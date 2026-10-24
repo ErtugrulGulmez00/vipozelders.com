@@ -233,6 +233,7 @@ class PoolQuestion {
     this.fee = 0,
     this.claimExpiresAt,
     this.releaseAt,
+    this.subscription = false,
     this.actions = const {},
   });
 
@@ -263,6 +264,9 @@ class PoolQuestion {
   final int fee;
   final DateTime? claimExpiresAt;
   final DateTime? releaseAt;
+
+  /// Soru aylık abonelikten (havuza düşmez, doğrudan abone olunan öğretmende)
+  final bool subscription;
 
   /// Öğrenci: canCancel, canFollowUp, canRate, canDispute · Öğretmen: canClaim, canRelease, canReject, canAnswer, canAnswerFollowUp
   final Map<String, bool> actions;
@@ -297,6 +301,7 @@ class PoolQuestion {
       fee: asInt(json['fee']),
       claimExpiresAt: asDate(json['claimExpiresAt']),
       releaseAt: asDate(json['releaseAt']),
+      subscription: asBool(json['subscription']),
       actions: actions.map((key, value) => MapEntry(key, asBool(value))),
     );
   }

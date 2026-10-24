@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/models/booking.dart';
 import '../../core/models/center.dart';
+import '../../core/models/commerce.dart';
 import '../../core/models/messages.dart';
 import '../../core/models/pool.dart';
 import '../../core/models/teacher.dart';
@@ -24,6 +25,7 @@ final bookingDetailProvider = FutureProvider.autoDispose.family<BookingDetail, S
 
 final teacherProfileProvider = FutureProvider.autoDispose.family<TeacherProfile, String>((ref, slug) {
   ref.watch(currentUserIdProvider);
+  ref.watch(purchasesRevisionProvider);
   return ref.watch(apiProvider).teacher(slug);
 });
 
@@ -122,4 +124,54 @@ final threadsProvider = FutureProvider.autoDispose<List<ThreadSummary>>((ref) as
   ref.watch(currentUserIdProvider);
   ref.watch(messagesRevisionProvider);
   return (await ref.watch(apiProvider).threads()).$1;
+});
+
+// ---------------------------------------------------------------- paket, abonelik, grup dersi, davet
+
+/// Satın almalar ve kayıtlar değişince (ödeme, iade, iptal) ilgili ekranlar yenilensin diye artırılır.
+final purchasesRevisionProvider = StateProvider<int>((ref) => 0);
+
+void bumpPurchases(WidgetRef ref) {
+  ref.read(purchasesRevisionProvider.notifier).state++;
+  ref.read(bookingsRevisionProvider.notifier).state++;
+}
+
+final packagesProvider = FutureProvider.autoDispose<List<LessonPackage>>((ref) {
+  ref.watch(currentUserIdProvider);
+  ref.watch(purchasesRevisionProvider);
+  return ref.watch(apiProvider).packages();
+});
+
+final subscriptionsProvider = FutureProvider.autoDispose<List<QuestionSubscription>>((ref) {
+  ref.watch(currentUserIdProvider);
+  ref.watch(purchasesRevisionProvider);
+  ref.watch(questionsRevisionProvider);
+  return ref.watch(apiProvider).subscriptions();
+});
+
+final groupCoursesProvider = FutureProvider.autoDispose<(bool, List<GroupCourse>)>((ref) {
+  ref.watch(purchasesRevisionProvider);
+  return ref.watch(apiProvider).groupCourses();
+});
+
+final groupCourseProvider = FutureProvider.autoDispose.family<GroupCourse, String>((ref, code) {
+  ref.watch(currentUserIdProvider);
+  ref.watch(purchasesRevisionProvider);
+  return ref.watch(apiProvider).groupCourse(code);
+});
+
+final myGroupsProvider = FutureProvider.autoDispose<List<MyGroupEnrollment>>((ref) {
+  ref.watch(currentUserIdProvider);
+  ref.watch(purchasesRevisionProvider);
+  return ref.watch(apiProvider).myGroups();
+});
+
+final teacherGroupsProvider = FutureProvider.autoDispose<List<GroupCourse>>((ref) {
+  ref.watch(currentUserIdProvider);
+  return ref.watch(apiProvider).teacherGroups();
+});
+
+final inviteProvider = FutureProvider.autoDispose<InviteInfo>((ref) {
+  ref.watch(currentUserIdProvider);
+  return ref.watch(apiProvider).invite();
 });

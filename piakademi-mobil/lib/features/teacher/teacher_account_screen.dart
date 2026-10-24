@@ -41,7 +41,14 @@ class TeacherAccountScreen extends ConsumerWidget {
             trailing: me.unreadMessages > 0 ? Badge(label: Text('${me.unreadMessages}')) : null,
             onTap: () => context.push(Routes.messages),
           ),
-          MenuTile(icon: Icons.photo_camera_outlined, title: 'Soru havuzu', subtitle: 'Fotoğraflı soruları üstlenip çözün', onTap: () => context.push(Routes.teacherPool)),
+          MenuTile(icon: Icons.photo_camera_outlined, title: 'Soru havuzu', subtitle: 'Fotoğraflı soruları ve abonelerinizin sorularını çözün', onTap: () => context.push(Routes.teacherPool)),
+          MenuTile(icon: Icons.groups_2_outlined, title: 'Grup derslerim', subtitle: 'Oturumlar ve kayıtlar', onTap: () => context.push(Routes.myGroups)),
+          MenuTile(
+            icon: Icons.subscriptions_outlined,
+            title: 'Soru aboneliği planlarım',
+            subtitle: 'Aylık soru aboneliği satın',
+            onTap: () => context.push(Routes.teacherWeb('/ogretmen-paneli/soru-aboneligi', 'Soru aboneliği')),
+          ),
           const MenuTitle('Profil'),
           if (teacher != null)
             MenuTile(icon: Icons.visibility_outlined, title: 'Profilimi görüntüle', subtitle: 'Velilerin gördüğü sayfa', onTap: () => context.push(Routes.teacher(teacher.slug))),

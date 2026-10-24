@@ -27,7 +27,7 @@ Future<void> showInviteCodeSheet(BuildContext context) async {
     useSafeArea: true,
     builder: (context) => const _InviteSheet(),
   );
-  if (token != null && context.mounted) context.push(Routes.invite(token));
+  if (token != null && context.mounted) context.push(Routes.centerInvite(token));
 }
 
 class _InviteSheet extends StatefulWidget {

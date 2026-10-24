@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../features/account/account_screen.dart';
 import '../../features/account/delete_account_screen.dart';
+import '../../features/account/invite_friends_screen.dart';
 import '../../features/account/profile_edit_screen.dart';
 import '../../features/account/web_page_screen.dart';
 import '../../features/auth/change_password_screen.dart';
@@ -22,17 +23,22 @@ import '../../features/center/report_card_screen.dart';
 import '../../features/classroom/classroom_screen.dart';
 import '../../features/explore/explore_screen.dart';
 import '../../features/favorites/favorites_screen.dart';
+import '../../features/groups/group_screens.dart';
 import '../../features/messages/messages_screen.dart';
 import '../../features/messages/thread_screen.dart';
 import '../../features/questions/ask_question_screen.dart';
-import '../../features/questions/credit_payment_status_screen.dart';
 import '../../features/questions/credits_screen.dart';
 import '../../features/questions/my_questions_screen.dart';
 import '../../features/questions/question_detail_screen.dart';
 import '../../features/lessons/lesson_detail_screen.dart';
 import '../../features/lessons/lessons_screen.dart';
 import '../../features/notifications/notifications_screen.dart';
+import '../../features/packages/package_buy_screen.dart';
+import '../../features/packages/packages_screen.dart';
+import '../../features/shared/purchase_status_screen.dart';
 import '../../features/shell/shells.dart';
+import '../../features/subscriptions/subscribe_screen.dart';
+import '../../features/subscriptions/subscriptions_screen.dart';
 import '../../features/teacher/earnings_screen.dart';
 import '../../features/teacher/pool_question_screen.dart';
 import '../../features/teacher/pool_screen.dart';
@@ -42,6 +48,7 @@ import '../../features/teacher/teacher_calendar_screen.dart';
 import '../../features/teacher/teacher_home_screen.dart';
 import '../../features/teacher/teacher_lessons_screen.dart';
 import '../../features/teacher/teacher_reviews_screen.dart';
+import '../../features/teachers/lesson_request_screen.dart';
 import '../../features/teachers/teacher_list_screen.dart';
 import '../../features/teachers/teacher_profile_screen.dart';
 import '../api/pi_api.dart';
@@ -87,23 +94,39 @@ class Routes {
   static const myQuestions = '/sorularim';
   static const messages = '/mesajlar';
 
+  // Paket ders, soru aboneliği, grup dersi, davet, öğretmen talebi, rehber
+  static const packages = '/paketlerim';
+  static const subscriptions = '/aboneliklerim';
+  static const groups = '/grup-dersleri';
+  static const myGroups = '/grup-derslerim';
+  static const invite = '/davet';
+  static const lessonRequest = '/ogretmen-talebi';
+  static const guide = '/rehber';
+
   static String teacher(String slug) => '/ogretmen/$slug';
   static String booking(String slug, {String? offeringId}) => Uri(path: '/ogretmen/$slug/randevu', queryParameters: offeringId == null ? null : {'ders': offeringId}).toString();
   static String question(String slug, {String? offeringId}) => Uri(path: '/ogretmen/$slug/soru', queryParameters: offeringId == null ? null : {'ders': offeringId}).toString();
   static String lesson(String id) => '/ders/$id';
   static String intro(String slug) => '/ogretmen/$slug/tanisma';
+  static String packageBuy(String slug, {String? offeringId, bool recurring = false}) =>
+      Uri(path: '/ogretmen/$slug/paket', queryParameters: {'ders': ?offeringId, if (recurring) 'tekrar': '1'}).toString();
+  static String subscribe(String slug, String planId) => '/ogretmen/$slug/abonelik/$planId';
+  static String subscriptionAsk(String id) => '/aboneliklerim/$id/soru';
+  static String group(String code) => '/grup-dersleri/$code';
+  static String groupClassroom(String sessionId) => '/grup-oturum/$sessionId/sinif';
   static String messageTeacher(String slug) => '/ogretmen/$slug/mesaj';
   static String myQuestion(String id) => '/sorularim/$id';
   static String poolQuestion(String id) => '/panel/soru-havuzu/$id';
   static String thread(String id) => '/mesajlar/$id';
-  static String creditPayment(String purchaseId) => '/kredi-odeme/$purchaseId';
-  static String creditPaymentStatus(String purchaseId) => '/kredi-odeme-durumu/$purchaseId';
+  /// Kredi, paket, abonelik ve grup kaydı ödemesi (WebView) ve sonucu
+  static String purchasePayment(PurchaseKind kind, String id) => '/satin-al/${kind.slug}/$id';
+  static String purchaseStatus(PurchaseKind kind, String id) => '/satin-alma-sonucu/${kind.slug}/$id';
   static String classroom(String id) => '/ders/$id/sinif';
   static String payment(String bookingId) => '/odeme/$bookingId';
   static String paymentStatus(String bookingId) => '/odeme-durumu/$bookingId';
   static String centerChild(String id, {String? tab}) => Uri(path: '/kurum/$id', queryParameters: tab == null ? null : {'sekme': tab}).toString();
   static String reportCard(String id, String examId) => '/kurum/$id/deneme/$examId';
-  static String invite(String token) => '/kurum-davet/$token';
+  static String centerInvite(String token) => '/kurum-davet/$token';
   static String page(String slug) => '/sayfa/$slug';
   static String teacherWeb(String panelPath, String title) => Uri(path: '/panel/web', queryParameters: {'yol': panelPath, 'baslik': title}).toString();
   static String teacherSearch(TeacherQuery query) => Uri(path: teachers, queryParameters: query.toUri().isEmpty ? null : query.toUri()).toString();
@@ -112,17 +135,22 @@ class Routes {
   static bool needsAuth(String path) =>
       path.startsWith('/ders/') ||
       path.startsWith('/odeme') ||
-      path.startsWith('/kredi-odeme') ||
+      path.startsWith('/satin-al') ||
       path.startsWith(askQuestion) ||
       path.startsWith(myQuestions) ||
       path.startsWith(messages) ||
+      path.startsWith(packages) ||
+      path.startsWith(subscriptions) ||
+      path.startsWith(myGroups) ||
+      path.startsWith('/grup-oturum') ||
+      path == invite ||
       path.startsWith('/kurum/') ||
       path.startsWith('/kurum-davet/') ||
       path.startsWith('/hesap/') ||
       path.startsWith('/panel') ||
       path == notifications ||
       path == changePassword ||
-      RegExp(r'^/ogretmen/[^/]+/(randevu|soru|tanisma|mesaj)$').hasMatch(path);
+      RegExp(r'^/ogretmen/[^/]+/(randevu|soru|tanisma|mesaj|paket|abonelik/[^/]+)$').hasMatch(path);
 
   static bool isAuthPage(String path) => path == login || path == register || path == forgot;
 
@@ -145,6 +173,10 @@ String? mapWebPath(Uri uri) {
   if (question != null) return Routes.myQuestion(question.group(1)!);
   if (path == '/hesabim/sorularim') return Routes.myQuestions;
   if (path == '/hesabim/krediler') return Routes.ask;
+  if (path.startsWith('/hesabim/paketlerim')) return Routes.packages;
+  if (path.startsWith('/hesabim/abonelikler')) return Routes.subscriptions;
+  if (path.startsWith('/hesabim/grup-derslerim')) return Routes.myGroups;
+  if (path == '/hesabim/davet') return Routes.invite;
   if (path == '/hesabim/bildirimler' || path == '/ogretmen-paneli/bildirimler') return Routes.notifications;
   if (path.startsWith('/ogretmen-paneli/talepler')) return Routes.teacherRequests;
   if (path.startsWith('/ogretmen-paneli/kazanclar')) return Routes.earnings;
@@ -153,6 +185,7 @@ String? mapWebPath(Uri uri) {
   final poolQuestion = RegExp(r'^/ogretmen-paneli/soru-havuzu/([A-Za-z0-9]+)').firstMatch(path);
   if (poolQuestion != null) return Routes.poolQuestion(poolQuestion.group(1)!);
   if (path.startsWith('/ogretmen-paneli/soru-havuzu')) return Routes.teacherPool;
+  if (path.startsWith('/ogretmen-paneli/grup-dersleri')) return Routes.myGroups;
   final thread = RegExp(r'^/(?:hesabim|ogretmen-paneli)/mesajlar/([A-Za-z0-9]+)').firstMatch(path);
   if (thread != null) return Routes.thread(thread.group(1)!);
   if (path == '/hesabim/mesajlar' || path == '/ogretmen-paneli/mesajlar') return Routes.messages;
@@ -279,6 +312,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             parentNavigatorKey: rootNavigatorKey,
+            path: 'paket',
+            builder: (_, state) => PackageBuyScreen(slug: state.pathParameters['slug']!, offeringId: state.uri.queryParameters['ders'], recurring: state.uri.queryParameters['tekrar'] == '1'),
+          ),
+          GoRoute(
+            parentNavigatorKey: rootNavigatorKey,
+            path: 'abonelik/:planId',
+            builder: (_, state) => SubscribeScreen(slug: state.pathParameters['slug']!, planId: state.pathParameters['planId']!),
+          ),
+          GoRoute(
+            parentNavigatorKey: rootNavigatorKey,
             path: 'tanisma',
             builder: (_, state) => BookingScreen(slug: state.pathParameters['slug']!, offeringId: state.uri.queryParameters['ders'], intro: true),
           ),
@@ -317,6 +360,32 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(parentNavigatorKey: rootNavigatorKey, path: Routes.notifications, builder: (_, _) => const NotificationsScreen()),
+      GoRoute(parentNavigatorKey: rootNavigatorKey, path: Routes.packages, builder: (_, _) => const PackagesScreen()),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: Routes.subscriptions,
+        builder: (_, _) => const SubscriptionsScreen(),
+        routes: [GoRoute(parentNavigatorKey: rootNavigatorKey, path: ':id/soru', builder: (_, state) => SubscriptionAskScreen(subscriptionId: state.pathParameters['id']!))],
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: Routes.groups,
+        builder: (_, _) => const GroupListScreen(),
+        routes: [GoRoute(parentNavigatorKey: rootNavigatorKey, path: ':code', builder: (_, state) => GroupCourseScreen(code: state.pathParameters['code']!))],
+      ),
+      GoRoute(parentNavigatorKey: rootNavigatorKey, path: Routes.myGroups, builder: (_, _) => const MyGroupsScreen()),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: '/grup-oturum/:id/sinif',
+        builder: (_, state) => ClassroomScreen(bookingId: state.pathParameters['id']!, groupSession: true),
+      ),
+      GoRoute(parentNavigatorKey: rootNavigatorKey, path: Routes.invite, builder: (_, _) => const InviteFriendsScreen()),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: Routes.lessonRequest,
+        builder: (_, state) => LessonRequestScreen(levelSlug: state.uri.queryParameters['kademe'], subjectSlug: state.uri.queryParameters['ders']),
+      ),
+      GoRoute(parentNavigatorKey: rootNavigatorKey, path: Routes.guide, builder: (_, _) => const WebPageScreen(url: '', title: 'Rehber', guide: true)),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
         path: Routes.ask,
@@ -331,13 +400,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
-        path: '/kredi-odeme/:id',
-        builder: (_, state) => PaymentScreen(bookingId: state.pathParameters['id']!, link: state.extra is PaymentLink ? state.extra as PaymentLink : null, creditPurchase: true),
+        path: '/satin-al/:kind/:id',
+        builder: (_, state) => PaymentScreen(
+          bookingId: state.pathParameters['id']!,
+          link: state.extra is PaymentLink ? state.extra as PaymentLink : null,
+          purchase: PurchaseKind.fromSlug(state.pathParameters['kind']!) ?? PurchaseKind.credits,
+        ),
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
-        path: '/kredi-odeme-durumu/:id',
-        builder: (_, state) => CreditPaymentStatusScreen(purchaseId: state.pathParameters['id']!),
+        path: '/satin-alma-sonucu/:kind/:id',
+        builder: (_, state) => PurchaseStatusScreen(kind: PurchaseKind.fromSlug(state.pathParameters['kind']!) ?? PurchaseKind.credits, id: state.pathParameters['id']!),
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
@@ -457,6 +530,16 @@ String routeForTarget(String screen, String? id) {
       return id == null ? Routes.messages : Routes.thread(id);
     case 'messages':
       return Routes.messages;
+    case 'packages':
+      return Routes.packages;
+    case 'subscriptions':
+      return Routes.subscriptions;
+    case 'myGroups':
+      return Routes.myGroups;
+    case 'group':
+      return id == null ? Routes.groups : Routes.group(id);
+    case 'invite':
+      return Routes.invite;
     default:
       return Routes.notifications;
   }

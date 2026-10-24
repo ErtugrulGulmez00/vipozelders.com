@@ -2,11 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../core/api/pi_api.dart';
 import '../../core/models/catalog.dart';
 import '../../core/models/teacher.dart';
 import '../../core/providers.dart';
+import '../../core/router/app_router.dart';
 import '../../core/widgets/states.dart';
 import '../shared/widgets.dart';
 import 'teacher_filters_sheet.dart';
@@ -199,16 +200,27 @@ class _TeacherListScreenState extends ConsumerState<TeacherListScreen> {
                   empty: EmptyView(
                     icon: Icons.person_search_rounded,
                     title: 'Aradığınız ölçütlere uygun öğretmen bulunamadı',
-                    message: 'Filtreleri azaltmayı ya da farklı bir arama yapmayı deneyin.',
-                    action: filters > 0 || (_query.q?.isNotEmpty ?? false)
-                        ? OutlinedButton(
+                    message: 'Filtreleri azaltmayı deneyin ya da ne aradığınızı bize yazın; ekibimiz size uygun öğretmeni bulsun.',
+                    action: Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        FilledButton.icon(
+                          onPressed: () => context.push(Uri(path: Routes.lessonRequest, queryParameters: {'kademe': ?_query.level, 'ders': ?_query.subject}).toString()),
+                          icon: const Icon(Icons.support_agent_rounded),
+                          label: const Text('Öğretmen bulun'),
+                        ),
+                        if (filters > 0 || (_query.q?.isNotEmpty ?? false))
+                          OutlinedButton(
                             onPressed: () {
                               _search.clear();
                               _apply(const TeacherQuery());
                             },
                             child: const Text('Tüm öğretmenleri göster'),
-                          )
-                        : null,
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),

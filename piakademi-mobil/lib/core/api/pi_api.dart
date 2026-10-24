@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import '../models/booking.dart';
 import '../models/catalog.dart';
 import '../models/center.dart';
+import '../models/commerce.dart';
 import '../models/json.dart';
 import '../models/me.dart';
 import '../models/messages.dart';
@@ -178,6 +179,8 @@ class BookingRequest {
     this.address,
     this.note,
     this.intro = false,
+    this.couponCode,
+    this.packageId,
   });
 
   final String offeringId;
@@ -194,6 +197,12 @@ class BookingRequest {
   /// Ücretsiz 15 dk tanışma görüşmesi (ödemesiz; sözleşme onayı gerekmez)
   final bool intro;
 
+  /// İndirim kodu (boşsa uygunsa davet indirimi)
+  final String? couponCode;
+
+  /// Paketten ders: ödeme ve sözleşme onayı yok, doğrudan öğretmen onayına düşer
+  final String? packageId;
+
   Json toJson() => {
         'offeringId': offeringId,
         'startAt': startAt.toUtc().toIso8601String(),
@@ -205,7 +214,8 @@ class BookingRequest {
         if (districtId != null) 'districtId': districtId,
         if (address != null && address!.isNotEmpty) 'address': address,
         if (note != null && note!.isNotEmpty) 'note': note,
-        if (intro) 'intro': true else 'consent': true,
+        if (intro) 'intro': true else if (packageId != null) 'packageId': packageId else 'consent': true,
+        if (couponCode != null && couponCode!.trim().isNotEmpty && !intro && packageId == null) 'couponCode': couponCode!.trim(),
       };
 }
 
@@ -259,6 +269,7 @@ class PiApi {
     required bool terms,
     bool marketing = false,
     String? deviceName,
+    String? referralCode,
   }) async {
     final json = asJson(await client.post('/kayit', data: {
       'firstName': firstName,
@@ -271,6 +282,7 @@ class PiApi {
       'terms': terms,
       'marketing': marketing,
       'deviceName': ?deviceName,
+      if (referralCode != null && referralCode.trim().isNotEmpty) 'referralCode': referralCode.trim(),
     }));
     return AuthResult(token: asString(json['token']), me: Me.fromJson(asJson(json['user'])));
   }
@@ -357,8 +369,8 @@ class PiApi {
   Future<Credits> credits() async => Credits.fromJson(asJson(await client.get('/krediler')));
 
   /// Kredi paketi satın alma: ödeme sayfası WebView'da açılır, dönüşte [creditPurchase] sorgulanır.
-  Future<(CreditPurchase, PaymentLink)> buyCredits(int credits) async {
-    final json = asJson(await client.post('/krediler', data: {'credits': credits, 'consent': true}));
+  Future<(CreditPurchase, PaymentLink)> buyCredits(int credits, {String? couponCode}) async {
+    final json = asJson(await client.post('/krediler', data: {'credits': credits, 'consent': true, if (couponCode != null && couponCode.trim().isNotEmpty) 'couponCode': couponCode.trim()}));
     return (CreditPurchase.fromJson(asJson(json['purchase'])), PaymentLink.fromJson(asJson(json['payment'])));
   }
 
@@ -421,6 +433,87 @@ class PiApi {
   /// Öğretmene ilk mesaj (konuşma yoksa açılır).
   Future<MessageThread> messageTeacher(String slug, String body) async =>
       MessageThread.fromJson(asJson(await client.post('/ogretmenler/${Uri.encodeComponent(slug)}/mesaj', data: {'body': body})));
+
+  // ---------------------------------------------------------------- indirim kodu, davet, öğretmen talebi
+
+  /// target: booking (ref: offeringId, duration) · credits (credits) · subscription (ref: planId) · group (ref: courseId)
+  Future<CouponCheck> checkCoupon({required String target, required String code, String? ref, int? duration, int? credits}) async =>
+      CouponCheck.fromJson(asJson(await client.post('/indirim-kodu', data: {'target': target, 'code': code, 'ref': ?ref, 'duration': ?duration, 'credits': ?credits})));
+
+  Future<InviteInfo> invite() async => InviteInfo.fromJson(asJson(await client.get('/davet')));
+
+  Future<String> lessonRequest(Json data) async => asString(asJson(await client.post('/ogretmen-talebi', data: data))['message']);
+
+  // ---------------------------------------------------------------- erteleme
+
+  /// action: request {newStartAt, note?} · accept / decline / cancel {requestId}
+  Future<BookingDetail> reschedule(String bookingId, String action, {DateTime? newStartAt, String? note, String? requestId}) async => BookingDetail.fromJson(asJson(await client.post(
+        '/rezervasyonlar/$bookingId/erteleme',
+        data: {'action': action, if (newStartAt != null) 'newStartAt': newStartAt.toUtc().toIso8601String(), if (note != null && note.isNotEmpty) 'note': note, 'requestId': ?requestId},
+      )));
+
+  // ---------------------------------------------------------------- paket ders
+
+  Future<List<LessonPackage>> packages() async => asList(asJson(await client.get('/paketler'))['items'], LessonPackage.fromJson);
+
+  Future<(LessonPackage, PaymentLink)> buyPackage({required String offeringId, required int durationMinutes, int? lessons, Json? recurring}) async {
+    final json = asJson(await client.post('/paketler', data: {'offeringId': offeringId, 'durationMinutes': durationMinutes, 'lessons': ?lessons, 'recurring': ?recurring, 'consent': true}));
+    return (LessonPackage.fromJson(asJson(json['package'])), PaymentLink.fromJson(asJson(json['payment'])));
+  }
+
+  Future<LessonPackage> package(String id) async => LessonPackage.fromJson(asJson(await client.get('/paketler/$id')));
+
+  Future<String> refundPackage(String id) async => asString(asJson(await client.post('/paketler/$id'))['message']);
+
+  /// Öğretmen: paketin (düzenli dersin) bekleyen tüm taleplerini onaylar → onaylanan sayısı.
+  Future<int> approvePackageBookings(String packageId) async => asInt(asJson(await client.post('/ogretmen/paketler/$packageId'))['approved']);
+
+  // ---------------------------------------------------------------- aylık soru aboneliği
+
+  Future<List<QuestionSubscription>> subscriptions() async => asList(asJson(await client.get('/abonelikler'))['items'], QuestionSubscription.fromJson);
+
+  Future<(QuestionSubscription, PaymentLink)> subscribe(String planId, {String? couponCode}) async {
+    final json = asJson(await client.post('/abonelikler', data: {'planId': planId, 'consent': true, if (couponCode != null && couponCode.trim().isNotEmpty) 'couponCode': couponCode.trim()}));
+    return (QuestionSubscription.fromJson(asJson(json['subscription'])), PaymentLink.fromJson(asJson(json['payment'])));
+  }
+
+  Future<QuestionSubscription> subscription(String id) async => QuestionSubscription.fromJson(asJson(await client.get('/abonelikler/$id')));
+
+  Future<PoolQuestion> askSubscriptionQuestion(String id, {String? note, required UploadFile image, void Function(int, int)? onProgress}) async {
+    final form = FormData.fromMap({if (note != null && note.isNotEmpty) 'note': note, 'image': await image.toMultipart()});
+    return PoolQuestion.fromJson(asJson(await client.postMultipart('/abonelikler/$id', form, onProgress: onProgress)));
+  }
+
+  // ---------------------------------------------------------------- grup dersi
+
+  Future<(bool, List<GroupCourse>)> groupCourses() async {
+    final json = asJson(await client.get('/grup-dersleri'));
+    return (asBool(json['enabled'], true), asList(json['items'], GroupCourse.fromJson));
+  }
+
+  Future<GroupCourse> groupCourse(String code) async => GroupCourse.fromJson(asJson(await client.get('/grup-dersleri/${Uri.encodeComponent(code)}')));
+
+  /// Öğrencinin kayıtları.
+  Future<List<MyGroupEnrollment>> myGroups() async => asList(asJson(await client.get('/grup-dersleri', query: {'kapsam': 'benim'}))['items'], MyGroupEnrollment.fromJson);
+
+  /// Öğretmenin kendi grup dersleri.
+  Future<List<GroupCourse>> teacherGroups() async => asList(asJson(await client.get('/grup-dersleri', query: {'kapsam': 'benim'}))['items'], GroupCourse.fromJson);
+
+  Future<(GroupEnrollmentInfo, PaymentLink)> enrollGroup(String code, {String? learnerName, String? couponCode}) async {
+    final json = asJson(await client.post('/grup-dersleri/${Uri.encodeComponent(code)}', data: {
+      'consent': true,
+      if (learnerName != null && learnerName.trim().isNotEmpty) 'learnerName': learnerName.trim(),
+      if (couponCode != null && couponCode.trim().isNotEmpty) 'couponCode': couponCode.trim(),
+    }));
+    final e = asJson(json['enrollment']);
+    return (GroupEnrollmentInfo(id: asString(e['id']), code: asString(e['code']), status: 'PENDING_PAYMENT', statusLabel: 'Ödeme bekleniyor', price: asInt(e['price'])), PaymentLink.fromJson(asJson(json['payment'])));
+  }
+
+  Future<GroupEnrollmentInfo> groupEnrollment(String id) async => GroupEnrollmentInfo.fromJson(asJson(await client.get('/grup-kayitlari/$id')));
+
+  Future<GroupEnrollmentInfo> cancelGroupEnrollment(String id) async => GroupEnrollmentInfo.fromJson(asJson(await client.delete<Object?>('/grup-kayitlari/$id')));
+
+  Future<ClassroomAccess> groupClassroom(String sessionId) async => ClassroomAccess.fromJson(asJson(await client.get('/grup-oturumlari/$sessionId/sinif')));
 
   // ---------------------------------------------------------------- favoriler, bildirimler, cihazlar
 

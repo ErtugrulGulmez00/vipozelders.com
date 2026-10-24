@@ -67,6 +67,22 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
     }
   }
 
+  /// Düzenli ders / paket: bu paketin bekleyen tüm talepleri tek seferde onaylanır.
+  Future<void> _approveAll() async {
+    final ok = await confirmDialog(context, title: 'Paketin tüm taleplerini onayla', message: 'Bu öğrencinin paketinden (düzenli ders) gelen bekleyen tüm ders talepleri onaylanacak.', confirmText: 'Hepsini onayla');
+    if (!ok) return;
+    setState(() => _busy = true);
+    try {
+      final count = await ref.read(apiProvider).approvePackageBookings(b.packageId!);
+      bumpBookings(ref);
+      if (mounted) showSnack(context, '$count ders onaylandı.');
+    } on ApiException catch (error) {
+      if (mounted) showError(context, error);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _reject() async {
     final reason = await reasonDialog(
       context,
@@ -157,6 +173,13 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
                     Expanded(child: OutlinedButton.icon(onPressed: _reject, icon: const Icon(Icons.close_rounded), label: const Text('Reddet'))),
                   ],
                 ),
+              if (!_busy && b.packageId != null) ...[
+                const SizedBox(height: 6),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton.icon(onPressed: _approveAll, icon: const Icon(Icons.done_all_rounded, size: 18), label: const Text('Paketin tüm taleplerini onayla')),
+                ),
+              ],
             ],
           ),
         ),

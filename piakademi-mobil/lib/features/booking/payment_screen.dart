@@ -11,16 +11,17 @@ import '../../core/router/app_router.dart';
 import '../../core/widgets/states.dart';
 import '../../core/widgets/web_view.dart';
 import '../shared/data.dart';
+import '../shared/purchase_status_screen.dart';
 
 /// Güvenli ödeme sayfası (sitedeki PayTR formu) uygulama içinde açılır. Kart bilgisi uygulamaya hiç gelmez.
 /// Sayfa ödeme sonucu adresine geçince kapanır ve "ödemeniz kontrol ediliyor" ekranı açılır.
 class PaymentScreen extends ConsumerStatefulWidget {
-  const PaymentScreen({super.key, required this.bookingId, this.link, this.creditPurchase = false});
+  const PaymentScreen({super.key, required this.bookingId, this.link, this.purchase});
 
-  /// Randevu kimliği; [creditPurchase] açıkken soru kredisi satın alma kimliği.
+  /// Randevu kimliği; [purchase] verilirse o satın almanın (kredi, paket, abonelik, grup kaydı) kimliği.
   final String bookingId;
   final PaymentLink? link;
-  final bool creditPurchase;
+  final PurchaseKind? purchase;
 
   @override
   ConsumerState<PaymentScreen> createState() => _PaymentScreenState();
@@ -37,8 +38,8 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   void initState() {
     super.initState();
     _link = widget.link;
-    if (_link == null && widget.creditPurchase) {
-      // Kredi ödemesinin bağlantısı yeniden alınamaz; durum ekranında sonuç gösterilir.
+    if (_link == null && widget.purchase != null) {
+      // Bu ödemelerin bağlantısı yeniden alınamaz; durum ekranında sonuç gösterilir.
       WidgetsBinding.instance.addPostFrameCallback((_) => _finish());
     } else if (_link == null) {
       _fetchLink();
@@ -91,8 +92,9 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   void _finish() {
     if (_finished || !mounted) return;
     _finished = true;
-    if (widget.creditPurchase) {
-      context.pushReplacement(Routes.creditPaymentStatus(widget.bookingId));
+    final purchase = widget.purchase;
+    if (purchase != null) {
+      context.pushReplacement(Routes.purchaseStatus(purchase, widget.bookingId));
       return;
     }
     bumpBookings(ref);

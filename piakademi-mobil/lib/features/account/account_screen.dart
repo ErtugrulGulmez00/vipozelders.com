@@ -83,10 +83,21 @@ class AccountScreen extends ConsumerWidget {
             onTap: () => context.push(Routes.ask),
           ),
           MenuTile(icon: Icons.help_outline_rounded, title: 'Sorularım', onTap: () => context.push(Routes.myQuestions)),
+          MenuTile(icon: Icons.subscriptions_outlined, title: 'Soru aboneliklerim', subtitle: 'Öğretmeninize doğrudan soru', onTap: () => context.push(Routes.subscriptions)),
           const MenuTitle('Özel ders'),
           MenuTile(icon: Icons.event_note_outlined, title: 'Derslerim', onTap: () => context.go(Routes.lessons)),
+          MenuTile(icon: Icons.inventory_2_outlined, title: 'Paketlerim', subtitle: 'Paket ve düzenli dersler', onTap: () => context.push(Routes.packages)),
+          MenuTile(icon: Icons.groups_2_outlined, title: 'Grup derslerim', onTap: () => context.push(Routes.myGroups)),
           MenuTile(icon: Icons.favorite_border_rounded, title: 'Favori öğretmenler', onTap: () => context.go(Routes.favorites)),
           MenuTile(icon: Icons.search_rounded, title: 'Öğretmen bul', onTap: () => context.push(Routes.teachers)),
+          MenuTile(icon: Icons.co_present_outlined, title: 'Grup dersleri', subtitle: 'Küçük gruplarla canlı ders', onTap: () => context.push(Routes.groups)),
+          if (catalog?.rules.referralEnabled ?? false)
+            MenuTile(
+              icon: Icons.card_giftcard_rounded,
+              title: 'Arkadaşını davet et',
+              subtitle: 'Arkadaşınıza %${catalog!.rules.referralDiscountPercent} indirim, size soru kredisi',
+              onTap: () => context.push(Routes.invite),
+            ),
           const MenuTitle('Kurum (etüt merkezi / dershane)'),
           if (links.isNotEmpty)
             MenuTile(
@@ -101,6 +112,7 @@ class AccountScreen extends ConsumerWidget {
             subtitle: 'Kurumunuzun gönderdiği bağlantıyı ya da kodu girin',
             onTap: () => showInviteCodeSheet(context),
           ),
+          MenuTile(icon: Icons.auto_stories_outlined, title: 'Rehber', subtitle: 'Sınav ve ders çalışma yazıları', onTap: () => context.push(Routes.guide)),
           if (catalog != null) InfoLinks(catalog: catalog),
           const MenuTitle('Hesabı yönet'),
           MenuTile(icon: Icons.person_remove_outlined, title: 'Hesabımı sil', onTap: () => context.push(Routes.deleteAccount)),

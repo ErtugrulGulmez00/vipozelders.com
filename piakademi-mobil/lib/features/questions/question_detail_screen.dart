@@ -111,7 +111,9 @@ class _QuestionBodyState extends ConsumerState<_QuestionBody> {
             icon: Icons.hourglass_top_rounded,
             message: q.status == 'OPEN'
                 ? 'Sorunuz öğretmen bekliyor. ${q.expiresAt == null ? '' : '${formatDateTime(q.expiresAt!)} saatine kadar çözülmezse krediniz iade edilir.'}'
-                : 'Bir öğretmen sorunuzu üstlendi ve çözüyor; çözüm gelince bildirim alacaksınız.',
+                : q.subscription
+                    ? 'Sorunuz abone olduğunuz öğretmeninize iletildi${q.expiresAt == null ? '' : '; en geç ${formatDateTime(q.expiresAt!)} saatine kadar cevaplar'}.'
+                    : 'Bir öğretmen sorunuzu üstlendi ve çözüyor; çözüm gelince bildirim alacaksınız.',
           ),
         if (q.rejectReason != null && q.status == 'REJECTED') NoticeBox(tone: Tone.rose, title: 'Soru çözülemedi, krediniz iade edildi', message: 'Öğretmenin notu: “${q.rejectReason}”. Soruyu net ve tek soru olacak şekilde tekrar gönderebilirsiniz.'),
         if (q.status == 'DISPUTED') const NoticeBox(tone: Tone.violet, message: 'Bildiriminiz inceleniyor; sonuçlanınca bildirim alacaksınız.'),

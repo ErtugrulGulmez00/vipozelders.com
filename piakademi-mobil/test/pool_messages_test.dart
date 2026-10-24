@@ -149,7 +149,7 @@ void main() {
       expect(Routes.needsAuth('/sorularim/q1'), isTrue);
       expect(Routes.needsAuth('/soru-sor/gonder'), isTrue);
       expect(Routes.needsAuth('/mesajlar'), isTrue);
-      expect(Routes.needsAuth('/kredi-odeme/p1'), isTrue);
+      expect(Routes.needsAuth('/satin-al/kredi/p1'), isTrue);
       expect(Routes.needsAuth('/ogretmen/ayse-yilmaz/tanisma'), isTrue);
       expect(Routes.needsAuth('/ogretmen/ayse-yilmaz/mesaj'), isTrue);
       // Paketler misafire de gösterilir

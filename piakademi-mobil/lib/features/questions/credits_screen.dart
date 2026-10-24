@@ -13,7 +13,10 @@ import '../../core/widgets/badges.dart';
 import '../../core/widgets/cards.dart';
 import '../../core/widgets/feedback.dart';
 import '../../core/widgets/states.dart';
+import '../../core/models/commerce.dart';
+import '../shared/coupon_field.dart';
 import '../shared/data.dart';
+import '../shared/purchase_status_screen.dart';
 import '../shared/widgets.dart';
 import '../booking/booking_screen.dart' show ConsentText;
 
@@ -68,6 +71,8 @@ class _CreditsBodyState extends ConsumerState<_CreditsBody> {
   bool _consent = false;
   bool _busy = false;
   String? _error;
+  String? _couponCode;
+  CouponCheck? _coupon;
 
   Credits get c => widget.credits;
 
@@ -90,9 +95,9 @@ class _CreditsBodyState extends ConsumerState<_CreditsBody> {
       _error = null;
     });
     try {
-      final (purchase, payment) = await ref.read(apiProvider).buyCredits(pack.credits);
+      final (purchase, payment) = await ref.read(apiProvider).buyCredits(pack.credits, couponCode: _couponCode);
       if (!mounted) return;
-      context.push(Routes.creditPayment(purchase.id), extra: payment);
+      context.push(Routes.purchasePayment(PurchaseKind.credits, purchase.id), extra: payment);
     } on ApiException catch (error) {
       if (mounted) setState(() => _error = error.message);
     } finally {
@@ -154,6 +159,14 @@ class _CreditsBodyState extends ConsumerState<_CreditsBody> {
             child: _PackageTile(package: p, selected: _selected?.credits == p.credits, onTap: c.salesOpen ? () => setState(() => _selected = p) : null),
           ),
         if (c.salesOpen && _selected != null) ...[
+          CouponField(
+            target: 'credits',
+            credits: _selected!.credits,
+            onChanged: (code, check) => setState(() {
+              _couponCode = code;
+              _coupon = check;
+            }),
+          ),
           CheckboxListTile(
             value: _consent,
             contentPadding: EdgeInsets.zero,
@@ -162,7 +175,7 @@ class _CreditsBodyState extends ConsumerState<_CreditsBody> {
             title: ConsentText(onOpen: (slug) => context.push(Routes.page(slug))),
           ),
           if (_error != null) ...[NoticeBox(message: _error!, tone: Tone.rose), const SizedBox(height: 8)],
-          BusyButton(busy: _busy, onPressed: _buy, label: '${_selected!.title} · ${formatMoney(_selected!.price)} öde', icon: Icons.lock_rounded),
+          BusyButton(busy: _busy, onPressed: _buy, label: '${_selected!.title} · ${formatMoney(_coupon?.finalPrice ?? _selected!.price)} öde', icon: Icons.lock_rounded),
         ],
         if (c.purchases.isNotEmpty) ...[
           const SectionTitle('Paketlerim'),

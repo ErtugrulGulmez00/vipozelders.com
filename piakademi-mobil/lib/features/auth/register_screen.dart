@@ -26,6 +26,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _email = TextEditingController();
   final _phone = TextEditingController();
   final _password = TextEditingController();
+  final _referral = TextEditingController();
   String _accountType = 'PARENT';
   bool _kvkk = false;
   bool _terms = false;
@@ -36,7 +37,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   void dispose() {
-    for (final c in [_firstName, _lastName, _email, _phone, _password]) {
+    for (final c in [_firstName, _lastName, _email, _phone, _password, _referral]) {
       c.dispose();
     }
     super.dispose();
@@ -63,6 +64,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             password: _password.text,
             accountType: _accountType,
             marketing: _marketing,
+            referralCode: _referral.text.trim().isEmpty ? null : _referral.text.trim(),
           );
       messenger.showSnackBar(const SnackBar(content: Text('Hoş geldiniz! Hesabınız oluşturuldu.')));
       router.go(next != null && next.startsWith('/') ? next : Routes.explore);
@@ -163,6 +165,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 errorText: _error?.field('password'),
                 helperText: 'En az 8 karakter; harf ve rakam içermeli.',
                 validator: passwordProblem,
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _referral,
+                textCapitalization: TextCapitalization.characters,
+                autocorrect: false,
+                decoration: const InputDecoration(
+                  labelText: 'Davet kodu (isteğe bağlı)',
+                  prefixIcon: Icon(Icons.card_giftcard_rounded),
+                  helperText: 'Arkadaşınız sizi davet ettiyse kodunu yazın; ilk siparişinizde indirim kazanırsınız.',
+                  helperMaxLines: 2,
+                ),
               ),
             ],
           ),
