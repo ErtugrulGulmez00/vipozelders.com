@@ -10,6 +10,7 @@ import { requireRole } from "@/server/auth/current-user";
 import { creditLots, refundPreview } from "@/server/credits";
 import { db } from "@/server/db";
 import { loadSettings } from "@/server/settings";
+import { SectionTabs, STUDENT_QUESTION_TABS } from "@/components/panel/section-tabs";
 
 export const metadata: Metadata = { title: "Soru kredilerim" };
 
@@ -28,6 +29,7 @@ export default async function CreditsPage() {
 
   return (
     <>
+      <SectionTabs tabs={STUDENT_QUESTION_TABS} active="/hesabim/krediler" />
       <PageHeader
         title="Soru kredilerim"
         description={`Kalan krediniz: ${balance}. Her soru 1 kredi; krediler ${settings.creditValidityMonths} ay geçerlidir ve önce süresi en erken dolan paketten düşülür.`}

@@ -9,6 +9,7 @@ import { formatMoney } from "@/lib/money";
 import { fullName } from "@/lib/text";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
+import { SectionTabs, STUDENT_QUESTION_TABS } from "@/components/panel/section-tabs";
 
 export const metadata: Metadata = { title: "Soru aboneliklerim" };
 
@@ -24,10 +25,11 @@ export default async function MySubscriptionsPage() {
 
   return (
     <>
+      <SectionTabs tabs={STUDENT_QUESTION_TABS} active="/hesabim/abonelikler" />
       <PageHeader
         title="Soru aboneliklerim"
         description="Abone olduğunuz öğretmenlere sorularınızı doğrudan gönderin. Otomatik çekim yoktur; dönem bitmeden yenileyebilirsiniz."
-        actions={<LinkButton href="/ogretmenler?service=soru-cozum" variant="outline">Öğretmen bul</LinkButton>}
+        actions={<LinkButton href="/ogretmenler?abonelik=1" variant="outline">Abonelik veren öğretmenler</LinkButton>}
       />
       {subs.length === 0 ? (
         <EmptyState

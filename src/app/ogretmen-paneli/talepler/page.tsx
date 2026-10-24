@@ -10,11 +10,13 @@ import { formatMoney } from "@/lib/money";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { RequestActions } from "./request-actions";
+import { SectionTabs, teacherLessonTabs } from "@/components/panel/section-tabs";
 
 export const metadata: Metadata = { title: "Ders talepleri" };
 
 export default async function RequestsPage({ searchParams }: PageProps<"/ogretmen-paneli/talepler">) {
   const user = await requireRole("TEACHER");
+  const pendingCount = await db.booking.count({ where: { teacherId: user.id, status: "PENDING_APPROVAL" } });
   const { durum } = await searchParams;
   await connection();
   const now = new Date();
@@ -26,6 +28,7 @@ export default async function RequestsPage({ searchParams }: PageProps<"/ogretme
 
   return (
     <>
+      <SectionTabs tabs={teacherLessonTabs(pendingCount)} active="/ogretmen-paneli/talepler" />
       <PageHeader title="Talepler ve sorular" description="Ödemesi alınmış ders talepleri ve fotoğrafla gelen sorular. Süresi içinde yanıt vermezseniz talep iptal edilir ve öğrenciye iade yapılır." />
       <FlashNotice code={durum} />
       {requests.length === 0 ? (

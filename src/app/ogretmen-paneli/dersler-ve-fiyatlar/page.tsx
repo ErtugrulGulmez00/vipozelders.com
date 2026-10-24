@@ -7,6 +7,7 @@ import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { getCatalog } from "@/server/site";
 import { loadTeacherEditorData } from "@/server/teacher-editor-data";
+import { SectionTabs, TEACHER_PROFILE_TABS } from "@/components/panel/section-tabs";
 
 export const metadata: Metadata = { title: "Dersler ve fiyatlar" };
 
@@ -19,6 +20,7 @@ export default async function OfferingsPage() {
   ]);
   return (
     <>
+      <SectionTabs tabs={TEACHER_PROFILE_TABS} active="/ogretmen-paneli/dersler-ve-fiyatlar" />
       <PageHeader title="Dersler ve fiyatlar" description="Verdiğiniz her kademe, ders ve hizmet için ayrı saatlik ücret belirleyebilirsiniz." />
       <Alert tone="info" className="mb-6">
         Girdiğiniz ücret velinin ödeyeceği, KDV dahil saatlik tutardır. Platform hizmet bedeli {formatBps(data.commissionBps)}; kalan tutar ders tamamlandıktan sonra hakedişinize eklenir. Süreye göre ücret otomatik hesaplanır (ör. 90 dk = 1,5 saat).

@@ -5,10 +5,13 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
-export type PanelNavItem = { href: string; label: string; icon: ReactNode; badge?: number; exact?: boolean };
+/** also: bu başlık altında toplanan diğer sayfalar (sekmeli bölümler); oradayken de başlık seçili görünür. */
+export type PanelNavItem = { href: string; label: string; icon: ReactNode; badge?: number; exact?: boolean; also?: string[] };
 
 function isActive(pathname: string, item: PanelNavItem) {
-  return item.exact ? pathname === item.href : pathname === item.href || pathname.startsWith(`${item.href}/`);
+  const match = (href: string) => pathname === href || pathname.startsWith(`${href}/`);
+  if (item.exact) return pathname === item.href;
+  return match(item.href) || Boolean(item.also?.some(match));
 }
 
 export function SideNav({ items }: { items: PanelNavItem[] }) {

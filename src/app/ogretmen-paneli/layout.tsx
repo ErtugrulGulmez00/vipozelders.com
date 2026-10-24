@@ -1,4 +1,4 @@
-import { Bell, Building2, CalendarClock, CalendarDays, FileCheck2, Inbox, LayoutDashboard, ListChecks, MessageCircle, MessageCircleQuestion, MessageSquareQuote, Repeat, Settings, Users, UserRound, Wallet } from "lucide-react";
+import { Bell, Building2, CalendarClock, CalendarDays, LayoutDashboard, MessageCircle, MessageCircleQuestion, MessageSquareQuote, Repeat, Settings, Users, UserRound, Wallet } from "lucide-react";
 import { PanelShell } from "@/components/panel/panel-shell";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
@@ -21,16 +21,14 @@ export default async function TeacherLayout({ children }: { children: React.Reac
       title="Öğretmen paneli"
       nav={[
         { href: "/ogretmen-paneli", label: "Özet", icon: <LayoutDashboard />, exact: true },
-        { href: "/ogretmen-paneli/talepler", label: "Ders talepleri", icon: <Inbox />, badge: pending || undefined },
-        { href: "/ogretmen-paneli/dersler", label: "Derslerim", icon: <CalendarDays /> },
+        // Bekleyen talep varsa başlık doğrudan taleplere götürür
+        { href: pending ? "/ogretmen-paneli/talepler" : "/ogretmen-paneli/dersler", label: "Derslerim", icon: <CalendarDays />, badge: pending || undefined, also: ["/ogretmen-paneli/talepler", "/ogretmen-paneli/dersler"] },
         { href: "/ogretmen-paneli/mesajlar", label: "Mesajlar", icon: <MessageCircle />, badge: unreadMessages || undefined },
         { href: "/ogretmen-paneli/soru-havuzu", label: "Soru havuzu", icon: <MessageCircleQuestion />, badge: poolActive || undefined },
         { href: "/ogretmen-paneli/soru-aboneligi", label: "Soru aboneliği", icon: <Repeat /> },
         { href: "/ogretmen-paneli/grup-dersleri", label: "Grup dersleri", icon: <Users /> },
-        { href: "/ogretmen-paneli/profil", label: "Profilim", icon: <UserRound /> },
-        { href: "/ogretmen-paneli/dersler-ve-fiyatlar", label: "Dersler ve fiyatlar", icon: <ListChecks /> },
+        { href: "/ogretmen-paneli/profil", label: "Profilim", icon: <UserRound />, also: ["/ogretmen-paneli/dersler-ve-fiyatlar", "/ogretmen-paneli/belgeler"] },
         { href: "/ogretmen-paneli/takvim", label: "Müsaitlik takvimi", icon: <CalendarClock /> },
-        { href: "/ogretmen-paneli/belgeler", label: "Belgelerim", icon: <FileCheck2 /> },
         { href: "/ogretmen-paneli/kazanclar", label: "Kazançlarım", icon: <Wallet /> },
         { href: "/ogretmen-paneli/yorumlar", label: "Yorumlar", icon: <MessageSquareQuote /> },
         { href: "/ogretmen-paneli/bildirimler", label: "Bildirimler", icon: <Bell />, badge: unread || undefined },

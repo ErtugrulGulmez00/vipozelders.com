@@ -82,6 +82,7 @@ model User {
   poolQuestions     PoolQuestion[]
   questionSubscriptions QuestionSubscription[]
   groupEnrollments  GroupEnrollment[]
+  lessonRequests    LessonRequest[]
   classroomReports  ClassroomReport[]
   threadsAsStudent  MessageThread[]    @relation("ThreadStudent")
   threadsAsTeacher  MessageThread[]    @relation("ThreadTeacher")
@@ -2203,4 +2204,42 @@ model GroupEnrollment {
 
   @@unique([courseId, studentId])
   @@index([studentId, status])
+}
+
+// ---------------------------------------------------------------------------
+// Öğretmen talebi: aradığı öğretmeni bulamayan veli ders, kademe ve uygun saatlerini bırakır; yönetici ve
+// o derste ders veren öğretmenler bilgilendirilir. İletişim bilgisi öğretmenlere gösterilmez.
+// ---------------------------------------------------------------------------
+
+enum LessonRequestStatus {
+  NEW
+  CONTACTED
+  MATCHED
+  CLOSED
+}
+
+model LessonRequest {
+  id               String              @id @default(cuid())
+  studentId        String?
+  student          User?               @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  name             String
+  phone            String
+  email            String?
+  levelId          Int?
+  subjectId        Int?
+  levelName        String?
+  subjectName      String?
+  // online | yuz-yuze | farketmez
+  mode             String
+  cityName         String?
+  preferredTimes   String?
+  note             String?
+  status           LessonRequestStatus @default(NEW)
+  adminNote        String?
+  notifiedTeachers Int                 @default(0)
+  ipAddress        String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  @@index([status, createdAt])
 }

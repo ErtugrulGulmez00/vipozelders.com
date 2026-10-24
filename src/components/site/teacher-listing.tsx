@@ -5,7 +5,9 @@ import { LinkButton } from "@/components/ui/button";
 import { loadDistricts } from "@/server/catalog";
 import { getCatalog, getCities } from "@/server/site";
 import { searchTeachers, SORT_OPTIONS, TIME_OPTIONS, type TeacherSearchParams } from "@/server/teachers";
+import { getCurrentUser } from "@/server/auth/current-user";
 import { FilterPanel, SortSelect } from "./filter-panel";
+import { LessonRequestForm } from "./lesson-request-form";
 import { TeacherCard } from "./teacher-card";
 
 const KEYS: (keyof TeacherSearchParams)[] = ["level", "subject", "service", "mode", "city", "district", "minPrice", "maxPrice", "rating", "gender", "time", "verified", "intro", "abonelik", "q", "sort", "page"];
@@ -39,6 +41,7 @@ export async function TeacherListing({
   const districts = result.resolved.city ? await loadDistricts(result.resolved.city.id) : [];
   // Sonuç yoksa veli boş sayfayla kalmasın: önce aynı dersin, yoksa tüm öğretmenler önerilir.
   const fallback = result.items.length ? null : await similarTeachers(params);
+  const user = await getCurrentUser();
   const { level, subject, service, city, district } = result.resolved;
   const title = [
     district ? `${district.name}` : city ? city.name : null,
@@ -103,6 +106,19 @@ export async function TeacherListing({
           </>
         )}
         <Pagination page={result.page} pageCount={result.pageCount} hrefFor={hrefFor} />
+        <details open={!result.items.length} className="group mt-8 rounded-2xl border border-brand-200 bg-brand-50/60 p-5">
+          <summary className="cursor-pointer list-none [&::-webkit-details-marker]:hidden">
+            <span className="block text-lg font-bold text-slate-900">Aradığınız öğretmeni bulamadınız mı?</span>
+            <span className="block text-sm text-slate-600">Ders ve uygun saatlerinizi bırakın; size uygun öğretmeni bulup dönelim. Ücretsizdir.</span>
+          </summary>
+          <div className="mt-5">
+            <LessonRequestForm
+              levels={catalog.levels.map((l) => ({ id: l.id, name: l.name, subjectIds: l.subjectIds }))}
+              subjects={catalog.subjects.map((s) => ({ id: s.id, name: s.name }))}
+              defaults={{ levelId: level?.id, subjectId: subject?.id, name: user?.role === "STUDENT" ? `${user.firstName} ${user.lastName}` : undefined, email: user?.role === "STUDENT" ? user.email ?? undefined : undefined }}
+            />
+          </div>
+        </details>
       </section>
     </div>
   );

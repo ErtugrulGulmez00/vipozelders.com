@@ -8,6 +8,7 @@ import { poolStatus } from "@/lib/labels";
 import { requireRole } from "@/server/auth/current-user";
 import { creditBalance } from "@/server/credits";
 import { db } from "@/server/db";
+import { SectionTabs, STUDENT_QUESTION_TABS } from "@/components/panel/section-tabs";
 
 export const metadata: Metadata = { title: "Sorularım" };
 
@@ -20,6 +21,7 @@ export default async function MyQuestionsPage() {
 
   return (
     <>
+      <SectionTabs tabs={STUDENT_QUESTION_TABS} active="/hesabim/sorularim" />
       <PageHeader
         title="Sorularım"
         description={`Fotoğrafla gönderdiğiniz sorular ve çözümleri. Kalan krediniz: ${balance}.`}

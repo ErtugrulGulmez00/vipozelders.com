@@ -8,6 +8,7 @@ import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { uploadUrl } from "@/server/storage";
 import { DocumentUploadForm } from "./document-upload-form";
+import { SectionTabs, TEACHER_PROFILE_TABS } from "@/components/panel/section-tabs";
 
 export const metadata: Metadata = { title: "Belgelerim" };
 
@@ -21,6 +22,7 @@ export default async function TeacherDocumentsPage() {
 
   return (
     <>
+      <SectionTabs tabs={TEACHER_PROFILE_TABS} active="/ogretmen-paneli/belgeler" />
       <PageHeader title="Belgelerim" description="Kimlik ve diplomanızı yükleyin; yönetici doğruladığında profilinizde “Onaylı öğretmen” rozeti görünür." />
       <div className="space-y-6">
         <Alert tone="info" title="Hangi belgeler isteniyor?">

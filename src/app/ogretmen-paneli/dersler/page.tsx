@@ -5,11 +5,13 @@ import { EmptyState, PageHeader } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
+import { SectionTabs, teacherLessonTabs } from "@/components/panel/section-tabs";
 
 export const metadata: Metadata = { title: "Derslerim" };
 
 export default async function TeacherLessonsPage({ searchParams }: PageProps<"/ogretmen-paneli/dersler">) {
   const user = await requireRole("TEACHER");
+  const pendingCount = await db.booking.count({ where: { teacherId: user.id, status: "PENDING_APPROVAL" } });
   const tab = (await searchParams).sekme === "gecmis" ? "gecmis" : "yaklasan";
   const now = new Date();
   const lessons = await db.booking.findMany({
@@ -23,6 +25,7 @@ export default async function TeacherLessonsPage({ searchParams }: PageProps<"/o
 
   return (
     <>
+      <SectionTabs tabs={teacherLessonTabs(pendingCount)} active="/ogretmen-paneli/dersler" />
       <PageHeader title="Derslerim" />
       <div className="mb-5 flex gap-1 rounded-xl bg-slate-100 p-1 text-sm font-semibold sm:w-fit">
         {[
