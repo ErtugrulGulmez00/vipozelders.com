@@ -16,7 +16,7 @@ export const instant = false;
 export default async function MockPaymentPage({ params }: PageProps<"/odeme/test/[paymentId]">) {
   const user = await requireUser();
   const { paymentId } = await params;
-  const payment = await db.payment.findUnique({ where: { id: paymentId }, include: { booking: true, creditPurchase: true, subscription: true, groupEnrollment: { include: { course: true } } } });
+  const payment = await db.payment.findUnique({ where: { id: paymentId }, include: { booking: true, creditPurchase: true, subscription: true, groupEnrollment: { include: { course: true } }, package: true } });
   const subject = payment ? paymentSubject(payment) : null;
   if (!payment || !subject || subject.ownerId !== user.id || payment.provider !== "mock") redirect("/hesabim");
   if (payment.status !== "INITIATED") redirect(`/odeme/sonuc/${subject.resultId}`);

@@ -92,6 +92,11 @@ async function loadBusy(tx: DbTransaction | typeof db, teacherId: string, from: 
   return [...rows.map((row) => ({ start: row.startAt, end: row.blockEndAt })), ...groups];
 }
 
+/** Tam iade cümlesi: paket dersinde para değil ders geri döner. */
+function fullRefundText(booking: Pick<Booking, "packageId" | "price">, verb = "kartınıza iade ediliyor") {
+  return booking.packageId ? "Ders paketinize geri eklendi." : `Ödediğiniz ${formatMoney(booking.price)} ${verb}.`;
+}
+
 export function lessonSummary(booking: Pick<Booking, "subjectName" | "levelName" | "serviceName" | "startAt" | "endAt" | "mode" | "code">) {
   if (booking.mode === "QUESTION") return `${booking.levelName} ${booking.subjectName} · Fotoğrafla soru (${booking.code})`;
   return `${booking.levelName} ${booking.subjectName} · ${booking.serviceName} — ${formatLessonRange(booking.startAt, booking.endAt)}`;
@@ -158,6 +163,8 @@ export type CreateBookingInput = {
   intro?: boolean;
   /** İndirim kodu (boşsa uygunsa davet indirimi) */
   couponCode?: string | null;
+  /** Paketten alınan ders: ödeme yok, ders paketten düşer ve doğrudan öğretmen onayına gider */
+  packageId?: string | null;
 };
 
 /** Bir öğrencinin aynı anda bekleyen/onaylı en fazla tanışma görüşmesi. */
@@ -167,9 +174,15 @@ const MAX_OPEN_INTROS = 2;
  * Saati ödeme süresi boyunca kilitleyen randevu kaydı oluşturur (PENDING_PAYMENT).
  * Tanışma görüşmesinde ödeme yoktur: kayıt doğrudan öğretmen onayına (PENDING_APPROVAL) düşer.
  */
-export async function createBookingHold(input: CreateBookingInput, now = new Date()): Promise<Booking> {
+export async function createBookingHold(input: CreateBookingInput, now = new Date(), options: { ignoreMaxAdvance?: boolean } = {}): Promise<Booking> {
   const intro = Boolean(input.intro);
-  if (!intro && !salesOpen()) throw new BookingError("Online ödeme altyapımız çok yakında açılıyor; şu an ders ve soru satışı yapılamıyor.");
+  const pkg = input.packageId && !intro ? await db.lessonPackage.findUnique({ where: { id: input.packageId } }) : null;
+  if (input.packageId && !intro) {
+    if (!pkg || pkg.studentId !== input.studentId || pkg.status !== "PAID") throw new BookingError("Paket bulunamadı ya da kullanılamıyor.");
+    if (pkg.expiresAt && pkg.expiresAt <= now) throw new BookingError("Paketinizin kullanım süresi doldu.");
+    if (pkg.offeringId !== input.offeringId || pkg.durationMinutes !== input.durationMinutes) throw new BookingError("Bu paket yalnızca aynı ders ve sürede kullanılabilir.");
+  }
+  if (!intro && !pkg && !salesOpen()) throw new BookingError("Online ödeme altyapımız çok yakında açılıyor; şu an ders ve soru satışı yapılamıyor.");
   const settings = await loadSettings();
   const offering = await db.teacherOffering.findUnique({
     where: { id: input.offeringId },
@@ -227,11 +240,12 @@ export async function createBookingHold(input: CreateBookingInput, now = new Dat
     throw new BookingError("Öğretmenin ödeme hesabı henüz tamamlanmadığı için şu an randevu alınamıyor.");
   }
 
-  const listPrice = intro ? 0 : lessonPrice(offering.hourlyPrice, input.durationMinutes);
-  const commissionRateBps = teacher.commissionRateBps ?? settings.commissionRateBps;
+  // Paket dersi: paketteki ders başı ücret ve paketin komisyon oranı
+  const listPrice = intro ? 0 : pkg ? pkg.unitPrice : lessonPrice(offering.hourlyPrice, input.durationMinutes);
+  const commissionRateBps = pkg ? pkg.commissionRateBps : (teacher.commissionRateBps ?? settings.commissionRateBps);
   const split = splitCommission(listPrice, commissionRateBps);
   // İndirim platformun hizmet bedelinden düşer; öğretmen payı değişmez.
-  const discount = intro
+  const discount = intro || pkg
     ? { amount: 0, couponCode: null }
     : await resolveDiscount(input.studentId, input.couponCode, "booking", listPrice, split.commissionAmount, now).catch((error: unknown) => {
         if (error instanceof DiscountError) throw new BookingError(error.message);
@@ -247,6 +261,10 @@ export async function createBookingHold(input: CreateBookingInput, now = new Dat
     return await db.$transaction(async (tx) => {
       await lockTeacher(tx, teacher.userId);
       await expireStaleHoldsForTeacher(tx, teacher.userId, now);
+      if (pkg) {
+        await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtext(${`pkg:${pkg.id}`}))`;
+        if ((await packageLessonsLeft(tx, pkg)) <= 0) throw new BookingError("Paketinizde kullanılmamış ders kalmadı.");
+      }
 
       const date = toLocalDateString(input.startAt);
       const [exceptions, busy] = await Promise.all([
@@ -263,7 +281,7 @@ export async function createBookingHold(input: CreateBookingInput, now = new Dat
           now,
           minNoticeHours: settings.minNoticeHours,
           allowSameDay: settings.allowSameDayBooking,
-          maxAdvanceDays: settings.maxAdvanceDays,
+          maxAdvanceDays: options.ignoreMaxAdvance ? 366 : settings.maxAdvanceDays,
         },
         input.startAt,
       );
@@ -312,15 +330,30 @@ export async function createBookingHold(input: CreateBookingInput, now = new Dat
           teacherAmount,
           discountAmount: discount.amount,
           couponCode: discount.couponCode,
-          status: intro ? "PENDING_APPROVAL" : "PENDING_PAYMENT",
+          packageId: pkg?.id ?? null,
+          // Paket dersinin ödemesi paketin ödemesidir (hakediş aktarım süresi ondan sayılır)
+          paidAt: pkg?.paidAt ?? null,
+          status: intro || pkg ? "PENDING_APPROVAL" : "PENDING_PAYMENT",
           isIntro: intro,
-          holdExpiresAt: intro ? null : new Date(now.getTime() + settings.paymentHoldMinutes * 60_000),
-          approvalDeadline: intro ? approvalDeadline(now, input.startAt, settings) : null,
+          holdExpiresAt: intro || pkg ? null : new Date(now.getTime() + settings.paymentHoldMinutes * 60_000),
+          approvalDeadline: intro || pkg ? approvalDeadline(now, input.startAt, settings) : null,
         },
       });
       await tx.bookingEvent.create({
-        data: { bookingId: booking.id, toStatus: booking.status, actorId: input.studentId, note: intro ? "Ücretsiz tanışma görüşmesi istendi" : "Saat ödeme için ayrıldı" },
+        data: { bookingId: booking.id, toStatus: booking.status, actorId: input.studentId, note: intro ? "Ücretsiz tanışma görüşmesi istendi" : pkg ? `Paketten (${pkg.code}) ders talebi` : "Saat ödeme için ayrıldı" },
       });
+      if (pkg) {
+        await notify(
+          {
+            userId: teacher.userId,
+            type: "booking.request",
+            title: "Yeni ders talebi (paket)",
+            body: `${learnerName} için ${lessonSummary(booking)}. Ücret ödenmiş paketten. Lütfen ${formatDateTime(booking.approvalDeadline!)} saatine kadar onaylayın.`,
+            link: "/ogretmen-paneli/talepler",
+          },
+          tx,
+        );
+      }
       if (intro) {
         await notify(
           {
@@ -339,6 +372,44 @@ export async function createBookingHold(input: CreateBookingInput, now = new Dat
     if (isOverlapViolation(error)) throw new BookingError("Seçtiğiniz saat az önce doldu. Lütfen başka bir saat seçin.");
     throw error;
   }
+}
+
+/**
+ * Erteleme: dersin yeni saati öğretmenin takviminde uygun mu? Dersin kendi eski saati dolu sayılmaz.
+ * Transaction içinde, öğretmen kilidi alınmış olarak çağrılmalı.
+ */
+export async function rescheduleSlotFree(tx: DbTransaction, booking: Booking, newStartAt: Date, now = new Date()) {
+  const settings = await loadSettings();
+  const teacher = await tx.teacherProfile.findUniqueOrThrow({ where: { userId: booking.teacherId }, select: { bufferMinutes: true, availabilityRules: true } });
+  const date = toLocalDateString(newStartAt);
+  const end = new Date(newStartAt.getTime() + booking.durationMinutes * 60_000);
+  const [exceptions, busy] = await Promise.all([
+    tx.availabilityException.findMany({ where: { teacherId: booking.teacherId, date: dateStringToDbDate(date) } }),
+    loadBusy(tx, booking.teacherId, new Date(newStartAt.getTime() - 24 * HOUR), new Date(end.getTime() + 24 * HOUR), now),
+  ]);
+  const others = busy.filter((b) => !(b.start.getTime() === booking.startAt.getTime() && b.end.getTime() === booking.blockEndAt.getTime()));
+  return isSlotAvailable(
+    {
+      rules: teacher.availabilityRules,
+      exceptions: exceptions.map(toDayException),
+      busy: others,
+      durationMinutes: booking.durationMinutes,
+      bufferMinutes: teacher.bufferMinutes,
+      now,
+      minNoticeHours: settings.minNoticeHours,
+      allowSameDay: settings.allowSameDayBooking,
+      maxAdvanceDays: settings.maxAdvanceDays,
+    },
+    newStartAt,
+  );
+}
+
+export { lockTeacher };
+
+/** Paketteki kullanılmamış ders sayısı: tam iade edilen (öğretmen reddi, süre aşımı, erken iptal…) dersler pakete geri döner. */
+export async function packageLessonsLeft(tx: DbTransaction | typeof db, pkg: { id: string; lessonCount: number }) {
+  const used = await tx.$queryRaw<{ n: bigint }[]>`SELECT COUNT(*) AS n FROM "Booking" WHERE "packageId" = ${pkg.id} AND "refundedAmount" < "price"`;
+  return pkg.lessonCount - Number(used[0]?.n ?? 0);
 }
 
 async function expireStaleHoldsForTeacher(tx: DbTransaction, teacherId: string, now: Date) {
@@ -414,6 +485,11 @@ export async function completeCheckout(token: string, now = new Date()): Promise
   }
   if (found.groupEnrollmentId) {
     return { bookingId: found.groupEnrollmentId, outcome: await completeGroupCheckout(found, now) };
+  }
+  if (found.packageId) {
+    // Paket modülü randevu modülünü kullandığı için burada geç yüklenir (döngüsel içe aktarma olmasın)
+    const { completePackageCheckout } = await import("./packages");
+    return { bookingId: found.packageId, outcome: await completePackageCheckout(found, now) };
   }
   if (!found.bookingId) throw new BookingError("Ödeme kaydı bulunamadı.");
   const payment = { ...found, bookingId: found.bookingId };
@@ -667,7 +743,7 @@ export async function rejectBooking(bookingId: string, teacherId: string, reason
         userId: booking.studentId,
         type: "booking.rejected",
         title: "Ders talebiniz onaylanmadı",
-        body: `${lessonSummary(booking)}. Öğretmenin notu: “${reason}”. Ödediğiniz ${formatMoney(booking.price)} kartınıza iade ediliyor.`,
+        body: `${lessonSummary(booking)}. Öğretmenin notu: “${reason}”. ${fullRefundText(booking)}`,
         link: "/ogretmenler",
       },
       tx,
@@ -727,7 +803,7 @@ export async function cancelByStudent(bookingId: string, studentId: string, reas
       await resetPendingForBooking(tx, booking, teacherShare, `${booking.code} öğrenci iptali sonrası hakediş`);
     }
 
-    const refundText = preview.refundAmount > 0 ? `${formatMoney(preview.refundAmount)} iade ediliyor.` : "İptal politikası gereği iade yapılmadı.";
+    const refundText = booking.packageId && preview.refundAmount >= booking.price ? "Ders paketinize geri eklendi." : preview.refundAmount > 0 ? `${formatMoney(preview.refundAmount)} iade ediliyor.` : "İptal politikası gereği iade yapılmadı.";
     await notify(
       { userId: booking.studentId, type: "booking.cancelled", title: "Randevunuz iptal edildi", body: `${lessonSummary(booking)}. ${refundText}`, link: `/hesabim/derslerim/${booking.id}` },
       tx,
@@ -764,7 +840,7 @@ export async function cancelByTeacher(bookingId: string, teacherId: string, reas
         userId: booking.studentId,
         type: "booking.cancelled",
         title: "Öğretmeniniz dersi iptal etti",
-        body: `${lessonSummary(booking)}. Öğretmenin notu: “${reason}”. Ödediğiniz ${formatMoney(booking.price)} tamamen iade ediliyor.`,
+        body: `${lessonSummary(booking)}. Öğretmenin notu: “${reason}”. ${fullRefundText(booking, "tamamen iade ediliyor")}`,
         link: "/ogretmenler",
       },
       tx,
@@ -908,7 +984,7 @@ export async function expireOverdueApprovals(now = new Date()): Promise<number> 
             userId: booking.studentId,
             type: "booking.expired",
             title: booking.mode === "QUESTION" ? "Sorunuz zamanında çözülmedi" : "Talebiniz zamanında onaylanmadı",
-            body: `${lessonSummary(booking)}. Öğretmen süresi içinde yanıt vermediği için talep iptal edildi; ${formatMoney(booking.price)} kartınıza iade ediliyor.`,
+            body: `${lessonSummary(booking)}. Öğretmen süresi içinde yanıt vermediği için talep iptal edildi. ${fullRefundText(booking)}`,
             link: "/ogretmenler",
           },
           tx,
@@ -963,7 +1039,7 @@ export async function completeFinishedLessons(now = new Date()): Promise<number>
           await resetPendingForBooking(tx, booking, 0, `${booking.code} öğretmen katılmadı`);
           await tx.teacherProfile.update({ where: { userId: booking.teacherId }, data: { cancellationCount: { increment: 1 } } });
           await notify(
-            { userId: booking.studentId, type: "booking.no_show_teacher", title: "Öğretmen derse katılmadı", body: `${lessonSummary(booking)}. Ödediğiniz ${formatMoney(booking.price)} tamamen iade ediliyor. Yaşadığınız sorun için özür dileriz.`, link: `/hesabim/derslerim/${booking.id}` },
+            { userId: booking.studentId, type: "booking.no_show_teacher", title: "Öğretmen derse katılmadı", body: `${lessonSummary(booking)}. ${fullRefundText(booking, "tamamen iade ediliyor")} Yaşadığınız sorun için özür dileriz.`, link: `/hesabim/derslerim/${booking.id}` },
             tx,
           );
           await notify(

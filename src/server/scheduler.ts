@@ -21,6 +21,8 @@ import { sendPendingPushes } from "./push";
 import { expireUnansweredQuestions, releaseExpiredClaims, releasePoolEarnings } from "./question-pool";
 import { processSubscriptions } from "./subscriptions";
 import { processGroups } from "./groups";
+import { expirePackages } from "./packages";
+import { expireRescheduleRequests } from "./reschedule";
 
 const HOLDER = `${hostname()}-${process.pid}-${randomUUID().slice(0, 8)}`;
 
@@ -55,6 +57,9 @@ const TASKS = {
   subscriptions: processSubscriptions,
   // Grup dersi: kayıt bitişi, oturum sonu, oturum payları, hatırlatmalar
   groups: processGroups,
+  // Paket ders: süresi dolan paketin kalan dersleri iade
+  packages: expirePackages,
+  reschedules: expireRescheduleRequests,
   refunds: () => processPendingRefunds(),
   payoutDay: sendPayoutDayReminder,
   statsPrune: pruneStats,

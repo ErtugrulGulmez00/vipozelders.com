@@ -32,6 +32,8 @@ export default async function PaymentResultPage({ params }: PageProps<"/odeme/so
     if (subscription) return <SubscriptionResult subscriptionId={bookingId} userId={user.id} />;
     const group = await db.groupEnrollment.findUnique({ where: { id: bookingId }, select: { id: true } });
     if (group) return <GroupResult enrollmentId={bookingId} userId={user.id} />;
+    const lessonPackage = await db.lessonPackage.findUnique({ where: { id: bookingId }, select: { id: true } });
+    if (lessonPackage) return <PackageResult packageId={bookingId} userId={user.id} />;
     return <CreditPurchaseResult purchaseId={bookingId} userId={user.id} />;
   }
   if (booking.studentId !== user.id) redirect("/hesabim");
@@ -183,6 +185,61 @@ async function CreditPurchaseResult({ purchaseId, userId }: { purchaseId: string
       <Card className="mt-6 p-5 text-left">{details}</Card>
       <LinkButton href="/soru-sor" size="lg" className="mt-6">
         <RotateCcw className="size-4" aria-hidden /> Paket seçimine dön
+      </LinkButton>
+    </Result>
+  );
+}
+
+/** Ders paketi (ve tekrarlayan ders) ödemesinin sonucu. */
+async function PackageResult({ packageId, userId }: { packageId: string; userId: string }) {
+  const load = () => db.lessonPackage.findUnique({ where: { id: packageId }, include: { payments: { orderBy: { createdAt: "desc" }, take: 1 }, teacher: { select: { slug: true } }, _count: { select: { bookings: true } } } });
+  let pkg = await load();
+  if (!pkg || pkg.studentId !== userId) redirect("/hesabim");
+  let payment = pkg.payments[0];
+  if (payment?.status === "INITIATED" && REMOTE_PROVIDERS.has(payment.provider) && payment.providerToken) {
+    await completeCheckout(payment.providerToken).catch((error: unknown) => console.error("[ödeme sonucu]", error));
+    pkg = (await load())!;
+    payment = pkg.payments[0];
+  }
+  const details = (
+    <DescriptionList
+      items={[
+        { label: "Paket no", value: pkg.code },
+        { label: "Paket", value: `${pkg.levelName} ${pkg.subjectName} · ${pkg.lessonCount} ders × ${pkg.durationMinutes} dk` },
+        { label: "Tutar", value: `${formatMoney(pkg.price)}${pkg.discountPercent ? ` (%${pkg.discountPercent} paket indirimi)` : ""}` },
+      ]}
+    />
+  );
+  if (pkg.status === "PAID" || pkg.status === "CLOSED") {
+    return (
+      <Result icon={<CheckCircle2 className="size-12 text-emerald-500" />} title={pkg.recurringStartAt ? "Düzenli dersleriniz planlandı" : "Ders paketiniz hazır"}>
+        <p className="text-slate-600">
+          {pkg.recurringStartAt
+            ? `${pkg._count.bookings} haftalık ders için öğretmeninize talep gönderildi; onayladıkça bildirim alacaksınız.`
+            : "Öğretmeninizin takviminden saat seçip “Paketimden kullan” ile ders alabilirsiniz."}
+        </p>
+        <Card className="mt-6 p-5 text-left">{details}</Card>
+        <LinkButton href={pkg.recurringStartAt ? "/hesabim/derslerim" : `/ogretmen/${pkg.teacher.slug}#randevu`} size="lg" className="mt-6">
+          {pkg.recurringStartAt ? "Derslerim" : "Saat seç"}
+        </LinkButton>
+      </Result>
+    );
+  }
+  if (pkg.status === "PENDING_PAYMENT" && payment?.status === "INITIATED" && REMOTE_PROVIDERS.has(payment.provider)) {
+    return (
+      <Result icon={<LoaderCircle className="size-12 animate-spin text-brand-500" />} title="Ödemeniz kontrol ediliyor">
+        <AutoRefresh />
+        <p className="text-slate-600">Bankanızdan gelen sonuç bekleniyor. Bu sayfa birkaç saniyede bir kendiliğinden yenilenir.</p>
+        <Card className="mt-6 p-5 text-left">{details}</Card>
+      </Result>
+    );
+  }
+  return (
+    <Result icon={<XCircle className="size-12 text-rose-500" />} title="Ödeme tamamlanamadı">
+      <p className="text-slate-600">{payment?.failureReason ?? "Ödeme işlemi tamamlanmadı."} Kartınızdan para çekilmedi; tekrar deneyebilirsiniz.</p>
+      <Card className="mt-6 p-5 text-left">{details}</Card>
+      <LinkButton href={`/ogretmen/${pkg.teacher.slug}#randevu`} size="lg" className="mt-6">
+        <RotateCcw className="size-4" aria-hidden /> Öğretmen sayfasına dön
       </LinkButton>
     </Result>
   );

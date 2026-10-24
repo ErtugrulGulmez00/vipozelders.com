@@ -21,6 +21,7 @@ import { db } from "@/server/db";
 import { uploadUrl } from "@/server/storage";
 import { loadSettings } from "@/server/settings";
 import { publicPlans } from "@/server/subscriptions";
+import { activePackages, parsePackageDiscounts } from "@/server/packages";
 import { getTeacherMeta, getTeacherProfileBySlug, isTeacherPublic, type PublicTeacher } from "@/server/teachers";
 
 export async function generateMetadata({ params }: PageProps<"/ogretmen/[slug]">): Promise<Metadata> {
@@ -63,6 +64,10 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
     if (!viewer || (viewer.role !== "ADMIN" && viewer.id !== teacher.userId)) notFound();
   }
 
+  // Paket indirimleri, izleyicinin bu öğretmendeki paketleri, tekrarlayan ders sınırı
+  const [viewerUser, pkgSettings, discountRow] = await Promise.all([getCurrentUser(), loadSettings(), db.teacherProfile.findUnique({ where: { userId: teacher.userId }, select: { packageDiscounts: true } })]);
+  const packageOffers = pkgSettings.packagesEnabled ? parsePackageDiscounts(discountRow?.packageDiscounts ?? "", pkgSettings.packageMaxLessons, pkgSettings.packageMaxDiscountPercent) : [];
+  const myPackages = viewerUser?.role === "STUDENT" ? (await activePackages(viewerUser.id, teacher.userId)).map((p) => ({ id: p.id, code: p.code, offeringId: p.offeringId, durationMinutes: p.durationMinutes, left: p.left })) : [];
   const name = fullName(teacher.user);
   const video = youtubeId(teacher.videoUrl);
   const serviceAreas = teacher.serviceDistricts.length
@@ -211,6 +216,9 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
             offersIntro={teacher.offersIntro && teacher.offersOnline}
             inPerson={teacher.offersInPerson}
             today={toLocalDateString(new Date())}
+            packageOffers={packageOffers}
+            myPackages={myPackages}
+            maxWeeks={pkgSettings.packagesEnabled ? Math.min(12, pkgSettings.packageMaxLessons) : 0}
             offerings={teacher.offerings.map((o) => ({
               id: o.id,
               serviceName: o.serviceType.name,

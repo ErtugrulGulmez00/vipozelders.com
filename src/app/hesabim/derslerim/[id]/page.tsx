@@ -20,6 +20,7 @@ import { reviewEligibility } from "@/server/reviews";
 import { loadSettings } from "@/server/settings";
 import { uploadUrl } from "@/server/storage";
 import { CancelForm, DisputeForm, ReviewForm } from "./student-forms";
+import { ReschedulePanel } from "@/components/packages/reschedule-panel";
 
 export const metadata: Metadata = { title: "Ders ayrıntısı" };
 
@@ -31,6 +32,7 @@ export default async function StudentBookingPage({ params, searchParams }: PageP
     where: { id },
     include: {
       teacher: { include: { user: { select: { firstName: true, lastName: true } } } },
+      package: { select: { code: true } },
       district: { include: { city: true } },
       payments: { include: { refunds: true }, orderBy: { createdAt: "asc" } },
       events: { orderBy: { createdAt: "asc" } },
@@ -53,7 +55,9 @@ export default async function StudentBookingPage({ params, searchParams }: PageP
     booking.status === "PENDING_PAYMENT"
       ? "Ödeme yapılmadığı için iade söz konusu değil."
       : cancellation.refundAmount === booking.price
-        ? `Şimdi iptal ederseniz ödediğiniz ${formatMoney(booking.price)} tamamen iade edilir.`
+        ? booking.packageId
+          ? "Şimdi iptal ederseniz ders paketinize geri eklenir."
+          : `Şimdi iptal ederseniz ödediğiniz ${formatMoney(booking.price)} tamamen iade edilir.`
         : cancellation.refundAmount > 0
           ? `Şimdi iptal ederseniz ${formatMoney(cancellation.refundAmount)} (%${cancellation.refundPercent}) iade edilir.`
           : "Derse çok az kaldığı için iptal politikası gereği iade yapılmaz.";
@@ -176,6 +180,8 @@ export default async function StudentBookingPage({ params, searchParams }: PageP
             </Card>
           ) : null}
 
+          <ReschedulePanel booking={booking} viewerId={user.id} />
+
           {cancellation.allowed ? (
             <Card>
               <CardHeader title="Randevuyu iptal et" />
@@ -205,7 +211,17 @@ export default async function StudentBookingPage({ params, searchParams }: PageP
           <Card>
             <CardHeader title="Ödeme" />
             <CardBody className="space-y-3 text-sm">
-              {booking.payments.length === 0 ? <p className="text-slate-500">Ödeme yapılmadı.</p> : null}
+              {booking.payments.length === 0 ? (
+                <p className="text-slate-500">
+                  {booking.package ? (
+                    <>
+                      Ders paketinizden ödendi ({booking.package.code}). <Link href="/hesabim/paketlerim" className="font-medium text-brand-700 hover:underline">Paketlerim</Link>
+                    </>
+                  ) : (
+                    "Ödeme yapılmadı."
+                  )}
+                </p>
+              ) : null}
               {booking.payments.map((p) => (
                 <div key={p.id} className="space-y-1">
                   <div className="flex items-center justify-between">

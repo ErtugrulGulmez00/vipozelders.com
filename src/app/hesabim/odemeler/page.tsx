@@ -13,8 +13,8 @@ export const metadata: Metadata = { title: "Ödemelerim" };
 export default async function PaymentsPage() {
   const user = await requireRole("STUDENT");
   const payments = await db.payment.findMany({
-    where: { OR: [{ booking: { studentId: user.id } }, { creditPurchase: { studentId: user.id } }, { subscription: { studentId: user.id } }, { groupEnrollment: { studentId: user.id } }], status: { not: "INITIATED" } },
-    include: { booking: true, creditPurchase: true, subscription: true, groupEnrollment: { include: { course: true } }, refunds: true },
+    where: { OR: [{ booking: { studentId: user.id } }, { creditPurchase: { studentId: user.id } }, { subscription: { studentId: user.id } }, { groupEnrollment: { studentId: user.id } }, { package: { studentId: user.id } }], status: { not: "INITIATED" } },
+    include: { booking: true, creditPurchase: true, subscription: true, groupEnrollment: { include: { course: true } }, package: true, refunds: true },
     orderBy: { createdAt: "desc" },
     take: 100,
   });
@@ -68,6 +68,13 @@ export default async function PaymentsPage() {
                           Grup dersi: {p.groupEnrollment.course.title}
                         </Link>
                         <p className="text-xs text-slate-400">{p.groupEnrollment.code}</p>
+                      </>
+                    ) : p.package ? (
+                      <>
+                        <Link href="/hesabim/paketlerim" className="font-medium text-brand-700 hover:underline">
+                          {p.package.levelName} {p.package.subjectName} · {p.package.lessonCount} ders paketi
+                        </Link>
+                        <p className="text-xs text-slate-400">{p.package.code}</p>
                       </>
                     ) : (
                       "—"

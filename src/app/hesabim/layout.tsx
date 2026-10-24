@@ -19,7 +19,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
       title="Öğrenci / Veli"
       nav={[
         { href: "/hesabim", label: "Özet", icon: <LayoutDashboard />, exact: true },
-        { href: "/hesabim/derslerim", label: "Derslerim", icon: <CalendarDays /> },
+        { href: "/hesabim/derslerim", label: "Derslerim", icon: <CalendarDays />, also: ["/hesabim/paketlerim"] },
         { href: "/hesabim/mesajlar", label: "Mesajlar", icon: <MessageCircle />, badge: unreadMessages || undefined },
         { href: "/hesabim/sorularim", label: "Soru çözüm", icon: <MessageCircleQuestion />, also: ["/hesabim/krediler", "/hesabim/abonelikler"] },
         { href: "/hesabim/grup-derslerim", label: "Grup derslerim", icon: <Users /> },

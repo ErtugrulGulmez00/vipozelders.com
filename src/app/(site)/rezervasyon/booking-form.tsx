@@ -21,6 +21,7 @@ export function BookingForm({
   places,
   districts,
   notePlaceholder,
+  packageId,
   intro = false,
 }: {
   offeringId: string;
@@ -33,6 +34,8 @@ export function BookingForm({
   places: { home: boolean; teacher: boolean };
   districts: { id: number; name: string }[];
   notePlaceholder: string;
+  /** Paketten kullanım: ödeme ve sözleşme adımı yok */
+  packageId?: string;
   intro?: boolean;
 }) {
   const [learnerName, setLearnerName] = useState(learners[0]?.name ?? "");
@@ -42,6 +45,7 @@ export function BookingForm({
   return (
     <ActionForm action={createBookingAction} className="space-y-5">
       <input type="hidden" name="offeringId" value={offeringId} />
+      {packageId ? <input type="hidden" name="packageId" value={packageId} /> : null}
       <input type="hidden" name="startAt" value={startAt} />
       <input type="hidden" name="duration" value={duration} />
       <input type="hidden" name="mode" value={mode} />
@@ -138,9 +142,9 @@ export function BookingForm({
         <Textarea id="note" name="note" rows={3} maxLength={1000} placeholder={notePlaceholder} />
       </Field>
 
-      {intro ? null : <CouponField target="booking" refId={offeringId} duration={duration} />}
+      {intro || packageId ? null : <CouponField target="booking" refId={offeringId} duration={duration} />}
 
-      {intro ? null : (
+      {intro || packageId ? null : (
         <div className="rounded-xl border border-slate-200 p-4">
           <Checkbox
             name="consent"
@@ -166,10 +170,10 @@ export function BookingForm({
         </div>
       )}
 
-      <SubmitButton size="lg" className="w-full" pendingText={intro ? "Gönderiliyor…" : "Ödeme sayfası hazırlanıyor…"}>
-        {intro ? "Tanışma talebini gönder" : "Ödemeye geç"}
+      <SubmitButton size="lg" className="w-full" pendingText={intro || packageId ? "Gönderiliyor…" : "Ödeme sayfası hazırlanıyor…"}>
+        {intro ? "Tanışma talebini gönder" : packageId ? "Paketimden ders talebi gönder" : "Ödemeye geç"}
       </SubmitButton>
-      {intro ? null : (
+      {intro || packageId ? null : (
         <p className="flex flex-wrap items-center justify-center gap-2 text-xs text-slate-500">
           <Lock className="size-3.5" aria-hidden /> Kart bilgileriniz yalnızca bankanın 3D Secure sayfasında girilir. <CardLogos />
         </p>

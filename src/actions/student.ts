@@ -48,7 +48,8 @@ export async function createBookingAction(_: ActionState, formData: FormData): P
   if (!parsed.success) return failure("Lütfen işaretli alanları kontrol edin.", zodFieldErrors(parsed.error.issues));
   const input = parsed.data;
   const intro = input.intro === "1";
-  if (!intro && input.consent !== "on") return failure("Lütfen işaretli alanları kontrol edin.", { consent: "Ön bilgilendirme formunu ve mesafeli satış sözleşmesini onaylayın." });
+  const packageId = String(formData.get("packageId") ?? "").trim() || null;
+  if (!intro && !packageId && input.consent !== "on") return failure("Lütfen işaretli alanları kontrol edin.", { consent: "Ön bilgilendirme formunu ve mesafeli satış sözleşmesini onaylayın." });
 
   let redirectUrl: string;
   try {
@@ -66,9 +67,10 @@ export async function createBookingAction(_: ActionState, formData: FormData): P
       studentNote: input.note ?? null,
       intro,
       couponCode: String(formData.get("couponCode") ?? "").trim() || null,
+      packageId,
     });
-    if (intro) {
-      redirectUrl = `/hesabim/derslerim/${booking.id}?durum=tanisma`;
+    if (intro || packageId) {
+      redirectUrl = `/hesabim/derslerim/${booking.id}?durum=${intro ? "tanisma" : "paket"}`;
     } else {
       const { ipAddress } = await requestMeta();
       redirectUrl = await startCheckout(booking.id, user.id, ipAddress ?? "127.0.0.1");
@@ -102,7 +104,7 @@ export async function mockPaymentAction(formData: FormData) {
   if (!user || getPaymentProvider().id !== "mock") redirect("/");
   const paymentId = text(formData, "paymentId");
   const outcome = text(formData, "outcome") === "success" ? "success" : "failure";
-  const payment = await db.payment.findUnique({ where: { id: paymentId }, include: { booking: true, creditPurchase: true, subscription: true, groupEnrollment: { include: { course: true } } } });
+  const payment = await db.payment.findUnique({ where: { id: paymentId }, include: { booking: true, creditPurchase: true, subscription: true, groupEnrollment: { include: { course: true } }, package: true } });
   const subject = payment ? paymentSubject(payment) : null;
   if (!payment || !subject || subject.ownerId !== user.id || payment.provider !== "mock" || !payment.providerToken) redirect("/hesabim");
   if (payment.status === "INITIATED") {

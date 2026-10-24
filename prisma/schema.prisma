@@ -90,6 +90,7 @@ model User {
   lessonRequests    LessonRequest[]
   referrals         User[]             @relation("Referrals")
   couponRedemptions CouponRedemption[]
+  lessonPackages    LessonPackage[]
   classroomReports  ClassroomReport[]
   threadsAsStudent  MessageThread[]    @relation("ThreadStudent")
   threadsAsTeacher  MessageThread[]    @relation("ThreadTeacher")
@@ -296,6 +297,8 @@ model TeacherProfile {
   userId                  String             @id
   user                    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   slug                    String             @unique
+  // Paket indirimleri: "ders sayısı:yüzde" virgülle (ör. "5:5,10:10"); boşsa paket satılmaz
+  packageDiscounts        String                @default("")
   headline                String?
   bio                     String?
   photoKey                String?
@@ -354,6 +357,7 @@ model TeacherProfile {
   questionPlans          QuestionPlan[]
   questionSubscriptions  QuestionSubscription[]
   groupCourses           GroupCourse[]
+  lessonPackages         LessonPackage[]
 
   @@index([status])
 }
@@ -371,6 +375,7 @@ model TeacherOffering {
   id            String         @id @default(cuid())
   teacherId     String
   teacher       TeacherProfile @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+  lessonPackages LessonPackage[]
   serviceTypeId Int
   serviceType   ServiceType    @relation(fields: [serviceTypeId], references: [id])
   levelId       Int
@@ -561,6 +566,10 @@ model Booking {
   // İndirim (kupon ya da davet); fiyat indirimli tutardır, indirim platformun hizmet bedelinden düşülür
   discountAmount     Int                @default(0)
   couponCode         String?
+  // Paketten alınan ders (ödeme paketin ödemesidir)
+  packageId          String?
+  package            LessonPackage?     @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  rescheduleCount    Int                @default(0)
   refundedAmount     Int              @default(0)
   status             BookingStatus    @default(PENDING_PAYMENT)
   holdExpiresAt      DateTime?
@@ -594,6 +603,7 @@ model Booking {
   attendance    LessonAttendance[]
   review        Review?
   ledgerEntries LedgerEntry[]
+  rescheduleRequests RescheduleRequest[]
   reports       ClassroomReport[]
 
   @@index([teacherId, startAt])
@@ -650,6 +660,8 @@ model Payment {
   subscription      QuestionSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   groupEnrollmentId String?
   groupEnrollment   GroupEnrollment? @relation(fields: [groupEnrollmentId], references: [id], onDelete: Cascade)
+  packageId         String?
+  package           LessonPackage? @relation(fields: [packageId], references: [id], onDelete: Cascade)
   provider          String
   providerToken     String?         @unique
   providerPaymentId String?
@@ -2332,4 +2344,80 @@ model CouponRedemption {
   @@unique([targetType, targetId])
   @@index([couponId])
   @@index([userId])
+}
+
+// ---------------------------------------------------------------------------
+// Paket ders: aynı öğretmenden (ders + süre) birden fazla ders peşin ve indirimli alınır; dersler paketten düşer.
+// Tekrarlayan ders bir pakettir: ödeme sonrası haftalık randevular kendiliğinden oluşturulur.
+// ---------------------------------------------------------------------------
+
+enum LessonPackageStatus {
+  PENDING_PAYMENT
+  PAID
+  // Kalan dersler iade edildi ya da süresi doldu
+  CLOSED
+  FAILED
+  EXPIRED
+}
+
+model LessonPackage {
+  id                String              @id @default(cuid())
+  code              String              @unique
+  studentId         String
+  student           User                @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacherId         String
+  teacher           TeacherProfile      @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+  offeringId        String?
+  offering          TeacherOffering?    @relation(fields: [offeringId], references: [id], onDelete: SetNull)
+  serviceName       String
+  levelName         String
+  subjectName       String
+  durationMinutes   Int
+  lessonCount       Int
+  // İndirimsiz tek ders ücreti ve paketteki ders başı ücret (kuruş)
+  listUnitPrice     Int
+  unitPrice         Int
+  discountPercent   Int
+  price             Int
+  commissionRateBps Int
+  status            LessonPackageStatus @default(PENDING_PAYMENT)
+  paidAt            DateTime?
+  expiresAt         DateTime?
+  refundedAmount    Int                 @default(0)
+  // Tekrarlayan ders: ilk dersin zamanı, hafta sayısı ve randevu bilgileri (ödeme sonrası randevular oluşturulur)
+  recurringStartAt  DateTime?
+  recurring         Json?
+  closedAt          DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  bookings Booking[]
+  payments Payment[]
+
+  @@index([studentId, status])
+  @@index([status, expiresAt])
+}
+
+enum RescheduleStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+  EXPIRED
+}
+
+// Onaylı dersin saatini değiştirme talebi: bir taraf önerir, diğeri kabul eder.
+model RescheduleRequest {
+  id            String           @id @default(cuid())
+  bookingId     String
+  booking       Booking          @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  requestedById String
+  newStartAt    DateTime
+  note          String?
+  status        RescheduleStatus @default(PENDING)
+  respondedAt   DateTime?
+  createdAt     DateTime         @default(now())
+
+  @@index([bookingId, status])
+  @@index([status, createdAt])
 }

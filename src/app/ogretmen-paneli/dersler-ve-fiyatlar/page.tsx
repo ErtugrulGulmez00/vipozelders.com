@@ -1,22 +1,26 @@
 import type { Metadata } from "next";
 import { IntroToggle } from "@/components/teacher/intro-toggle";
 import { OfferingsEditor } from "@/components/teacher/offerings-editor";
-import { Alert, Card, CardBody, PageHeader } from "@/components/ui/primitives";
+import { Alert, Card, CardBody, CardHeader, PageHeader } from "@/components/ui/primitives";
 import { formatBps } from "@/lib/money";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { getCatalog } from "@/server/site";
 import { loadTeacherEditorData } from "@/server/teacher-editor-data";
 import { SectionTabs, TEACHER_PROFILE_TABS } from "@/components/panel/section-tabs";
+import { PackageDiscountsForm } from "@/components/packages/forms";
+import { parsePackageDiscounts } from "@/server/packages";
+import { loadSettings } from "@/server/settings";
 
 export const metadata: Metadata = { title: "Dersler ve fiyatlar" };
 
 export default async function OfferingsPage() {
   const user = await requireRole("TEACHER");
-  const [data, catalog, profile] = await Promise.all([
+  const [data, catalog, profile, settings] = await Promise.all([
     loadTeacherEditorData(user.id),
     getCatalog(),
-    db.teacherProfile.findUniqueOrThrow({ where: { userId: user.id }, select: { offersIntro: true } }),
+    db.teacherProfile.findUniqueOrThrow({ where: { userId: user.id }, select: { offersIntro: true, packageDiscounts: true } }),
+    loadSettings(),
   ]);
   return (
     <>
@@ -35,6 +39,14 @@ export default async function OfferingsPage() {
           <OfferingsEditor teacherId={user.id} catalog={catalog} offerings={data.offerings} commissionBps={data.commissionBps} />
         </CardBody>
       </Card>
+      {settings.packagesEnabled ? (
+        <Card className="mt-6">
+          <CardHeader title="Paket indirimleri" description="Veliler birden fazla dersi peşin ve indirimli alabilir; dersleri sizin takviminizden seçer. İndirim sizin ücretinizden yapılır; düzenli öğrenci kazanmanın en kolay yolu." />
+          <CardBody>
+            <PackageDiscountsForm rows={parsePackageDiscounts(profile.packageDiscounts, settings.packageMaxLessons, settings.packageMaxDiscountPercent)} maxLessons={settings.packageMaxLessons} maxPercent={settings.packageMaxDiscountPercent} />
+          </CardBody>
+        </Card>
+      ) : null}
     </>
   );
 }

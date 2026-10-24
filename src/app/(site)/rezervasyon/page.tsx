@@ -11,6 +11,7 @@ import { fullName, initials } from "@/lib/text";
 import { requireUser } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { INTRO_MINUTES, lessonPrice } from "@/server/pricing";
+import { activePackages } from "@/server/packages";
 import { loadSettings } from "@/server/settings";
 import { uploadUrl } from "@/server/storage";
 import { BookingForm } from "./booking-form";
@@ -68,7 +69,9 @@ export default async function BookingPage({ searchParams }: PageProps<"/rezervas
           : Promise.resolve([])
       : Promise.resolve([]),
   ]);
-  const price = intro ? 0 : lessonPrice(offering.hourlyPrice, duration);
+  // Paketten kullanım: aynı ders ve sürede, kullanılmamış dersi olan paket
+  const pkg = !intro && query.paket ? (await activePackages(user.id, teacher.userId)).find((p) => p.id === String(query.paket) && p.offeringId === offering.id && p.durationMinutes === duration) ?? null : null;
+  const price = intro ? 0 : pkg ? pkg.unitPrice : lessonPrice(offering.hourlyPrice, duration);
   const end = new Date(start.getTime() + duration * 60_000);
   const name = fullName(teacher.user);
 
@@ -90,6 +93,7 @@ export default async function BookingPage({ searchParams }: PageProps<"/rezervas
             districts={districts}
             notePlaceholder={notePlaceholder(offering.level.name, offering.subject.name)}
             intro={intro}
+            packageId={pkg?.id}
           />
         </Card>
         <aside className="space-y-4">
@@ -114,8 +118,9 @@ export default async function BookingPage({ searchParams }: PageProps<"/rezervas
             />
             <div className="mt-4 flex items-baseline justify-between border-t border-slate-100 pt-4">
               <span className="text-sm text-slate-600">Toplam (KDV dahil)</span>
-              <span className="text-2xl font-bold text-slate-900">{intro ? "Ücretsiz" : formatMoney(price)}</span>
+              <span className="text-2xl font-bold text-slate-900">{intro ? "Ücretsiz" : pkg ? "Paketten" : formatMoney(price)}</span>
             </div>
+            {pkg ? <p className="mt-1 text-xs text-slate-500">{pkg.code} · bu dersten sonra paketinizde {pkg.left - 1} ders kalır. Ödeme yok; öğretmen onaylamazsa ders paketinize geri eklenir.</p> : null}
           </Card>
           {intro ? (
             <Card className="space-y-3 p-5 text-sm text-slate-600">

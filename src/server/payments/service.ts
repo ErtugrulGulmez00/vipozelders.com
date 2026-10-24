@@ -43,6 +43,24 @@ export async function requestRefund(
   options: { paymentId?: string; countTowardBooking?: boolean } = {},
 ): Promise<string | null> {
   if (amount <= 0) return null;
+  const booking = options.paymentId ? null : await tx.booking.findUnique({ where: { id: bookingId }, select: { packageId: true, price: true, refundedAmount: true } });
+  if (booking?.packageId) {
+    const open = booking.price - booking.refundedAmount;
+    const value = Math.min(amount, open);
+    if (value <= 0) return null;
+    await tx.booking.update({ where: { id: bookingId }, data: { refundedAmount: { increment: value } } });
+    // Tam iade: para hareketi yok, ders pakete geri döner
+    if (value >= open) return null;
+    const packagePayments = await tx.payment.findMany({
+      where: { packageId: booking.packageId, status: { in: ["SUCCEEDED", "PARTIALLY_REFUNDED"] } },
+      orderBy: { createdAt: "desc" },
+      include: { refunds: { where: { status: { in: ["PENDING", "SUCCEEDED"] } } } },
+    });
+    const pay = packagePayments.find((p) => p.amount - p.refunds.reduce((sum, r) => sum + r.amount, 0) >= value);
+    if (!pay) return null;
+    await tx.lessonPackage.update({ where: { id: booking.packageId }, data: { refundedAmount: { increment: value } } });
+    return (await tx.refund.create({ data: { paymentId: pay.id, amount: value, reason } })).id;
+  }
   const payments = await tx.payment.findMany({
     where: { bookingId, ...(options.paymentId ? { id: options.paymentId } : {}), status: { in: ["SUCCEEDED", "PARTIALLY_REFUNDED"] } },
     orderBy: { createdAt: "desc" },

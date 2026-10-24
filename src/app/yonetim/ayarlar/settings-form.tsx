@@ -129,6 +129,18 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
         <NumberField name="groupMaxPriceTl" label="En yüksek kişi başı ücret" value={settings.groupMaxPriceTl} suffix="TL" />
       </Section>
 
+      <Section title="Paket ders, düzenli ders ve erteleme" description="Öğretmen paket indirimlerini kendisi belirler (en fazla aşağıdaki yüzde). Düzenli ders, haftalık randevuları otomatik oluşturan bir pakettir. Erteleme: taraflardan biri yeni saat önerir, diğeri kabul eder.">
+        <div className="sm:col-span-2">
+          <Checkbox name="packagesEnabled" defaultChecked={settings.packagesEnabled} label="Paket ders ve düzenli ders açık" />
+        </div>
+        <NumberField name="packageMaxLessons" label="Pakette en fazla ders" value={settings.packageMaxLessons} suffix="ders" />
+        <NumberField name="packageMaxDiscountPercent" label="Öğretmenin verebileceği en yüksek paket indirimi" value={settings.packageMaxDiscountPercent} suffix="%" />
+        <NumberField name="packageValidityMonths" label="Paket geçerlilik süresi" hint="Süre dolunca kullanılmayan derslerin ücreti iade edilir." value={settings.packageValidityMonths} suffix="ay" />
+        <div className="hidden sm:block" />
+        <NumberField name="rescheduleMinHours" label="Erteleme en geç dersten kaç saat önce" value={settings.rescheduleMinHours} suffix="saat" />
+        <NumberField name="rescheduleMaxPerBooking" label="Ders başına en fazla erteleme" value={settings.rescheduleMaxPerBooking} suffix="kez" />
+      </Section>
+
       <Section title="Arkadaşını getir" description="Her veli/öğrencinin kişisel davet bağlantısı olur. Davetle kayıt olan yeni üyeye ilk siparişinde indirim, davet edene ilk ödeme yapıldığında soru kredisi verilir. İndirim platformun hizmet bedelinden karşılanır.">
         <div className="sm:col-span-2">
           <Checkbox name="referralEnabled" defaultChecked={settings.referralEnabled} label="Arkadaşını getir açık" />

@@ -10,6 +10,7 @@ import { formatMoney } from "@/lib/money";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { RequestActions } from "./request-actions";
+import { ApprovePackageForm } from "@/components/packages/forms";
 import { SectionTabs, teacherLessonTabs } from "@/components/panel/section-tabs";
 
 export const metadata: Metadata = { title: "Ders talepleri" };
@@ -31,6 +32,15 @@ export default async function RequestsPage({ searchParams }: PageProps<"/ogretme
       <SectionTabs tabs={teacherLessonTabs(pendingCount)} active="/ogretmen-paneli/talepler" />
       <PageHeader title="Talepler ve sorular" description="Ödemesi alınmış ders talepleri ve fotoğrafla gelen sorular. Süresi içinde yanıt vermezseniz talep iptal edilir ve öğrenciye iade yapılır." />
       <FlashNotice code={durum} />
+      {/* Tekrarlayan ders: aynı paketten birden fazla talep tek seferde onaylanabilir */}
+      {Object.entries(requests.reduce<Record<string, number>>((acc, b) => (b.packageId ? { ...acc, [b.packageId]: (acc[b.packageId] ?? 0) + 1 } : acc), {}))
+        .filter(([, count]) => count > 1)
+        .map(([packageId, count]) => (
+          <Card key={packageId} className="mb-4 flex flex-wrap items-center justify-between gap-3 border-brand-200 bg-brand-50/60 p-4 text-sm">
+            <span>Düzenli ders: aynı öğrenciden {count} haftalık talep var.</span>
+            <ApprovePackageForm packageId={packageId} count={count} />
+          </Card>
+        ))}
       {requests.length === 0 ? (
         <EmptyState icon={<Inbox className="size-8" />} title="Yanıt bekleyen talep yok" />
       ) : (
@@ -41,6 +51,7 @@ export default async function RequestsPage({ searchParams }: PageProps<"/ogretme
                 <div className="min-w-0 space-y-1">
                   <p className="text-lg font-semibold text-slate-900">
                     {b.levelName} · {b.subjectName} <span className="text-sm font-normal text-slate-500">({b.serviceName})</span>
+                    {b.packageId ? <span className="ml-2 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">Paket · ödendi</span> : null}
                   </p>
                   {b.mode === "QUESTION" ? (
                     <p className="text-sm font-medium text-brand-700">Fotoğrafla soru · çözüm bekliyor</p>

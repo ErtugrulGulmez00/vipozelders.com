@@ -62,6 +62,7 @@ export async function GET(request: NextRequest, { params }: RouteContext<"/api/y
         creditPurchase: { select: { code: true, student: { select: { firstName: true, lastName: true } } } },
         subscription: { select: { code: true, student: { select: { firstName: true, lastName: true } } } },
         groupEnrollment: { select: { code: true, student: { select: { firstName: true, lastName: true } } } },
+        package: { select: { code: true, student: { select: { firstName: true, lastName: true } } } },
         refunds: { where: { status: "SUCCEEDED" } },
       },
     });
@@ -69,8 +70,8 @@ export async function GET(request: NextRequest, { params }: RouteContext<"/api/y
       ["Tarih", "Randevu / paket no", "Veli/öğrenci", "Sağlayıcı", "Sağlayıcı işlem no", "Tutar (TL)", "İade edilen (TL)", "Durum", "Hata"],
       payments.map((p) => [
         formatCompact(p.createdAt),
-        p.booking?.code ?? p.creditPurchase?.code ?? p.subscription?.code ?? p.groupEnrollment?.code ?? "",
-        fullName((p.booking ?? p.creditPurchase ?? p.subscription ?? p.groupEnrollment)?.student ?? { firstName: "", lastName: "" }),
+        p.booking?.code ?? p.creditPurchase?.code ?? p.subscription?.code ?? p.groupEnrollment?.code ?? p.package?.code ?? "",
+        fullName((p.booking ?? p.creditPurchase ?? p.subscription ?? p.groupEnrollment ?? p.package)?.student ?? { firstName: "", lastName: "" }),
         p.provider,
         p.providerPaymentId,
         csvMoney(p.amount),

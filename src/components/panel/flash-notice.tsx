@@ -5,6 +5,7 @@ import { Alert } from "@/components/ui/primitives";
 const MESSAGES: Record<string, string> = {
   onaylandi: "Ders onaylandı; öğrenciye bildirildi.",
   tanisma: "Tanışma talebiniz öğretmene iletildi. Öğretmen onaylayınca size haber vereceğiz; görüşme sanal sınıfta yapılır.",
+  paket: "Ders talebiniz paketinizden öğretmene iletildi. Öğretmen onaylayınca size haber vereceğiz; onaylamazsa ders paketinize geri eklenir.",
   bildirim: "Bildiriminiz alındı ve ders odası kapatıldı. Ekibimiz konuyu hemen inceleyip size dönecek.",
   reddedildi: "Talep reddedildi; öğrenciye ücretin tamamı iade ediliyor.",
   iptal: "Randevu iptal edildi. İade varsa kartınıza işleniyor.",

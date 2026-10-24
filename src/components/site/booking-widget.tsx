@@ -21,6 +21,8 @@ export type WidgetOffering = {
   durations: number[];
 };
 
+export type WidgetPackage = { id: string; code: string; offeringId: string | null; durationMinutes: number; left: number };
+
 type SlotDay = { date: string; weekday: string; day: string; slots: { start: string; time: string; available: boolean }[] };
 
 export function BookingWidget({
@@ -30,6 +32,9 @@ export function BookingWidget({
   inPerson,
   today,
   offersIntro = false,
+  packageOffers = [],
+  myPackages = [],
+  maxWeeks = 0,
 }: {
   teacherId: string;
   offerings: WidgetOffering[];
@@ -38,6 +43,12 @@ export function BookingWidget({
   today: string;
   /** Ücretsiz 15 dk tanışma görüşmesi (online, ödemesiz) */
   offersIntro?: boolean;
+  /** Öğretmenin paket indirimleri */
+  packageOffers?: { lessons: number; percent: number }[];
+  /** Öğrencinin bu öğretmende kullanılabilir paketleri */
+  myPackages?: WidgetPackage[];
+  /** Tekrarlayan ders için en fazla hafta (0: kapalı) */
+  maxWeeks?: number;
 }) {
   const router = useRouter();
   // Önce hizmet (Özel Ders / Soru Çözüm / Koçluk), sonra o hizmetteki dersler
@@ -54,6 +65,9 @@ export function BookingWidget({
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [activeDate, setActiveDate] = useState<string | null>(null);
+  const [usePackage, setUsePackage] = useState(true);
+  const [repeat, setRepeat] = useState(false);
+  const [weeks, setWeeks] = useState(4);
 
   useEffect(() => {
     if (!offering) return;
@@ -97,11 +111,18 @@ export function BookingWidget({
     if (!next.durations.includes(duration)) setDuration(next.durations.includes(60) ? 60 : next.durations[0]);
   };
 
+  const myPackage = intro ? undefined : myPackages.find((p) => p.offeringId === offering.id && p.durationMinutes === duration && p.left > 0);
+  const canRepeat = !intro && !myPackage && maxWeeks >= 2 && mode === "ONLINE";
   const proceed = () => {
     if (!selected) return;
-    const query = new URLSearchParams({ ders: offering.id, saat: selected, sure: String(duration), sekil: intro ? "ONLINE" : mode, ...(intro ? { tanisma: "1" } : {}) });
+    if (canRepeat && repeat) {
+      router.push(`/paket?${new URLSearchParams({ ders: offering.id, sure: String(duration), tekrar: selected, hafta: String(weeks) })}`);
+      return;
+    }
+    const query = new URLSearchParams({ ders: offering.id, saat: selected, sure: String(duration), sekil: intro ? "ONLINE" : mode, ...(intro ? { tanisma: "1" } : {}), ...(myPackage && usePackage ? { paket: myPackage.id } : {}) });
     router.push(`/rezervasyon?${query}`);
   };
+  const repeatDiscount = packageOffers.filter((o) => o.lessons <= weeks).reduce((best, o) => Math.max(best, o.percent), 0);
 
   return (
     <div className="space-y-4">
@@ -288,8 +309,59 @@ export function BookingWidget({
         ) : null}
         <p className="mt-0.5 text-xs text-slate-500">{intro ? "Ödeme yok · öğretmen onaylayınca sanal sınıfta görüşürsünüz." : "KDV dahil · Öğretmen onaylamazsa tamamı iade edilir."}</p>
       </div>
+      {myPackage ? (
+        <label className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+          <input type="checkbox" checked={usePackage} onChange={(e) => setUsePackage(e.target.checked)} className="mt-0.5" />
+          <span>
+            <strong>Paketimden kullan</strong> · paketinizde {myPackage.left} ders var ({myPackage.code}). Ödeme yapmadan talep gönderirsiniz.
+          </span>
+        </label>
+      ) : null}
+      {canRepeat ? (
+        <div className="rounded-xl border border-slate-200 p-3 text-sm">
+          <label className="flex items-start gap-2">
+            <input type="checkbox" checked={repeat} onChange={(e) => setRepeat(e.target.checked)} className="mt-0.5" />
+            <span>
+              <strong>Her hafta bu gün ve saatte tekrarla</strong>
+              <span className="block text-xs text-slate-500">Dersler peşin ödenir, her hafta için öğretmene talep gider. Saati dolu olan hafta paketinizde kalır.</span>
+            </span>
+          </label>
+          {repeat ? (
+            <div className="mt-2 flex items-center gap-2 pl-6">
+              <Select value={String(weeks)} onChange={(e) => setWeeks(Number(e.target.value))} className="w-auto" aria-label="Hafta sayısı">
+                {Array.from({ length: maxWeeks - 1 }, (_, i) => i + 2).map((n) => (
+                  <option key={n} value={n}>
+                    {n} hafta
+                  </option>
+                ))}
+              </Select>
+              <span className="text-slate-600">
+                {formatMoney(Math.round((price * (100 - repeatDiscount)) / 100) * weeks)}
+                {repeatDiscount ? <span className="ml-1 text-xs font-semibold text-emerald-700">%{repeatDiscount} indirim</span> : null}
+              </span>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+      {!intro && !myPackage && packageOffers.length ? (
+        <div className="rounded-xl border border-dashed border-brand-200 p-3 text-sm">
+          <p className="font-semibold text-slate-900">Paket al, daha az öde</p>
+          <ul className="mt-1.5 space-y-1">
+            {packageOffers.map((o) => (
+              <li key={o.lessons} className="flex items-center justify-between gap-2">
+                <span className="text-slate-600">
+                  {o.lessons} ders{o.percent ? <span className="ml-1 font-semibold text-emerald-700">%{o.percent} indirim</span> : null} · ders başı {formatMoney(Math.round((price * (100 - o.percent)) / 100))}
+                </span>
+                <Link href={`/paket?${new URLSearchParams({ ders: offering.id, sure: String(duration), adet: String(o.lessons) })}`} className="font-semibold text-brand-700 hover:underline">
+                  Al
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
       <Button size="lg" className="w-full" disabled={!selected} onClick={proceed}>
-        {selected ? "Devam et" : "Önce bir saat seçin"}
+        {!selected ? "Önce bir saat seçin" : canRepeat && repeat ? `${weeks} haftalık dersi planla` : myPackage && usePackage ? "Paketimden devam et" : "Devam et"}
       </Button>
     </div>
   );

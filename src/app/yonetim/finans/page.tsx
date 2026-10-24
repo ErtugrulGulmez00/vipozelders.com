@@ -21,9 +21,9 @@ export default async function FinancePage() {
   const [totals, refunds, refundIssues, balanceGroups, payments, pendingTotal] = await Promise.all([
     db.payment.aggregate({ where: { status: { in: ["SUCCEEDED", "PARTIALLY_REFUNDED", "REFUNDED"] } }, _sum: { amount: true } }),
     db.refund.aggregate({ where: { status: "SUCCEEDED" }, _sum: { amount: true } }),
-    db.refund.findMany({ where: { status: { in: ["PENDING", "FAILED"] } }, include: { payment: { include: { booking: true, creditPurchase: true, subscription: true, groupEnrollment: { include: { course: true } } } } }, orderBy: { createdAt: "asc" } }),
+    db.refund.findMany({ where: { status: { in: ["PENDING", "FAILED"] } }, include: { payment: { include: { booking: true, creditPurchase: true, subscription: true, groupEnrollment: { include: { course: true } }, package: true } } }, orderBy: { createdAt: "asc" } }),
     db.ledgerEntry.groupBy({ by: ["teacherId"], where: { bucket: "AVAILABLE" }, _sum: { amount: true } }),
-    db.payment.findMany({ where: { status: { not: "INITIATED" } }, orderBy: { createdAt: "desc" }, take: 30, include: { booking: true, creditPurchase: true, subscription: true, groupEnrollment: { include: { course: true } } } }),
+    db.payment.findMany({ where: { status: { not: "INITIATED" } }, orderBy: { createdAt: "desc" }, take: 30, include: { booking: true, creditPurchase: true, subscription: true, groupEnrollment: { include: { course: true } }, package: true } }),
     db.ledgerEntry.aggregate({ where: { bucket: "PENDING" }, _sum: { amount: true } }),
   ]);
   const withBalance = balanceGroups.filter((g) => (g._sum.amount ?? 0) > 0);
@@ -85,7 +85,7 @@ export default async function FinancePage() {
               {refundIssues.map((r) => (
                 <tr key={r.id}>
                   <Td>
-                    <PaymentLink booking={r.payment.booking} purchase={r.payment.creditPurchase} subscription={r.payment.subscription} group={r.payment.groupEnrollment} />
+                    <PaymentLink booking={r.payment.booking} purchase={r.payment.creditPurchase} subscription={r.payment.subscription} group={r.payment.groupEnrollment} lessonPackage={r.payment.package} />
                   </Td>
                   <Td>{formatMoney(r.amount)}</Td>
                   <Td>
@@ -146,7 +146,7 @@ export default async function FinancePage() {
               <tr key={p.id}>
                 <Td className="whitespace-nowrap text-xs">{formatCompact(p.createdAt)}</Td>
                 <Td>
-                  <PaymentLink booking={p.booking} purchase={p.creditPurchase} subscription={p.subscription} group={p.groupEnrollment} />
+                  <PaymentLink booking={p.booking} purchase={p.creditPurchase} subscription={p.subscription} group={p.groupEnrollment} lessonPackage={p.package} />
                 </Td>
                 <Td className="text-xs">{p.provider}</Td>
                 <Td>{formatMoney(p.amount)}</Td>
@@ -172,11 +172,13 @@ function PaymentLink({
   purchase,
   subscription,
   group,
+  lessonPackage,
 }: {
   booking: { id: string; code: string } | null;
   purchase: { code: string; credits: number } | null;
   subscription: { code: string; levelName: string; subjectName: string } | null;
   group: { code: string; course: { id: string; title: string } } | null;
+  lessonPackage: { code: string; lessonCount: number; levelName: string; subjectName: string } | null;
 }) {
   if (booking) {
     return (
@@ -204,6 +206,13 @@ function PaymentLink({
       <Link href={`/yonetim/grup-dersleri?ders=${group.course.id}`} className="font-semibold text-brand-700 hover:underline">
         {group.code} <span className="font-normal text-slate-500">· grup dersi: {group.course.title}</span>
       </Link>
+    );
+  }
+  if (lessonPackage) {
+    return (
+      <span className="font-semibold text-slate-800">
+        {lessonPackage.code} <span className="font-normal text-slate-500">· {lessonPackage.levelName} {lessonPackage.subjectName} {lessonPackage.lessonCount} ders paketi</span>
+      </span>
     );
   }
   return <>—</>;

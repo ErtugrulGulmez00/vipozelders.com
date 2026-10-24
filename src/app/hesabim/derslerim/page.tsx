@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BookingRow } from "@/components/panel/booking-ui";
+import { SectionTabs, STUDENT_LESSON_TABS } from "@/components/panel/section-tabs";
 import { LinkButton } from "@/components/ui/button";
 import { EmptyState, PageHeader } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
@@ -28,6 +29,7 @@ export default async function StudentLessonsPage({ searchParams }: PageProps<"/h
 
   return (
     <>
+      <SectionTabs tabs={STUDENT_LESSON_TABS} active="/hesabim/derslerim" />
       <PageHeader title="Derslerim" actions={<LinkButton href="/ogretmenler">Yeni ders al</LinkButton>} />
       <div className="mb-5 flex gap-1 rounded-xl bg-slate-100 p-1 text-sm font-semibold sm:w-fit">
         {TABS.map((t) => (

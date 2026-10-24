@@ -76,6 +76,15 @@ export const settingsSchema = z.object({
   referralDiscountPercent: z.number().int().min(0).max(50).default(10),
   referralRewardCredits: z.number().int().min(0).max(50).default(3),
 
+  // Paket ders ve tekrarlayan ders
+  packagesEnabled: z.boolean().default(true),
+  packageMaxLessons: z.number().int().min(2).max(50).default(20),
+  packageMaxDiscountPercent: z.number().int().min(0).max(50).default(30),
+  packageValidityMonths: z.number().int().min(1).max(24).default(6),
+  // Erteleme: dersten en az kaç saat önce ve ders başına en fazla kaç kez
+  rescheduleMinHours: z.number().int().min(1).max(168).default(24),
+  rescheduleMaxPerBooking: z.number().int().min(0).max(10).default(2),
+
   // Yorumlar
   reviewWindowDays: z.number().int().min(1).max(365).default(30),
 

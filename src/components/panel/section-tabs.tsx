@@ -31,6 +31,11 @@ export const STUDENT_QUESTION_TABS: SectionTab[] = [
   { href: "/hesabim/abonelikler", label: "Aboneliklerim" },
 ];
 
+export const STUDENT_LESSON_TABS: SectionTab[] = [
+  { href: "/hesabim/derslerim", label: "Derslerim" },
+  { href: "/hesabim/paketlerim", label: "Paketlerim" },
+];
+
 export const TEACHER_PROFILE_TABS: SectionTab[] = [
   { href: "/ogretmen-paneli/profil", label: "Profil bilgileri" },
   { href: "/ogretmen-paneli/dersler-ve-fiyatlar", label: "Dersler ve fiyatlar" },

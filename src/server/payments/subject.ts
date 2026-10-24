@@ -1,9 +1,9 @@
-import type { Booking, CreditPurchase, GroupCourse, GroupEnrollment, QuestionSubscription } from "@/generated/prisma/client";
+import type { Booking, CreditPurchase, GroupCourse, GroupEnrollment, LessonPackage, QuestionSubscription } from "@/generated/prisma/client";
 import { formatLessonRange } from "@/lib/dates";
 
 /** Ödemenin neye ait olduğu: ders randevusu, soru kredisi paketi ya da soru aboneliği. Ödeme ve sonuç sayfaları bunu gösterir. */
 export type PaymentSubject = {
-  kind: "booking" | "credits" | "subscription" | "group";
+  kind: "booking" | "credits" | "subscription" | "group" | "package";
   ownerId: string;
   /** /odeme/sonuc/[id] sayfasının kimliği */
   resultId: string;
@@ -18,8 +18,9 @@ export function paymentSubject(payment: {
   creditPurchase: CreditPurchase | null;
   subscription?: QuestionSubscription | null;
   groupEnrollment?: (GroupEnrollment & { course: GroupCourse }) | null;
+  package?: LessonPackage | null;
 }): PaymentSubject | null {
-  const { booking, creditPurchase, subscription, groupEnrollment } = payment;
+  const { booking, creditPurchase, subscription, groupEnrollment, package: lessonPackage } = payment;
   if (booking) {
     return {
       kind: "booking",
@@ -62,6 +63,17 @@ export function paymentSubject(payment: {
       title: `Grup dersi: ${groupEnrollment.course.title}`,
       detail: `${groupEnrollment.course.levelName} ${groupEnrollment.course.subjectName}`,
       holdExpiresAt: groupEnrollment.holdExpiresAt,
+    };
+  }
+  if (lessonPackage) {
+    return {
+      kind: "package",
+      ownerId: lessonPackage.studentId,
+      resultId: lessonPackage.id,
+      code: lessonPackage.code,
+      title: `${lessonPackage.levelName} ${lessonPackage.subjectName} · ${lessonPackage.lessonCount} derslik paket`,
+      detail: lessonPackage.recurringStartAt ? `Her hafta, ${lessonPackage.durationMinutes} dk` : `${lessonPackage.durationMinutes} dakikalık dersler`,
+      holdExpiresAt: null,
     };
   }
   return null;

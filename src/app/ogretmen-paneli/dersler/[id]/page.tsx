@@ -16,6 +16,7 @@ import { db } from "@/server/db";
 import { lessonCalendarEvent } from "@/server/lesson-calendar";
 import { loadSettings } from "@/server/settings";
 import { TeacherCancelForm } from "./cancel-form";
+import { ReschedulePanel } from "@/components/packages/reschedule-panel";
 import { PlatformRules } from "@/components/teacher/platform-rules";
 
 export const metadata: Metadata = { title: "Ders ayrıntısı" };
@@ -122,6 +123,8 @@ export default async function TeacherLessonPage({ params, searchParams }: PagePr
           ) : null}
         </div>
         <aside className="space-y-6">
+          <ReschedulePanel booking={booking} viewerId={user.id} />
+
           {booking.status === "CONFIRMED" && booking.startAt > now ? (
             <Card>
               <CardHeader title="Dersi iptal et" />
