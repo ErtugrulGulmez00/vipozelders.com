@@ -149,6 +149,16 @@ class _ProfileViewState extends ConsumerState<_ProfileView> {
                     ),
                   ),
                 ],
+                if (t.offersIntro && canBook && hasLessons) ...[
+                  const SizedBox(height: 12),
+                  NoticeBox(
+                    tone: Tone.green,
+                    icon: Icons.waving_hand_rounded,
+                    title: 'Ücretsiz 15 dakika tanışma',
+                    message: 'Ders almadan önce öğretmenle online tanışın, hedefinizi konuşun. Ücret alınmaz.',
+                    action: TextButton(onPressed: () => context.push(Routes.intro(t.slug)), child: const Text('Tanışma iste')),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 _Offerings(teacher: t, onBook: canBook ? (offering, question) => context.push(question ? Routes.question(t.slug, offeringId: offering.id) : Routes.booking(t.slug, offeringId: offering.id)) : null),
                 const SizedBox(height: 12),
@@ -182,14 +192,12 @@ class _ProfileViewState extends ConsumerState<_ProfileView> {
                                 ],
                               ),
                             ),
-                          if (t.acceptsQuestions) ...[
-                            IconButton.outlined(
-                              tooltip: 'Fotoğrafla soru sor',
-                              onPressed: () => _book(question: true),
-                              icon: const Icon(Icons.photo_camera_outlined),
-                            ),
-                            const SizedBox(width: 8),
-                          ],
+                          IconButton.outlined(
+                            tooltip: 'Mesaj gönder',
+                            onPressed: () => context.push(Uri(path: Routes.messageTeacher(t.slug), queryParameters: {'ad': t.name}).toString()),
+                            icon: const Icon(Icons.chat_bubble_outline_rounded),
+                          ),
+                          const SizedBox(width: 8),
                           Expanded(
                             flex: t.minHourlyPrice != null ? 1 : 2,
                             child: FilledButton.icon(

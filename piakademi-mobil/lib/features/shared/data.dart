@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/models/booking.dart';
 import '../../core/models/center.dart';
+import '../../core/models/messages.dart';
+import '../../core/models/pool.dart';
 import '../../core/models/teacher.dart';
 import '../../core/models/teacher_panel.dart';
 import '../../core/providers.dart';
@@ -72,4 +74,52 @@ final teacherCalendarProvider = FutureProvider.autoDispose<TeacherCalendar>((ref
 final teacherReviewsProvider = FutureProvider.autoDispose<List<Review>>((ref) {
   ref.watch(currentUserIdProvider);
   return ref.watch(apiProvider).teacherReviews();
+});
+
+// ---------------------------------------------------------------- soru kredisi, soru havuzu, mesajlar
+
+/// Soru ve kredi ekranları bir işlemden sonra (gönderme, satın alma, çözüm) yenilensin diye artırılır.
+final questionsRevisionProvider = StateProvider<int>((ref) => 0);
+
+void bumpQuestions(WidgetRef ref) {
+  ref.read(questionsRevisionProvider.notifier).state++;
+  ref.read(sessionProvider.notifier).refreshMe();
+}
+
+final creditsProvider = FutureProvider.autoDispose<Credits>((ref) {
+  ref.watch(currentUserIdProvider);
+  ref.watch(questionsRevisionProvider);
+  return ref.watch(apiProvider).credits();
+});
+
+final myQuestionProvider = FutureProvider.autoDispose.family<PoolQuestion, String>((ref, id) {
+  ref.watch(currentUserIdProvider);
+  ref.watch(questionsRevisionProvider);
+  return ref.watch(apiProvider).myQuestion(id);
+});
+
+final teacherPoolProvider = FutureProvider.autoDispose<TeacherPool>((ref) {
+  ref.watch(currentUserIdProvider);
+  ref.watch(questionsRevisionProvider);
+  return ref.watch(apiProvider).teacherPool();
+});
+
+final poolQuestionProvider = FutureProvider.autoDispose.family<PoolQuestion, String>((ref, id) {
+  ref.watch(currentUserIdProvider);
+  ref.watch(questionsRevisionProvider);
+  return ref.watch(apiProvider).poolQuestion(id);
+});
+
+/// Mesaj listesi ve konuşmalar bir gönderimden sonra yenilensin diye artırılır.
+final messagesRevisionProvider = StateProvider<int>((ref) => 0);
+
+void bumpMessages(WidgetRef ref) {
+  ref.read(messagesRevisionProvider.notifier).state++;
+  ref.read(sessionProvider.notifier).refreshMe();
+}
+
+final threadsProvider = FutureProvider.autoDispose<List<ThreadSummary>>((ref) async {
+  ref.watch(currentUserIdProvider);
+  ref.watch(messagesRevisionProvider);
+  return (await ref.watch(apiProvider).threads()).$1;
 });

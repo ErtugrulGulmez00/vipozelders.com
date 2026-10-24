@@ -102,6 +102,35 @@ class _Body extends StatelessWidget {
             ),
           ],
         ),
+        const SizedBox(height: 10),
+        Consumer(
+          builder: (context, ref, _) {
+            final unread = ref.watch(sessionProvider.select((s) => s.me?.unreadMessages ?? 0));
+            return Row(
+              children: [
+                Expanded(
+                  child: StatTile(
+                    icon: Icons.photo_camera_rounded,
+                    label: 'Soru havuzu',
+                    value: 'Aç',
+                    hint: 'Fotoğraflı soruları üstlenip çözün',
+                    onTap: () => context.push(Routes.teacherPool),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: StatTile(
+                    icon: Icons.forum_rounded,
+                    label: 'Mesajlar',
+                    value: unread > 0 ? '$unread yeni' : 'Aç',
+                    hint: 'Velilerle yazışmalar',
+                    onTap: () => context.push(Routes.messages),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
         const SizedBox(height: 8),
         SectionTitle(
           'Yanıt bekleyen talepler',

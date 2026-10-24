@@ -4,9 +4,9 @@ Pi Kampüs web sitesinin Android ve iOS uygulaması. Uygulama yalnızca sitenin 
 
 ## Neler var?
 
-- **Veli / öğrenci:** keşfet, öğretmen arama ve filtreler, öğretmen profili (tanıtım videosu, yorumlar, favori), saat seçip randevu, PayTR ödemesi (sitenin güvenli ödeme sayfası uygulama içinde açılır), derslerim, ders ayrıntısı (iptal ve iade önizlemesi, değerlendirme, sorun bildirme, takvime ekleme), sanal sınıf, **fotoğrafla soru** (kamera/galeri, çözüm ve yazışma), favoriler, bildirimler, profil, şifre, hesap silme talebi.
+- **Veli / öğrenci:** keşfet, öğretmen arama ve filtreler, öğretmen profili (tanıtım videosu, yorumlar, favori), saat seçip randevu, **ücretsiz 15 dk tanışma**, kartla ödeme (sitenin güvenli ödeme sayfası uygulama içinde açılır), derslerim, ders ayrıntısı (iptal ve iade önizlemesi, değerlendirme, sorun bildirme, takvime ekleme), sanal sınıf, **soru kredisi ve soru sor** (paket satın alma, fotoğrafla soru, çözüm, bir kez ek soru, puan, sorun bildirme, kredi iadesi), **öğretmenle mesajlaşma**, favoriler, bildirimler, profil, şifre, hesap silme talebi.
 - **Kurumum (veli portalı):** kurum davet bağlantısıyla bağlanma; özet, devam ve etüt, çalışma salonu, çalışma programı ve kaynak ilerlemesi, koçluk görüşmeleri, denemeler (net grafiği, karne), ödemeler, ödevler, kuruma fotoğrafla soru, ders programı, duyurular.
-- **Öğretmen:** özet, talepler (onay/red), fotoğrafla soruya çözüm gönderme, dersler, haftalık müsaitlik ve izinler, kazançlar, yorumlara cevap.
+- **Öğretmen:** özet, talepler (onay/red, tanışma), **soru havuzu** (üstlen, çöz, geri çevir, ek soruya cevap), **mesajlar**, profil/fotoğraf/fiyat/belge/IBAN sayfaları (uygulama içinde oturum açık), dersler, haftalık müsaitlik ve izinler, kazançlar, yorumlara cevap.
 - **Ortak:** push bildirimleri (Firebase), bildirime dokununca ilgili ekran, site bağlantılarının uygulamada açılması, çevrimdışı uyarısı, bakım modu uyarısı.
 
 Yönetici ve kurum personeli hesapları uygulamaya giremez (sunucu `ADMIN_NOT_SUPPORTED` / `CENTER_NOT_SUPPORTED` döner); uygulama bu durumda web panelini açan bir düğme gösterir.

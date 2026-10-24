@@ -104,7 +104,7 @@ export const TEACHER_PANEL_TARGETS = ["/ogretmen-paneli/profil", "/ogretmen-pane
 
 const WEB_LOGIN_TARGETS = [
   /^\/ders\/[a-z0-9]+$/i,
-  /^\/odeme\/(paytr|test)\/[a-z0-9]+$/i,
+  /^\/odeme\/(garanti|paytr|test)\/[a-z0-9]+$/i,
   /^\/odeme\/sonuc\/[a-z0-9]+$/i,
   ...TEACHER_PANEL_TARGETS.map((path) => new RegExp(`^${path}$`)),
 ];

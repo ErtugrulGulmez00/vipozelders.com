@@ -16,6 +16,8 @@ class Me {
     this.emailVerified = false,
     this.mustChangePassword = false,
     this.unreadNotifications = 0,
+    this.unreadMessages = 0,
+    this.questionCredits,
     this.student,
     this.teacher,
   });
@@ -30,6 +32,12 @@ class Me {
   final bool emailVerified;
   final bool mustChangePassword;
   final int unreadNotifications;
+
+  /// Okunmamış mesaj konuşması sayısı
+  final int unreadMessages;
+
+  /// Soru kredisi bakiyesi (yalnızca veli/öğrenci)
+  final int? questionCredits;
   final StudentInfo? student;
   final TeacherInfo? teacher;
 
@@ -56,12 +64,14 @@ class Me {
       emailVerified: asBool(json['emailVerified']),
       mustChangePassword: asBool(json['mustChangePassword']),
       unreadNotifications: asInt(json['unreadNotifications']),
+      unreadMessages: asInt(json['unreadMessages']),
+      questionCredits: asIntOrNull(json['questionCredits']),
       student: json['student'] is Map ? StudentInfo.fromJson(asJson(json['student'])) : null,
       teacher: json['teacher'] is Map ? TeacherInfo.fromJson(asJson(json['teacher'])) : null,
     );
   }
 
-  Me copyWith({int? unreadNotifications, bool? mustChangePassword}) => Me(
+  Me copyWith({int? unreadNotifications, int? unreadMessages, int? questionCredits, bool? mustChangePassword}) => Me(
         id: id,
         role: role,
         firstName: firstName,
@@ -72,6 +82,8 @@ class Me {
         emailVerified: emailVerified,
         mustChangePassword: mustChangePassword ?? this.mustChangePassword,
         unreadNotifications: unreadNotifications ?? this.unreadNotifications,
+        unreadMessages: unreadMessages ?? this.unreadMessages,
+        questionCredits: questionCredits ?? this.questionCredits,
         student: student,
         teacher: teacher,
       );

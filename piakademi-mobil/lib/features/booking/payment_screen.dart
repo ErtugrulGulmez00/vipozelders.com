@@ -15,10 +15,12 @@ import '../shared/data.dart';
 /// Güvenli ödeme sayfası (sitedeki PayTR formu) uygulama içinde açılır. Kart bilgisi uygulamaya hiç gelmez.
 /// Sayfa ödeme sonucu adresine geçince kapanır ve "ödemeniz kontrol ediliyor" ekranı açılır.
 class PaymentScreen extends ConsumerStatefulWidget {
-  const PaymentScreen({super.key, required this.bookingId, this.link});
+  const PaymentScreen({super.key, required this.bookingId, this.link, this.creditPurchase = false});
 
+  /// Randevu kimliği; [creditPurchase] açıkken soru kredisi satın alma kimliği.
   final String bookingId;
   final PaymentLink? link;
+  final bool creditPurchase;
 
   @override
   ConsumerState<PaymentScreen> createState() => _PaymentScreenState();
@@ -35,7 +37,10 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   void initState() {
     super.initState();
     _link = widget.link;
-    if (_link == null) {
+    if (_link == null && widget.creditPurchase) {
+      // Kredi ödemesinin bağlantısı yeniden alınamaz; durum ekranında sonuç gösterilir.
+      WidgetsBinding.instance.addPostFrameCallback((_) => _finish());
+    } else if (_link == null) {
       _fetchLink();
     } else {
       _open(_link!);
@@ -86,6 +91,10 @@ class _PaymentScreenState extends ConsumerState<PaymentScreen> {
   void _finish() {
     if (_finished || !mounted) return;
     _finished = true;
+    if (widget.creditPurchase) {
+      context.pushReplacement(Routes.creditPaymentStatus(widget.bookingId));
+      return;
+    }
     bumpBookings(ref);
     context.pushReplacement(Routes.paymentStatus(widget.bookingId));
   }

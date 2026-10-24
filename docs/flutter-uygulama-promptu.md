@@ -17,7 +17,9 @@ Arayüz tamamen **Türkçe**, saatler **Europe/Istanbul**, para birimi **TL**. S
 - **Veli / öğrenci:** öğretmen arar (kademe, ders, hizmet türü, online/yüz yüze, il/ilçe, fiyat, puan), profil ve boş saatleri görür, saat seçip randevu alır, kartla öder (PayTR, uygulama içi WebView), öğretmen onaylayınca sanal sınıfa katılır, ders sonrası puan/yorum bırakır.
 - **Öğretmen** (hesabı yönetici açar, kullanıcı adıyla girer): talepleri onaylar/reddeder, derslerini görür, sanal sınıfa katılır, haftalık müsaitliğini ve izinlerini düzenler, kazançlarını görür, yorumlara cevap verir. Profil (fotoğraf, ders ve fiyatlar) web panelinden düzenlenir.
 - **Yönetici** ve **kurum personeli** mobil uygulamaya giremez (API `ADMIN_NOT_SUPPORTED` / `CENTER_NOT_SUPPORTED` döner); yönetim ve Kurum Paneli yalnızca web'de.
-- **Fotoğrafla soru:** öğretmen “Soru Çözüm” hizmetinde soru başı ücret (`questionPrice`) belirlediyse veli sorunun fotoğrafını çekip öder; öğretmen `rules.questionAnswerHours` saat içinde çözümü (yazı, fotoğraf, video) gönderir, ardından kısa bir yazışma açık kalır.
+- **Soru kredisi ve soru havuzu:** veli/öğrenci kredi paketi alır (1/10/20/50, fiyatlar site ayarından), her soru 1 kredi. Soru fotoğrafı kademe ve derse uygun, havuza katılan öğretmenlere düşer; ilk üstlenen (30 dk kilit, aynı anda en çok 3) çözer, tek soru değilse geri çevirir. Süresinde çözülmeyen, geri çevrilen ya da itirazı haklı bulunan sorunun kredisi iade edilir; öğrenci bir kez ek soru sorar, puanlar, süre içinde sorun bildirir. Öğretmen öğrencinin adını görmez. (Eski “öğretmene özel fotoğrafla soru ücreti”, `questionPrice`, kapatıldı; alan hep null gelir.)
+- **Mesajlaşma:** veli/öğrenci öğretmene profilinden yazar; iletişim bilgileri otomatik gizlenir, öğretmen cevap vermeden en çok 3 mesaj.
+- **Ücretsiz tanışma:** öğretmen açtıysa (`offersIntro`) 15 dk online, ödemesiz görüşme istenir; doğrudan öğretmen onayına düşer.
 - Kademeler (Okul Öncesi, İlkokul, Ortaokul, Lise, LGS, YKS…), dersler ve hizmet türleri (Özel Ders, Soru Çözüm, Koçluk) sunucudan dinamik gelir.
 - Randevu durumları (`status`, Türkçe karşılığı `statusLabel` olarak hazır gelir): `PENDING_PAYMENT`, `PAYMENT_FAILED`, `PENDING_APPROVAL`, `CONFIRMED`, `COMPLETED`, `REJECTED`, `EXPIRED`, `CANCELLED_BY_STUDENT`, `CANCELLED_BY_TEACHER`, `CANCELLED_BY_ADMIN`, `NO_SHOW_STUDENT`, `NO_SHOW_TEACHER`, `DISPUTED`.
 
@@ -108,7 +110,7 @@ Sayfalı listelerde `?sayfa=N` gönderilir; yanıttaki `nextPage` null ise son s
 
 ```json
 { "id": "cmv47…", "role": "STUDENT", "firstName": "Fatma", "lastName": "Demirtaş", "email": "veli@ornek.com", "username": null, "phone": "05321112233",
-  "emailVerified": true, "mustChangePassword": false, "unreadNotifications": 3,
+  "emailVerified": true, "mustChangePassword": false, "unreadNotifications": 3, "unreadMessages": 1, "questionCredits": 9,
   "student": { "accountType": "PARENT", "city": { "id": 34, "name": "İstanbul" }, "marketingConsent": false },
   "teacher": null }
 ```
@@ -164,7 +166,7 @@ Saatler:
 | İstek | Gövde | Yanıt |
 | --- | --- | --- |
 | `GET /rezervasyonlar?kapsam=…&sayfa=` | veli: `yaklasan`, `gecmis`, `iptal` · öğretmen: `yaklasan`, `talepler`, `gecmis` | `{scope, items: BookingSummary[], nextPage}` |
-| `POST /rezervasyonlar` (veli) | `{offeringId, startAt, durationMinutes, mode: "ONLINE"\|"IN_PERSON", learnerName, learnerGrade?, inPersonPlace?: "STUDENT_HOME"\|"TEACHER_PLACE", districtId?, address?, note?, consent: true}` | 201 `{booking: BookingDetail, payment}` |
+| `POST /rezervasyonlar` (veli) | `{offeringId, startAt, durationMinutes, mode: "ONLINE"\|"IN_PERSON", learnerName, learnerGrade?, inPersonPlace?: "STUDENT_HOME"\|"TEACHER_PLACE", districtId?, address?, note?, consent: true}` · ücretsiz tanışma: `{offeringId, startAt, durationMinutes: 15, mode: "ONLINE", learnerName, intro: true}` (saatler `?duration=15`) | 201 `{booking: BookingDetail, payment}` (tanışmada `payment: null`, durum `PENDING_APPROVAL`) |
 | `GET /rezervasyonlar/{id}` | — | `BookingDetail` |
 | `POST /rezervasyonlar/{id}/odeme` (veli) | — | `{payment}` |
 | `POST /rezervasyonlar/{id}/iptal` | `{reason}` | `BookingDetail` |
@@ -225,6 +227,32 @@ Fotoğrafla soruda öğretmen onaylamaz (`canApprove` false): `canSolve` iken ç
 | `POST /cihazlar` | `{token, platform: "android"\|"ios"}` | 201 |
 | `DELETE /cihazlar/{token}` | — | 204 |
 
+### Soru kredisi ve soru havuzu (veli/öğrenci)
+
+| İstek | Gövde | Yanıt |
+| --- | --- | --- |
+| `GET /krediler` | — | `{balance, salesOpen, rules: {validityMonths, refundDays, answerHours, disputeHours, singlePrice}, packages: [{credits, price, unitPrice, savingPercent}], subjects: [{levelId, subjectId, levelName, subjectName}], purchases: [{id, code, credits, price, refundedAmount, status, statusLabel, paidAt, expiresAt, remaining, expired, refund: {allowed, amount, reason}}], entries: [{id, kind, kindLabel, amount, note, createdAt}]}` |
+| `POST /krediler` | `{credits, consent: true}` | 201 `{purchase, payment: {url, returnUrlPrefix}}` — ödeme randevudaki gibi WebView'da |
+| `GET /krediler/{id}` | — | satın alma + `payment: {status, failureReason}` (ödeme dönüşünde 3 sn'de bir sorgulanır; `PAID` olunca krediler hesapta) |
+| `POST /krediler/{id}/iade` | — | `{amount, message}` (süre içinde, kullanılmayan krediler) |
+| `GET /sorular?sayfa=` | — | `{items: PoolQuestion[], nextPage}` |
+| `POST /sorular` | multipart/form-data: `image`, `levelId`, `subjectId`, `note?` | 201 `PoolQuestion` (1 kredi düşer; nottaki iletişim bilgisi gizlenir) |
+| `GET /sorular/{id}` | — | `PoolQuestion` ayrıntısı |
+| `POST /sorular/{id}` | `{action: "cancel"}` · `{action: "followUp", body}` · `{action: "rate", rating}` · `{action: "dispute", reason}` | `PoolQuestion` |
+
+`PoolQuestion`: `{id, code, levelName, subjectName, note, imageUrl, status, statusLabel, createdAt, expiresAt, answeredAt, teacher: {name, photoUrl} | null, answer: {text, imageUrl, videoUrl, answeredAt, followUp: {text, askedAt, answer, answeredAt} | null} | null, rating, rejectReason, disputeReason, resolutionNote, disputeUntil, actions: {canCancel, canFollowUp, canRate, canDispute}}`. Durumlar: `OPEN` (öğretmen bekleniyor), `CLAIMED` (çözülüyor), `ANSWERED`, `CLOSED` (çözüldü), `EXPIRED`, `REJECTED`, `REFUNDED`, `CANCELLED` (kredi iade), `DISPUTED` (itiraz inceleniyor).
+
+### Mesajlar (veli/öğrenci ve öğretmen)
+
+| İstek | Gövde | Yanıt |
+| --- | --- | --- |
+| `GET /mesajlar` | — | `{items: [{id, counterpart: {name, photoUrl, teacherSlug}, last: {body, mine, createdAt}, unread, lastMessageAt}], unread}` |
+| `GET /mesajlar/{id}` | — | `{id, counterpart, messages: [{id, mine, body, masked, createdAt}]}` (açılınca okundu sayılır) |
+| `POST /mesajlar/{id}` | `{body}` | konuşma + `masked` (iletişim bilgisi gizlendiyse true) |
+| `POST /ogretmenler/{slug}/mesaj` (veli) | `{body}` | 201 konuşma (yoksa açılır) |
+
+Öğretmen velinin soyadını yalnızca baş harfiyle görür. Cevapsız en çok 3 mesaj ve günde en çok 5 yeni konuşma kuralı `RULE_VIOLATION` döner.
+
 ### Kurum (veli portalı)
 
 | İstek | Gövde | Yanıt |
@@ -242,7 +270,7 @@ Fotoğrafla soruda öğretmen onaylamaz (`canApprove` false): `canSolve` iken ç
 
 Çalışma salonunda `marks` periyot başına `G` (geldi), `Y` (gelmedi), `-` (işaretlenmedi) içerir; `completion` ve `accuracy` 0-1 arasıdır; koç görüşmelerinde `weekday` 1 = Pazartesi, `minute` gün başından dakikadır. Devam durumu `PRESENT` (Geldi), `ABSENT` (Gelmedi), `LATE` (Geç), `EXCUSED` (İzinli); taksit durumu `paid`, `partial`, `overdue`, `due`, `upcoming`; ödev durumu `PENDING` (kontrol edilmedi), `DONE`, `PARTIAL`, `MISSING`; `rate` 0-1 arası doğru oranıdır. Yalnızca kurumun yayınladığı denemeler döner. Kurum bildirimleri (`type` `center.` ile başlar) `link` olarak `/hesabim/kurum/<id>` taşır; uygulama bunu Kurumum → öğrenci ekranına yönlendirmelidir.
 
-`target` uygulamada açılacak ekrandır: `{screen: "booking", id}`, `{screen: "requests"}`, `{screen: "reviews"}`, `{screen: "earnings"}`, `{screen: "teacher", id: slug}`, `{screen: "centerStudent", id}` (Kurumum → öğrenci), `{screen: "center"}` (Kurumum listesi) veya null.
+`target` uygulamada açılacak ekrandır: `{screen: "booking", id}`, `{screen: "requests"}`, `{screen: "reviews"}`, `{screen: "earnings"}`, `{screen: "teacher", id: slug}`, `{screen: "centerStudent", id}` (Kurumum → öğrenci), `{screen: "center"}` (Kurumum listesi), `{screen: "question", id}` · `{screen: "questions"}` · `{screen: "credits"}` (soru kredisi), `{screen: "poolQuestion", id}` · `{screen: "pool"}` (öğretmen soru havuzu), `{screen: "thread", id}` · `{screen: "messages"}` veya null.
 
 ### Öğretmen
 
@@ -256,8 +284,13 @@ Fotoğrafla soruda öğretmen onaylamaz (`canApprove` false): `canSolve` iken ç
 | `DELETE /ogretmen/izinler/{id}` | — | 204 |
 | `GET /ogretmen/yorumlar` | — | `{items: [{id, rating, comment, studentName, lesson, status, teacherReply, teacherRepliedAt, createdAt}]}` |
 | `POST /yorumlar/{id}/cevap` | `{reply}` (boş metin cevabı kaldırır) | `{ok: true}` |
+| `GET /ogretmen/soru-havuzu` | — | `{answersPool, eligible, blocked, standing: {ratingAvg, ratingCount, upheldDisputes}, rules: {claimMinutes, maxActiveClaims, fee}, open: PoolQuestion[], mine: PoolQuestion[]}` (öğretmen görünümünde `mine`, `fee`, `claimExpiresAt`, öğrenci adı yok) |
+| `PUT /ogretmen/soru-havuzu` | `{answersPool}` | havuz |
+| `GET /ogretmen/soru-havuzu/{id}` | — | soru + `answer`, `rating`, `releaseAt`, `actions: {canClaim, canRelease, canReject, canAnswer, canAnswerFollowUp}` |
+| `POST /ogretmen/soru-havuzu/{id}` | `{action: "claim" \| "release"}` · `{action: "reject", reason}` · `{action: "followUpAnswer", body}` · çözüm: multipart/form-data `body` (en az 20 karakter), `image?`, `video?` | soru (`release` sonrası `{ok: true}`) |
+| `POST /web-oturum` | `{path}` (`/ogretmen-paneli/profil`, `/dersler-ve-fiyatlar`, `/belgeler`, `/kazanclar`) | `{url}` — web paneli sayfasını WebView'da oturum açık açan tek kullanımlık bağlantı |
 
-## 6. Ödeme (PayTR, WebView)
+## 6. Ödeme (Garanti BBVA / PayTR, WebView)
 
 1. `POST /rezervasyonlar` (veya `POST /rezervasyonlar/{id}/odeme`) yanıtındaki `payment.url` tam ekran WebView'da açılır. Bu tek kullanımlık bağlantı WebView'da oturum açar ve sitedeki güvenli ödeme sayfasını (PayTR 3D Secure formu) gösterir. Kart bilgisi uygulamada **hiçbir zaman** alınmaz veya saklanmaz.
 2. WebView, `payment.returnUrlPrefix` ile başlayan bir adrese geçtiğinde WebView kapatılır. Hem `NavigationDelegate.onNavigationRequest` (tam sayfa geçişleri) hem `onUrlChange` (sitenin kendi içindeki geçişleri) dinlenmelidir.

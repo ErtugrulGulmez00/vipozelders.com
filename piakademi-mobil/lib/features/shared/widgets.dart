@@ -295,8 +295,8 @@ class BookingTile extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(formatMoney(booking.amount), style: const TextStyle(fontWeight: FontWeight.w800)),
-                  if (teacherView) Text('kazancınız', style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)),
+                  Text(booking.isIntro ? 'Ücretsiz' : formatMoney(booking.amount), style: const TextStyle(fontWeight: FontWeight.w800)),
+                  if (teacherView && !booking.isIntro) Text('kazancınız', style: TextStyle(fontSize: 11, color: scheme.onSurfaceVariant)),
                 ],
               ),
             ],

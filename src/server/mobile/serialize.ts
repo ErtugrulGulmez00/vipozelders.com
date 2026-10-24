@@ -62,6 +62,8 @@ export function teacherProfileJson(teacher: PublicTeacher) {
     avgResponseMinutes: teacher.avgResponseMinutes,
     offersOnline: teacher.offersOnline,
     offersInPerson: teacher.offersInPerson,
+    // Ücretsiz 15 dk tanışma görüşmesi (online)
+    offersIntro: teacher.offersIntro && teacher.offersOnline,
     inPersonAtStudentHome: teacher.inPersonAtStudentHome,
     inPersonAtTeacherPlace: teacher.inPersonAtTeacherPlace,
     city: teacher.city ? { id: teacher.city.id, name: teacher.city.name } : null,
@@ -104,6 +106,17 @@ export function notificationTarget(link: string | null): { screen: string; id?: 
   const center = /^\/hesabim\/kurum\/([a-z0-9]+)/i.exec(link);
   if (center) return { screen: "centerStudent", id: center[1] };
   if (link.startsWith("/hesabim/kurum")) return { screen: "center" };
+  // Soru havuzu, kredi ve mesajlar
+  const question = /^\/hesabim\/sorularim\/([a-z0-9]+)/i.exec(link);
+  if (question) return { screen: "question", id: question[1] };
+  if (link.startsWith("/hesabim/sorularim")) return { screen: "questions" };
+  if (link.startsWith("/soru-sor") || link.startsWith("/hesabim/krediler")) return { screen: "credits" };
+  const pool = /^\/ogretmen-paneli\/soru-havuzu\/([a-z0-9]+)/i.exec(link);
+  if (pool) return { screen: "poolQuestion", id: pool[1] };
+  if (link.startsWith("/ogretmen-paneli/soru-havuzu")) return { screen: "pool" };
+  const thread = /^\/(?:hesabim|ogretmen-paneli)\/mesajlar\/([a-z0-9]+)/i.exec(link);
+  if (thread) return { screen: "thread", id: thread[1] };
+  if (/^\/(?:hesabim|ogretmen-paneli)\/mesajlar/.test(link)) return { screen: "messages" };
   return null;
 }
 
@@ -136,6 +149,7 @@ export function bookingSummaryJson(booking: BookingWithPeople, viewer: "STUDENT"
     counterpart:
       viewer === "STUDENT"
         ? { name: fullName(booking.teacher.user), photoUrl: absoluteUpload(booking.teacher.photoKey), teacherSlug: booking.teacher.slug }
-        : { name: `${booking.student.firstName} ${booking.student.lastName}`, photoUrl: null, teacherSlug: null },
+        : { name: shortName(booking.student), photoUrl: null, teacherSlug: null },
+    isIntro: booking.isIntro,
   };
 }

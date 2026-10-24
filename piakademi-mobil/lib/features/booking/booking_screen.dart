@@ -26,11 +26,13 @@ final slotWeekProvider = FutureProvider.autoDispose.family<SlotWeek, (String, in
 });
 
 /// Randevu: ders → süre → şekil → gün ve saat → öğrenci bilgisi → özet ve onay → ödeme.
+/// [intro] açıkken ücretsiz 15 dk online tanışma görüşmesi istenir (ödeme ve sözleşme onayı yok).
 class BookingScreen extends ConsumerWidget {
-  const BookingScreen({super.key, required this.slug, this.offeringId});
+  const BookingScreen({super.key, required this.slug, this.offeringId, this.intro = false});
 
   final String slug;
   final String? offeringId;
+  final bool intro;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -39,7 +41,7 @@ class BookingScreen extends ConsumerWidget {
     final session = ref.watch(sessionProvider);
     if (session.isTeacher) {
       return Scaffold(
-        appBar: AppBar(leading: const AppBackButton(), title: const Text('Randevu al')),
+        appBar: AppBar(leading: const AppBackButton(), title: Text(intro ? 'Ücretsiz tanışma' : 'Randevu al')),
         body: const EmptyView(
           icon: Icons.person_off_outlined,
           title: 'Randevu yalnızca veli/öğrenci hesabıyla alınabilir',
@@ -48,7 +50,7 @@ class BookingScreen extends ConsumerWidget {
       );
     }
     return Scaffold(
-      appBar: AppBar(leading: const AppBackButton(), title: const Text('Randevu al')),
+      appBar: AppBar(leading: const AppBackButton(), title: Text(intro ? 'Ücretsiz tanışma' : 'Randevu al')),
       body: profile.when(
         loading: () => const LoadingView(),
         error: (error, _) => ErrorView(error: error, onRetry: () => ref.invalidate(teacherProfileProvider(slug))),
@@ -60,7 +62,10 @@ class BookingScreen extends ConsumerWidget {
             if (lessons.isEmpty) {
               return const EmptyView(title: 'Bu öğretmenin randevu alınabilecek dersi yok', icon: Icons.event_busy_rounded);
             }
-            return _BookingForm(teacher: teacher, catalog: catalog, offerings: lessons, initialOfferingId: offeringId);
+            if (intro && !teacher.offersIntro) {
+              return const EmptyView(title: 'Bu öğretmen ücretsiz tanışma görüşmesi sunmuyor', icon: Icons.event_busy_rounded);
+            }
+            return _BookingForm(teacher: teacher, catalog: catalog, offerings: lessons, initialOfferingId: offeringId, intro: intro);
           },
         ),
       ),
@@ -69,12 +74,13 @@ class BookingScreen extends ConsumerWidget {
 }
 
 class _BookingForm extends ConsumerStatefulWidget {
-  const _BookingForm({required this.teacher, required this.catalog, required this.offerings, this.initialOfferingId});
+  const _BookingForm({required this.teacher, required this.catalog, required this.offerings, this.initialOfferingId, this.intro = false});
 
   final TeacherProfile teacher;
   final Catalog catalog;
   final List<Offering> offerings;
   final String? initialOfferingId;
+  final bool intro;
 
   @override
   ConsumerState<_BookingForm> createState() => _BookingFormState();
@@ -82,8 +88,10 @@ class _BookingForm extends ConsumerStatefulWidget {
 
 class _BookingFormState extends ConsumerState<_BookingForm> {
   late Offering _offering = widget.offerings.firstWhere((o) => o.id == widget.initialOfferingId, orElse: () => widget.offerings.first);
-  late int _duration = _defaultDuration(_offering);
-  late String _mode = widget.teacher.offersOnline ? 'ONLINE' : 'IN_PERSON';
+  /// Tanışma görüşmesi 15 dakika ve online
+  static const _introMinutes = 15;
+  late int _duration = widget.intro ? _introMinutes : _defaultDuration(_offering);
+  late String _mode = widget.intro || widget.teacher.offersOnline ? 'ONLINE' : 'IN_PERSON';
   String? _place;
   District? _district;
   String? _weekStart;
@@ -123,14 +131,14 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
 
   static int _defaultDuration(Offering o) => o.durations.any((d) => d.minutes == 60) ? 60 : o.durations.first.minutes;
 
-  int get _price => _offering.durations.firstWhere((d) => d.minutes == _duration, orElse: () => _offering.durations.first).price;
+  int get _price => widget.intro ? 0 : _offering.durations.firstWhere((d) => d.minutes == _duration, orElse: () => _offering.durations.first).price;
 
   List<Grade> get _grades => widget.catalog.levels.where((l) => l.id == _offering.level.id).expand((l) => l.grades).toList();
 
   void _selectOffering(Offering o) {
     setState(() {
       _offering = o;
-      if (!o.durations.any((d) => d.minutes == _duration)) {
+      if (!widget.intro && !o.durations.any((d) => d.minutes == _duration)) {
         _duration = _defaultDuration(o);
         _slot = null;
       }
@@ -145,7 +153,7 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
       if (_place == 'STUDENT_HOME' && (_district == null || _address.text.trim().isEmpty)) return 'Yüz yüze ders için ilçe ve adres gerekli.';
     }
     if (_learner.text.trim().length < 2) return 'Dersin kimin için olduğunu yazın.';
-    if (!_consent) return 'Ön bilgilendirme formunu ve mesafeli satış sözleşmesini onaylayın.';
+    if (!widget.intro && !_consent) return 'Ön bilgilendirme formunu ve mesafeli satış sözleşmesini onaylayın.';
     return null;
   }
 
@@ -173,11 +181,19 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
               districtId: _mode == 'IN_PERSON' && _place == 'STUDENT_HOME' ? _district?.id : null,
               address: _mode == 'IN_PERSON' && _place == 'STUDENT_HOME' ? _address.text.trim() : null,
               note: _note.text.trim(),
+              intro: widget.intro,
             ),
           );
       bumpBookings(ref);
       if (!mounted) return;
-      context.pushReplacement(Routes.payment(result.booking.id), extra: result.payment);
+      final payment = result.payment;
+      if (payment == null) {
+        // Ücretsiz tanışma: ödeme yok, öğretmenin onayı beklenir.
+        showSnack(context, 'Tanışma isteğiniz öğretmene iletildi; onaylayınca bildirim alacaksınız.');
+        context.pushReplacement(Routes.lesson(result.booking.id));
+      } else {
+        context.pushReplacement(Routes.payment(result.booking.id), extra: payment);
+      }
     } on ApiException catch (error) {
       if (!mounted) return;
       setState(() => _error = error);
@@ -229,6 +245,16 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
                         if (picked?.value != null) _selectOffering(picked!.value!);
                       },
               ),
+              if (widget.intro) ...[
+                const SizedBox(height: 16),
+                const NoticeBox(
+                  tone: Tone.green,
+                  icon: Icons.waving_hand_rounded,
+                  title: 'Ücretsiz 15 dakika · online',
+                  message: 'Öğretmenle tanışın, hedefinizi konuşun; ücret alınmaz. Öğretmen onaylayınca görüşme sanal sınıfta yapılır.',
+                ),
+              ],
+              if (!widget.intro) ...[
               const _StepTitle(number: 2, title: 'Süre'),
               Wrap(
                 spacing: 8,
@@ -283,7 +309,8 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
                   onDistrict: (d) => setState(() => _district = d),
                 ),
               ],
-              const _StepTitle(number: 4, title: 'Gün ve saat'),
+              ],
+              _StepTitle(number: widget.intro ? 2 : 4, title: 'Gün ve saat'),
               _SlotPicker(
                 slug: t.slug,
                 duration: _duration,
@@ -297,7 +324,7 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
                 onDay: (day) => setState(() => _day = day),
                 onSlot: (slot) => setState(() => _slot = slot),
               ),
-              const _StepTitle(number: 5, title: 'Ders kimin için?'),
+              _StepTitle(number: widget.intro ? 3 : 5, title: 'Ders kimin için?'),
               TextField(
                 controller: _learner,
                 textCapitalization: TextCapitalization.words,
@@ -329,7 +356,7 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
                   hintText: 'Örn: ${_offering.subject.name} dersinde hangi konularda zorlanıyor, hedefi ne?',
                 ),
               ),
-              const _StepTitle(number: 6, title: 'Özet'),
+              _StepTitle(number: widget.intro ? 4 : 6, title: 'Özet'),
               _Summary(
                 teacher: t,
                 offering: _offering,
@@ -337,8 +364,10 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
                 mode: _mode,
                 slot: _slot,
                 price: _price,
+                intro: widget.intro,
               ),
               const SizedBox(height: 12),
+              if (!widget.intro) ...[
               NoticeBox(
                 tone: Tone.sky,
                 icon: Icons.verified_user_outlined,
@@ -353,6 +382,7 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
                 onChanged: (v) => setState(() => _consent = v ?? false),
                 title: ConsentText(onOpen: (slug) => context.push(Routes.page(slug))),
               ),
+              ],
               if (_error != null) ...[
                 const SizedBox(height: 8),
                 NoticeBox(message: _error!.message, tone: Tone.rose),
@@ -372,13 +402,13 @@ class _BookingFormState extends ConsumerState<_BookingForm> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(formatMoney(_price), style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800)),
-                      Text('KDV dahil · ${durationLabel(_duration)}', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
+                      Text(widget.intro ? 'Ücretsiz' : formatMoney(_price), style: const TextStyle(fontSize: 21, fontWeight: FontWeight.w800)),
+                      Text(widget.intro ? 'Tanışma · ${durationLabel(_duration)}' : 'KDV dahil · ${durationLabel(_duration)}', style: TextStyle(fontSize: 12, color: scheme.onSurfaceVariant)),
                     ],
                   ),
                 ),
                 Expanded(
-                  child: BusyButton(busy: _busy, onPressed: _submit, label: 'Ödemeye geç', icon: Icons.lock_rounded),
+                  child: BusyButton(busy: _busy, onPressed: _submit, label: widget.intro ? 'Tanışma iste' : 'Ödemeye geç', icon: widget.intro ? Icons.send_rounded : Icons.lock_rounded),
                 ),
               ],
             ),
@@ -616,7 +646,7 @@ class _SlotPicker extends ConsumerWidget {
 }
 
 class _Summary extends StatelessWidget {
-  const _Summary({required this.teacher, required this.offering, required this.duration, required this.mode, required this.slot, required this.price});
+  const _Summary({required this.teacher, required this.offering, required this.duration, required this.mode, required this.slot, required this.price, this.intro = false});
 
   final TeacherProfile teacher;
   final Offering offering;
@@ -624,6 +654,7 @@ class _Summary extends StatelessWidget {
   final String mode;
   final Slot? slot;
   final int price;
+  final bool intro;
 
   @override
   Widget build(BuildContext context) {
@@ -631,15 +662,15 @@ class _Summary extends StatelessWidget {
       child: Column(
         children: [
           InfoRow(label: 'Öğretmen', value: teacher.name),
-          InfoRow(label: 'Ders', value: '${offering.title} · ${offering.service.name}'),
+          InfoRow(label: 'Ders', value: intro ? '${offering.title} · Ücretsiz tanışma' : '${offering.title} · ${offering.service.name}'),
           InfoRow(label: 'Zaman', value: slot == null ? 'Saat seçilmedi' : formatLessonRange(slot!.startAt, slot!.endAt)),
           InfoRow(label: 'Süre', value: durationLabel(duration)),
           InfoRow(label: 'Şekil', value: mode == 'ONLINE' ? 'Online (sanal sınıf)' : 'Yüz yüze'),
           const Divider(height: 20),
           Row(
             children: [
-              const Expanded(child: Text('Toplam (KDV dahil)', style: TextStyle(fontWeight: FontWeight.w600))),
-              Text(formatMoney(price), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+              Expanded(child: Text(intro ? 'Ücret' : 'Toplam (KDV dahil)', style: const TextStyle(fontWeight: FontWeight.w600))),
+              Text(intro ? 'Ücretsiz' : formatMoney(price), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
             ],
           ),
         ],

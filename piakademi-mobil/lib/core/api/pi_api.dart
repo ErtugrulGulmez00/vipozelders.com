@@ -5,7 +5,9 @@ import '../models/catalog.dart';
 import '../models/center.dart';
 import '../models/json.dart';
 import '../models/me.dart';
+import '../models/messages.dart';
 import '../models/notification.dart';
+import '../models/pool.dart';
 import '../models/teacher.dart';
 import '../models/teacher_panel.dart';
 import 'api_client.dart';
@@ -175,6 +177,7 @@ class BookingRequest {
     this.districtId,
     this.address,
     this.note,
+    this.intro = false,
   });
 
   final String offeringId;
@@ -188,6 +191,9 @@ class BookingRequest {
   final String? address;
   final String? note;
 
+  /// Ücretsiz 15 dk tanışma görüşmesi (ödemesiz; sözleşme onayı gerekmez)
+  final bool intro;
+
   Json toJson() => {
         'offeringId': offeringId,
         'startAt': startAt.toUtc().toIso8601String(),
@@ -199,7 +205,7 @@ class BookingRequest {
         if (districtId != null) 'districtId': districtId,
         if (address != null && address!.isNotEmpty) 'address': address,
         if (note != null && note!.isNotEmpty) 'note': note,
-        'consent': true,
+        if (intro) 'intro': true else 'consent': true,
       };
 }
 
@@ -345,6 +351,76 @@ class PiApi {
     });
     return BookingDetail.fromJson(asJson(await client.postMultipart('/rezervasyonlar/$id/mesajlar', form, onProgress: onProgress)));
   }
+
+  // ---------------------------------------------------------------- soru kredisi ve soru havuzu (veli/öğrenci)
+
+  Future<Credits> credits() async => Credits.fromJson(asJson(await client.get('/krediler')));
+
+  /// Kredi paketi satın alma: ödeme sayfası WebView'da açılır, dönüşte [creditPurchase] sorgulanır.
+  Future<(CreditPurchase, PaymentLink)> buyCredits(int credits) async {
+    final json = asJson(await client.post('/krediler', data: {'credits': credits, 'consent': true}));
+    return (CreditPurchase.fromJson(asJson(json['purchase'])), PaymentLink.fromJson(asJson(json['payment'])));
+  }
+
+  Future<CreditPurchase> creditPurchase(String id) async => CreditPurchase.fromJson(asJson(await client.get('/krediler/$id')));
+
+  Future<String> refundCredits(String id) async => asString(asJson(await client.post('/krediler/$id/iade'))['message']);
+
+  Future<PoolQuestionPage> myQuestions({int page = 1}) async => PoolQuestionPage.fromJson(asJson(await client.get('/sorular', query: {'sayfa': page})));
+
+  Future<PoolQuestion> askQuestion({required PoolSubject subject, String? note, required UploadFile image, void Function(int, int)? onProgress}) async {
+    final form = FormData.fromMap({
+      'levelId': subject.levelId.toString(),
+      'subjectId': subject.subjectId.toString(),
+      if (note != null && note.isNotEmpty) 'note': note,
+      'image': await image.toMultipart(),
+    });
+    return PoolQuestion.fromJson(asJson(await client.postMultipart('/sorular', form, onProgress: onProgress)));
+  }
+
+  Future<PoolQuestion> myQuestion(String id) async => PoolQuestion.fromJson(asJson(await client.get('/sorular/$id')));
+
+  /// action: cancel · followUp {body} · rate {rating} · dispute {reason}
+  Future<PoolQuestion> questionAction(String id, String action, [Json extra = const {}]) async =>
+      PoolQuestion.fromJson(asJson(await client.post('/sorular/$id', data: {'action': action, ...extra})));
+
+  // ---------------------------------------------------------------- soru havuzu (öğretmen)
+
+  Future<TeacherPool> teacherPool() async => TeacherPool.fromJson(asJson(await client.get('/ogretmen/soru-havuzu')));
+
+  Future<TeacherPool> setAnswersPool(bool on) async => TeacherPool.fromJson(asJson(await client.put('/ogretmen/soru-havuzu', data: {'answersPool': on})));
+
+  Future<PoolQuestion> poolQuestion(String id) async => PoolQuestion.fromJson(asJson(await client.get('/ogretmen/soru-havuzu/$id')));
+
+  /// action: claim · release · reject {reason} · followUpAnswer {body}. "release" sonrası soru null döner.
+  Future<PoolQuestion?> poolAction(String id, String action, [Json extra = const {}]) async {
+    final json = asJson(await client.post('/ogretmen/soru-havuzu/$id', data: {'action': action, ...extra}));
+    return json['id'] == null ? null : PoolQuestion.fromJson(json);
+  }
+
+  Future<PoolQuestion> answerPoolQuestion(String id, {required String body, UploadFile? image, UploadFile? video, void Function(int, int)? onProgress}) async {
+    final form = FormData.fromMap({
+      'body': body,
+      if (image != null) 'image': await image.toMultipart(),
+      if (video != null) 'video': await video.toMultipart(),
+    });
+    return PoolQuestion.fromJson(asJson(await client.postMultipart('/ogretmen/soru-havuzu/$id', form, onProgress: onProgress)));
+  }
+
+  // ---------------------------------------------------------------- mesajlar
+
+  Future<(List<ThreadSummary>, int)> threads() async {
+    final json = asJson(await client.get('/mesajlar'));
+    return (asList(json['items'], ThreadSummary.fromJson), asInt(json['unread']));
+  }
+
+  Future<MessageThread> thread(String id) async => MessageThread.fromJson(asJson(await client.get('/mesajlar/$id')));
+
+  Future<MessageThread> sendMessage(String id, String body) async => MessageThread.fromJson(asJson(await client.post('/mesajlar/$id', data: {'body': body})));
+
+  /// Öğretmene ilk mesaj (konuşma yoksa açılır).
+  Future<MessageThread> messageTeacher(String slug, String body) async =>
+      MessageThread.fromJson(asJson(await client.post('/ogretmenler/${Uri.encodeComponent(slug)}/mesaj', data: {'body': body})));
 
   // ---------------------------------------------------------------- favoriler, bildirimler, cihazlar
 

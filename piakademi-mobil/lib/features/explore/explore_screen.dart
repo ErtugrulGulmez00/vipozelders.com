@@ -359,6 +359,40 @@ class _Services extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SectionHeader(title: 'Hizmetlerimiz', subtitle: 'Sanal dershanemizde ihtiyacınıza uygun çalışma şeklini seçin.'),
+        // Soru kredisi: fotoğrafla soru gönder, havuzdaki öğretmen çözsün
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: Material(
+            borderRadius: BorderRadius.circular(20),
+            clipBehavior: Clip.antiAlias,
+            child: Ink(
+              decoration: const BoxDecoration(gradient: LinearGradient(colors: [Color(0xFF312E81), Color(0xFF4F46E5)])),
+              child: InkWell(
+                onTap: () => context.push(Routes.ask),
+                child: const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      CircleAvatar(radius: 24, backgroundColor: Color(0xFFFBBF24), child: Icon(Icons.photo_camera_rounded, color: Color(0xFF1E1B4B))),
+                      SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Takıldığın soruyu sor', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 17)),
+                            SizedBox(height: 2),
+                            Text('Fotoğrafını çek, branş öğretmeni adım adım çözsün. Çözülmezse kredin iade.', style: TextStyle(color: Colors.white70, height: 1.3)),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right_rounded, color: Colors.white),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
         SizedBox(
           height: 150,
           child: ListView.separated(

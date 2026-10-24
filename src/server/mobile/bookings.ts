@@ -142,7 +142,7 @@ export async function bookingDetail(user: MobileUser, bookingId: string, now = n
 
   return {
     ...base,
-    parent: revealContact ? { name: `${booking.student.firstName} ${booking.student.lastName}`, phone: booking.student.phone } : { name: booking.student.firstName, phone: null },
+    parent: revealContact ? { name: `${booking.student.firstName} ${booking.student.lastName.charAt(0)}.`, phone: booking.student.phone } : { name: booking.student.firstName, phone: null },
     teacherAmount: booking.teacherAmount,
     actions: {
       canJoin: classroomOpen,

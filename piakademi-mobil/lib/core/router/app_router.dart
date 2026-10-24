@@ -22,11 +22,20 @@ import '../../features/center/report_card_screen.dart';
 import '../../features/classroom/classroom_screen.dart';
 import '../../features/explore/explore_screen.dart';
 import '../../features/favorites/favorites_screen.dart';
+import '../../features/messages/messages_screen.dart';
+import '../../features/messages/thread_screen.dart';
+import '../../features/questions/ask_question_screen.dart';
+import '../../features/questions/credit_payment_status_screen.dart';
+import '../../features/questions/credits_screen.dart';
+import '../../features/questions/my_questions_screen.dart';
+import '../../features/questions/question_detail_screen.dart';
 import '../../features/lessons/lesson_detail_screen.dart';
 import '../../features/lessons/lessons_screen.dart';
 import '../../features/notifications/notifications_screen.dart';
 import '../../features/shell/shells.dart';
 import '../../features/teacher/earnings_screen.dart';
+import '../../features/teacher/pool_question_screen.dart';
+import '../../features/teacher/pool_screen.dart';
 import '../../features/teacher/requests_screen.dart';
 import '../../features/teacher/teacher_account_screen.dart';
 import '../../features/teacher/teacher_calendar_screen.dart';
@@ -70,11 +79,25 @@ class Routes {
   static const teacherAccount = '/panel/hesap';
   static const earnings = '/panel/kazanclar';
   static const teacherReviews = '/panel/yorumlar';
+  static const teacherPool = '/panel/soru-havuzu';
+
+  // Soru kredisi ve soru havuzu (veli/öğrenci), mesajlar (iki taraf)
+  static const ask = '/soru-sor';
+  static const askQuestion = '/soru-sor/gonder';
+  static const myQuestions = '/sorularim';
+  static const messages = '/mesajlar';
 
   static String teacher(String slug) => '/ogretmen/$slug';
   static String booking(String slug, {String? offeringId}) => Uri(path: '/ogretmen/$slug/randevu', queryParameters: offeringId == null ? null : {'ders': offeringId}).toString();
   static String question(String slug, {String? offeringId}) => Uri(path: '/ogretmen/$slug/soru', queryParameters: offeringId == null ? null : {'ders': offeringId}).toString();
   static String lesson(String id) => '/ders/$id';
+  static String intro(String slug) => '/ogretmen/$slug/tanisma';
+  static String messageTeacher(String slug) => '/ogretmen/$slug/mesaj';
+  static String myQuestion(String id) => '/sorularim/$id';
+  static String poolQuestion(String id) => '/panel/soru-havuzu/$id';
+  static String thread(String id) => '/mesajlar/$id';
+  static String creditPayment(String purchaseId) => '/kredi-odeme/$purchaseId';
+  static String creditPaymentStatus(String purchaseId) => '/kredi-odeme-durumu/$purchaseId';
   static String classroom(String id) => '/ders/$id/sinif';
   static String payment(String bookingId) => '/odeme/$bookingId';
   static String paymentStatus(String bookingId) => '/odeme-durumu/$bookingId';
@@ -89,13 +112,17 @@ class Routes {
   static bool needsAuth(String path) =>
       path.startsWith('/ders/') ||
       path.startsWith('/odeme') ||
+      path.startsWith('/kredi-odeme') ||
+      path.startsWith(askQuestion) ||
+      path.startsWith(myQuestions) ||
+      path.startsWith(messages) ||
       path.startsWith('/kurum/') ||
       path.startsWith('/kurum-davet/') ||
       path.startsWith('/hesap/') ||
       path.startsWith('/panel') ||
       path == notifications ||
       path == changePassword ||
-      RegExp(r'^/ogretmen/[^/]+/(randevu|soru)$').hasMatch(path);
+      RegExp(r'^/ogretmen/[^/]+/(randevu|soru|tanisma|mesaj)$').hasMatch(path);
 
   static bool isAuthPage(String path) => path == login || path == register || path == forgot;
 
@@ -114,11 +141,21 @@ String? mapWebPath(Uri uri) {
   if (path == '/hesabim/kurum') return Routes.center;
   if (path == '/hesabim/derslerim' || path == '/hesabim') return path == '/hesabim' ? Routes.account : Routes.lessons;
   if (path == '/hesabim/favoriler') return Routes.favorites;
+  final question = RegExp(r'^/hesabim/sorularim/([A-Za-z0-9]+)').firstMatch(path);
+  if (question != null) return Routes.myQuestion(question.group(1)!);
+  if (path == '/hesabim/sorularim') return Routes.myQuestions;
+  if (path == '/hesabim/krediler') return Routes.ask;
   if (path == '/hesabim/bildirimler' || path == '/ogretmen-paneli/bildirimler') return Routes.notifications;
   if (path.startsWith('/ogretmen-paneli/talepler')) return Routes.teacherRequests;
   if (path.startsWith('/ogretmen-paneli/kazanclar')) return Routes.earnings;
   if (path.startsWith('/ogretmen-paneli/yorumlar')) return Routes.teacherReviews;
   if (path.startsWith('/ogretmen-paneli/takvim')) return Routes.teacherCalendar;
+  final poolQuestion = RegExp(r'^/ogretmen-paneli/soru-havuzu/([A-Za-z0-9]+)').firstMatch(path);
+  if (poolQuestion != null) return Routes.poolQuestion(poolQuestion.group(1)!);
+  if (path.startsWith('/ogretmen-paneli/soru-havuzu')) return Routes.teacherPool;
+  final thread = RegExp(r'^/(?:hesabim|ogretmen-paneli)/mesajlar/([A-Za-z0-9]+)').firstMatch(path);
+  if (thread != null) return Routes.thread(thread.group(1)!);
+  if (path == '/hesabim/mesajlar' || path == '/ogretmen-paneli/mesajlar') return Routes.messages;
   if (path.startsWith('/ogretmen-paneli')) return Routes.teacherHome;
   final level = RegExp(r'^/ozel-ders/([a-z0-9-]+)(?:/([a-z0-9-]+))?').firstMatch(path);
   if (level != null) {
@@ -242,6 +279,16 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             parentNavigatorKey: rootNavigatorKey,
+            path: 'tanisma',
+            builder: (_, state) => BookingScreen(slug: state.pathParameters['slug']!, offeringId: state.uri.queryParameters['ders'], intro: true),
+          ),
+          GoRoute(
+            parentNavigatorKey: rootNavigatorKey,
+            path: 'mesaj',
+            builder: (_, state) => ThreadScreen(teacherSlug: state.pathParameters['slug']!, teacherName: state.uri.queryParameters['ad']),
+          ),
+          GoRoute(
+            parentNavigatorKey: rootNavigatorKey,
             path: 'soru',
             builder: (_, state) => QuestionScreen(slug: state.pathParameters['slug']!, offeringId: state.uri.queryParameters['ders']),
           ),
@@ -270,6 +317,40 @@ final routerProvider = Provider<GoRouter>((ref) {
         ],
       ),
       GoRoute(parentNavigatorKey: rootNavigatorKey, path: Routes.notifications, builder: (_, _) => const NotificationsScreen()),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: Routes.ask,
+        builder: (_, _) => const CreditsScreen(),
+        routes: [GoRoute(parentNavigatorKey: rootNavigatorKey, path: 'gonder', builder: (_, _) => const AskQuestionScreen())],
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: Routes.myQuestions,
+        builder: (_, _) => const MyQuestionsScreen(),
+        routes: [GoRoute(parentNavigatorKey: rootNavigatorKey, path: ':id', builder: (_, state) => QuestionDetailScreen(id: state.pathParameters['id']!))],
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: '/kredi-odeme/:id',
+        builder: (_, state) => PaymentScreen(bookingId: state.pathParameters['id']!, link: state.extra is PaymentLink ? state.extra as PaymentLink : null, creditPurchase: true),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: '/kredi-odeme-durumu/:id',
+        builder: (_, state) => CreditPaymentStatusScreen(purchaseId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: Routes.messages,
+        builder: (_, _) => const MessagesScreen(),
+        routes: [GoRoute(parentNavigatorKey: rootNavigatorKey, path: ':id', builder: (_, state) => ThreadScreen(threadId: state.pathParameters['id']!))],
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: Routes.teacherPool,
+        builder: (_, _) => const TeacherPoolScreen(),
+        routes: [GoRoute(parentNavigatorKey: rootNavigatorKey, path: ':id', builder: (_, state) => PoolQuestionScreen(id: state.pathParameters['id']!))],
+      ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
         path: '/kurum/:id',
@@ -362,6 +443,20 @@ String routeForTarget(String screen, String? id) {
       return id == null ? Routes.center : Routes.centerChild(id);
     case 'center':
       return Routes.center;
+    case 'question':
+      return id == null ? Routes.myQuestions : Routes.myQuestion(id);
+    case 'questions':
+      return Routes.myQuestions;
+    case 'credits':
+      return Routes.ask;
+    case 'poolQuestion':
+      return id == null ? Routes.teacherPool : Routes.poolQuestion(id);
+    case 'pool':
+      return Routes.teacherPool;
+    case 'thread':
+      return id == null ? Routes.messages : Routes.thread(id);
+    case 'messages':
+      return Routes.messages;
     default:
       return Routes.notifications;
   }

@@ -212,6 +212,7 @@ class TeacherProfile {
     this.offersInPerson = false,
     this.inPersonAtStudentHome = false,
     this.inPersonAtTeacherPlace = false,
+    this.offersIntro = false,
     this.city,
     this.district,
     this.serviceDistricts = const [],
@@ -239,6 +240,9 @@ class TeacherProfile {
   final bool offersInPerson;
   final bool inPersonAtStudentHome;
   final bool inPersonAtTeacherPlace;
+
+  /// Ücretsiz 15 dk online tanışma görüşmesi sunuyor
+  final bool offersIntro;
   final NamedRef? city;
   final NamedRef? district;
   final List<ServiceDistrict> serviceDistricts;
@@ -269,6 +273,7 @@ class TeacherProfile {
         offersInPerson: asBool(json['offersInPerson']),
         inPersonAtStudentHome: asBool(json['inPersonAtStudentHome']),
         inPersonAtTeacherPlace: asBool(json['inPersonAtTeacherPlace']),
+        offersIntro: asBool(json['offersIntro']),
         city: json['city'] is Map ? NamedRef.fromJson(asJson(json['city'])) : null,
         district: json['district'] is Map ? NamedRef.fromJson(asJson(json['district'])) : null,
         serviceDistricts: asList(json['serviceDistricts'], ServiceDistrict.fromJson),
@@ -297,6 +302,7 @@ class TeacherProfile {
         offersInPerson: offersInPerson,
         inPersonAtStudentHome: inPersonAtStudentHome,
         inPersonAtTeacherPlace: inPersonAtTeacherPlace,
+        offersIntro: offersIntro,
         city: city,
         district: district,
         serviceDistricts: serviceDistricts,

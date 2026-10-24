@@ -1,4 +1,6 @@
+import { creditBalance } from "../credits";
 import { db } from "../db";
+import { unreadThreadCount } from "../messages";
 import type { MobileUser } from "./auth";
 import { absoluteUpload } from "./serialize";
 
@@ -12,6 +14,11 @@ export async function meJson(userId: string) {
       _count: { select: { notifications: { where: { readAt: null } } } },
     },
   });
+  const asTeacher = user.role === "TEACHER";
+  const [unreadMessages, credits] = await Promise.all([
+    user.role === "STUDENT" || asTeacher ? unreadThreadCount(user.id, asTeacher ? "teacher" : "student") : Promise.resolve(0),
+    user.role === "STUDENT" ? creditBalance(user.id) : Promise.resolve(null),
+  ]);
   return {
     id: user.id,
     role: user.role as MobileUser["role"],
@@ -23,6 +30,9 @@ export async function meJson(userId: string) {
     emailVerified: Boolean(user.emailVerifiedAt),
     mustChangePassword: user.mustChangePassword,
     unreadNotifications: user._count.notifications,
+    unreadMessages,
+    // Soru kredisi bakiyesi (yalnızca veli/öğrenci)
+    questionCredits: credits,
     student: user.studentProfile
       ? {
           accountType: user.studentProfile.accountType,

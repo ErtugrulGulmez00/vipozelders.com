@@ -120,7 +120,7 @@ class _DetailBody extends ConsumerWidget {
                   value: booking.location?.text.isNotEmpty ?? false ? booking.location!.text : 'Öğretmenin yeri (onay sonrası paylaşılır)',
                 ),
               if (booking.note != null && !s.isQuestion) InfoRow(label: asTeacher ? 'Öğrencinin notu' : 'Notunuz', value: booking.note!),
-              InfoRow(label: s.isQuestion ? 'Soru ücreti' : 'Ders ücreti', value: formatMoney(booking.price)),
+              InfoRow(label: s.isQuestion ? 'Soru ücreti' : 'Ders ücreti', value: s.isIntro ? 'Ücretsiz tanışma' : formatMoney(booking.price)),
               if (asTeacher && booking.teacherAmount != null) InfoRow(label: 'Kazancınız', value: formatMoney(booking.teacherAmount!)),
               if (booking.refundedAmount > 0) InfoRow(label: 'İade', value: formatMoney(booking.refundedAmount)),
               if (upcomingConfirmed) ...[
@@ -152,7 +152,7 @@ class _DetailBody extends ConsumerWidget {
           const SizedBox(height: 12),
           SectionCard(
             title: s.isQuestion ? 'Soruyu iptal et' : (asTeacher ? 'Dersi iptal et' : 'Randevuyu iptal et'),
-            subtitle: asTeacher ? 'Öğrenciye ücretin tamamı iade edilir.' : _refundText(),
+            subtitle: s.isIntro ? 'Ücretsiz tanışma görüşmesi; iptalde ücret söz konusu değildir.' : (asTeacher ? 'Öğrenciye ücretin tamamı iade edilir.' : _refundText()),
             child: Align(
               alignment: Alignment.centerLeft,
               child: BusyButton(
@@ -214,7 +214,7 @@ class _DetailBody extends ConsumerWidget {
         title: s.isQuestion ? 'Çözüm bekleniyor' : 'Öğretmen onayı bekleniyor',
         message: s.isQuestion
             ? 'Öğretmeniniz çözümü ${deadline != null ? 'en geç ${formatDateTime(deadline)} saatine kadar' : 'kısa süre içinde'} gönderecek. Gelmezse ödemenizin tamamı otomatik iade edilir.'
-            : 'Öğretmeniniz ${deadline != null ? '${formatDateTime(deadline)} saatine kadar' : 'kısa süre içinde'} yanıt verecek. Onaylanmazsa ödemenizin tamamı otomatik iade edilir.',
+            : 'Öğretmeniniz ${deadline != null ? '${formatDateTime(deadline)} saatine kadar' : 'kısa süre içinde'} yanıt verecek.${s.isIntro ? '' : ' Onaylanmazsa ödemenizin tamamı otomatik iade edilir.'}',
       ));
     }
     if (s.status == BookingStatus.disputed && booking.disputeReason != null) {

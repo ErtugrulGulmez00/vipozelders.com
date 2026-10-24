@@ -2,13 +2,14 @@ import { formatDayLabel, formatTime, isDateString, toLocalDateString } from "@/l
 import { getTeacherSlots } from "@/server/bookings";
 import { db } from "@/server/db";
 import { ApiError, json, notFound } from "@/server/mobile/http";
+import { INTRO_MINUTES } from "@/server/pricing";
 import { publicRoute } from "@/server/mobile/route";
 
-/** Seçilen süre için 7 günlük boş/dolu saatler: ?duration=60&start=2026-10-14 */
+/** Seçilen süre için 7 günlük boş/dolu saatler: ?duration=60&start=2026-10-14 (15 = ücretsiz tanışma görüşmesi) */
 export const GET = publicRoute<{ slug: string }>(async ({ request, params }) => {
   const url = new URL(request.url);
   const duration = Number(url.searchParams.get("duration"));
-  if (![45, 60].includes(duration)) throw new ApiError(400, "INVALID_DURATION", "Geçersiz süre.");
+  if (![INTRO_MINUTES, 45, 60].includes(duration)) throw new ApiError(400, "INVALID_DURATION", "Geçersiz süre.");
   const teacher = await db.teacherProfile.findUnique({ where: { slug: params.slug }, select: { userId: true, status: true, user: { select: { status: true } } } });
   if (!teacher || teacher.status !== "PUBLISHED" || teacher.user.status !== "ACTIVE") throw notFound("Öğretmen bulunamadı.");
 

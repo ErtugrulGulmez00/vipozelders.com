@@ -2,6 +2,9 @@ import type { z } from "zod";
 import { zodFieldErrors } from "@/lib/action-state";
 import { AccountError } from "../accounts";
 import { BookingError } from "../bookings";
+import { CreditError } from "../credits";
+import { MessageError } from "../messages";
+import { PoolError } from "../question-pool";
 import { ReviewError } from "../reviews";
 import { ProfileError } from "../teacher-profile";
 
@@ -32,7 +35,14 @@ export function errorJson(error: unknown): Response {
     return json({ error: { code: error.code, message: error.message, ...(error.fields ? { fields: error.fields } : {}), ...error.extra } }, error.status);
   }
   // İş kuralı hataları (dolu saat, iptal süresi geçti vb.) kullanıcıya olduğu gibi gösterilir.
-  if (error instanceof BookingError || error instanceof ReviewError || error instanceof AccountError) {
+  if (
+    error instanceof BookingError ||
+    error instanceof ReviewError ||
+    error instanceof AccountError ||
+    error instanceof CreditError ||
+    error instanceof PoolError ||
+    error instanceof MessageError
+  ) {
     return json({ error: { code: "RULE_VIOLATION", message: error.message } }, 422);
   }
   if (error instanceof ProfileError) {

@@ -34,6 +34,14 @@ class TeacherAccountScreen extends ConsumerWidget {
           const MenuTitle('Kazanç ve geri bildirim'),
           MenuTile(icon: Icons.payments_outlined, title: 'Kazançlar', subtitle: 'Bekleyen, ödenebilir ve ödenen tutarlar', onTap: () => context.push(Routes.earnings)),
           MenuTile(icon: Icons.reviews_outlined, title: 'Yorumlar', subtitle: 'Gelen yorumlar ve cevaplarınız', onTap: () => context.push(Routes.teacherReviews)),
+          MenuTile(
+            icon: Icons.forum_outlined,
+            title: 'Mesajlar',
+            subtitle: 'Velilerle yazışmalar',
+            trailing: me.unreadMessages > 0 ? Badge(label: Text('${me.unreadMessages}')) : null,
+            onTap: () => context.push(Routes.messages),
+          ),
+          MenuTile(icon: Icons.photo_camera_outlined, title: 'Soru havuzu', subtitle: 'Fotoğraflı soruları üstlenip çözün', onTap: () => context.push(Routes.teacherPool)),
           const MenuTitle('Profil'),
           if (teacher != null)
             MenuTile(icon: Icons.visibility_outlined, title: 'Profilimi görüntüle', subtitle: 'Velilerin gördüğü sayfa', onTap: () => context.push(Routes.teacher(teacher.slug))),

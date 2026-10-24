@@ -117,8 +117,8 @@ class _RequestCardState extends ConsumerState<_RequestCard> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(formatMoney(b.amount), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-                      Text('kazancınız', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11.5)),
+                      Text(b.isIntro ? 'Ücretsiz' : formatMoney(b.amount), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                      Text(b.isIntro ? 'tanışma' : 'kazancınız', style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 11.5)),
                     ],
                   ),
                 ],

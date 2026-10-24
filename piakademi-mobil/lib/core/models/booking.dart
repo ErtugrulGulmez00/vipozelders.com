@@ -49,6 +49,7 @@ class BookingSummary {
     required this.amount,
     this.approvalDeadline,
     this.isTest = false,
+    this.isIntro = false,
     required this.counterpart,
   });
 
@@ -69,6 +70,9 @@ class BookingSummary {
   final int amount;
   final DateTime? approvalDeadline;
   final bool isTest;
+
+  /// Ücretsiz 15 dk tanışma görüşmesi (ödemesiz)
+  final bool isIntro;
   final Counterpart counterpart;
 
   bool get isQuestion => mode == 'QUESTION';
@@ -91,6 +95,7 @@ class BookingSummary {
         amount: asInt(json['amount']),
         approvalDeadline: asDate(json['approvalDeadline']),
         isTest: asBool(json['isTest']),
+        isIntro: asBool(json['isIntro']),
         counterpart: Counterpart.fromJson(asJson(json['counterpart'])),
       );
 }
@@ -443,14 +448,16 @@ class PaymentLink {
 }
 
 class CheckoutResult {
-  const CheckoutResult({required this.booking, required this.payment});
+  const CheckoutResult({required this.booking, this.payment});
 
   final BookingDetail booking;
-  final PaymentLink payment;
+
+  /// Ücretsiz tanışma görüşmesinde ödeme yoktur (null).
+  final PaymentLink? payment;
 
   factory CheckoutResult.fromJson(Json json) => CheckoutResult(
         booking: BookingDetail.fromJson(asJson(json['booking'])),
-        payment: PaymentLink.fromJson(asJson(json['payment'])),
+        payment: json['payment'] is Map ? PaymentLink.fromJson(asJson(json['payment'])) : null,
       );
 }
 

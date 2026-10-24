@@ -23,7 +23,9 @@ const createSchema = z.object({
   districtId: z.number().int().optional(),
   address: z.string().trim().max(500).optional(),
   note: z.string().trim().max(1000).optional(),
-  consent: z.literal(true, { error: "Ön bilgilendirme formunu ve mesafeli satış sözleşmesini onaylayın." }),
+  // Ücretsiz 15 dk tanışma görüşmesi: ödeme yok, doğrudan öğretmen onayına düşer (consent gerekmez)
+  intro: z.boolean().optional(),
+  consent: z.boolean().optional(),
 });
 
 /**
@@ -34,6 +36,10 @@ export const POST = withUser(async ({ request, user }) => {
   requireRole(user, "STUDENT");
   if ((await maintenanceState()).on) throw new ApiError(503, "MAINTENANCE", "Site şu an bakımda; randevu alma birazdan yeniden açılacak.");
   const input = await readBody(request, createSchema);
+  const intro = Boolean(input.intro);
+  if (!intro && input.consent !== true) {
+    throw new ApiError(422, "VALIDATION", "Lütfen işaretli alanları kontrol edin.", { consent: "Ön bilgilendirme formunu ve mesafeli satış sözleşmesini onaylayın." });
+  }
   const booking = await createBookingHold({
     studentId: user.id,
     offeringId: input.offeringId,
@@ -46,7 +52,9 @@ export const POST = withUser(async ({ request, user }) => {
     districtId: input.districtId ?? null,
     address: input.address ?? null,
     studentNote: input.note ?? null,
+    intro,
   });
+  if (intro) return json({ booking: await bookingDetail(user, booking.id), payment: null }, 201);
   const redirectUrl = await startCheckout(booking.id, user.id, clientIp(request) ?? "127.0.0.1");
   return json(
     {
