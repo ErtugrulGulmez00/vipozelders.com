@@ -2433,6 +2433,8 @@ model WhatsAppMessage {
   user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
   to         String
   body       String
+  // Şablonla gönderimde değişkenler: [başlık, metin, bağlantı]
+  params     Json?
   type       String?
   status     EmailStatus @default(PENDING)
   attempts   Int         @default(0)

@@ -14,6 +14,9 @@ export const settingsSchema = z.object({
   supportWhatsapp: z.string().default("+90 850 308 84 43"),
   // Önemli bildirimler (ders talebi, onay, 1 saat kala hatırlatma…) WhatsApp ile de gönderilsin (LetsBot)
   whatsappNotifications: z.boolean().default(true),
+  // Meta onaylı bildirim şablonu (LetsBot panelinden; boşsa düz metin: yalnızca son 24 saatte yazmış kişiye ulaşır)
+  whatsappTemplateName: z.string().default(""),
+  whatsappTemplateLanguage: z.string().default("tr"),
   companyName: z.string().default(""),
   companyAddress: z.string().default(""),
   companyTaxInfo: z.string().default(""),

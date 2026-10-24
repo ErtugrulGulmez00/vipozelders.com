@@ -1,9 +1,11 @@
-// WhatsApp bildirimleri. Gönderim LetsBot API ile yapılır (LETSBOT_API_KEY): şablon gerekmez, düz metin gider.
-// LetsBot panelinde işletmenin WhatsApp numarası "bağlı cihaz" olarak eklenmiş olmalı (QR ile).
+// WhatsApp bildirimleri. Gönderim LetsBot API ile yapılır (LETSBOT_API_KEY); kanal resmî WhatsApp Cloud API'dir.
+// Meta kuralı: işletmenin başlattığı mesaj onaylı şablonla gider; düz metin yalnızca kişi son 24 saatte yazdıysa
+// ulaşır. Site ayarlarında şablon adı girildiyse bildirimler şablonla (değişkenler: başlık, metin, bağlantı) gider.
 // Bildirimler önce WhatsAppMessage kuyruğuna yazılır; zamanlayıcı dakikada sınırlı sayıda gönderir.
 // Yedek: Meta WhatsApp Business Cloud API (WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID), yalnızca onaylı şablonlarla.
 
 import { db } from "./db";
+import { loadSettings } from "./settings";
 
 const LETSBOT = "https://letsbot.net/api/v1";
 const GRAPH = "https://graph.facebook.com/v21.0";
@@ -37,8 +39,33 @@ async function letsbot(path: string, body: Record<string, unknown>) {
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(20_000),
   });
-  const data = (await response.json().catch(() => ({}))) as { success?: boolean; message?: string; data?: { id?: string; key?: { id?: string } } | unknown[] };
+  const data = (await response.json().catch(() => ({}))) as { success?: boolean; Status?: boolean; message?: string; Message?: string; data?: { id?: string; key?: { id?: string } } | unknown[] };
   return { response, data };
+}
+
+/** Şablon değişkeni: Meta yeni satır, sekme ve 4'ten fazla boşluk kabul etmez. */
+function templateParam(text: string) {
+  return text.replace(/[\r\n\t]+/g, " · ").replace(/ {2,}/g, " ").trim().slice(0, 900) || "-";
+}
+
+/** Onaylı şablonla mesaj (LetsBot → Meta). params: gövdedeki {{1}}, {{2}}… değerleri. */
+export async function sendLetsbotTemplate(phone: string, template: string, language: string, params: string[]): Promise<WhatsAppResult> {
+  if (!letsbotConfigured()) return { ok: false, error: "LetsBot API anahtarı girilmemiş." };
+  const to = toWhatsAppNumber(phone);
+  if (!to) return { ok: false, error: "Geçersiz telefon numarası." };
+  try {
+    const { response, data } = await letsbot("template/send", {
+      phone: to,
+      template_name: template,
+      template_language: language,
+      components: params.length ? [{ type: "body", parameters: params.map((text) => ({ type: "text", text: templateParam(text) })) }] : [],
+    });
+    if (!response.ok || data.success === false || data.Status === false) return { ok: false, error: `${response.status}: ${data.message ?? data.Message ?? "Şablon mesajı gönderilemedi"}`.slice(0, 300) };
+    const info = Array.isArray(data.data) ? undefined : data.data;
+    return { ok: true, messageId: info?.id ?? info?.key?.id ?? "" };
+  } catch (error) {
+    return { ok: false, error: String(error).slice(0, 300) };
+  }
 }
 
 /** Düz metin WhatsApp mesajı (LetsBot). */
@@ -56,12 +83,17 @@ export async function sendWhatsAppText(phone: string, body: string): Promise<Wha
   }
 }
 
-/** LetsBot'ta WhatsApp oturumu (bağlı numara) açık mı? Mesaj göndermez. */
+/** LetsBot anahtarı ve kanal çalışıyor mu? Son mesajlar okunarak denetlenir; mesaj göndermez. */
 export async function whatsappSessionStatus(): Promise<{ ok: boolean; message: string }> {
   if (!letsbotConfigured()) return { ok: false, message: "LetsBot API anahtarı girilmemiş." };
   try {
-    const { response, data } = await letsbot("session/status", {});
-    return { ok: response.ok && data.success !== false, message: data.message ?? String(response.status) };
+    const today = new Date().toISOString().slice(0, 10);
+    const response = await fetch(`${LETSBOT}/messages?date_from=${today}&date_to=${today}`, {
+      headers: { Accept: "application/json", Authorization: `Bearer ${process.env.LETSBOT_API_KEY}` },
+      signal: AbortSignal.timeout(15_000),
+    });
+    const data = (await response.json().catch(() => ({}))) as { Status?: boolean; Message?: string; message?: string };
+    return { ok: response.ok && data.Status !== false, message: data.Message ?? data.message ?? String(response.status) };
   } catch (error) {
     return { ok: false, message: String(error).slice(0, 200) };
   }
@@ -100,6 +132,9 @@ export async function sendWhatsAppTemplate(phone: string, template: string, lang
 export async function sendPendingWhatsApps(now = new Date()): Promise<number> {
   if (!letsbotConfigured()) return 0;
   const pending = await db.whatsAppMessage.findMany({ where: { status: "PENDING", attempts: { lt: MAX_ATTEMPTS } }, orderBy: { createdAt: "asc" }, take: PER_MINUTE });
+  if (!pending.length) return 0;
+  const settings = await loadSettings();
+  const template = settings.whatsappTemplateName.trim();
   let sent = 0;
   for (const message of pending) {
     // Bir saatten eski bildirim artık anlamını yitirmiştir (ör. "1 saat sonra dersiniz var")
@@ -107,7 +142,8 @@ export async function sendPendingWhatsApps(now = new Date()): Promise<number> {
       await db.whatsAppMessage.update({ where: { id: message.id }, data: { status: "FAILED", error: "Süresi geçti, gönderilmedi" } });
       continue;
     }
-    const result = await sendWhatsAppText(message.to, message.body);
+    const params = Array.isArray(message.params) ? (message.params as string[]) : null;
+    const result = template && params ? await sendLetsbotTemplate(message.to, template, settings.whatsappTemplateLanguage || "tr", params) : await sendWhatsAppText(message.to, message.body);
     const attempts = message.attempts + 1;
     await db.whatsAppMessage.update({
       where: { id: message.id },

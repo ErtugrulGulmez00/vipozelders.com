@@ -47,6 +47,12 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
         <div className="sm:col-span-2">
           <Checkbox name="whatsappNotifications" defaultChecked={settings.whatsappNotifications} label="Önemli bildirimleri WhatsApp ile de gönder (ders talebi, onay, 1 saat kala hatırlatma, çözüm geldi…)" />
         </div>
+        <Field label="WhatsApp bildirim şablonu (Meta onaylı)" hint="LetsBot panelinde onaylanan şablonun adı; 3 değişkenli: {{1}} başlık, {{2}} metin, {{3}} bağlantı. Boşsa düz metin gider ve yalnızca son 24 saatte size yazmış kişiye ulaşır.">
+          <Input name="whatsappTemplateName" defaultValue={settings.whatsappTemplateName} placeholder="pikampus_bildirim" />
+        </Field>
+        <Field label="Şablon dili">
+          <Input name="whatsappTemplateLanguage" defaultValue={settings.whatsappTemplateLanguage} placeholder="tr" />
+        </Field>
         <Field label="Ticari unvan" hint="Örn: VIP Eğitim Teknolojileri Ltd. Şti.">
           <Input name="companyName" defaultValue={settings.companyName} />
         </Field>

@@ -75,7 +75,9 @@ export async function notify(input: NotifyInput, tx: DbTransaction | typeof db =
     const settings = await loadSettings();
     if (settings.whatsappNotifications) {
       const body = [`*${settings.siteName}* · ${input.title}`, input.body, input.link ? appUrl(input.link) : null].filter(Boolean).join("\n");
-      await tx.whatsAppMessage.create({ data: { userId: input.userId, to: user.phone, body: body.slice(0, 1500), type: input.type } });
+      // Şablonla gönderimde değişkenler: başlık, metin, bağlantı
+      const params = [input.title, input.body, input.link ? appUrl(input.link) : appUrl("/")];
+      await tx.whatsAppMessage.create({ data: { userId: input.userId, to: user.phone, body: body.slice(0, 1500), params, type: input.type } });
     }
   }
 }

@@ -29,13 +29,20 @@ export default async function WhatsAppAdminPage() {
       {!letsbotConfigured() ? (
         <Alert tone="warning" className="mb-6">LetsBot API anahtarı sunucuya girilmemiş; mesajlar kuyrukta bekler.</Alert>
       ) : session.ok ? (
-        <Alert tone="success" className="mb-6">LetsBot bağlantısı açık: WhatsApp numarası bağlı.</Alert>
+        <Alert tone="success" className="mb-6">LetsBot bağlantısı çalışıyor.</Alert>
       ) : (
-        <Alert tone="error" className="mb-6" title="WhatsApp numarası bağlı değil">
-          LetsBot “{session.message}” diyor. LetsBot panelinde QR kodu, işletmenin WhatsApp’ındaki “Bağlı cihazlar” bölümünden okutun. Bağlanana kadar mesajlar kuyrukta bekler (1 saatten eskiler gönderilmez).
+        <Alert tone="error" className="mb-6" title="LetsBot bağlantısı çalışmıyor">
+          LetsBot “{session.message}” diyor. API anahtarını ve kanalın “Bağlı” olduğunu LetsBot panelinden kontrol edin. Sorun giderilene kadar mesajlar kuyrukta bekler (1 saatten eskiler gönderilmez).
         </Alert>
       )}
       {!settings.whatsappNotifications ? <Alert tone="info" className="mb-6">Site ayarlarında WhatsApp bildirimleri kapalı.</Alert> : null}
+      {settings.whatsappTemplateName ? (
+        <Alert tone="info" className="mb-6">Bildirimler “{settings.whatsappTemplateName}” şablonuyla gidiyor.</Alert>
+      ) : (
+        <Alert tone="warning" className="mb-6" title="Bildirim şablonu tanımlı değil">
+          Resmî WhatsApp kanalında işletmenin başlattığı mesaj onaylı şablonla gider; şu an düz metin gidiyor ve yalnızca son 24 saatte size yazmış kişilere ulaşıyor. LetsBot panelinde “Yardımcı (Utility)” türünde, Türkçe, 3 değişkenli bir şablon oluşturup onaylatın ve adını Site ayarları → WhatsApp bildirim şablonu alanına yazın.
+        </Alert>
+      )}
       <div className="mb-6 grid gap-3 sm:grid-cols-3">
         <StatCard label="Son 24 saat gönderilen" value={count("SENT")} />
         <StatCard label="Sırada" value={count("PENDING")} />
