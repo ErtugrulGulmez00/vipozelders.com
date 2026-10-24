@@ -61,6 +61,14 @@ export const settingsSchema = z.object({
   // Dönem bitmeden kaç gün önce yenileme hatırlatması gider
   subscriptionReminderDays: z.number().int().min(0).max(14).default(3),
 
+  // Grup dersi (sanal dershane): komisyon, katılımcı sınırları, kişi başı ücret aralığı
+  groupsEnabled: z.boolean().default(true),
+  groupCommissionBps: z.number().int().min(0).max(9000).default(2000),
+  groupMinParticipants: z.number().int().min(2).max(50).default(4),
+  groupMaxCapacity: z.number().int().min(2).max(50).default(10),
+  groupMinPriceTl: z.number().int().min(1).max(100_000).default(100),
+  groupMaxPriceTl: z.number().int().min(1).max(100_000).default(20_000),
+
   // Yorumlar
   reviewWindowDays: z.number().int().min(1).max(365).default(30),
 

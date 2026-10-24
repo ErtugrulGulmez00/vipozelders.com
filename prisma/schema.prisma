@@ -81,6 +81,7 @@ model User {
   creditEntries     CreditLedger[]
   poolQuestions     PoolQuestion[]
   questionSubscriptions QuestionSubscription[]
+  groupEnrollments  GroupEnrollment[]
   classroomReports  ClassroomReport[]
   threadsAsStudent  MessageThread[]    @relation("ThreadStudent")
   threadsAsTeacher  MessageThread[]    @relation("ThreadTeacher")
@@ -192,6 +193,7 @@ model Level {
   bookings      Booking[]
   poolQuestions PoolQuestion[]
   questionPlans QuestionPlan[]
+  groupCourses  GroupCourse[]
 }
 
 model Grade {
@@ -215,6 +217,7 @@ model Subject {
   bookings      Booking[]
   poolQuestions PoolQuestion[]
   questionPlans QuestionPlan[]
+  groupCourses  GroupCourse[]
 }
 
 model LevelSubject {
@@ -342,6 +345,7 @@ model TeacherProfile {
   poolQuestions          PoolQuestion[]
   questionPlans          QuestionPlan[]
   questionSubscriptions  QuestionSubscription[]
+  groupCourses           GroupCourse[]
 
   @@index([status])
 }
@@ -633,6 +637,8 @@ model Payment {
   creditPurchase    CreditPurchase? @relation(fields: [creditPurchaseId], references: [id], onDelete: Cascade)
   subscriptionId    String?
   subscription      QuestionSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  groupEnrollmentId String?
+  groupEnrollment   GroupEnrollment? @relation(fields: [groupEnrollmentId], references: [id], onDelete: Cascade)
   provider          String
   providerToken     String?         @unique
   providerPaymentId String?
@@ -690,6 +696,8 @@ model LedgerEntry {
   poolQuestion   PoolQuestion?  @relation(fields: [poolQuestionId], references: [id], onDelete: SetNull)
   subscriptionId String?
   subscription   QuestionSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  groupEnrollmentId String?
+  groupEnrollment   GroupEnrollment? @relation(fields: [groupEnrollmentId], references: [id], onDelete: SetNull)
   payoutId       String?
   payout         Payout?        @relation(fields: [payoutId], references: [id], onDelete: SetNull)
   bucket         LedgerBucket
@@ -2065,4 +2073,134 @@ model PageView {
   createdAt DateTime @default(now())
 
   @@index([day])
+}
+
+// ---------------------------------------------------------------------------
+// Grup dersi (sanal dershane): öğretmen belirli oturumlardan oluşan bir program ilan eder (ör. 4 hafta, haftada
+// 2 oturum). Öğrenciler kişi başı ücreti öder; kayıt bitişinde en az katılımcı dolmazsa ders iptal olur ve
+// herkese tam iade yapılır. Öğretmen payı her oturum yapıldıkça oturum oturum serbest kalır; öğretmenin
+// katılmadığı oturumun payı öğrencilere iade edilir.
+// ---------------------------------------------------------------------------
+
+enum GroupCourseStatus {
+  // Kayıtlar açık
+  OPEN
+  // En az katılımcı doldu, kayıt kapandı
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+model GroupCourse {
+  id                String            @id @default(cuid())
+  code              String            @unique
+  teacherId         String
+  teacher           TeacherProfile    @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+  levelId           Int
+  level             Level             @relation(fields: [levelId], references: [id])
+  subjectId         Int
+  subject           Subject           @relation(fields: [subjectId], references: [id])
+  levelName         String
+  subjectName       String
+  title             String
+  description       String?
+  // Kişi başı toplam ücret (tüm oturumlar, kuruş, KDV dahil)
+  price             Int
+  commissionRateBps Int
+  capacity          Int
+  minParticipants   Int
+  enrollDeadline    DateTime
+  // Sitedeki grup dersleri listesinde görünsün mü (değilse yalnızca davetle)
+  isPublic          Boolean           @default(true)
+  status            GroupCourseStatus @default(OPEN)
+  confirmedAt       DateTime?
+  cancelledAt       DateTime?
+  cancelReason      String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  sessions    GroupSession[]
+  enrollments GroupEnrollment[]
+
+  @@index([status, enrollDeadline])
+  @@index([teacherId, status])
+}
+
+enum GroupSessionStatus {
+  SCHEDULED
+  COMPLETED
+  // Öğretmen katılmadı: bu oturumun payı öğrencilere iade edildi
+  TEACHER_NO_SHOW
+  CANCELLED
+}
+
+model GroupSession {
+  id                 String             @id @default(cuid())
+  courseId           String
+  course             GroupCourse        @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  // Programdaki sırası (0'dan)
+  index              Int
+  startAt            DateTime
+  endAt              DateTime
+  status             GroupSessionStatus @default(SCHEDULED)
+  videoRoomName      String             @unique
+  completedAt        DateTime?
+  earningsReleaseAt  DateTime?
+  earningsReleasedAt DateTime?
+  reminderSentAt     DateTime?
+
+  attendance GroupAttendance[]
+
+  @@unique([courseId, index])
+  @@index([status, endAt])
+  @@index([startAt])
+}
+
+model GroupAttendance {
+  id        String       @id @default(cuid())
+  sessionId String
+  session   GroupSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userId    String
+  joinedAt  DateTime
+  leftAt    DateTime?
+
+  @@index([sessionId, userId])
+}
+
+enum GroupEnrollmentStatus {
+  // Öğretmen davet etti, ödeme yapılmadı (yer ayrılmaz)
+  INVITED
+  PENDING_PAYMENT
+  PAID
+  // Öğrenci ders başlamadan çıktı ya da ders iptal oldu (tam iade)
+  CANCELLED
+  EXPIRED
+  FAILED
+}
+
+model GroupEnrollment {
+  id                String                @id @default(cuid())
+  code              String                @unique
+  courseId          String
+  course            GroupCourse           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  studentId         String
+  student           User                  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  learnerName       String?
+  status            GroupEnrollmentStatus
+  price             Int
+  commissionAmount  Int
+  teacherAmount     Int
+  holdExpiresAt     DateTime?
+  paidAt            DateTime?
+  refundedAmount    Int                   @default(0)
+  invitedAt         DateTime?
+  cancelledAt       DateTime?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+
+  payments      Payment[]
+  ledgerEntries LedgerEntry[]
+
+  @@unique([courseId, studentId])
+  @@index([studentId, status])
 }

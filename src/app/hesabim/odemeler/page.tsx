@@ -13,8 +13,8 @@ export const metadata: Metadata = { title: "Ödemelerim" };
 export default async function PaymentsPage() {
   const user = await requireRole("STUDENT");
   const payments = await db.payment.findMany({
-    where: { OR: [{ booking: { studentId: user.id } }, { creditPurchase: { studentId: user.id } }, { subscription: { studentId: user.id } }], status: { not: "INITIATED" } },
-    include: { booking: true, creditPurchase: true, subscription: true, refunds: true },
+    where: { OR: [{ booking: { studentId: user.id } }, { creditPurchase: { studentId: user.id } }, { subscription: { studentId: user.id } }, { groupEnrollment: { studentId: user.id } }], status: { not: "INITIATED" } },
+    include: { booking: true, creditPurchase: true, subscription: true, groupEnrollment: { include: { course: true } }, refunds: true },
     orderBy: { createdAt: "desc" },
     take: 100,
   });
@@ -61,6 +61,13 @@ export default async function PaymentsPage() {
                           {p.subscription.levelName} {p.subscription.subjectName} aboneliği
                         </Link>
                         <p className="text-xs text-slate-400">{p.subscription.code}</p>
+                      </>
+                    ) : p.groupEnrollment ? (
+                      <>
+                        <Link href={`/hesabim/grup-derslerim/${p.groupEnrollment.id}`} className="font-medium text-brand-700 hover:underline">
+                          Grup dersi: {p.groupEnrollment.course.title}
+                        </Link>
+                        <p className="text-xs text-slate-400">{p.groupEnrollment.code}</p>
                       </>
                     ) : (
                       "—"

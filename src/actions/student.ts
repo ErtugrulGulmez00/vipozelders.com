@@ -101,7 +101,7 @@ export async function mockPaymentAction(formData: FormData) {
   if (!user || getPaymentProvider().id !== "mock") redirect("/");
   const paymentId = text(formData, "paymentId");
   const outcome = text(formData, "outcome") === "success" ? "success" : "failure";
-  const payment = await db.payment.findUnique({ where: { id: paymentId }, include: { booking: true, creditPurchase: true, subscription: true } });
+  const payment = await db.payment.findUnique({ where: { id: paymentId }, include: { booking: true, creditPurchase: true, subscription: true, groupEnrollment: { include: { course: true } } } });
   const subject = payment ? paymentSubject(payment) : null;
   if (!payment || !subject || subject.ownerId !== user.id || payment.provider !== "mock" || !payment.providerToken) redirect("/hesabim");
   if (payment.status === "INITIATED") {

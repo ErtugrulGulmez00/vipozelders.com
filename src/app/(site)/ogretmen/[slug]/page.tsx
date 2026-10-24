@@ -13,6 +13,7 @@ import { PhotoZoom } from "@/components/site/photo-zoom";
 import { Alert, Badge, Card, RatingSummary, Skeleton, Stars } from "@/components/ui/primitives";
 import { formatDate, toLocalDateString } from "@/lib/dates";
 import { durationLabel } from "@/lib/labels";
+import { scheduleSummary } from "@/lib/groups";
 import { formatMoney } from "@/lib/money";
 import { fullName, initials, shortName } from "@/lib/text";
 import { getCurrentUser } from "@/server/auth/current-user";
@@ -183,6 +184,10 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
           <SubscriptionPlans teacherId={teacher.userId} firstName={teacher.user.firstName} />
         </Suspense>
 
+        <Suspense fallback={null}>
+          <GroupCourses teacherId={teacher.userId} />
+        </Suspense>
+
         <Reviews teacher={teacher} />
       </div>
 
@@ -237,6 +242,44 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
         </div>
       ) : null}
     </div>
+  );
+}
+
+/** Öğretmenin kayıt alan grup dersleri (varsa). */
+async function GroupCourses({ teacherId }: { teacherId: string }) {
+  await connection();
+  const courses = await db.groupCourse.findMany({
+    where: { teacherId, status: "OPEN", isPublic: true, enrollDeadline: { gt: new Date() } },
+    orderBy: { enrollDeadline: "asc" },
+    take: 5,
+    include: { sessions: { orderBy: { index: "asc" }, select: { startAt: true, endAt: true } } },
+  });
+  if (!courses.length) return null;
+  return (
+    <Card className="border-sky-200 p-6">
+      <h2 className="flex items-center gap-2 text-lg font-bold text-slate-900">
+        <Users className="size-5 text-sky-600" aria-hidden /> Grup dersleri
+      </h2>
+      <div className="mt-3 divide-y divide-slate-100">
+        {courses.map((c) => (
+          <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+            <div className="min-w-0">
+              <p className="font-semibold text-slate-900">{c.title}</p>
+              <p className="text-sm text-slate-500">{scheduleSummary(c.sessions)}</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <p className="text-right">
+                <span className="text-lg font-bold text-slate-900">{formatMoney(c.price)}</span>
+                <span className="text-sm text-slate-500"> / kişi</span>
+              </p>
+              <Link href={`/grup-dersleri/${c.code}`} className={buttonClasses("outline", "sm")}>
+                İncele
+              </Link>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 }
 

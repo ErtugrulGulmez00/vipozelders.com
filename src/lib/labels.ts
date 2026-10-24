@@ -110,6 +110,29 @@ export const SUBSCRIPTION_STATUS: Record<string, { label: string; tone: Tone }> 
   EXPIRED: { label: "Ödenmedi", tone: "slate" },
 };
 
+export const GROUP_COURSE_STATUS: Record<string, { label: string; tone: Tone }> = {
+  OPEN: { label: "Kayıtlar açık", tone: "sky" },
+  CONFIRMED: { label: "Kesinleşti", tone: "green" },
+  CANCELLED: { label: "İptal edildi", tone: "rose" },
+  COMPLETED: { label: "Tamamlandı", tone: "slate" },
+};
+
+export const GROUP_SESSION_STATUS: Record<string, { label: string; tone: Tone }> = {
+  SCHEDULED: { label: "Planlandı", tone: "sky" },
+  COMPLETED: { label: "Yapıldı", tone: "green" },
+  TEACHER_NO_SHOW: { label: "Öğretmen katılmadı · iade", tone: "rose" },
+  CANCELLED: { label: "İptal", tone: "slate" },
+};
+
+export const GROUP_ENROLLMENT_STATUS: Record<string, { label: string; tone: Tone }> = {
+  INVITED: { label: "Davet edildi", tone: "violet" },
+  PENDING_PAYMENT: { label: "Ödeme bekleniyor", tone: "amber" },
+  PAID: { label: "Kayıtlı", tone: "green" },
+  CANCELLED: { label: "İptal · iade", tone: "slate" },
+  EXPIRED: { label: "Süresi doldu", tone: "slate" },
+  FAILED: { label: "Ödeme başarısız", tone: "rose" },
+};
+
 export const CREDIT_PURCHASE_STATUS: Record<string, { label: string; tone: Tone }> = {
   PENDING_PAYMENT: { label: "Ödeme bekleniyor", tone: "amber" },
   PAID: { label: "Aktif", tone: "green" },

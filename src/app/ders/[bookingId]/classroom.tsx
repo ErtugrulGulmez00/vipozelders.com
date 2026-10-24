@@ -127,7 +127,7 @@ function Stage({
 }: {
   title: string;
   endsAt: number;
-  bookingId: string;
+  bookingId?: string;
   observer: boolean;
   teacherNotice: boolean;
   onReporting: () => void;
@@ -220,9 +220,9 @@ function Stage({
               </button>
             </div>
           ) : null}
-          {/* Tahta kapalıyken de bağlı kalır; karşı taraf çizdikçe içerik güncel tutulur. */}
+          {/* Tahta kapalıyken de bağlı kalır; karşı taraf çizdikçe içerik güncel tutulur. Çizim aracının kendi görünür kıldığı düğmeler için saydamlık da kapatılır. */}
           {observer ? null : (
-            <div className={cn("absolute inset-0", boardOpen ? "visible" : "pointer-events-none invisible")} aria-hidden={!boardOpen}>
+            <div className={cn("absolute inset-0", boardOpen ? "visible" : "pointer-events-none invisible opacity-0 [&_*]:pointer-events-none!")} aria-hidden={!boardOpen}>
               <Whiteboard open={boardOpen} onRemoteOpen={openBoard} />
             </div>
           )}
@@ -266,7 +266,7 @@ function Stage({
             </button>
           </>
         )}
-        <ReportButton bookingId={bookingId} onSending={onReporting} onDone={onReported} className="bg-slate-800 text-rose-300 hover:bg-slate-700" />
+        {bookingId ? <ReportButton bookingId={bookingId} onSending={onReporting} onDone={onReported} className="bg-slate-800 text-rose-300 hover:bg-slate-700" /> : null}
         <DisconnectButton className="bg-rose-600 text-white hover:bg-rose-700">
           <LogOut className="size-4" aria-hidden /> <span className={LABEL}>Dersten çık</span>
         </DisconnectButton>
@@ -284,14 +284,18 @@ export function Classroom({
   bookingId,
   observer = false,
   teacherNotice = false,
+  startMuted = false,
 }: {
   token: string;
   serverUrl: string;
   title: string;
   endsAt: number;
   backHref: string;
-  bookingId: string;
+  /** Birebir derste uygunsuz durum bildirimi için; grup dersinde yok */
+  bookingId?: string;
   observer?: boolean;
+  /** Grup dersinde öğrenci mikrofonu kapalı girer, söz alınca açar */
+  startMuted?: boolean;
   /** Öğretmene platform kuralları hatırlatması (üst şerit) */
   teacherNotice?: boolean;
 }) {
@@ -300,7 +304,7 @@ export function Classroom({
   const leave = () => router.push(reported.current ? `${backHref}?durum=bildirim` : backHref);
   return (
     <div data-lk-theme="default" className="classroom-root">
-      <LiveKitRoom token={token} serverUrl={serverUrl} options={ROOM_OPTIONS} connect video={!observer} audio={!observer} onDisconnected={leave} className="h-full">
+      <LiveKitRoom token={token} serverUrl={serverUrl} options={ROOM_OPTIONS} connect video={!observer} audio={!observer && !startMuted} onDisconnected={leave} className="h-full">
         <Stage
           title={title}
           endsAt={endsAt}

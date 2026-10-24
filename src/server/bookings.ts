@@ -18,6 +18,7 @@ import { notify, notifyRole } from "./notifications";
 import { getPaymentProvider, getProviderById, PAYMENT_PROVIDERS, processRefund, requestRefund, salesOpen } from "./payments/service";
 import { completeCreditCheckout } from "./credits";
 import { completeSubscriptionCheckout } from "./subscriptions";
+import { completeGroupCheckout, groupBusy } from "./groups";
 import { approvalDeadline, INTRO_MINUTES, lessonPrice, settledReleaseAt, splitCommission, splitRetained, studentCancellationRefund } from "./pricing";
 import { appUrl } from "./email";
 import { loadSettings } from "./settings";
@@ -79,11 +80,15 @@ function toDayException(row: { date: Date; type: "BLOCKED" | "EXTRA"; startMinut
 }
 
 async function loadBusy(tx: DbTransaction | typeof db, teacherId: string, from: Date, to: Date, now: Date): Promise<BusyRange[]> {
-  const rows = await tx.booking.findMany({
-    where: { teacherId, startAt: { lt: to }, blockEndAt: { gt: from }, ...blockingWhere(now) },
-    select: { startAt: true, blockEndAt: true },
-  });
-  return rows.map((row) => ({ start: row.startAt, end: row.blockEndAt }));
+  const [rows, groups] = await Promise.all([
+    tx.booking.findMany({
+      where: { teacherId, startAt: { lt: to }, blockEndAt: { gt: from }, ...blockingWhere(now) },
+      select: { startAt: true, blockEndAt: true },
+    }),
+    // Grup dersi oturumları da öğretmenin takvimini doldurur
+    groupBusy(tx, teacherId, from, to),
+  ]);
+  return [...rows.map((row) => ({ start: row.startAt, end: row.blockEndAt })), ...groups];
 }
 
 export function lessonSummary(booking: Pick<Booking, "subjectName" | "levelName" | "serviceName" | "startAt" | "endAt" | "mode" | "code">) {
@@ -391,6 +396,9 @@ export async function completeCheckout(token: string, now = new Date()): Promise
   }
   if (found.subscriptionId) {
     return { bookingId: found.subscriptionId, outcome: await completeSubscriptionCheckout(found, now) };
+  }
+  if (found.groupEnrollmentId) {
+    return { bookingId: found.groupEnrollmentId, outcome: await completeGroupCheckout(found, now) };
   }
   if (!found.bookingId) throw new BookingError("Ödeme kaydı bulunamadı.");
   const payment = { ...found, bookingId: found.bookingId };

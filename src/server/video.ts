@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { AccessToken, RoomServiceClient, WebhookReceiver } from "livekit-server-sdk";
 import type { Booking } from "@/generated/prisma/client";
 import { db } from "./db";
+import { handleGroupRoomEvent } from "./groups";
 import { loadSettings } from "./settings";
 import { videoConfigured } from "./video-config";
 
@@ -43,6 +44,16 @@ export async function createClassroomToken(
   now = new Date(),
   options: { observer?: boolean } = {},
 ): Promise<{ token: string; serverUrl: string }> {
+  return createRoomToken({ room: access.booking.videoRoomName!, role: access.role, closesAt: access.closesAt }, user, now, options);
+}
+
+/** Herhangi bir ders odası için anahtar (birebir ders ya da grup dersi oturumu). */
+export async function createRoomToken(
+  access: { room: string; role: "teacher" | "student"; closesAt: Date },
+  user: { id: string; firstName: string; lastName: string },
+  now = new Date(),
+  options: { observer?: boolean } = {},
+): Promise<{ token: string; serverUrl: string }> {
   if (!videoConfigured()) throw new Error("Sanal sınıf yapılandırılmamış.");
   const observer = Boolean(options.observer) && access.role === "student";
   const ttlSeconds = Math.max(60, Math.round((access.closesAt.getTime() - now.getTime()) / 1000));
@@ -53,7 +64,7 @@ export async function createClassroomToken(
   });
   token.addGrant({
     roomJoin: true,
-    room: access.booking.videoRoomName!,
+    room: access.room,
     canPublish: !observer,
     canSubscribe: true,
     canPublishData: !observer,
@@ -70,6 +81,7 @@ export async function handleLiveKitWebhook(body: string, authorization: string |
   const roomName = event.room?.name;
   const identity = event.participant?.identity;
   if (!roomName || !identity) return;
+  if (roomName.startsWith("grup-")) return handleGroupRoomEvent(roomName, identity, event.event);
 
   const booking = await db.booking.findUnique({ where: { videoRoomName: roomName }, select: { id: true, teacherId: true, studentId: true } });
   if (!booking || (identity !== booking.teacherId && identity !== booking.studentId)) return;

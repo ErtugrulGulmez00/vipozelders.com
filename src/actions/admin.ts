@@ -410,7 +410,7 @@ export async function saveSettingsAction(_: ActionState, formData: FormData): Pr
     // İşaretsiz onay kutusu forma hiç gelmez; formdaki tüm onay kutuları bu yüzden her zaman okunur.
     if (!formData.has(key) && typeof defaultValue !== "boolean") continue;
     if (typeof defaultValue === "boolean") values[key] = formData.get(key) === "on";
-    else if (typeof defaultValue === "number") values[key] = key === "commissionRateBps" || key === "subscriptionCommissionBps" ? Math.round(Number(String(formData.get(key)).replace(",", ".")) * 100) : Number(formData.get(key));
+    else if (typeof defaultValue === "number") values[key] = key === "commissionRateBps" || key === "subscriptionCommissionBps" || key === "groupCommissionBps" ? Math.round(Number(String(formData.get(key)).replace(",", ".")) * 100) : Number(formData.get(key));
     else values[key] = String(formData.get(key) ?? "").trim();
   }
   const parsed = settingsSchema.partial().safeParse(values);

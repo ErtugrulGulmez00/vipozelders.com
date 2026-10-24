@@ -35,6 +35,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         { href: "/yonetim/mesajlar", label: "Mesaj denetimi", icon: <MessageCircleWarning />, badge: messagesToReview || undefined },
         { href: "/yonetim/ders-bildirimleri", label: "Ders bildirimleri", icon: <ShieldAlert />, badge: openReports || undefined },
         { href: "/yonetim/soru-havuzu", label: "Soru havuzu", icon: <MessageCircleQuestion />, badge: poolDisputes || undefined },
+        { href: "/yonetim/grup-dersleri", label: "Grup dersleri", icon: <Users /> },
         { href: "/yonetim/finans", label: "Finans", icon: <Wallet /> },
         { href: "/yonetim/odeme-testi", label: "Ödeme testi", icon: <CreditCard /> },
         { href: "/yonetim/yorumlar", label: "Yorumlar", icon: <MessageSquareQuote /> },

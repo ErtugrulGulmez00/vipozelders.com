@@ -23,6 +23,6 @@ export async function POST(request: NextRequest) {
   }
 
   await completeCheckout(orderId).catch((error: unknown) => console.error("[garanti dönüş]", error));
-  const target = payment.bookingId ?? payment.creditPurchaseId ?? payment.subscriptionId;
+  const target = payment.bookingId ?? payment.creditPurchaseId ?? payment.subscriptionId ?? payment.groupEnrollmentId;
   return NextResponse.redirect(appUrl(target ? `/odeme/sonuc/${target}` : "/hesabim"), 303);
 }

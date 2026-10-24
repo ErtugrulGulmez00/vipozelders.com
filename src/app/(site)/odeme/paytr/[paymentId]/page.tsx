@@ -15,7 +15,7 @@ export const instant = false;
 export default async function PaytrPaymentPage({ params }: PageProps<"/odeme/paytr/[paymentId]">) {
   const user = await requireUser();
   const { paymentId } = await params;
-  const payment = await db.payment.findUnique({ where: { id: paymentId }, include: { booking: true, creditPurchase: true, subscription: true } });
+  const payment = await db.payment.findUnique({ where: { id: paymentId }, include: { booking: true, creditPurchase: true, subscription: true, groupEnrollment: { include: { course: true } } } });
   const subject = payment ? paymentSubject(payment) : null;
   if (!payment || !subject || subject.ownerId !== user.id || payment.provider !== "paytr") redirect("/hesabim");
   const iframeToken = (payment.raw as { paytrIframeToken?: string } | null)?.paytrIframeToken;

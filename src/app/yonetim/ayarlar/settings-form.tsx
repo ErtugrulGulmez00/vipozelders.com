@@ -112,6 +112,20 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
         <NumberField name="subscriptionReminderDays" label="Yenileme hatırlatması" hint="Dönem bitmeden bu kadar gün önce (0: gönderilmez)." value={settings.subscriptionReminderDays} suffix="gün" />
       </Section>
 
+      <Section title="Grup dersi (sanal dershane)" description="Öğretmen 4–10 kişilik grup dersi programı açar; öğrenciler kişi başı öder. Kayıt bitişinde en az kişi dolmazsa ders iptal olur, herkese tam iade yapılır. Öğretmen payı her oturum yapıldıkça serbest kalır.">
+        <div className="sm:col-span-2">
+          <Checkbox name="groupsEnabled" defaultChecked={settings.groupsEnabled} label="Grup dersi açık" />
+        </div>
+        <Field label="Grup dersi komisyonu (%)">
+          <Input name="groupCommissionBps" inputMode="decimal" defaultValue={String(settings.groupCommissionBps / 100)} required />
+        </Field>
+        <div className="hidden sm:block" />
+        <NumberField name="groupMinParticipants" label="En az katılımcı" value={settings.groupMinParticipants} suffix="kişi" />
+        <NumberField name="groupMaxCapacity" label="En fazla kontenjan" value={settings.groupMaxCapacity} suffix="kişi" />
+        <NumberField name="groupMinPriceTl" label="En düşük kişi başı ücret" value={settings.groupMinPriceTl} suffix="TL" />
+        <NumberField name="groupMaxPriceTl" label="En yüksek kişi başı ücret" value={settings.groupMaxPriceTl} suffix="TL" />
+      </Section>
+
       <Section title="Kurum paneli abonelikleri" description="Etüt merkezi ve dershanelere satılan paneller. Fiyatlar KDV dahil; “Kurumlar için” sayfasında görünür. “Eski fiyat” üstü çizili gösterilir; 0 yazarsanız gösterilmez.">
         <NumberField name="centerTrialDays" label="Yeni kuruma tanınan ilk kullanım süresi" hint="Sitede ilan edilmez; kurum hesabı açılırken uygulanır." value={settings.centerTrialDays} suffix="gün" />
         <div className="hidden sm:block" />

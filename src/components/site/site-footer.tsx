@@ -57,6 +57,11 @@ export async function SiteFooter() {
               </li>
             ))}
             <li>
+              <Link href="/grup-dersleri" className="hover:text-white">
+                Grup dersleri (sanal dershane)
+              </Link>
+            </li>
+            <li>
               <Link href="/ogretmen-ol" className="hover:text-white">
                 Öğretmen olarak katılın
               </Link>

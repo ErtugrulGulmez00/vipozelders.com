@@ -1,9 +1,9 @@
-import type { Booking, CreditPurchase, QuestionSubscription } from "@/generated/prisma/client";
+import type { Booking, CreditPurchase, GroupCourse, GroupEnrollment, QuestionSubscription } from "@/generated/prisma/client";
 import { formatLessonRange } from "@/lib/dates";
 
 /** Ödemenin neye ait olduğu: ders randevusu, soru kredisi paketi ya da soru aboneliği. Ödeme ve sonuç sayfaları bunu gösterir. */
 export type PaymentSubject = {
-  kind: "booking" | "credits" | "subscription";
+  kind: "booking" | "credits" | "subscription" | "group";
   ownerId: string;
   /** /odeme/sonuc/[id] sayfasının kimliği */
   resultId: string;
@@ -13,8 +13,13 @@ export type PaymentSubject = {
   holdExpiresAt: Date | null;
 };
 
-export function paymentSubject(payment: { booking: Booking | null; creditPurchase: CreditPurchase | null; subscription?: QuestionSubscription | null }): PaymentSubject | null {
-  const { booking, creditPurchase, subscription } = payment;
+export function paymentSubject(payment: {
+  booking: Booking | null;
+  creditPurchase: CreditPurchase | null;
+  subscription?: QuestionSubscription | null;
+  groupEnrollment?: (GroupEnrollment & { course: GroupCourse }) | null;
+}): PaymentSubject | null {
+  const { booking, creditPurchase, subscription, groupEnrollment } = payment;
   if (booking) {
     return {
       kind: "booking",
@@ -46,6 +51,17 @@ export function paymentSubject(payment: { booking: Booking | null; creditPurchas
       title: `${subscription.levelName} ${subscription.subjectName} soru aboneliği`,
       detail: `${subscription.days} gün · günde ${subscription.dailyLimit} soruya kadar`,
       holdExpiresAt: null,
+    };
+  }
+  if (groupEnrollment) {
+    return {
+      kind: "group",
+      ownerId: groupEnrollment.studentId,
+      resultId: groupEnrollment.id,
+      code: groupEnrollment.code,
+      title: `Grup dersi: ${groupEnrollment.course.title}`,
+      detail: `${groupEnrollment.course.levelName} ${groupEnrollment.course.subjectName}`,
+      holdExpiresAt: groupEnrollment.holdExpiresAt,
     };
   }
   return null;

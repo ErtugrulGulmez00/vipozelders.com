@@ -30,6 +30,8 @@ export default async function PaymentResultPage({ params }: PageProps<"/odeme/so
   if (!booking) {
     const subscription = await db.questionSubscription.findUnique({ where: { id: bookingId }, select: { id: true } });
     if (subscription) return <SubscriptionResult subscriptionId={bookingId} userId={user.id} />;
+    const group = await db.groupEnrollment.findUnique({ where: { id: bookingId }, select: { id: true } });
+    if (group) return <GroupResult enrollmentId={bookingId} userId={user.id} />;
     return <CreditPurchaseResult purchaseId={bookingId} userId={user.id} />;
   }
   if (booking.studentId !== user.id) redirect("/hesabim");
@@ -181,6 +183,69 @@ async function CreditPurchaseResult({ purchaseId, userId }: { purchaseId: string
       <Card className="mt-6 p-5 text-left">{details}</Card>
       <LinkButton href="/soru-sor" size="lg" className="mt-6">
         <RotateCcw className="size-4" aria-hidden /> Paket seçimine dön
+      </LinkButton>
+    </Result>
+  );
+}
+
+/** Grup dersi kaydı ödemesinin sonucu. */
+async function GroupResult({ enrollmentId, userId }: { enrollmentId: string; userId: string }) {
+  const load = () => db.groupEnrollment.findUnique({ where: { id: enrollmentId }, include: { course: true, payments: { orderBy: { createdAt: "desc" }, take: 1 } } });
+  let enrollment = await load();
+  if (!enrollment || enrollment.studentId !== userId) redirect("/hesabim");
+  let payment = enrollment.payments[0];
+  if (payment?.status === "INITIATED" && REMOTE_PROVIDERS.has(payment.provider) && payment.providerToken) {
+    await completeCheckout(payment.providerToken).catch((error: unknown) => console.error("[ödeme sonucu]", error));
+    enrollment = (await load())!;
+    payment = enrollment.payments[0];
+  }
+  const { course } = enrollment;
+  const details = (
+    <DescriptionList
+      items={[
+        { label: "Kayıt no", value: enrollment.code },
+        { label: "Ders", value: course.title },
+        { label: "Tutar", value: formatMoney(enrollment.price) },
+        { label: "Son kayıt", value: formatDateTime(course.enrollDeadline) },
+      ]}
+    />
+  );
+  if (enrollment.status === "PAID") {
+    return (
+      <Result icon={<CheckCircle2 className="size-12 text-emerald-500" />} title="Grup dersine kaydınız tamamlandı">
+        <p className="text-slate-600">
+          {course.status === "CONFIRMED" ? "Ders kesinleşti; oturum saatlerinde “Derse katıl” düğmesi açılır." : `Ders, kayıt bitişinde en az ${course.minParticipants} kişiye ulaşırsa açılır; ulaşmazsa ücretin tamamı iade edilir.`}
+        </p>
+        <Card className="mt-6 p-5 text-left">{details}</Card>
+        <LinkButton href={`/hesabim/grup-derslerim/${enrollment.id}`} size="lg" className="mt-6">
+          Grup dersime git
+        </LinkButton>
+      </Result>
+    );
+  }
+  if (enrollment.status === "PENDING_PAYMENT" && payment?.status === "INITIATED" && REMOTE_PROVIDERS.has(payment.provider)) {
+    return (
+      <Result icon={<LoaderCircle className="size-12 animate-spin text-brand-500" />} title="Ödemeniz kontrol ediliyor">
+        <AutoRefresh />
+        <p className="text-slate-600">Bankanızdan gelen sonuç bekleniyor. Bu sayfa birkaç saniyede bir kendiliğinden yenilenir.</p>
+        <Card className="mt-6 p-5 text-left">{details}</Card>
+      </Result>
+    );
+  }
+  if (enrollment.status === "CANCELLED" && enrollment.refundedAmount > 0) {
+    return (
+      <Result icon={<Clock className="size-12 text-slate-400" />} title="Kayıt tamamlanamadı">
+        <p className="text-slate-600">{formatMoney(enrollment.refundedAmount)} kartınıza iade ediliyor.</p>
+        <Card className="mt-6 p-5 text-left">{details}</Card>
+      </Result>
+    );
+  }
+  return (
+    <Result icon={<XCircle className="size-12 text-rose-500" />} title="Ödeme tamamlanamadı">
+      <p className="text-slate-600">{payment?.failureReason ?? "Ödeme işlemi tamamlanmadı."} Kartınızdan para çekilmedi; tekrar deneyebilirsiniz.</p>
+      <Card className="mt-6 p-5 text-left">{details}</Card>
+      <LinkButton href={`/grup-dersleri/${course.code}`} size="lg" className="mt-6">
+        <RotateCcw className="size-4" aria-hidden /> Tekrar dene
       </LinkButton>
     </Result>
   );

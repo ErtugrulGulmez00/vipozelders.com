@@ -1,4 +1,4 @@
-import { Bell, Building2, CalendarClock, CalendarDays, FileCheck2, Inbox, LayoutDashboard, ListChecks, MessageCircle, MessageCircleQuestion, MessageSquareQuote, Repeat, Settings, UserRound, Wallet } from "lucide-react";
+import { Bell, Building2, CalendarClock, CalendarDays, FileCheck2, Inbox, LayoutDashboard, ListChecks, MessageCircle, MessageCircleQuestion, MessageSquareQuote, Repeat, Settings, Users, UserRound, Wallet } from "lucide-react";
 import { PanelShell } from "@/components/panel/panel-shell";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
@@ -26,6 +26,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
         { href: "/ogretmen-paneli/mesajlar", label: "Mesajlar", icon: <MessageCircle />, badge: unreadMessages || undefined },
         { href: "/ogretmen-paneli/soru-havuzu", label: "Soru havuzu", icon: <MessageCircleQuestion />, badge: poolActive || undefined },
         { href: "/ogretmen-paneli/soru-aboneligi", label: "Soru aboneliği", icon: <Repeat /> },
+        { href: "/ogretmen-paneli/grup-dersleri", label: "Grup dersleri", icon: <Users /> },
         { href: "/ogretmen-paneli/profil", label: "Profilim", icon: <UserRound /> },
         { href: "/ogretmen-paneli/dersler-ve-fiyatlar", label: "Dersler ve fiyatlar", icon: <ListChecks /> },
         { href: "/ogretmen-paneli/takvim", label: "Müsaitlik takvimi", icon: <CalendarClock /> },
