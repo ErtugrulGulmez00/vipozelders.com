@@ -456,9 +456,9 @@ async function confirmOrCancelAtDeadline(course: GroupCourse, now: Date) {
       const students = await tx.groupEnrollment.findMany({ where: { courseId: course.id, status: "PAID" }, select: { id: true, studentId: true } });
       const first = await tx.groupSession.findFirst({ where: { courseId: course.id }, orderBy: { index: "asc" } });
       for (const s of students) {
-        await notify({ userId: s.studentId, type: "group.confirmed", title: "Grup dersiniz kesinleşti", body: `${course.title} ${paid} kişiyle açılıyor. İlk oturum: ${first ? formatDateTime(first.startAt) : "—"}.`, link: `/hesabim/grup-derslerim/${s.id}` }, tx);
+        await notify({ userId: s.studentId, type: "group.confirmed", lesson: `${course.title} · ${first ? formatDateTime(first.startAt) : ""}`, title: "Grup dersiniz kesinleşti", body: `${course.title} ${paid} kişiyle açılıyor. İlk oturum: ${first ? formatDateTime(first.startAt) : "—"}.`, link: `/hesabim/grup-derslerim/${s.id}` }, tx);
       }
-      await notify({ userId: course.teacherId, type: "group.confirmed", title: "Grup dersiniz kesinleşti", body: `${course.title} · ${paid} öğrenci. İlk oturum: ${first ? formatDateTime(first.startAt) : "—"}.`, link: `/ogretmen-paneli/grup-dersleri/${course.id}` }, tx);
+      await notify({ userId: course.teacherId, type: "group.confirmed", lesson: `${course.title} · ${first ? formatDateTime(first.startAt) : ""}`, title: "Grup dersiniz kesinleşti", body: `${course.title} · ${paid} öğrenci. İlk oturum: ${first ? formatDateTime(first.startAt) : "—"}.`, link: `/ogretmen-paneli/grup-dersleri/${course.id}` }, tx);
     });
   } else {
     await cancelGroupCourse(course.id, `kayıt süresinde en az ${course.minParticipants} katılımcıya ulaşılamadı`, null, now).catch((error: unknown) => {
@@ -564,8 +564,8 @@ export async function processGroups(now = new Date()): Promise<number> {
     if (marked.count !== 1) continue;
     const enrollments = await db.groupEnrollment.findMany({ where: { courseId: session.courseId, status: "PAID" }, select: { id: true, studentId: true } });
     const body = `${session.course.title} · ${session.index + 1}. oturum ${formatDateTime(session.startAt)} saatinde. “Derse katıl” düğmesi ders saatinden önce açılır.`;
-    for (const e of enrollments) await notify({ userId: e.studentId, type: "group.reminder", title: "Grup dersiniz yaklaşıyor", body, link: `/hesabim/grup-derslerim/${e.id}` });
-    await notify({ userId: session.course.teacherId, type: "group.reminder", title: "Grup dersiniz yaklaşıyor", body, link: `/ogretmen-paneli/grup-dersleri/${session.courseId}` });
+    for (const e of enrollments) await notify({ userId: e.studentId, type: "group.reminder", lesson: `${session.course.title} · ${formatDateTime(session.startAt)}`, title: "Grup dersiniz yaklaşıyor", body, link: `/hesabim/grup-derslerim/${e.id}` });
+    await notify({ userId: session.course.teacherId, type: "group.reminder", lesson: `${session.course.title} · ${formatDateTime(session.startAt)}`, title: "Grup dersiniz yaklaşıyor", body, link: `/ogretmen-paneli/grup-dersleri/${session.courseId}` });
     changed++;
   }
   return changed;

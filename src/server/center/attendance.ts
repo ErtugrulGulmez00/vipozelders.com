@@ -2,7 +2,8 @@ import { dateStringToDbDate, isoWeekday, minutesToTime } from "@/lib/dates";
 import { db } from "../db";
 import type { CenterContext } from "./context";
 import { CenterError } from "./errors";
-import { messageGuardians } from "./messages";
+import { WA_TEMPLATES } from "../whatsapp";
+import { centerContact, messageGuardians } from "./messages";
 
 // Yoklama: programdaki her ders için grup bazında oturum; gelmeyenlerin velisine bildirim.
 
@@ -153,6 +154,7 @@ export async function saveAttendance(ctx: CenterContext, input: AttendanceSheetI
         studentId: record.student.id,
         kind: "absence",
         whatsappTitle: "Devamsızlık",
+        template: { name: WA_TEMPLATES.absence, params: [name, when, session.subject, centerContact(ctx.center)] },
         whatsapp: `Sayın veli, öğrenciniz ${name} ${when} saatindeki ${session.subject} dersine (${group.name}) katılmamıştır. Bir bilginiz yoksa lütfen kurumumuzla iletişime geçin.${ctx.center.phone ? ` Tel: ${ctx.center.phone}` : ""}`,
         notification: { title: `${record.student.firstName} derse katılmadı`, body: `${when} · ${session.subject} (${group.name})` },
       });

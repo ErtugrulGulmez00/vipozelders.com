@@ -1,6 +1,7 @@
 import { db, type DbTransaction } from "./db";
 import { appUrl, renderEmail } from "./email";
 import { loadSettings } from "./settings";
+import { WA_TEMPLATES } from "./whatsapp";
 
 export type NotifyInput = {
   userId: string;
@@ -14,6 +15,8 @@ export type NotifyInput = {
   email?: boolean;
   /** false ise WhatsApp gönderilmez (önemli bildirim türlerinde varsayılan olarak gider) */
   whatsapp?: boolean;
+  /** Dersin kısa özeti (lessonSummary); verilirse WhatsApp "ders_durumu" şablonuyla gider */
+  lesson?: string;
 };
 
 // WhatsApp ile de gönderilen önemli bildirimler (zamana bağlı, kaçırılmaması gerekenler)
@@ -75,9 +78,11 @@ export async function notify(input: NotifyInput, tx: DbTransaction | typeof db =
     const settings = await loadSettings();
     if (settings.whatsappNotifications) {
       const body = [`*${settings.siteName}* · ${input.title}`, input.body, input.link ? appUrl(input.link) : null].filter(Boolean).join("\n");
-      // Şablonla gönderimde değişkenler: başlık, metin, bağlantı
-      const params = [input.title, input.body, input.link ? appUrl(input.link) : appUrl("/")];
-      await tx.whatsAppMessage.create({ data: { userId: input.userId, to: user.phone, body: body.slice(0, 1500), params, type: input.type } });
+      const link = input.link ? appUrl(input.link) : appUrl("/");
+      // Ders bildirimleri: ders_durumu (ders, ne oldu, bağlantı); diğerleri: site ayarındaki genel şablon (başlık, metin, bağlantı) ya da düz metin
+      const template = input.lesson ? WA_TEMPLATES.lesson : null;
+      const params = input.lesson ? [input.lesson, input.title, link] : [input.title, input.body, link];
+      await tx.whatsAppMessage.create({ data: { userId: input.userId, to: user.phone, body: body.slice(0, 1500), template, params, type: input.type } });
     }
   }
 }

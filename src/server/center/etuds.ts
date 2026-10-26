@@ -2,7 +2,8 @@ import { dateStringToDbDate, minutesToTime } from "@/lib/dates";
 import { db } from "../db";
 import type { CenterContext } from "./context";
 import { CenterError } from "./errors";
-import { messageGuardians } from "./messages";
+import { WA_TEMPLATES } from "../whatsapp";
+import { centerContact, messageGuardians } from "./messages";
 
 // Birebir veya küçük grup etütleri: öğretmen, öğrenciler, saat, ders/konu, katılım.
 
@@ -105,6 +106,7 @@ export async function completeEtud(ctx: CenterContext, etudId: string, attendanc
       studentId: student.id,
       kind: "etud_absence",
       whatsappTitle: "Etüt devamsızlığı",
+      template: { name: WA_TEMPLATES.absence, params: [name, when, `${etud.subject} etüt`, centerContact(ctx.center)] },
       whatsapp: `Sayın veli, öğrenciniz ${name} ${when} saatindeki ${etud.subject} etüdüne katılmamıştır.`,
       notification: { title: `${student.firstName} etüde katılmadı`, body: `${when} · ${etud.subject}` },
     });

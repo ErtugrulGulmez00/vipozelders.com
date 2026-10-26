@@ -2436,7 +2436,9 @@ model WhatsAppMessage {
   user       User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
   to         String
   body       String
-  // Şablonla gönderimde değişkenler: [başlık, metin, bağlantı]
+  // Meta onaylı şablonun adı (boşsa site ayarındaki genel şablon ya da düz metin)
+  template   String?
+  // Şablon değişkenleri ({{1}}, {{2}}…)
   params     Json?
   type       String?
   status     EmailStatus @default(PENDING)

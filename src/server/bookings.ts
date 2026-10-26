@@ -347,6 +347,7 @@ export async function createBookingHold(input: CreateBookingInput, now = new Dat
           {
             userId: teacher.userId,
             type: "booking.request",
+            lesson: lessonSummary(booking),
             title: "Yeni ders talebi (paket)",
             body: `${learnerName} için ${lessonSummary(booking)}. Ücret ödenmiş paketten. Lütfen ${formatDateTime(booking.approvalDeadline!)} saatine kadar onaylayın.`,
             link: "/ogretmen-paneli/talepler",
@@ -359,6 +360,7 @@ export async function createBookingHold(input: CreateBookingInput, now = new Dat
           {
             userId: teacher.userId,
             type: "booking.request",
+            lesson: lessonSummary(booking),
             title: "Ücretsiz tanışma görüşmesi talebi",
             body: `${learnerName} için ${lessonSummary(booking)}. Lütfen ${formatDateTime(booking.approvalDeadline!)} saatine kadar onaylayın.`,
             link: "/ogretmen-paneli/talepler",
@@ -577,6 +579,7 @@ export async function completeCheckout(token: string, now = new Date()): Promise
       {
         userId: booking.teacherId,
         type: "booking.request",
+        lesson: lessonSummary(booking),
         title: isQuestion ? "Yeni soru geldi" : "Yeni ders talebi",
         body: isQuestion
           ? `${booking.learnerName} · ${lessonSummary(booking)}. Çözümü ${formatDateTime(deadline)} saatine kadar gönderin; gönderilmezse ücret öğrenciye iade edilir.`
@@ -719,6 +722,7 @@ export async function approveBooking(bookingId: string, teacherId: string, now =
       {
         userId: booking.studentId,
         type: "booking.confirmed",
+        lesson: lessonSummary(booking),
         title: "Dersiniz onaylandı",
         body: `${lessonSummary(booking)}. ${where}`,
         link: `/hesabim/derslerim/${booking.id}`,
@@ -742,6 +746,7 @@ export async function rejectBooking(bookingId: string, teacherId: string, reason
       {
         userId: booking.studentId,
         type: "booking.rejected",
+        lesson: lessonSummary(booking),
         title: "Ders talebiniz onaylanmadı",
         body: `${lessonSummary(booking)}. Öğretmenin notu: “${reason}”. ${fullRefundText(booking)}`,
         link: "/ogretmenler",
@@ -805,13 +810,14 @@ export async function cancelByStudent(bookingId: string, studentId: string, reas
 
     const refundText = booking.packageId && preview.refundAmount >= booking.price ? "Ders paketinize geri eklendi." : preview.refundAmount > 0 ? `${formatMoney(preview.refundAmount)} iade ediliyor.` : "İptal politikası gereği iade yapılmadı.";
     await notify(
-      { userId: booking.studentId, type: "booking.cancelled", title: "Randevunuz iptal edildi", body: `${lessonSummary(booking)}. ${refundText}`, link: `/hesabim/derslerim/${booking.id}` },
+      { userId: booking.studentId, type: "booking.cancelled", lesson: lessonSummary(booking), title: "Randevunuz iptal edildi", body: `${lessonSummary(booking)}. ${refundText}`, link: `/hesabim/derslerim/${booking.id}` },
       tx,
     );
     await notify(
       {
         userId: booking.teacherId,
         type: "booking.cancelled",
+        lesson: lessonSummary(booking),
         title: "Öğrenci dersi iptal etti",
         body: `${booking.learnerName} — ${lessonSummary(booking)}. Gerekçe: “${reason}”.${teacherShare > 0 ? ` Geç iptal nedeniyle ${formatMoney(teacherShare)} hakedişiniz korunuyor.` : ""}`,
         link: "/ogretmen-paneli/dersler",
@@ -839,6 +845,7 @@ export async function cancelByTeacher(bookingId: string, teacherId: string, reas
       {
         userId: booking.studentId,
         type: "booking.cancelled",
+        lesson: lessonSummary(booking),
         title: "Öğretmeniniz dersi iptal etti",
         body: `${lessonSummary(booking)}. Öğretmenin notu: “${reason}”. ${fullRefundText(booking, "tamamen iade ediliyor")}`,
         link: "/ogretmenler",
@@ -884,8 +891,8 @@ export async function cancelByAdmin(bookingId: string, adminId: string, requeste
     if (confirmedBefore) await resetPendingForBooking(tx, booking, teacherShare, `${booking.code} yönetici iptali`);
 
     const body = `${lessonSummary(booking)}. Açıklama: “${reason}”.${refund > 0 ? ` ${formatMoney(refund)} iade ediliyor.` : ""}`;
-    await notify({ userId: booking.studentId, type: "booking.cancelled", title: "Randevunuz iptal edildi", body, link: `/hesabim/derslerim/${booking.id}` }, tx);
-    await notify({ userId: booking.teacherId, type: "booking.cancelled", title: "Ders yönetici tarafından iptal edildi", body, link: "/ogretmen-paneli/dersler" }, tx);
+    await notify({ userId: booking.studentId, type: "booking.cancelled", lesson: lessonSummary(booking), title: "Randevunuz iptal edildi", body, link: `/hesabim/derslerim/${booking.id}` }, tx);
+    await notify({ userId: booking.teacherId, type: "booking.cancelled", lesson: lessonSummary(booking), title: "Ders yönetici tarafından iptal edildi", body, link: "/ogretmen-paneli/dersler" }, tx);
   });
   if (refundId) await processRefund(refundId);
 }
@@ -983,6 +990,7 @@ export async function expireOverdueApprovals(now = new Date()): Promise<number> 
           {
             userId: booking.studentId,
             type: "booking.expired",
+            lesson: lessonSummary(booking),
             title: booking.mode === "QUESTION" ? "Sorunuz zamanında çözülmedi" : "Talebiniz zamanında onaylanmadı",
             body: `${lessonSummary(booking)}. Öğretmen süresi içinde yanıt vermediği için talep iptal edildi. ${fullRefundText(booking)}`,
             link: "/ogretmenler",
@@ -993,6 +1001,7 @@ export async function expireOverdueApprovals(now = new Date()): Promise<number> 
           {
             userId: booking.teacherId,
             type: "booking.expired",
+            lesson: lessonSummary(booking),
             title: "Bir ders talebi yanıtsız kaldı",
             body: `${booking.learnerName} — ${lessonSummary(booking)}. Süresinde yanıt verilmediği için talep iptal edildi.`,
             link: "/ogretmen-paneli/talepler",
@@ -1039,11 +1048,11 @@ export async function completeFinishedLessons(now = new Date()): Promise<number>
           await resetPendingForBooking(tx, booking, 0, `${booking.code} öğretmen katılmadı`);
           await tx.teacherProfile.update({ where: { userId: booking.teacherId }, data: { cancellationCount: { increment: 1 } } });
           await notify(
-            { userId: booking.studentId, type: "booking.no_show_teacher", title: "Öğretmen derse katılmadı", body: `${lessonSummary(booking)}. ${fullRefundText(booking, "tamamen iade ediliyor")} Yaşadığınız sorun için özür dileriz.`, link: `/hesabim/derslerim/${booking.id}` },
+            { userId: booking.studentId, type: "booking.no_show_teacher", lesson: lessonSummary(booking), title: "Öğretmen derse katılmadı", body: `${lessonSummary(booking)}. ${fullRefundText(booking, "tamamen iade ediliyor")} Yaşadığınız sorun için özür dileriz.`, link: `/hesabim/derslerim/${booking.id}` },
             tx,
           );
           await notify(
-            { userId: booking.teacherId, type: "booking.no_show_teacher", title: "Derse katılmadınız", body: `${lessonSummary(booking)}. Öğrenciye tam iade yapıldı. Bir hata olduğunu düşünüyorsanız destek ekibine yazın.`, link: "/ogretmen-paneli/dersler" },
+            { userId: booking.teacherId, type: "booking.no_show_teacher", lesson: lessonSummary(booking), title: "Derse katılmadınız", body: `${lessonSummary(booking)}. Öğrenciye tam iade yapıldı. Bir hata olduğunu düşünüyorsanız destek ekibine yazın.`, link: "/ogretmen-paneli/dersler" },
             tx,
           );
           await notifyRole("ADMIN", { type: "admin.no_show", title: "Öğretmen derse katılmadı", body: booking.code, link: `/yonetim/randevular/${booking.id}`, email: false }, tx);
@@ -1166,8 +1175,8 @@ export async function sendLessonReminders(now = new Date()): Promise<number> {
       const marked = await tx.booking.updateMany({ where: { id: booking.id, reminder1hSentAt: null }, data: { reminder1hSentAt: now, reminder24hSentAt: booking.reminder24hSentAt ?? now } });
       if (marked.count !== 1) return;
       const link = booking.mode === "ONLINE" ? `/ders/${booking.id}` : `/hesabim/derslerim/${booking.id}`;
-      await notify({ userId: booking.studentId, type: "reminder.1h", title: "Dersiniz 1 saat içinde başlıyor", body: lessonSummary(booking), link }, tx);
-      await notify({ userId: booking.teacherId, type: "reminder.1h", title: "Dersiniz 1 saat içinde başlıyor", body: `${booking.learnerName} — ${lessonSummary(booking)}`, link: booking.mode === "ONLINE" ? `/ders/${booking.id}` : "/ogretmen-paneli/dersler" }, tx);
+      await notify({ userId: booking.studentId, type: "reminder.1h", lesson: lessonSummary(booking), title: "Dersiniz 1 saat içinde başlıyor", body: lessonSummary(booking), link }, tx);
+      await notify({ userId: booking.teacherId, type: "reminder.1h", lesson: lessonSummary(booking), title: "Dersiniz 1 saat içinde başlıyor", body: `${booking.learnerName} — ${lessonSummary(booking)}`, link: booking.mode === "ONLINE" ? `/ders/${booking.id}` : "/ogretmen-paneli/dersler" }, tx);
     });
     sent++;
   }

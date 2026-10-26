@@ -158,6 +158,7 @@ export async function addQuestionMessage(bookingId: string, user: { id: string; 
           {
             userId: booking.studentId,
             type: "question.solved",
+            lesson: lessonSummary(booking),
             title: "Sorunuzun çözümü geldi",
             body: `${lessonSummary(booking)}. Çözümü inceleyin; anlamadığınız yeri öğretmeninize yazabilirsiniz. Bir sorun varsa ${formatDateTime(releaseAt)} saatine kadar bildirebilirsiniz.`,
             link: `/hesabim/derslerim/${bookingId}`,

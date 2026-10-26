@@ -19,6 +19,8 @@ export type GuardianMessageInput = {
   whatsapp?: string | null;
   /** WhatsApp başlığı; verilmezse bildirim başlığı */
   whatsappTitle?: string;
+  /** Meta onaylı özel şablon ve değişkenleri (ör. devamsızlık); verilmezse genel şablon/düz metin */
+  template?: { name: string; params: string[] };
   /** WhatsApp'taki bağlantı (site içi yol); verilmezse veli portalı */
   link?: string;
   /** Yalnızca kurumun "e-postayla da gönder" seçtiği duyuru/mesajlarda */
@@ -31,6 +33,11 @@ export type GuardianMessageInput = {
   guardianIds?: string[];
   channels?: { whatsapp?: boolean; email?: boolean };
 };
+
+/** Şablonlarda kurumla iletişim: "Kurum adı (telefon)" */
+export function centerContact(center: { name: string; phone?: string | null }) {
+  return center.phone ? `${center.name} (${center.phone})` : center.name;
+}
 
 export type MessageCounts = { whatsapp: number; email: number; app: number };
 
@@ -80,7 +87,7 @@ export async function messageGuardians(input: GuardianMessageInput, tx: Tx = db)
         whatsappLeft--;
         const link = appUrl(input.link ?? (guardian.userId ? `/hesabim/kurum/${guardian.id}` : "/hesabim/kurum"));
         const body = [`*${title}*`, input.whatsapp, link].join("\n").slice(0, 1500);
-        const message = await tx.whatsAppMessage.create({ data: { userId: guardian.userId, to: phone, body, params: [title, input.whatsapp, link], type: `center.${input.kind}` } });
+        const message = await tx.whatsAppMessage.create({ data: { userId: guardian.userId, to: phone, body, template: input.template?.name ?? null, params: input.template?.params ?? [title, input.whatsapp, link], type: `center.${input.kind}` } });
         await tx.centerMessage.create({
           data: { centerId: input.centerId, channel: "WHATSAPP", to: phone, body: input.whatsapp, kind: input.kind, studentId: input.studentId, providerId: message.id },
         });

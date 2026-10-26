@@ -41,8 +41,8 @@ export async function requestReschedule(bookingId: string, userId: string, newSt
   const newRange = formatLessonRange(newStartAt, new Date(newStartAt.getTime() + booking.durationMinutes * 60_000));
   await notify(
     role === "student"
-      ? { userId: booking.teacherId, type: "booking.reschedule_request", title: "Ders saati değişikliği önerisi", body: `${booking.learnerName} · ${lessonSummary(booking)} → ${newRange}${request.note ? `. Not: “${request.note}”` : ""}`, link: `/ogretmen-paneli/dersler/${booking.id}` }
-      : { userId: booking.studentId, type: "booking.reschedule_request", title: "Öğretmeniniz ders saatini değiştirmek istiyor", body: `${lessonSummary(booking)} → ${newRange}${request.note ? `. Not: “${request.note}”` : ""}`, link: `/hesabim/derslerim/${booking.id}` },
+      ? { userId: booking.teacherId, type: "booking.reschedule_request", lesson: lessonSummary(booking), title: "Ders saati değişikliği önerisi", body: `${booking.learnerName} · ${lessonSummary(booking)} → ${newRange}${request.note ? `. Not: “${request.note}”` : ""}`, link: `/ogretmen-paneli/dersler/${booking.id}` }
+      : { userId: booking.studentId, type: "booking.reschedule_request", lesson: lessonSummary(booking), title: "Öğretmeniniz ders saatini değiştirmek istiyor", body: `${lessonSummary(booking)} → ${newRange}${request.note ? `. Not: “${request.note}”` : ""}`, link: `/hesabim/derslerim/${booking.id}` },
   );
   return request;
 }
@@ -74,8 +74,8 @@ export async function respondReschedule(requestId: string, userId: string, accep
     await tx.bookingEvent.create({ data: { bookingId: booking.id, fromStatus: "CONFIRMED", toStatus: "CONFIRMED", actorId: userId, note: `Ders saati değişti: ${oldRange} → ${formatLessonRange(request.newStartAt, newEnd)}` } });
   });
   const body = `${booking.levelName} ${booking.subjectName}: yeni saat ${formatLessonRange(request.newStartAt, newEnd)} (eski: ${oldRange}).`;
-  await notify({ userId: booking.studentId, type: "booking.rescheduled", title: "Ders saati değişti", body, link: `/hesabim/derslerim/${booking.id}` });
-  await notify({ userId: booking.teacherId, type: "booking.rescheduled", title: "Ders saati değişti", body, link: `/ogretmen-paneli/dersler/${booking.id}` });
+  await notify({ userId: booking.studentId, type: "booking.rescheduled", lesson: `${booking.levelName} ${booking.subjectName} — ${formatLessonRange(request.newStartAt, newEnd)}`, title: "Ders saati değişti", body, link: `/hesabim/derslerim/${booking.id}` });
+  await notify({ userId: booking.teacherId, type: "booking.rescheduled", lesson: `${booking.levelName} ${booking.subjectName} — ${formatLessonRange(request.newStartAt, newEnd)}`, title: "Ders saati değişti", body, link: `/ogretmen-paneli/dersler/${booking.id}` });
 }
 
 export async function cancelRescheduleRequest(requestId: string, userId: string, now = new Date()) {

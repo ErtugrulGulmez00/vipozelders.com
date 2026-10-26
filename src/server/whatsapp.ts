@@ -8,6 +8,14 @@ import { db } from "./db";
 import { loadSettings } from "./settings";
 
 const LETSBOT = "https://letsbot.net/api/v1";
+
+/** Meta'da (WhatsApp Yöneticisi, "Bilgilendirme" kategorisi, Türkçe) onaylı şablonlar. Değişken sırası yorumda. */
+export const WA_TEMPLATES = {
+  /** "Merhaba, {{1}} tarihli dersinizle ilgili güncelleme: {{2}}. Ders ayrıntılarını hesabınızdan görebilirsiniz: {{3}} İyi dersler dileriz." */
+  lesson: "ders_durumu",
+  /** "Sayın veli, öğrenciniz {{1}}, {{2}} tarihindeki {{3}} dersine katılmamıştır. Bilginiz yoksa lütfen {{4}} ile iletişime geçin." */
+  absence: "devamsizlik_bildirimi",
+} as const;
 const GRAPH = "https://graph.facebook.com/v21.0";
 /** Dakikada en fazla gönderim (kurum duyurularında yüzlerce veli olabilir) */
 const PER_MINUTE = 60;
@@ -144,7 +152,11 @@ export async function sendPendingWhatsApps(now = new Date()): Promise<number> {
       continue;
     }
     const params = Array.isArray(message.params) ? (message.params as string[]) : null;
-    const result = template && params ? await sendLetsbotTemplate(message.to, template, settings.whatsappTemplateLanguage || "tr", params) : await sendWhatsAppText(message.to, message.body);
+    const language = settings.whatsappTemplateLanguage || "tr";
+    const name = message.template ?? (template || null);
+    let result = name && params ? await sendLetsbotTemplate(message.to, name, language, params) : await sendWhatsAppText(message.to, message.body);
+    // Şablon Meta'da henüz yoksa/onaylı değilse (132001) düz metin dene: son 24 saatte yazmış kişiye ulaşır
+    if (!result.ok && name && /132001|does not exist/.test(result.error)) result = await sendWhatsAppText(message.to, message.body);
     const attempts = message.attempts + 1;
     await db.whatsAppMessage.update({
       where: { id: message.id },
