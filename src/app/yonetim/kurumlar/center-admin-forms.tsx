@@ -197,7 +197,7 @@ export function SubscriptionPaymentForm({ centerId, plan, monthlyPrice }: { cent
             <option>Nakit</option>
           </Select>
         </Field>
-        <Field label="Plan">
+        <Field label="Öğrenci kademesi">
           <Select name="plan" defaultValue={plan}>
             {Object.entries(CENTER_PLAN_LABEL).map(([value, label]) => (
               <option key={value} value={value}>
