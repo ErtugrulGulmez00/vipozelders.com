@@ -9,7 +9,7 @@ import { notifyRole } from "../notifications";
 import { loadSettings } from "../settings";
 import { CenterError } from "./errors";
 import { notifyCenterManagers } from "./messages";
-import { planStudentLimit, type CenterPlanName } from "./plans";
+import { planForEdition, planStudentLimit, type CenterPlanName } from "./plans";
 import { createCenterUser } from "./staff";
 
 // Pi Kampüs yönetimi: kurum açma, plan/süre, abonelik ödemeleri; "Kurumlar için" başvuruları ve vitrin ön kayıtları.
@@ -47,8 +47,8 @@ export async function adminCreateCenter(adminId: string, input: NewCenterInput) 
       kind: input.kind,
       edition: input.edition,
       cityId: input.cityId,
-      plan: input.plan,
-      studentLimit: planStudentLimit(input.plan, settings, 0),
+      plan: planForEdition(input.edition, input.plan),
+      studentLimit: planStudentLimit(planForEdition(input.edition, input.plan), settings, 0),
       status: "TRIAL",
       trialEndsAt: new Date(Date.now() + Math.max(input.trialDays, 1) * 86_400_000),
       phone: input.phone,
@@ -85,7 +85,10 @@ export async function adminUpdateCenter(adminId: string, centerId: string, input
   if (!center) throw new CenterError("Kurum bulunamadı.");
   // Süre değiştiyse bitiş hatırlatmaları yeniden başlar.
   const datesChanged = input.trialEndsAt?.getTime() !== center.trialEndsAt?.getTime() || input.paidUntil?.getTime() !== center.paidUntil?.getTime() || input.status !== center.status;
-  await db.center.update({ where: { id: centerId }, data: { ...input, ...(datesChanged ? { expiryNoticeDays: null } : {}) } });
+  const plan = planForEdition(input.edition, input.plan);
+  // Dershane'ye geçişte 20 kademesi 100'e çıkar; öğrenci sınırı en az o kademenin sınırı olur
+  const studentLimit = plan !== input.plan ? Math.max(input.studentLimit, planStudentLimit(plan, await loadSettings(), 0)) : input.studentLimit;
+  await db.center.update({ where: { id: centerId }, data: { ...input, plan, studentLimit, ...(datesChanged ? { expiryNoticeDays: null } : {}) } });
   await audit({ actorId: adminId, action: "center.update", entityType: "Center", entityId: centerId, details: { plan: input.plan, edition: input.edition, status: input.status, studentLimit: input.studentLimit } });
 }
 
@@ -97,7 +100,7 @@ export async function adminRecordSubscriptionPayment(adminId: string, centerId: 
   const settings = await loadSettings();
   const base = center.status === "TRIAL" ? null : center.paidUntil;
   const { periodStart, periodEnd } = extendSubscription(base, input.months);
-  const plan = input.plan ?? center.plan;
+  const plan = planForEdition(center.edition, input.plan ?? center.plan);
   await db.$transaction([
     db.centerSubscriptionPayment.create({ data: { centerId, amount: input.amount, months: input.months, periodStart, periodEnd, method: input.method, reference: input.reference, createdById: adminId } }),
     db.center.update({

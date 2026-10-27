@@ -200,7 +200,7 @@ export default async function ForCentersPage() {
           <EditionCards cta={trialDays > 0 ? "Ücretsiz deneyin" : "Başvurun"} fromPrice={fromPrice} />
         </div>
         <h3 className="mt-12 text-xl font-bold text-slate-900">Öğrenci sayısına göre fiyat</h3>
-        <p className="mt-1 mb-5 text-sm text-slate-600">Yıllık ödemede yaklaşık 2 ay ücretsiz.</p>
+        <p className="mt-1 mb-5 text-sm text-slate-600">Yıllık peşin ödemede büyük paket, küçük paketi aylık ödemekle aynı fiyata gelir.</p>
         <PricingTable plans={plans} cta="Bu kademeyle başvur" />
       </section>
 

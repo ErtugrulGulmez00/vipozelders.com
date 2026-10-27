@@ -77,15 +77,34 @@ export function TierCards({ plans, current, edition, cta }: { plans: CenterPlanI
               <span className="absolute -top-3 left-5 rounded-full bg-brand-600 px-3 py-0.5 text-xs font-bold text-white">En çok tercih edilen</span>
             ) : null}
             <p className="font-bold text-slate-900">{plan.name}</p>
-            <span className="mt-2 inline-block w-fit rounded-full bg-gold-50 px-2 py-0.5 text-xs font-bold text-gold-700">İndirimli</span>
-            <p className="mt-1 text-2xl font-black text-slate-900">{formatMoney(plan.priceTl * 100)}</p>
-            <p className="text-xs text-slate-500">aylık · KDV dahil</p>
+            {plan.upsell ? (
+              <span className="mt-2 inline-block w-fit rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-bold text-emerald-800">
+                {plan.upsell.from} paketini aylık ödemekle aynı fiyata {plan.upsell.ratio} kat kapasite
+              </span>
+            ) : (
+              <span className="mt-2 inline-block w-fit rounded-full bg-gold-50 px-2 py-0.5 text-xs font-bold text-gold-700">İndirimli</span>
+            )}
             {plan.yearlyPriceTl ? (
-              <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-                Yıllık <span className="font-bold">{formatMoney(plan.yearlyPriceTl * 100)}</span>
-                {yearlySaving > 0 ? <span className="block text-xs text-emerald-700">{formatMoney(yearlySaving * 100)} tasarruf</span> : null}
-              </p>
-            ) : null}
+              <>
+                <p className="mt-1 text-2xl font-black text-slate-900">
+                  {formatMoney(plan.yearlyPriceTl * 100)}
+                  <span className="text-sm font-semibold text-slate-500"> / yıl</span>
+                </p>
+                <p className="text-xs text-slate-500">aylık {formatMoney(Math.round(plan.yearlyPriceTl / 12) * 100)}’ye denk gelir · peşin · KDV dahil</p>
+                <p className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                  ya da aylık <span className="font-bold">{formatMoney(plan.priceTl * 100)}</span>
+                  {yearlySaving > 0 ? <span className="block text-xs text-emerald-700">Yıllıkta {formatMoney(yearlySaving * 100)} tasarruf</span> : null}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="mt-1 text-2xl font-black text-slate-900">
+                  {formatMoney(plan.priceTl * 100)}
+                  <span className="text-sm font-semibold text-slate-500"> / ay</span>
+                </p>
+                <p className="text-xs text-slate-500">yalnızca aylık ödeme · KDV dahil</p>
+              </>
+            )}
             {cta && edition ? (
               <Link href={applyHref(edition, plan.plan)} className={buttonClasses(!current && plan.highlight ? "primary" : "outline", "sm", "mt-4 w-full")}>
                 {cta}

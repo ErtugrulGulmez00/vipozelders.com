@@ -169,9 +169,7 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
       <Section title="Kurum paneli abonelikleri" description="Paket açık modülleri, öğrenci kademesi fiyatı belirler. Önce Dershane fiyatları ve öğrenci sınırları, altında Etüt Merkezi fiyatları. Fiyatlar KDV dahil; “Kurumlar için” sayfasında görünür.">
         <NumberField name="centerTrialDays" label="Yeni kuruma tanınan ilk kullanım süresi" hint="Sitede ilan edilmez; kurum hesabı açılırken uygulanır." value={settings.centerTrialDays} suffix="gün" />
         <div className="hidden sm:block" />
-        <NumberField name="centerTier20PriceTl" label="Dershane · 20 öğrenciye kadar · aylık (indirimli)" value={settings.centerTier20PriceTl} suffix="TL / ay" />
-        <NumberField name="centerTier20YearlyTl" label="Dershane · 20 öğrenciye kadar · yıllık" value={settings.centerTier20YearlyTl} suffix="TL / yıl" />
-        <NumberField name="centerTier20Students" label="20 öğrenciye kadar · öğrenci sınırı" value={settings.centerTier20Students} suffix="öğrenci" />
+        <NumberField name="centerTier20Students" label="20 öğrenciye kadar · öğrenci sınırı (yalnızca Etüt Merkezi)" value={settings.centerTier20Students} suffix="öğrenci" />
         <div className="hidden sm:block" />
         <NumberField name="centerTier100PriceTl" label="Dershane · 100 öğrenciye kadar · aylık (indirimli)" value={settings.centerTier100PriceTl} suffix="TL / ay" />
         <NumberField name="centerTier100YearlyTl" label="Dershane · 100 öğrenciye kadar · yıllık" value={settings.centerTier100YearlyTl} suffix="TL / yıl" />
