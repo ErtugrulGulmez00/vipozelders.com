@@ -44,8 +44,6 @@ export function normalizeSearch(input: string): string {
     .trim();
 }
 
-export const turkishCollator = new Intl.Collator("tr-TR", { sensitivity: "base" });
-
 export function fullName(person: { firstName: string; lastName: string }): string {
   return `${person.firstName} ${person.lastName}`.trim();
 }

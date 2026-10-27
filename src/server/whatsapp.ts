@@ -2,7 +2,6 @@
 // Meta kuralı: işletmenin başlattığı mesaj onaylı şablonla gider; düz metin yalnızca kişi son 24 saatte yazdıysa
 // ulaşır. Site ayarlarında şablon adı girildiyse bildirimler şablonla (değişkenler: başlık, metin, bağlantı) gider.
 // Bildirimler önce WhatsAppMessage kuyruğuna yazılır; zamanlayıcı dakikada sınırlı sayıda gönderir.
-// Yedek: Meta WhatsApp Business Cloud API (WHATSAPP_TOKEN, WHATSAPP_PHONE_NUMBER_ID), yalnızca onaylı şablonlarla.
 
 import { db } from "./db";
 import { loadSettings } from "./settings";
@@ -16,17 +15,12 @@ export const WA_TEMPLATES = {
   /** "Sayın veli, öğrenciniz {{1}}, {{2}} tarihindeki {{3}} dersine katılmamıştır. Bilginiz yoksa lütfen {{4}} ile iletişime geçin." */
   absence: "devamsizlik_bildirimi",
 } as const;
-const GRAPH = "https://graph.facebook.com/v21.0";
 /** Dakikada en fazla gönderim (kurum duyurularında yüzlerce veli olabilir) */
 const PER_MINUTE = 60;
 const MAX_ATTEMPTS = 3;
 
 export function letsbotConfigured(): boolean {
   return Boolean(process.env.LETSBOT_API_KEY);
-}
-
-export function whatsappConfigured(): boolean {
-  return letsbotConfigured() || Boolean(process.env.WHATSAPP_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID);
 }
 
 /** 05XXXXXXXXX / 5XXXXXXXXX / +905XXXXXXXXX → 905XXXXXXXXX (WhatsApp uluslararası biçim) */
@@ -104,35 +98,6 @@ export async function whatsappSessionStatus(): Promise<{ ok: boolean; message: s
     return { ok: response.ok && data.Status !== false, message: data.Message ?? data.message ?? String(response.status) };
   } catch (error) {
     return { ok: false, message: String(error).slice(0, 200) };
-  }
-}
-
-/** Onaylı şablonla mesaj (Meta Cloud API, yedek yol). params: şablondaki {{1}}, {{2}}… değerleri. */
-export async function sendWhatsAppTemplate(phone: string, template: string, language = "tr", params: string[] = []): Promise<WhatsAppResult> {
-  if (!process.env.WHATSAPP_TOKEN || !process.env.WHATSAPP_PHONE_NUMBER_ID) return { ok: false, error: "WhatsApp ayarları girilmemiş." };
-  const to = toWhatsAppNumber(phone);
-  if (!to) return { ok: false, error: "Geçersiz telefon numarası." };
-  try {
-    const response = await fetch(`${GRAPH}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        to,
-        type: "template",
-        template: {
-          name: template,
-          language: { code: language },
-          ...(params.length ? { components: [{ type: "body", parameters: params.map((text) => ({ type: "text", text })) }] } : {}),
-        },
-      }),
-      signal: AbortSignal.timeout(15_000),
-    });
-    const data = (await response.json().catch(() => ({}))) as { messages?: { id: string }[]; error?: { message?: string; code?: number } };
-    if (!response.ok || !data.messages?.[0]) return { ok: false, error: `${data.error?.code ?? response.status}: ${data.error?.message ?? "WhatsApp mesajı gönderilemedi"}`.slice(0, 300) };
-    return { ok: true, messageId: data.messages[0].id };
-  } catch (error) {
-    return { ok: false, error: String(error).slice(0, 300) };
   }
 }
 

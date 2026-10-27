@@ -29,8 +29,3 @@ export function zodFieldErrors(issues: { path: PropertyKey[]; message: string }[
   }
   return errors;
 }
-
-export function formString(formData: FormData, key: string): string {
-  const value = formData.get(key);
-  return typeof value === "string" ? value.trim() : "";
-}

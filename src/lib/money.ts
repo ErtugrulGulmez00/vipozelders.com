@@ -41,8 +41,3 @@ export function parseMoneyInput(value: string): number | null {
 export function formatBps(bps: number): string {
   return `%${(bps / 100).toLocaleString("tr-TR", { maximumFractionDigits: 2 })}`;
 }
-
-/** Bir tutarın baz puan kadarını hesaplar (yuvarlayarak). */
-export function applyBps(amount: number, bps: number): number {
-  return Math.round((amount * bps) / 10000);
-}

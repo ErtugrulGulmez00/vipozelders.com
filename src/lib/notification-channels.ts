@@ -13,10 +13,6 @@ export const CHANNEL_MODE_LABEL: Record<ChannelMode, string> = {
   hybrid: "WhatsApp ve e-posta birlikte",
 };
 
-export function isChannelMode(value: unknown): value is ChannelMode {
-  return typeof value === "string" && (CHANNEL_MODES as readonly string[]).includes(value);
-}
-
 /** WhatsApp kullanıcıya açık mı (kapalıyken arayüzde "Onay aşamasında" görünür). */
 export function whatsappActive(mode: ChannelMode): boolean {
   return mode !== "email";

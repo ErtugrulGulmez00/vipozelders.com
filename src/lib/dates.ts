@@ -86,13 +86,6 @@ const dateFormat = new Intl.DateTimeFormat("tr-TR", {
   year: "numeric",
 });
 
-const shortDateFormat = new Intl.DateTimeFormat("tr-TR", {
-  timeZone: TIME_ZONE,
-  day: "numeric",
-  month: "short",
-  weekday: "short",
-});
-
 const timeFormat = new Intl.DateTimeFormat("tr-TR", {
   timeZone: TIME_ZONE,
   hour: "2-digit",
@@ -116,11 +109,6 @@ export function formatDateTime(date: Date): string {
 /** "12 Ekim 2026" */
 export function formatDate(date: Date): string {
   return dateFormat.format(date);
-}
-
-/** "12 Eki Pzt" */
-export function formatShortDate(date: Date): string {
-  return shortDateFormat.format(date);
 }
 
 /** "18:00" */

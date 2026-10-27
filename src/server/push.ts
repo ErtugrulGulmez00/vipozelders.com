@@ -31,10 +31,6 @@ function serviceAccount(): ServiceAccount | null {
   return account;
 }
 
-export function pushConfigured(): boolean {
-  return Boolean(serviceAccount());
-}
-
 /** Google OAuth için RS256 imzalı servis hesabı JWT'si. */
 export function serviceAccountJwt(sa: ServiceAccount, nowSeconds = Math.floor(Date.now() / 1000)): string {
   const encode = (value: object) => Buffer.from(JSON.stringify(value)).toString("base64url");

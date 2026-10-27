@@ -61,8 +61,3 @@ export type SubMerchantInput = {
 export function toProviderAmount(kurus: number): string {
   return (kurus / 100).toFixed(2);
 }
-
-/** "1250.5" / 1250.5 → 125050 */
-export function fromProviderAmount(value: string | number): number {
-  return Math.round(Number(value) * 100);
-}

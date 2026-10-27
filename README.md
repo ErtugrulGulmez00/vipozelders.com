@@ -59,6 +59,7 @@ Demo veriler `@demo.vipozelders.local` uzantılı hesaplar ve bunlara bağlı ö
 | Komut | Ne yapar |
 | --- | --- |
 | `npm run db` | Gömülü PostgreSQL'i başlatır (port 5433) |
+| `npm run bildirim-testi` | Öğrenci, veli, öğretmen ve kurum sahibi test hesaplarına örnek bildirimler gönderir; kuyruğa ne girdiğini yazar (`-- --kanal=email\|whatsapp\|hybrid --eposta=ad@gmail.com`) |
 | `npm run dev` | Geliştirme sunucusu |
 | `npm run build` / `npm start` | Üretim derlemesi ve sunucusu (derleme sırasında veritabanı açık olmalı) |
 | `npm run db:seed` | Başlangıç verileri (tekrar çalıştırılabilir, kayıtları çoğaltmaz) |
