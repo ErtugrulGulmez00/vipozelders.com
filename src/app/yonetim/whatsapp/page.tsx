@@ -35,7 +35,9 @@ export default async function WhatsAppAdminPage() {
           LetsBot “{session.message}” diyor. API anahtarını ve kanalın “Bağlı” olduğunu LetsBot panelinden kontrol edin. Sorun giderilene kadar mesajlar kuyrukta bekler (1 saatten eskiler gönderilmez).
         </Alert>
       )}
-      {!settings.whatsappNotifications ? <Alert tone="info" className="mb-6">Site ayarlarında WhatsApp bildirimleri kapalı.</Alert> : null}
+      {settings.notificationChannel === "email" ? (
+        <Alert tone="info" className="mb-6">Bildirim kanalı “Yalnızca e-posta”: bildirimler e-postayla gidiyor, WhatsApp kuyruğuna yeni mesaj girmez. Şablonlar onaylanınca Site ayarları → Bildirim kanalı’ndan WhatsApp’a geçin.</Alert>
+      ) : null}
       {settings.whatsappTemplateName ? (
         <Alert tone="info" className="mb-6">Bildirimler “{settings.whatsappTemplateName}” şablonuyla gidiyor.</Alert>
       ) : (

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { cancelPaymentAction, createExpenseAction, deleteExpenseAction, recordPaymentAction, remindOverdueAction } from "@/actions/center/finance";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
+import { useMessageChannelLabel } from "@/components/notification-channel";
 import { Checkbox, Field, Input, Select } from "@/components/ui/form";
 import { EXPENSE_CATEGORY_LABEL, PAYMENT_METHOD_LABEL } from "@/lib/center/labels";
 import { formatMoney } from "@/lib/money";
@@ -44,6 +45,7 @@ export function StudentPicker({ students, selectedId, basePath }: { students: { 
 }
 
 export function PaymentForm({ studentId, suggested, payerName, today, guardiansReachable }: { studentId: string; suggested: number; payerName: string | null; today: string; guardiansReachable: boolean }) {
+  const via = useMessageChannelLabel();
   return (
     <ActionForm action={recordPaymentAction} className="space-y-3">
       <input type="hidden" name="studentId" value={studentId} />
@@ -71,7 +73,7 @@ export function PaymentForm({ studentId, suggested, payerName, today, guardiansR
           <Input name="note" placeholder="Örn: Ekim taksiti, kitap ücreti" />
         </Field>
       </div>
-      {guardiansReachable ? <Checkbox name="notify" defaultChecked label="Veliye ödeme bilgisi (WhatsApp) gönder" /> : null}
+      {guardiansReachable ? <Checkbox name="notify" defaultChecked label={`Veliye ödeme bilgisi (${via}) gönder`} /> : null}
       <SubmitButton size="lg">Tahsilatı kaydet ve makbuz oluştur</SubmitButton>
     </ActionForm>
   );
@@ -101,6 +103,7 @@ export function CancelPaymentForm({ paymentId }: { paymentId: string }) {
 }
 
 export function OverdueReminderForm({ rows }: { rows: { studentId: string; name: string; amount: number; installments: number; oldestDue: string; guardian: string; phone: string | null; lastReminded: string | null; meta: string }[] }) {
+  const via = useMessageChannelLabel();
   const [selected, setSelected] = useState(() => new Set(rows.map((r) => r.studentId)));
   const all = selected.size === rows.length;
   return (
@@ -167,7 +170,7 @@ export function OverdueReminderForm({ rows }: { rows: { studentId: string; name:
         </table>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-slate-500">Hatırlatma velilere WhatsApp ve site/uygulama bildirimiyle gider.</p>
+        <p className="text-xs text-slate-500">Hatırlatma velilere {via} ve site/uygulama bildirimiyle gider.</p>
         <SubmitButton disabled={!selected.size} confirmMessage={`${selected.size} öğrencinin velisine hatırlatma gönderilsin mi?`}>
           Seçilenlere hatırlatma gönder ({selected.size})
         </SubmitButton>

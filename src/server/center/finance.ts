@@ -116,8 +116,8 @@ export async function recordPayment(ctx: CenterContext, input: PaymentInput) {
       centerName: ctx.center.name,
       studentId: student.id,
       kind: "payment_receipt",
-      whatsappTitle: "Ödemeniz alındı",
-      whatsapp: `${name} için ${formatMoney(payment.amount)} tutarındaki ödemeniz ${formatDate(payment.paidAt)} tarihinde alınmıştır. Makbuz no: ${payment.receiptNo}. Teşekkür ederiz.`,
+      messageTitle: "Ödemeniz alındı",
+      message: `${name} için ${formatMoney(payment.amount)} tutarındaki ödemeniz ${formatDate(payment.paidAt)} tarihinde alınmıştır. Makbuz no: ${payment.receiptNo}. Teşekkür ederiz.`,
       notification: { title: "Ödemeniz alındı", body: `${formatMoney(payment.amount)} · makbuz ${payment.receiptNo}` },
     });
   }
@@ -200,8 +200,8 @@ export async function remindOverdue(ctx: CenterContext, studentIds: string[]) {
       centerName: ctx.center.name,
       studentId: row.studentId,
       kind: "payment_overdue",
-      whatsappTitle: "Ödeme hatırlatması",
-      whatsapp: `Sayın veli, ${row.name} için vadesi geçmiş ${formatMoney(row.amount)} tutarında ödemeniz bulunmaktadır (${row.installments} taksit). Ödemenizi yaptıysanız bu mesajı dikkate almayın.${ctx.center.phone ? ` Tel: ${ctx.center.phone}` : ""}`,
+      messageTitle: "Ödeme hatırlatması",
+      message: `Sayın veli, ${row.name} için vadesi geçmiş ${formatMoney(row.amount)} tutarında ödemeniz bulunmaktadır (${row.installments} taksit). Ödemenizi yaptıysanız bu mesajı dikkate almayın.${ctx.center.phone ? ` Tel: ${ctx.center.phone}` : ""}`,
       notification: { title: "Geciken ödeme", body: `${row.name} · ${formatMoney(row.amount)}` },
     });
     await db.centerInstallment.updateMany({ where: { studentId: row.studentId, dueDate: { lt: dateStringToDbDate(today) } }, data: { remindedAt: new Date() } });
@@ -243,8 +243,8 @@ export async function sendCenterPaymentReminders(now = new Date()): Promise<numb
       centerName: center.name,
       studentId: inst.studentId,
       kind: upcoming ? "payment_reminder" : "payment_overdue",
-      whatsappTitle: upcoming ? "Taksit hatırlatması" : "Geciken taksit",
-      whatsapp: upcoming
+      messageTitle: upcoming ? "Taksit hatırlatması" : "Geciken taksit",
+      message: upcoming
         ? `Sayın veli, ${name} için ${dueText} vadeli ${formatMoney(open)} taksit ödemenizi hatırlatırız. Ödemenizi yaptıysanız bu mesajı dikkate almayın.`
         : `Sayın veli, ${name} için ${dueText} vadeli ${formatMoney(open)} taksit ödemeniz gecikmiştir. Ödemenizi yaptıysanız bu mesajı dikkate almayın.${center.phone ? ` Tel: ${center.phone}` : ""}`,
       notification: { title: upcoming ? "Yaklaşan taksit" : "Geciken taksit", body: `${name} · ${dueText} · ${formatMoney(open)}` },

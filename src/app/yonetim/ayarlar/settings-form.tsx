@@ -3,7 +3,8 @@
 import type { ReactNode } from "react";
 import { saveSettingsAction } from "@/actions/admin";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
-import { Checkbox, Field, Input, Textarea } from "@/components/ui/form";
+import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
+import { CHANNEL_MODE_LABEL, CHANNEL_MODES } from "@/lib/notification-channels";
 import type { SiteSettings } from "@/server/settings";
 
 function Section({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
@@ -44,9 +45,15 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
         <Field label="WhatsApp destek numarası" hint="Sitenin sağ altındaki WhatsApp düğmesi bu numaraya yazar. Boş bırakırsanız düğme gösterilmez.">
           <Input name="supportWhatsapp" defaultValue={settings.supportWhatsapp} placeholder="+90 5xx xxx xx xx" />
         </Field>
-        <div className="sm:col-span-2">
-          <Checkbox name="whatsappNotifications" defaultChecked={settings.whatsappNotifications} label="Önemli bildirimleri WhatsApp ile de gönder (ders talebi, onay, 1 saat kala hatırlatma, çözüm geldi…)" />
-        </div>
+        <Field label="Bildirim kanalı" className="sm:col-span-2" hint="Öğrenci, veli, öğretmen ve kurum bildirimlerinin dış kanalı. WhatsApp şablonları Meta’da onaylanana kadar “Yalnızca e-posta” seçili kalsın; onaylanınca buradan değiştirin. Site/uygulama bildirimi her zaman gider.">
+          <Select name="notificationChannel" defaultValue={settings.notificationChannel}>
+            {CHANNEL_MODES.map((mode) => (
+              <option key={mode} value={mode}>
+                {CHANNEL_MODE_LABEL[mode]}
+              </option>
+            ))}
+          </Select>
+        </Field>
         <Field label="WhatsApp bildirim şablonu (Meta onaylı)" hint="LetsBot panelinde onaylanan şablonun adı; 3 değişkenli: {{1}} başlık, {{2}} metin, {{3}} bağlantı. Boşsa düz metin gider ve yalnızca son 24 saatte size yazmış kişiye ulaşır.">
           <Input name="whatsappTemplateName" defaultValue={settings.whatsappTemplateName} placeholder="pikampus_bildirim" />
         </Field>

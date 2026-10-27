@@ -338,8 +338,8 @@ export async function importOpticResults(ctx: CenterContext, examId: string, tem
   await recomputeExam(examId);
   return summary;
 }
-/** Sonuçları velilere açar; ilk yayında hesabı bağlı velilere bildirim, isteğe bağlı tüm velilere WhatsApp gider. */
-export async function publishExam(ctx: CenterContext, examId: string, publish: boolean, channels: { whatsapp: boolean }) {
+/** Sonuçları velilere açar; ilk yayında hesabı bağlı velilere bildirim, isteğe bağlı tüm velilere mesaj (WhatsApp/e-posta) gider. */
+export async function publishExam(ctx: CenterContext, examId: string, publish: boolean, options: { notifyGuardians: boolean }) {
   const exam = await getExamOrThrow(ctx, examId);
   await db.centerExam.update({ where: { id: examId }, data: { isPublished: publish } });
   if (!publish || exam.isPublished) return 0;
@@ -353,8 +353,8 @@ export async function publishExam(ctx: CenterContext, examId: string, publish: b
       centerName: ctx.center.name,
       studentId: r.student.id,
       kind: "exam_result",
-      whatsappTitle: "Deneme sonucu",
-      whatsapp: channels.whatsapp ? `${name} · ${summary} (sınav tarihi ${formatDate(exam.date)}). Ders ve konu bazında ayrıntılar veli portalında.` : null,
+      messageTitle: "Deneme sonucu",
+      message: options.notifyGuardians ? `${name} · ${summary} (sınav tarihi ${formatDate(exam.date)}). Ders ve konu bazında ayrıntılar veli portalında.` : null,
       notification: { title: `Deneme sonucu: ${exam.name}`, body: `${r.student.firstName} · ${summary}` },
     });
   }

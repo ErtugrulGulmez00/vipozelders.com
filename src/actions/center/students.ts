@@ -157,8 +157,8 @@ export async function messageStudentGuardiansAction(_: ActionState, formData: Fo
     kind: "custom",
     force: true,
     channels: { whatsapp, email },
-    whatsappTitle: "Kurumdan mesaj",
-    whatsapp: text,
+    messageTitle: "Kurumdan mesaj",
+    message: text,
     email: { subject: "Kurumdan mesaj", title: "Kurumdan mesajınız var", lines: text.split(/\r?\n/).filter(Boolean) },
     notification: { title: `${auth.ctx.center.name} size mesaj gönderdi`, body: text.slice(0, 180) },
   });

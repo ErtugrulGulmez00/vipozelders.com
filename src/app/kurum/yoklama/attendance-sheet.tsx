@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { saveAttendanceAction } from "@/actions/center/classes";
 import { ActionForm, SubmitButton } from "@/components/forms/action-form";
+import { useMessageChannelLabel } from "@/components/notification-channel";
 import { Checkbox, Input } from "@/components/ui/form";
 import { cn } from "@/lib/cn";
 
@@ -29,6 +30,7 @@ export function AttendanceSheet({
   /** Sınıf defteri: daha önce girilmiş işlenen konu */
   topic: string | null;
 }) {
+  const via = useMessageChannelLabel();
   const [statuses, setStatuses] = useState<Record<string, Status>>(() => Object.fromEntries(students.map((s) => [s.id, s.status])));
   const [notes, setNotes] = useState<Record<string, boolean>>(() => Object.fromEntries(students.map((s) => [s.id, Boolean(s.note)])));
   const counts = OPTIONS.map((o) => ({ ...o, count: Object.values(statuses).filter((s) => s === o.value).length }));
@@ -101,7 +103,7 @@ export function AttendanceSheet({
       </ul>
       <div className="flex flex-wrap items-center justify-between gap-3">
         {notifyAvailable ? (
-          <Checkbox name="notify" defaultChecked label="Gelmeyen öğrencilerin velilerine WhatsApp ve site/uygulama bildirimi gönder (her öğrenci için bir kez)" />
+          <Checkbox name="notify" defaultChecked label={`Gelmeyen öğrencilerin velilerine ${via} ve site/uygulama bildirimi gönder (her öğrenci için bir kez)`} />
         ) : (
           <p className="text-sm text-slate-500">Devamsızlık bildirimi kurum ayarlarında kapalı.</p>
         )}

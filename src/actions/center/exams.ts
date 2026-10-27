@@ -160,7 +160,7 @@ export async function publishExamAction(_: ActionState, formData: FormData): Pro
   if (!auth.ok) return auth.state;
   return guard(async () => {
     const publish = str(formData, "publish") === "1";
-    const notified = await publishExam(auth.ctx, str(formData, "examId"), publish, { whatsapp: bool(formData, "whatsapp") });
+    const notified = await publishExam(auth.ctx, str(formData, "examId"), publish, { notifyGuardians: bool(formData, "notifyGuardians") });
     refresh();
     return success(publish ? `Sonuçlar veli portalında yayında.${notified ? ` ${notified} öğrencinin velisine bildirim gönderildi.` : ""}` : "Sonuçlar veli portalından kaldırıldı.");
   });

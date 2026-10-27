@@ -2,6 +2,7 @@
 
 import { createStudentAction, updateStudentAction } from "@/actions/center/students";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
+import { WhatsAppCheckbox } from "@/components/notification-channel";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
 import { GRADE_OPTIONS, GUARDIAN_RELATIONS, TARGET_EXAMS } from "@/lib/center/labels";
 
@@ -57,8 +58,8 @@ function GuardianFields({ prefix, title, required }: { prefix: string; title: st
         <FieldError name={`${prefix}Email`} />
       </Field>
       <div className="flex flex-col justify-end gap-2 sm:col-span-2">
-        <Checkbox name={`${prefix}NotifyWhatsapp`} defaultChecked label="WhatsApp bildirimleri gönderilsin" />
-        <Checkbox name={`${prefix}NotifyEmail`} defaultChecked label="Duyurular e-postayla da gönderilebilsin" />
+        <WhatsAppCheckbox name={`${prefix}NotifyWhatsapp`} defaultChecked preserve label="WhatsApp bildirimleri gönderilsin" />
+        <Checkbox name={`${prefix}NotifyEmail`} defaultChecked label="E-posta bildirimleri gönderilsin" />
       </div>
     </Section>
   );

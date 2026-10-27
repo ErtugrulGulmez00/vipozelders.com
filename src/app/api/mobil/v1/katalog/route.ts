@@ -1,3 +1,4 @@
+import { whatsappActive } from "@/lib/notification-channels";
 import { appUrl } from "@/server/email";
 import { maintenanceState } from "@/server/maintenance";
 import { paymentReturnPrefix } from "@/server/mobile/auth";
@@ -37,7 +38,7 @@ export const GET = publicRoute(async () => {
       referralEnabled: settings.referralEnabled,
       referralDiscountPercent: settings.referralDiscountPercent,
       // Önemli bildirimler WhatsApp ile de gider (kullanıcı hesap ayarından kapatabilir)
-      whatsappNotifications: settings.whatsappNotifications,
+      whatsappNotifications: whatsappActive(settings.notificationChannel),
     },
     levels: catalog.levels.map((l) => ({ id: l.id, name: l.name, slug: l.slug, group: l.group, grades: l.grades, subjectIds: l.subjectIds })),
     subjects: catalog.subjects.map((s) => ({ id: s.id, name: s.name, slug: s.slug })),

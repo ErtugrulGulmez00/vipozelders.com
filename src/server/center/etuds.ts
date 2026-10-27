@@ -105,9 +105,9 @@ export async function completeEtud(ctx: CenterContext, etudId: string, attendanc
       centerName: ctx.center.name,
       studentId: student.id,
       kind: "etud_absence",
-      whatsappTitle: "Etüt devamsızlığı",
+      messageTitle: "Etüt devamsızlığı",
       template: { name: WA_TEMPLATES.absence, params: [name, when, `${etud.subject} etüt`, centerContact(ctx.center)] },
-      whatsapp: `Sayın veli, öğrenciniz ${name} ${when} saatindeki ${etud.subject} etüdüne katılmamıştır.`,
+      message: `Sayın veli, öğrenciniz ${name} ${when} saatindeki ${etud.subject} etüdüne katılmamıştır.`,
       notification: { title: `${student.firstName} etüde katılmadı`, body: `${when} · ${etud.subject}` },
     });
     notified++;

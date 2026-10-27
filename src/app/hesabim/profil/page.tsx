@@ -5,7 +5,9 @@ import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-
 import { Checkbox, Field, Input, Select } from "@/components/ui/form";
 import { Card, CardBody, CardHeader, PageHeader } from "@/components/ui/primitives";
 import { requireRole } from "@/server/auth/current-user";
+import { whatsappActive } from "@/lib/notification-channels";
 import { db } from "@/server/db";
+import { loadSettings } from "@/server/settings";
 import { getCities } from "@/server/site";
 import { AccountDeletionForm } from "@/components/panel/account-deletion-form";
 import { PasswordForm } from "@/components/panel/password-form";
@@ -15,9 +17,10 @@ export const metadata: Metadata = { title: "Hesap ayarları" };
 
 export default async function StudentProfilePage() {
   const user = await requireRole("STUDENT");
-  const [profile, cities] = await Promise.all([
+  const [profile, cities, settings] = await Promise.all([
     db.user.findUniqueOrThrow({ where: { id: user.id }, include: { studentProfile: { include: { learners: { orderBy: { createdAt: "asc" } } } } } }),
     getCities(),
+    loadSettings(),
   ]);
   const student = profile.studentProfile;
 
@@ -99,7 +102,7 @@ export default async function StudentProfilePage() {
           <Card>
             <CardHeader title="WhatsApp bildirimleri" />
             <CardBody>
-              <WhatsAppPreference on={!profile.whatsappOptOut} phone={profile.phone} />
+              <WhatsAppPreference on={!profile.whatsappOptOut} phone={profile.phone} active={whatsappActive(settings.notificationChannel)} />
             </CardBody>
           </Card>
           <Card>

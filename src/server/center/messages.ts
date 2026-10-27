@@ -1,11 +1,15 @@
 import { toLocalDateString } from "@/lib/dates";
+import { whatsappActive } from "@/lib/notification-channels";
 import { db, type DbTransaction } from "../db";
-import { appUrl, renderEmail } from "../email";
+import { appUrl } from "../email";
+import { NotificationService } from "../notification-service";
+import { notify } from "../notifications";
 import { loadSettings } from "../settings";
 
-// Kurumun velilere gönderdiği WhatsApp, e-posta ve site/uygulama bildirimleri. SMS yok: veliye her şey WhatsApp ve
-// bildirimle gider; e-posta yalnızca kurumun açıkça seçtiği duyuru ve mesajlarda. Her WhatsApp/e-posta CenterMessage
-// olarak kurumun mesaj geçmişine yazılır; gönderimi genel kuyruklar yapar (WhatsAppMessage, EmailMessage), durum
+// Kurumun velilere gönderdiği mesajlar. Dış kanal Site ayarlarındaki bildirim kanalına göre seçilir (NotificationService):
+// "email" modunda veliye e-posta, "whatsapp" modunda WhatsApp (telefon yoksa/kapalıysa/kota dolduysa e-posta),
+// "hybrid" modunda ikisi birden. SMS yok. Portala bağlı velilere ayrıca site/uygulama bildirimi gider.
+// Her dış mesaj CenterMessage olarak kurumun mesaj geçmişine yazılır; gönderimi genel kuyruklar yapar, durum
 // zamanlayıcıyla eşitlenir. WhatsApp'ta kurum başına aylık sınır vardır (Site ayarları).
 
 type Tx = DbTransaction | typeof db;
@@ -15,15 +19,15 @@ export type GuardianMessageInput = {
   centerName: string;
   studentId: string;
   kind: string;
-  /** WhatsApp metni; başlıkta kurum adı yer alır */
-  whatsapp?: string | null;
-  /** WhatsApp başlığı; verilmezse bildirim başlığı */
-  whatsappTitle?: string;
-  /** Meta onaylı özel şablon ve değişkenleri (ör. devamsızlık); verilmezse genel şablon/düz metin */
+  /** Veliye giden dış mesajın metni (kanala göre WhatsApp ve/veya e-posta); null ise yalnızca bildirim */
+  message?: string | null;
+  /** Dış mesajın başlığı; verilmezse bildirim başlığı */
+  messageTitle?: string;
+  /** Meta onaylı özel WhatsApp şablonu ve değişkenleri (ör. devamsızlık); verilmezse genel şablon/düz metin */
   template?: { name: string; params: string[] };
-  /** WhatsApp'taki bağlantı (site içi yol); verilmezse veli portalı */
+  /** Mesajdaki bağlantı (site içi yol); verilmezse veli portalı */
   link?: string;
-  /** Yalnızca kurumun "e-postayla da gönder" seçtiği duyuru/mesajlarda */
+  /** E-postanın kendine özel içeriği (duyuru, elle mesaj); verilmezse mesaj metninden oluşturulur */
   email?: { subject: string; title: string; lines: string[]; action?: { label: string; url: string } } | null;
   /** Hesabını kuruma bağlamış velinin site/uygulama bildirimi */
   notification?: { title: string; body: string } | null;
@@ -31,6 +35,7 @@ export type GuardianMessageInput = {
   force?: boolean;
   /** Yalnızca bu velilere */
   guardianIds?: string[];
+  /** Gönderenin seçtiği kanallar (duyuru, elle mesaj); false olan kanal kullanılmaz, email: true ise ayrıca e-posta gider */
   channels?: { whatsapp?: boolean; email?: boolean };
 };
 
@@ -47,13 +52,13 @@ function monthStart(now = new Date()) {
   return new Date(`${toLocalDateString(now).slice(0, 7)}-01T00:00:00+03:00`);
 }
 
-/** Kurumun bu ay kullandığı WhatsApp mesajı (sırada + gönderilen) ve sınırı. */
+/** Kurumun bu ay kullandığı WhatsApp mesajı (sırada + gönderilen) ve sınırı; enabled: bildirim kanalında WhatsApp açık mı. */
 export async function centerWhatsappUsage(centerId: string, tx: Tx = db) {
   const [used, settings] = await Promise.all([
     tx.centerMessage.count({ where: { centerId, channel: "WHATSAPP", status: { in: ["QUEUED", "SENT"] }, createdAt: { gte: monthStart() } } }),
     loadSettings(),
   ]);
-  return { used, limit: settings.centerWhatsappMonthlyLimit, enabled: settings.whatsappNotifications };
+  return { used, limit: settings.centerWhatsappMonthlyLimit, enabled: whatsappActive(settings.notificationChannel) };
 }
 
 export async function messageGuardians(input: GuardianMessageInput, tx: Tx = db): Promise<MessageCounts> {
@@ -63,14 +68,16 @@ export async function messageGuardians(input: GuardianMessageInput, tx: Tx = db)
   });
   const counts: MessageCounts = { whatsapp: 0, email: 0, app: 0 };
   const sentTo = new Set<string>();
+  const mode = await NotificationService.mode();
+  const message = input.message ?? null;
 
-  const wantsWhatsapp = Boolean(input.whatsapp) && input.channels?.whatsapp !== false;
   let whatsappLeft = 0;
-  if (wantsWhatsapp) {
+  if (message && whatsappActive(mode) && input.channels?.whatsapp !== false) {
     const usage = await centerWhatsappUsage(input.centerId, tx);
-    whatsappLeft = usage.enabled ? Math.max(0, usage.limit - usage.used) : 0;
+    whatsappLeft = Math.max(0, usage.limit - usage.used);
   }
-  const title = `${input.centerName} · ${input.whatsappTitle ?? input.notification?.title ?? "Bilgilendirme"}`;
+  const subject = input.messageTitle ?? input.notification?.title ?? "Bilgilendirme";
+  const title = `${input.centerName} · ${subject}`;
 
   for (const guardian of guardians) {
     if (guardian.isStudentAccount) {
@@ -80,39 +87,57 @@ export async function messageGuardians(input: GuardianMessageInput, tx: Tx = db)
       }
       continue;
     }
+    const path = input.link ?? (guardian.userId ? `/hesabim/kurum/${guardian.id}` : "/hesabim/kurum");
     const phone = guardian.phone;
-    if (input.whatsapp && wantsWhatsapp && phone && (guardian.notifyWhatsapp || input.force) && !(guardian.user?.whatsappOptOut && !input.force) && !sentTo.has(`wa:${phone}`)) {
-      sentTo.add(`wa:${phone}`);
-      if (whatsappLeft > 0) {
+    const email = guardian.email;
+
+    if (message) {
+      const waWanted =
+        whatsappActive(mode) && input.channels?.whatsapp !== false && Boolean(phone) && (guardian.notifyWhatsapp || Boolean(input.force)) && !(guardian.user?.whatsappOptOut && !input.force) && !sentTo.has(`wa:${phone}`);
+      // Kota dolduysa WhatsApp atlanır (geçmişe "gönderilmedi" yazılır); "whatsapp" modunda e-postaya düşer
+      if (waWanted && whatsappLeft <= 0) {
+        sentTo.add(`wa:${phone}`);
+        await tx.centerMessage.create({ data: { centerId: input.centerId, channel: "WHATSAPP", to: phone!, body: message, kind: input.kind, studentId: input.studentId, status: "SKIPPED", error: LIMIT_ERROR } });
+      }
+      const plan = NotificationService.plan(mode, {
+        whatsapp: waWanted && whatsappLeft > 0,
+        email: input.channels?.email !== false && Boolean(email) && (guardian.notifyEmail || Boolean(input.force)) && !sentTo.has(`email:${email}`),
+        alsoEmail: input.channels?.email === true,
+      });
+
+      if (plan.whatsapp && phone) {
+        sentTo.add(`wa:${phone}`);
         whatsappLeft--;
-        const link = appUrl(input.link ?? (guardian.userId ? `/hesabim/kurum/${guardian.id}` : "/hesabim/kurum"));
-        const body = [`*${title}*`, input.whatsapp, link].join("\n").slice(0, 1500);
-        const message = await tx.whatsAppMessage.create({ data: { userId: guardian.userId, to: phone, body, template: input.template?.name ?? null, params: input.template?.params ?? [title, input.whatsapp, link], type: `center.${input.kind}` } });
-        await tx.centerMessage.create({
-          data: { centerId: input.centerId, channel: "WHATSAPP", to: phone, body: input.whatsapp, kind: input.kind, studentId: input.studentId, providerId: message.id },
+        const link = appUrl(path);
+        const queued = await NotificationService.whatsapp.enqueue(tx, {
+          userId: guardian.userId,
+          to: phone,
+          body: [`*${title}*`, message, link].join("\n"),
+          template: input.template?.name ?? null,
+          params: input.template?.params ?? [title, message, link],
+          type: `center.${input.kind}`,
         });
+        await tx.centerMessage.create({ data: { centerId: input.centerId, channel: "WHATSAPP", to: phone, body: message, kind: input.kind, studentId: input.studentId, providerId: queued.id } });
         counts.whatsapp++;
-      } else {
-        await tx.centerMessage.create({
-          data: { centerId: input.centerId, channel: "WHATSAPP", to: phone, body: input.whatsapp, kind: input.kind, studentId: input.studentId, status: "SKIPPED", error: LIMIT_ERROR },
+      }
+      if (plan.email && email) {
+        sentTo.add(`email:${email}`);
+        const content = input.email ?? { subject, title: subject, lines: message.split(/\r?\n/).filter(Boolean), action: { label: "Ayrıntıları görüntüle", url: path } };
+        const queued = await NotificationService.email.enqueue(tx, {
+          userId: guardian.userId,
+          to: email,
+          subject: `${content.subject} · ${input.centerName}`,
+          senderName: input.centerName,
+          greetingName: guardian.fullName.split(" ")[0],
+          title: content.title,
+          lines: content.lines,
+          action: content.action,
         });
+        await tx.centerMessage.create({ data: { centerId: input.centerId, channel: "EMAIL", to: email, subject: content.subject, body: queued.text, kind: input.kind, studentId: input.studentId, providerId: queued.id } });
+        counts.email++;
       }
     }
-    if (input.email && input.channels?.email !== false && guardian.email && (guardian.notifyEmail || input.force) && !sentTo.has(`email:${guardian.email}`)) {
-      sentTo.add(`email:${guardian.email}`);
-      const { html, text } = renderEmail({
-        siteName: input.centerName,
-        greetingName: guardian.fullName.split(" ")[0],
-        title: input.email.title,
-        lines: input.email.lines,
-        action: input.email.action,
-      });
-      const email = await tx.emailMessage.create({ data: { userId: guardian.userId, to: guardian.email, subject: `${input.email.subject} · ${input.centerName}`, html, text } });
-      await tx.centerMessage.create({
-        data: { centerId: input.centerId, channel: "EMAIL", to: guardian.email, subject: input.email.subject, body: text, kind: input.kind, studentId: input.studentId, providerId: email.id },
-      });
-      counts.email++;
-    }
+
     if (input.notification && guardian.userId) {
       await tx.notification.create({
         data: { userId: guardian.userId, type: `center.${input.kind}`, title: input.notification.title, body: input.notification.body, link: `/hesabim/kurum/${guardian.id}` },
@@ -123,20 +148,21 @@ export async function messageGuardians(input: GuardianMessageInput, tx: Tx = db)
   return counts;
 }
 
-/** Kurum yöneticilerine (sahip ve müdür) site içi bildirim. */
+/** Kurum yöneticilerine (sahip ve müdür) bildirim; dış kanal (e-posta/WhatsApp) bildirim kanalı ayarına göre. */
 export async function notifyCenterManagers(centerId: string, notification: { type: string; title: string; body: string; link: string }, tx: Tx = db) {
   const managers = await tx.centerMember.findMany({ where: { centerId, isActive: true, role: { in: ["OWNER", "MANAGER"] } }, select: { userId: true } });
-  if (managers.length) {
-    await tx.notification.createMany({ data: managers.map((m) => ({ userId: m.userId, ...notification })) });
+  for (const m of managers) {
+    await notify({ userId: m.userId, ...notification, whatsapp: false }, tx);
   }
 }
+
 
 /** Zamanlayıcı görevi: WhatsApp ve e-posta durumlarını genel kuyruklardan eşitler; sınırı dolan kurumun yöneticisine bir kez haber verir. */
 export async function processCenterMessages(now = new Date()): Promise<number> {
   let processed = 0;
 
   // SMS kaldırıldı: sırada kalmış eski SMS'ler gönderilmez
-  const oldSms = await db.centerMessage.updateMany({ where: { channel: "SMS", status: "QUEUED" }, data: { status: "SKIPPED", error: "SMS kaldırıldı; mesajlar WhatsApp ile gider." } });
+  const oldSms = await db.centerMessage.updateMany({ where: { channel: "SMS", status: "QUEUED" }, data: { status: "SKIPPED", error: "SMS kaldırıldı." } });
   processed += oldSms.count;
 
   const queued = await db.centerMessage.findMany({ where: { channel: { in: ["WHATSAPP", "EMAIL"] }, status: "QUEUED", providerId: { not: null } }, select: { id: true, channel: true, providerId: true }, take: 500 });
@@ -174,7 +200,7 @@ export async function processCenterMessages(now = new Date()): Promise<number> {
     await notifyCenterManagers(centerId, {
       type,
       title: "Aylık WhatsApp sınırı doldu",
-      body: `Bu ay ${limit} WhatsApp mesajı hakkınız doldu. Ay sonuna kadar velilere yalnızca site/uygulama bildirimi gidiyor. Ek kota için Pi Kampüs ile görüşün.`,
+      body: `Bu ay ${limit} WhatsApp mesajı hakkınız doldu. Ay sonuna kadar velilere e-posta ve site/uygulama bildirimi gidiyor. Ek kota için Pi Kampüs ile görüşün.`,
       link: "/kurum/mesajlar",
     });
   }

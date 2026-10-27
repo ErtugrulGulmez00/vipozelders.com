@@ -22,8 +22,9 @@ export async function sendAnnouncement(ctx: CenterContext, input: { title: strin
       centerName: ctx.center.name,
       studentId: student.id,
       kind: "announcement",
-      whatsappTitle: `Duyuru: ${input.title}`,
-      whatsapp: input.sendWhatsapp ? input.body.slice(0, 900) : null,
+      messageTitle: `Duyuru: ${input.title}`,
+      message: input.sendWhatsapp || input.sendEmail ? input.body.slice(0, 900) : null,
+      channels: { whatsapp: input.sendWhatsapp, email: input.sendEmail },
       email: input.sendEmail ? { subject: input.title, title: input.title, lines: input.body.split(/\r?\n/).filter(Boolean) } : null,
       notification: { title: `Duyuru: ${input.title}`, body: input.body.slice(0, 200) },
     });

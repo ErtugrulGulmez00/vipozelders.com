@@ -2,9 +2,11 @@
 
 import { deleteAnnouncementAction, sendAnnouncementAction } from "@/actions/center/communication";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
+import { WhatsAppCheckbox, useWhatsAppActive } from "@/components/notification-channel";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
 
 export function AnnouncementForm({ groups }: { groups: { id: string; name: string; count: number }[] }) {
+  const whatsapp = useWhatsAppActive();
   return (
     <ActionForm action={sendAnnouncementAction} resetOnSuccess className="space-y-3">
       <Field label="Kime">
@@ -27,8 +29,8 @@ export function AnnouncementForm({ groups }: { groups: { id: string; name: strin
       </Field>
       <div className="space-y-2 rounded-xl bg-slate-50 p-3 text-sm">
         <p className="text-slate-600">Veli portalına bağlı velilere her zaman site/uygulama bildirimi gider.</p>
-        <Checkbox name="sendWhatsapp" defaultChecked label="WhatsApp ile gönder" />
-        <Checkbox name="sendEmail" label="E-posta da gönder" />
+        <WhatsAppCheckbox name="sendWhatsapp" defaultChecked label="WhatsApp ile gönder" />
+        <Checkbox name="sendEmail" defaultChecked={!whatsapp} label={whatsapp ? "E-posta da gönder" : "E-posta ile gönder"} />
         <p className="text-xs text-slate-500">
           WhatsApp yalnızca bilgilendirme içindir (toplantı, tatil, program değişikliği…). Kampanya, indirim ya da reklam göndermeyin: WhatsApp bu tür mesajları
           şikâyet üzerine engelleyebilir. Her veli için aylık WhatsApp hakkınızdan bir mesaj düşer.

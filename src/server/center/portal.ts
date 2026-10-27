@@ -28,8 +28,8 @@ export async function createGuardianInvite(ctx: CenterContext, guardianId: strin
       guardianIds: [guardian.id],
       force: true,
       kind: "invite",
-      whatsappTitle: "Veli portalı daveti",
-      whatsapp: `${ctx.center.name}, ${name} için sizi veli portalına davet etti. Devamsızlık, etüt, deneme sonuçları, ödeme planı ve duyuruları portaldan takip edebilirsiniz. Bağlantı ${INVITE_DAYS} gün geçerlidir; ücretsiz veli hesabınızla giriş yapıp onaylamanız yeterli.`,
+      messageTitle: "Veli portalı daveti",
+      message: `${ctx.center.name}, ${name} için sizi veli portalına davet etti. Devamsızlık, etüt, deneme sonuçları, ödeme planı ve duyuruları portaldan takip edebilirsiniz. Bağlantı ${INVITE_DAYS} gün geçerlidir; ücretsiz veli hesabınızla giriş yapıp onaylamanız yeterli.`,
       link: `/kurum-davet/${token}`,
     });
   }

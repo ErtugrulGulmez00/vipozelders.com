@@ -105,8 +105,8 @@ export async function saveHallDay(ctx: CenterContext, hallId: string, date: stri
         centerName: ctx.center.name,
         studentId: row.studentId,
         kind: "hall_absence",
-        whatsappTitle: "Çalışma salonu",
-        whatsapp: `Sayın veli, öğrenciniz ${name} ${d}.${m}.${y} tarihinde ${hall.name} çalışma salonuna gelmemiştir.`,
+        messageTitle: "Çalışma salonu",
+        message: `Sayın veli, öğrenciniz ${name} ${d}.${m}.${y} tarihinde ${hall.name} çalışma salonuna gelmemiştir.`,
         notification: { title: `${row.student.firstName} çalışma salonuna gelmedi`, body: `${d}.${m}.${y} · ${hall.name}` },
       });
       await db.centerHallDay.update({ where: { hallId_studentId_date: { hallId, studentId: row.studentId, date: day } }, data: { notifiedAt: new Date() } });

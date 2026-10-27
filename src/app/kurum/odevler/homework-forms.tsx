@@ -3,11 +3,13 @@
 import { useMemo, useState } from "react";
 import { checkHomeworkAction, createHomeworkAction, deleteHomeworkAction } from "@/actions/center/homework";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
+import { useMessageChannelLabel } from "@/components/notification-channel";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
 import { cn } from "@/lib/cn";
 import { normalizeSearch } from "@/lib/text";
 
 export function HomeworkForm({ groups, students, today, nextWeek }: { groups: { id: string; name: string }[]; students: { id: string; name: string; groups: string }[]; today: string; nextWeek: string }) {
+  const via = useMessageChannelLabel();
   const [groupId, setGroupId] = useState(groups[0]?.id ?? "");
   const [filter, setFilter] = useState("");
   const [selected, setSelected] = useState(() => new Set<string>());
@@ -76,7 +78,7 @@ export function HomeworkForm({ groups, students, today, nextWeek }: { groups: { 
       <Field label="Açıklama (isteğe bağlı)">
         <Textarea name="description" rows={2} />
       </Field>
-      <Checkbox name="notifyWhatsapp" label="Velilere WhatsApp ile de bildir (portala bağlı velilere bildirim her zaman gider; aylık WhatsApp hakkından düşer)" />
+      <Checkbox name="notifyGuardians" label={`Velilere ${via} ile de bildir (portala bağlı velilere bildirim her zaman gider)`} />
       <SubmitButton>Ödevi ver</SubmitButton>
     </ActionForm>
   );

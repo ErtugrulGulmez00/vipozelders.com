@@ -14,6 +14,7 @@ import {
 } from "@/actions/center/exams";
 import { ImportNotes } from "@/components/center/center-client";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
+import { useMessageChannelLabel } from "@/components/notification-channel";
 import { FileInput } from "@/components/ui/file-input";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
 import { computeNet, EXAM_PRESETS, PENALTY_OPTIONS, type ExamKindName } from "@/lib/center/exams";
@@ -140,6 +141,7 @@ export function DeleteExamForm({ examId }: { examId: string }) {
 }
 
 export function PublishExamForm({ examId, isPublished }: { examId: string; isPublished: boolean }) {
+  const via = useMessageChannelLabel();
   return (
     <ActionForm action={publishExamAction} className="space-y-3">
       <input type="hidden" name="examId" value={examId} />
@@ -148,9 +150,9 @@ export function PublishExamForm({ examId, isPublished }: { examId: string; isPub
         <p className="text-sm text-slate-600">Sonuçlar veli portalında görünüyor.</p>
       ) : (
         <>
-          <p className="text-sm text-slate-600">Yayınlayınca hesabını bağlamış velilere site/uygulama bildirimi gider; isterseniz tüm velilere WhatsApp ile de sonuç özeti gönderilir.</p>
+          <p className="text-sm text-slate-600">Yayınlayınca hesabını bağlamış velilere site/uygulama bildirimi gider; isterseniz tüm velilere {via} ile de sonuç özeti gönderilir.</p>
           <div className="flex gap-4">
-            <Checkbox name="whatsapp" defaultChecked label="WhatsApp ile de gönder" />
+            <Checkbox name="notifyGuardians" defaultChecked label={`Velilere ${via} ile de gönder`} />
           </div>
         </>
       )}

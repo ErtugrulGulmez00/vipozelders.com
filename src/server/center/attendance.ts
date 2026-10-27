@@ -153,9 +153,9 @@ export async function saveAttendance(ctx: CenterContext, input: AttendanceSheetI
         centerName: ctx.center.name,
         studentId: record.student.id,
         kind: "absence",
-        whatsappTitle: "Devamsızlık",
+        messageTitle: "Devamsızlık",
         template: { name: WA_TEMPLATES.absence, params: [name, when, session.subject, centerContact(ctx.center)] },
-        whatsapp: `Sayın veli, öğrenciniz ${name} ${when} saatindeki ${session.subject} dersine (${group.name}) katılmamıştır. Bir bilginiz yoksa lütfen kurumumuzla iletişime geçin.${ctx.center.phone ? ` Tel: ${ctx.center.phone}` : ""}`,
+        message: `Sayın veli, öğrenciniz ${name} ${when} saatindeki ${session.subject} dersine (${group.name}) katılmamıştır. Bir bilginiz yoksa lütfen kurumumuzla iletişime geçin.${ctx.center.phone ? ` Tel: ${ctx.center.phone}` : ""}`,
         notification: { title: `${record.student.firstName} derse katılmadı`, body: `${when} · ${session.subject} (${group.name})` },
       });
       if (counts.whatsapp + counts.email + counts.app > 0) notified++;

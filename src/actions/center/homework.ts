@@ -22,7 +22,7 @@ export async function createHomeworkAction(_: ActionState, formData: FormData): 
       description: opt(formData, "description", 2000),
       assignedOn: date(formData, "assignedOn", "Veriliş tarihi"),
       dueDate: date(formData, "dueDate", "Teslim tarihi"),
-      notifyWhatsapp: bool(formData, "notifyWhatsapp"),
+      notifyGuardians: bool(formData, "notifyGuardians"),
     });
     id = homework.id;
     return success(`Ödev ${count} öğrenciye verildi.`);

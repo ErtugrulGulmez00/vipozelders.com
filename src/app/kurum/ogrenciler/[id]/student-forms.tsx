@@ -16,6 +16,7 @@ import {
 import { createStudentAccountAction, removeStudentAccountAction, resetStudentAccountAction } from "@/actions/center/questions";
 import { CredentialsBox, InviteLinkBox } from "@/components/center/center-client";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
+import { WhatsAppCheckbox, useWhatsAppActive } from "@/components/notification-channel";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
 import { buildInstallments } from "@/lib/center/finance";
 import { GUARDIAN_RELATIONS, NOTE_KIND_LABEL } from "@/lib/center/labels";
@@ -58,8 +59,8 @@ function GuardianFields({ guardian }: { guardian?: GuardianView }) {
         <FieldError name="email" />
       </Field>
       <div className="space-y-2 sm:col-span-2">
-        <Checkbox name="notifyWhatsapp" defaultChecked={guardian?.notifyWhatsapp ?? true} label="WhatsApp bildirimleri" />
-        <Checkbox name="notifyEmail" defaultChecked={guardian?.notifyEmail ?? true} label="Duyurular e-postayla da gönderilebilsin" />
+        <WhatsAppCheckbox name="notifyWhatsapp" defaultChecked={guardian?.notifyWhatsapp ?? true} preserve label="WhatsApp bildirimleri" />
+        <Checkbox name="notifyEmail" defaultChecked={guardian?.notifyEmail ?? true} label="E-posta bildirimleri" />
         <Checkbox name="isPrimary" defaultChecked={guardian?.isPrimary} label="Birincil veli (listelerde görünen)" />
       </div>
     </div>
@@ -211,6 +212,7 @@ export function DeleteNoteButton({ noteId }: { noteId: string }) {
 }
 
 export function GuardianMessageForm({ studentId }: { studentId: string }) {
+  const whatsapp = useWhatsAppActive();
   return (
     <ActionForm action={messageStudentGuardiansAction} resetOnSuccess className="space-y-3">
       <input type="hidden" name="studentId" value={studentId} />
@@ -218,8 +220,8 @@ export function GuardianMessageForm({ studentId }: { studentId: string }) {
       <FieldError name="text" />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex gap-4">
-          <Checkbox name="whatsapp" defaultChecked label="WhatsApp" />
-          <Checkbox name="email" label="E-posta" />
+          <WhatsAppCheckbox name="whatsapp" defaultChecked label="WhatsApp" />
+          <Checkbox name="email" defaultChecked={!whatsapp} label="E-posta" />
         </div>
         <SubmitButton size="sm">Gönder</SubmitButton>
       </div>

@@ -40,9 +40,13 @@ export default async function MessagesPage({ searchParams }: PageProps<"/kurum/m
   return (
     <>
       <PageHeader title="Mesaj geçmişi" description="Velilere giden tüm otomatik ve elle gönderilen WhatsApp ve e-posta mesajları" />
-      {whatsapp.used >= whatsapp.limit ? (
+      {!whatsapp.enabled ? (
+        <Alert tone="info" className="mb-4" title="WhatsApp: çok yakında">
+          WhatsApp bildirimleri onay aşamasında. Şimdilik velilere tüm mesajlar e-posta ve site/uygulama bildirimi olarak gidiyor; onaylanınca kendiliğinden WhatsApp’a geçilir.
+        </Alert>
+      ) : whatsapp.used >= whatsapp.limit ? (
         <Alert tone="warning" className="mb-4" title="Aylık WhatsApp hakkı doldu">
-          Bu ay {whatsapp.limit} WhatsApp mesajı hakkınız doldu. Ay sonuna kadar velilere yalnızca site/uygulama bildirimi gidiyor. Ek kota için Pi Kampüs ile görüşün.
+          Bu ay {whatsapp.limit} WhatsApp mesajı hakkınız doldu. Ay sonuna kadar velilere e-posta ve site/uygulama bildirimi gidiyor. Ek kota için Pi Kampüs ile görüşün.
         </Alert>
       ) : whatsapp.used >= whatsapp.limit * 0.8 ? (
         <Alert tone="info" className="mb-4">
@@ -50,7 +54,7 @@ export default async function MessagesPage({ searchParams }: PageProps<"/kurum/m
         </Alert>
       ) : null}
       <div className="mb-4 grid grid-cols-2 gap-3">
-        <StatCard label="Bu ay WhatsApp" value={`${whatsapp.used} / ${whatsapp.limit}`} />
+        <StatCard label="Bu ay WhatsApp" value={whatsapp.enabled ? `${whatsapp.used} / ${whatsapp.limit}` : "Onay aşamasında"} />
         <StatCard label="Bu ay e-posta" value={emailThisMonth} />
       </div>
       <Form action="/kurum/mesajlar" className="mb-4 flex flex-wrap gap-2">

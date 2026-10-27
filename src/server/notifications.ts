@@ -1,5 +1,6 @@
 import { db, type DbTransaction } from "./db";
-import { appUrl, renderEmail } from "./email";
+import { appUrl } from "./email";
+import { NotificationService } from "./notification-service";
 import { loadSettings } from "./settings";
 import { WA_TEMPLATES } from "./whatsapp";
 
@@ -13,7 +14,7 @@ export type NotifyInput = {
   emailLines?: string[];
   /** false ise yalnızca site içi bildirim */
   email?: boolean;
-  /** false ise WhatsApp gönderilmez (önemli bildirim türlerinde varsayılan olarak gider) */
+  /** false ise WhatsApp gönderilmez (WhatsApp açıkken önemli bildirim türlerinde varsayılan olarak gider) */
   whatsapp?: boolean;
   /** Dersin kısa özeti (lessonSummary); verilirse WhatsApp "ders_durumu" şablonuyla gider */
   lesson?: string;
@@ -42,7 +43,11 @@ const WHATSAPP_TYPES = new Set([
   "admin.lesson_request",
 ]);
 
-/** Site içi bildirim oluşturur ve kullanıcının e-postası varsa e-posta kuyruğuna ekler. */
+/**
+ * Site/uygulama bildirimi oluşturur; dış kanalları (e-posta, WhatsApp) Site ayarlarındaki bildirim kanalına göre
+ * NotificationService seçer: "email" modunda her bildirim e-postayla, "whatsapp" modunda önemli türler WhatsApp'la
+ * (ulaşılamazsa e-postayla), "hybrid" modunda ikisiyle gider.
+ */
 export async function notify(input: NotifyInput, tx: DbTransaction | typeof db = db) {
   const user = await tx.user.findUnique({
     where: { id: input.userId },
@@ -60,30 +65,36 @@ export async function notify(input: NotifyInput, tx: DbTransaction | typeof db =
     },
   });
 
-  if (input.email !== false && user.email) {
-    const settings = await loadSettings();
-    const { html, text } = renderEmail({
-      siteName: settings.siteName,
+  const settings = await loadSettings();
+  const plan = NotificationService.plan(settings.notificationChannel, {
+    email: input.email !== false && Boolean(user.email),
+    whatsapp: input.whatsapp !== false && WHATSAPP_TYPES.has(input.type) && Boolean(user.phone) && !user.whatsappOptOut,
+  });
+
+  if (plan.email && user.email) {
+    await NotificationService.email.enqueue(tx, {
+      userId: input.userId,
+      to: user.email,
+      subject: `${input.title} · ${settings.siteName}`,
+      senderName: settings.siteName,
       greetingName: user.firstName,
       title: input.title,
       lines: [input.body, ...(input.emailLines ?? [])],
       action: input.link ? { label: "Ayrıntıları görüntüle", url: input.link } : undefined,
     });
-    await tx.emailMessage.create({
-      data: { userId: input.userId, to: user.email, subject: `${input.title} · ${settings.siteName}`, html, text },
-    });
   }
 
-  if (input.whatsapp !== false && WHATSAPP_TYPES.has(input.type) && user.phone && !user.whatsappOptOut) {
-    const settings = await loadSettings();
-    if (settings.whatsappNotifications) {
-      const body = [`*${settings.siteName}* · ${input.title}`, input.body, input.link ? appUrl(input.link) : null].filter(Boolean).join("\n");
-      const link = input.link ? appUrl(input.link) : appUrl("/");
-      // Ders bildirimleri: ders_durumu (ders, ne oldu, bağlantı); diğerleri: site ayarındaki genel şablon (başlık, metin, bağlantı) ya da düz metin
-      const template = input.lesson ? WA_TEMPLATES.lesson : null;
-      const params = input.lesson ? [input.lesson, input.title, link] : [input.title, input.body, link];
-      await tx.whatsAppMessage.create({ data: { userId: input.userId, to: user.phone, body: body.slice(0, 1500), template, params, type: input.type } });
-    }
+  if (plan.whatsapp && user.phone) {
+    const link = input.link ? appUrl(input.link) : appUrl("/");
+    // Ders bildirimleri: ders_durumu (ders, ne oldu, bağlantı); diğerleri: site ayarındaki genel şablon (başlık, metin, bağlantı) ya da düz metin
+    await NotificationService.whatsapp.enqueue(tx, {
+      userId: input.userId,
+      to: user.phone,
+      body: [`*${settings.siteName}* · ${input.title}`, input.body, input.link ? link : null].filter(Boolean).join("\n"),
+      template: input.lesson ? WA_TEMPLATES.lesson : null,
+      params: input.lesson ? [input.lesson, input.title, link] : [input.title, input.body, link],
+      type: input.type,
+    });
   }
 }
 

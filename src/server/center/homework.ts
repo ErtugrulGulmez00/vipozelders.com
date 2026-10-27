@@ -16,7 +16,7 @@ export type HomeworkInput = {
   description: string | null;
   assignedOn: string;
   dueDate: string;
-  notifyWhatsapp: boolean;
+  notifyGuardians: boolean;
 };
 
 const shortDate = (date: string) => date.split("-").reverse().join(".");
@@ -53,8 +53,8 @@ export async function createHomework(ctx: CenterContext, input: HomeworkInput) {
       centerName: ctx.center.name,
       studentId: s.id,
       kind: "homework",
-      whatsappTitle: "Yeni ödev",
-      whatsapp: input.notifyWhatsapp ? `${s.firstName} için yeni ödev: ${input.subject} · ${input.title}${input.description ? ` (${input.description})` : ""}. Teslim: ${shortDate(input.dueDate)}` : null,
+      messageTitle: "Yeni ödev",
+      message: input.notifyGuardians ? `${s.firstName} için yeni ödev: ${input.subject} · ${input.title}${input.description ? ` (${input.description})` : ""}. Teslim: ${shortDate(input.dueDate)}` : null,
       notification: { title: `Yeni ödev: ${input.subject}`, body: `${input.title} · teslim ${shortDate(input.dueDate)}` },
     });
   }
@@ -89,8 +89,8 @@ export async function checkHomework(ctx: CenterContext, homeworkId: string, reco
         centerName: ctx.center.name,
         studentId: row.studentId,
         kind: "homework_missing",
-        whatsappTitle: "Yapılmayan ödev",
-        whatsapp: `Sayın veli, öğrenciniz ${name} ${shortDate(dbDateToString(homework.dueDate))} teslimli “${homework.title}” (${homework.subject}) ödevini yapmamıştır.`,
+        messageTitle: "Yapılmayan ödev",
+        message: `Sayın veli, öğrenciniz ${name} ${shortDate(dbDateToString(homework.dueDate))} teslimli “${homework.title}” (${homework.subject}) ödevini yapmamıştır.`,
         notification: { title: `${row.student.firstName} ödevini yapmadı`, body: `${homework.subject} · ${homework.title}` },
       });
       await db.centerHomeworkStudent.update({ where: { homeworkId_studentId: { homeworkId, studentId: r.studentId } }, data: { notifiedAt: new Date() } });

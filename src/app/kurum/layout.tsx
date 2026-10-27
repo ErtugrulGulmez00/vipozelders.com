@@ -24,21 +24,24 @@ import {
   Wallet,
 } from "lucide-react";
 import { SubscriptionBanner } from "@/components/center/center-ui";
+import { NotificationChannelProvider } from "@/components/notification-channel";
 import { PanelShell } from "@/components/panel/panel-shell";
 import type { PanelNavItem } from "@/components/panel/nav-links";
 import { moduleForPath } from "@/lib/center/modules";
 import { CENTER_ROLE_LABEL, type CenterPermission } from "@/lib/center/permissions";
 import { requireCenter } from "@/server/center/context";
 import { db } from "@/server/db";
+import { loadSettings } from "@/server/settings";
 
 export const instant = false;
 
 export default async function CenterLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireCenter();
-  const [unread, newLeads, openQuestions] = await Promise.all([
+  const [unread, newLeads, openQuestions, settings] = await Promise.all([
     db.notification.count({ where: { userId: ctx.user.id, readAt: null } }),
     ctx.can("leads.manage") ? db.centerLead.count({ where: { centerId: ctx.center.id, status: "NEW" } }) : Promise.resolve(0),
     ctx.can("questions.answer") ? db.centerQuestion.count({ where: { centerId: ctx.center.id, status: "OPEN" } }) : Promise.resolve(0),
+    loadSettings(),
   ]);
   const items: (PanelNavItem & { permission?: CenterPermission })[] = [
     { href: "/kurum", label: "Özet", icon: <LayoutDashboard />, exact: true },
@@ -88,7 +91,7 @@ export default async function CenterLayout({ children }: { children: React.React
         ) : null
       }
     >
-      {children}
+      <NotificationChannelProvider mode={settings.notificationChannel}>{children}</NotificationChannelProvider>
     </PanelShell>
   );
 }

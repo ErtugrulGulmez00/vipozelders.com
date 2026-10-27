@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CHANNEL_MODES } from "@/lib/notification-channels";
 import { db } from "./db";
 
 /**
@@ -12,8 +13,8 @@ export const settingsSchema = z.object({
   contactPhone: z.string().default("+90 505 043 47 96"),
   // Sağ alttaki WhatsApp destek düğmesinin numarası (boşsa düğme gösterilmez)
   supportWhatsapp: z.string().default("+90 850 308 84 43"),
-  // Önemli bildirimler (ders talebi, onay, 1 saat kala hatırlatma…) WhatsApp ile de gönderilsin (LetsBot)
-  whatsappNotifications: z.boolean().default(true),
+  // Dış bildirim kanalı: email (WhatsApp onaylanana kadar), whatsapp (ulaşılamazsa e-posta), hybrid (ikisi)
+  notificationChannel: z.enum(CHANNEL_MODES).default("email"),
   // Meta onaylı bildirim şablonu (LetsBot panelinden; boşsa düz metin: yalnızca son 24 saatte yazmış kişiye ulaşır)
   whatsappTemplateName: z.string().default(""),
   whatsappTemplateLanguage: z.string().default("tr"),
