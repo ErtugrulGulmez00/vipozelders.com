@@ -47,8 +47,8 @@ Sitede öğretmen hesabı olan biri aynı e-postayla personel olarak eklenirse k
 ## Abonelik
 
 - İki eksen: **paket** (açık modülleri belirler) ve **öğrenci kademesi** (fiyatı belirler; iki pakette aynı).
-- **Etüt Merkezi paketi:** öğrenci/veli kayıtları, birebir takip ve koçluk, etüt planı ve etüt yoklaması, ödev, çalışma salonu, kaynaklar ve çalışma programı, fotoğrafla soru, muhasebe, veli/öğrenci portalı.
-- **Dershane paketi:** Etüt Merkezi'ndeki her şey + haftalık sınıf programı, sınıf yoklaması, sınıf defteri, denemeler (optik, analiz), **derslikler** (doluluk, çakışma, kapasite) ve **raporlar** (kurum → sınıf → öğrenci: devam, ödev, son deneme neti, geciken ödeme). Pakette olmayan bölüm menüde görünmez, adresi açılmaz; kayıtlar silinmez (`src/lib/center/editions.ts`).
+- **Etüt Merkezi paketi:** öğrenci/veli kayıtları, birebir takip ve koçluk, etüt planı ve etüt yoklaması, ödev, denemeler (optik, karne, analiz), çalışma salonu, kaynaklar ve çalışma programı, fotoğrafla soru, muhasebe, veli/öğrenci portalı.
+- **Dershane paketi:** Etüt Merkezi'ndeki her şey + haftalık sınıf programı, sınıf yoklaması, sınıf defteri, **derslikler** (doluluk, çakışma, kapasite) ve **raporlar** (kurum → sınıf → öğrenci: devam, ödev, son deneme neti, geciken ödeme). Pakette olmayan bölüm menüde görünmez, adresi açılmaz; kayıtlar silinmez (`src/lib/center/editions.ts`).
 - Kademeler (Yönetim → Site ayarları, KDV dahil; aylık fiyat indirimli olarak gösterilir): 20 öğrenciye kadar 3.999 TL / yıllık 44.999 TL; 100 öğrenci 4.999 / 49.999; 200 öğrenci 6.999 / 69.999; Kurumsal (200+) 9.999 / 99.999 (öğrenci sınırı kuruma göre). Varsayılan deneme süresi 14 gün.
 - Mevcut kurumlar Dershane paketinde kalır; paket ve kademe kurum sayfasından (Yönetim → Kurumlar) değiştirilir.
 - Yönetici kurumu açar ya da başvurudan oluşturur; ödeme havale/EFT ile alınır, yönetici “Abonelik ödemesi kaydet” ile süreyi uzatır (süre bitmemişse bitişin üzerine eklenir).

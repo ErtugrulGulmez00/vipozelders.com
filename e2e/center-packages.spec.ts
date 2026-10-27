@@ -3,7 +3,7 @@ import pg from "pg";
 
 /**
  * Kurum paketleri: yönetici Etüt Merkezi paketli kurum açar → kurum sahibi ilk girişte şifresini belirler, yalnızca
- * paketin bölümlerini görür (Dershane bölümlerinin adresi açılmaz) → yönetici paketi Dershane'ye yükseltir ve yıllık
+ * paketin bölümlerini görür (denemeler dahil) (Dershane bölümlerinin adresi açılmaz) → yönetici paketi Dershane'ye yükseltir ve yıllık
  * ödeme kaydeder (kademe 100 öğrenci) → kurum sahibi Dershane bölümlerini görür, abonelik sayfasında yeni paket yazar.
  */
 
@@ -74,9 +74,9 @@ test("yönetici paket atar ve yükseltir; kurum sahibi pakete göre bölümleri 
   await page.getByLabel("Yeni şifre (tekrar)").fill("PaketSifre123");
   await page.getByRole("button", { name: "Şifremi kaydet" }).click();
   await expect(page).toHaveURL(/\/kurum$/);
-  for (const label of ["Etütler", "Ödevler", "Çalışma salonu", "Muhasebe"]) await expect(nav(page).getByRole("link", { name: label, exact: true })).toBeVisible();
-  for (const label of ["Ders programı", "Yoklama", "Denemeler", "Derslikler", "Raporlar"]) await expect(nav(page).getByRole("link", { name: label, exact: true })).toHaveCount(0);
-  await page.goto("/kurum/denemeler");
+  for (const label of ["Etütler", "Ödevler", "Denemeler", "Çalışma salonu", "Muhasebe"]) await expect(nav(page).getByRole("link", { name: label, exact: true })).toBeVisible();
+  for (const label of ["Ders programı", "Yoklama", "Sınıf defteri", "Derslikler", "Raporlar"]) await expect(nav(page).getByRole("link", { name: label, exact: true })).toHaveCount(0);
+  await page.goto("/kurum/derslikler");
   await expect(page).toHaveURL(/\/kurum\?durum=paket$/);
   await expect(page.getByText("Bu bölüm Dershane paketinde", { exact: false })).toBeVisible();
   await page.goto("/kurum/raporlar");
@@ -103,7 +103,7 @@ test("yönetici paket atar ve yükseltir; kurum sahibi pakete göre bölümleri 
   // 4) Kurum sahibi Dershane bölümlerini görür; aboneliğinde yeni paket yazar
   await login(page, username, "PaketSifre123");
   await page.goto("/kurum");
-  for (const label of ["Ders programı", "Yoklama", "Denemeler", "Derslikler", "Raporlar"]) await expect(nav(page).getByRole("link", { name: label, exact: true })).toBeVisible();
+  for (const label of ["Ders programı", "Yoklama", "Sınıf defteri", "Derslikler", "Raporlar"]) await expect(nav(page).getByRole("link", { name: label, exact: true })).toBeVisible();
   await page.goto("/kurum/derslikler");
   await expect(page.getByRole("heading", { name: "Derslikler" })).toBeVisible();
   await page.getByLabel("Derslik adı").fill("101");

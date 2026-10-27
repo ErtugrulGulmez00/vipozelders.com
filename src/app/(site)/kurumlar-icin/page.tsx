@@ -195,7 +195,7 @@ export default async function ForCentersPage() {
 
       <section id="planlar" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16">
         <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">Paketler</h2>
-        <p className="mt-2 text-slate-600">Kurumunuzun çalışma şekline göre paketi seçin. Etüt Merkezi paketi birebir takip ve etüt odaklı, daha uygun fiyatlı; Dershane paketi sınıf programı, deneme analizi, derslik ve raporları da kapsar. Tüm paketlerde sınırsız personel ve veli portalı.</p>
+        <p className="mt-2 text-slate-600">Kurumunuzun çalışma şekline göre paketi seçin. Etüt Merkezi paketi birebir takip, etüt ve deneme analizi odaklı, daha uygun fiyatlı; Dershane paketi sınıf bazlı programı, yoklamayı, derslikleri ve raporları da kapsar. Tüm paketlerde sınırsız personel ve veli portalı.</p>
         <div className="mt-8">
           <EditionCards cta={trialDays > 0 ? "Ücretsiz deneyin" : "Başvurun"} fromPrice={fromPrice} />
         </div>

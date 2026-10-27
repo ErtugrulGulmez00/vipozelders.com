@@ -5,20 +5,21 @@ import { buildCenterReport, buildStudentRows, type ReportInput } from "@/lib/cen
 import { bookedMinutes, findRoomConflicts, type RoomSlot } from "@/lib/center/rooms";
 
 describe("Kurum paketleri", () => {
-  it("Etüt Merkezi paketinde sınıf programı, yoklama, sınıf defteri, deneme, derslik ve rapor kapalı", () => {
-    for (const s of ["program", "yoklama", "sinif-defteri", "denemeler", "derslikler", "raporlar"]) {
+  it("Etüt Merkezi paketinde sınıf programı, yoklama, sınıf defteri, derslik ve rapor kapalı; deneme açık", () => {
+    for (const s of ["program", "yoklama", "sinif-defteri", "derslikler", "raporlar"]) {
       expect(editionAllows("ETUT", s)).toBe(false);
       expect(editionAllows("DERSHANE", s)).toBe(true);
     }
-    for (const s of ["etutler", "odevler", "calisma-salonu", "kocluk", "muhasebe", "ogrenciler"]) expect(editionAllows("ETUT", s)).toBe(true);
+    for (const s of ["etutler", "odevler", "denemeler", "calisma-salonu", "kocluk", "muhasebe", "ogrenciler"]) expect(editionAllows("ETUT", s)).toBe(true);
   });
 
   it("modül hem kurum ayarına hem pakete bakar; ayarlarda yalnızca paketin modülleri listelenir", () => {
-    expect(moduleEnabled({ disabledModules: [], edition: "ETUT" }, "denemeler")).toBe(false);
-    expect(moduleEnabled({ disabledModules: [], edition: "DERSHANE" }, "denemeler")).toBe(true);
+    expect(moduleEnabled({ disabledModules: [], edition: "ETUT" }, "sinif-defteri")).toBe(false);
+    expect(moduleEnabled({ disabledModules: [], edition: "DERSHANE" }, "sinif-defteri")).toBe(true);
+    expect(moduleEnabled({ disabledModules: [], edition: "ETUT" }, "denemeler")).toBe(true);
     expect(moduleEnabled({ disabledModules: ["odevler"], edition: "DERSHANE" }, "odevler")).toBe(false);
-    expect(editionModules("ETUT").map((m) => m.key)).not.toContain("denemeler");
-    expect(editionModules("DERSHANE").map((m) => m.key)).toContain("denemeler");
+    expect(editionModules("ETUT").map((m) => m.key)).not.toContain("sinif-defteri");
+    expect(editionModules("ETUT").map((m) => m.key)).toContain("denemeler");
   });
 
   it("adresten Dershane bölümü bulunur", () => {
