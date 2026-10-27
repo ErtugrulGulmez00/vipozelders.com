@@ -3,7 +3,7 @@ import { Logo } from "@/components/site/logo";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-dvh flex-col bg-gradient-to-b from-brand-50 via-slate-50 to-slate-50">
+    <div className="flex min-h-dvh flex-col bg-ink-50">
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-5">
         <Logo />
         <Link href="/ogretmenler" className="text-sm font-medium text-slate-600 hover:text-brand-700">

@@ -31,7 +31,7 @@ export function PanelShell({
 }) {
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[260px_1fr]">
-      <aside className="hidden bg-brand-950 lg:flex lg:flex-col">
+      <aside className="hidden bg-ink-900 lg:flex lg:flex-col">
         <div className="px-5 py-5">
           <Logo light />
           <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-brand-300">{title}</p>

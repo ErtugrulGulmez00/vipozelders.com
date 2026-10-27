@@ -101,7 +101,7 @@ test("iki tarayıcı: veli kayıt olur, ders alır; öğretmen onaylar; canlı d
 
   // --- Öğretmen tarayıcısı: talep anlık bildirilir ve onaylanır
   await teacher.goto("/ogretmen-paneli/talepler");
-  const request = teacher.locator("li, article, div.rounded-2xl").filter({ hasText: learner }).filter({ has: teacher.getByRole("button", { name: "Onayla" }) }).last();
+  const request = teacher.locator("li, article, div.rounded-3xl").filter({ hasText: learner }).filter({ has: teacher.getByRole("button", { name: "Onayla" }) }).last();
   await expect(request).toBeVisible();
   await request.getByRole("button", { name: "Onayla" }).click();
   await expect(teacher.getByText("Ders onaylandı; öğrenciye bildirildi.")).toBeVisible();

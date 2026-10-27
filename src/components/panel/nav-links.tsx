@@ -30,7 +30,7 @@ export function SideNav({ items }: { items: PanelNavItem[] }) {
         >
           <span className="size-4 shrink-0 [&>svg]:size-4">{item.icon}</span>
           <span className="flex-1">{item.label}</span>
-          {item.badge ? <span className="rounded-full bg-gold-400 px-1.5 text-xs font-bold text-brand-950">{item.badge}</span> : null}
+          {item.badge ? <span className="rounded-full bg-gold-400 px-1.5 text-xs font-bold text-ink-900">{item.badge}</span> : null}
         </Link>
       ))}
     </nav>
@@ -51,7 +51,7 @@ export function MobileNav({ items }: { items: PanelNavItem[] }) {
           )}
         >
           {item.label}
-          {item.badge ? <span className="rounded-full bg-gold-400 px-1.5 text-[10px] text-brand-950">{item.badge}</span> : null}
+          {item.badge ? <span className="rounded-full bg-gold-400 px-1.5 text-[10px] text-ink-900">{item.badge}</span> : null}
         </Link>
       ))}
     </nav>

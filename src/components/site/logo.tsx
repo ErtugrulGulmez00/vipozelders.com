@@ -6,11 +6,11 @@ import { PiMark } from "./pi-mark";
 export async function Logo({ className, light = false }: { className?: string; light?: boolean }) {
   const settings = await getSiteSettings();
   return (
-    <Link href="/" className={cn("inline-flex items-center gap-2 font-bold tracking-tight", light ? "text-white" : "text-brand-950", className)}>
-      <span className="inline-flex size-9 items-center justify-center rounded-xl bg-gradient-to-br from-brand-600 to-brand-800 text-gold-300 shadow-sm">
+    <Link href="/" className={cn("inline-flex items-center gap-2.5 font-display font-extrabold tracking-tight", light ? "text-white" : "text-ink-900", className)}>
+      <span className="inline-flex size-10 -rotate-6 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-sm">
         <PiMark className="size-6" />
       </span>
-      <span className="whitespace-nowrap text-base sm:text-lg">{settings.siteName}</span>
+      <span className="whitespace-nowrap text-lg sm:text-xl">{settings.siteName}</span>
     </Link>
   );
 }

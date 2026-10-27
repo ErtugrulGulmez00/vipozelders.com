@@ -7,11 +7,11 @@ import { Logo } from "./logo";
 export async function SiteFooter() {
   const [settings, pages, catalog] = await Promise.all([getSiteSettings(), getFooterPages(), getCatalog()]);
   return (
-    <footer className="pk-site-chrome mt-20 bg-brand-950 text-slate-300">
+    <footer className="pk-site-chrome mt-20 bg-ink-900 text-ink-200">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-3">
           <Logo light />
-          <p className="text-sm leading-relaxed text-slate-400">{settings.siteTagline}</p>
+          <p className="text-sm leading-relaxed text-ink-300">{settings.siteTagline}</p>
           <address className="space-y-1.5 text-sm not-italic">
             {settings.companyName ? <p className="font-medium text-slate-200">{settings.companyName}</p> : null}
             {settings.companyAddress ? (
@@ -22,7 +22,7 @@ export async function SiteFooter() {
             {settings.contactPhone ? (
               <p className="flex gap-2">
                 <Phone className="mt-0.5 size-4 shrink-0" aria-hidden />
-                <a href={`tel:${settings.contactPhone.replace(/[^d+]/g, "")}`} className="hover:text-white">{settings.contactPhone}</a>
+                <a href={`tel:${settings.contactPhone.replace(/[^\d+]/g, "")}`} className="hover:text-white">{settings.contactPhone}</a>
               </p>
             ) : null}
             {settings.contactEmail ? (

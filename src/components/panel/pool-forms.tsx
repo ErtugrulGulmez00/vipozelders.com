@@ -66,7 +66,7 @@ export function RatingForm({ id, current }: { id: string; current: number | null
             aria-checked={value === n}
             aria-label={`${n} puan`}
             onClick={() => setValue(n)}
-            className={cn("size-9 rounded-lg text-lg leading-none ring-1 transition", n <= value ? "bg-gold-400 text-brand-950 ring-gold-400" : "bg-white text-slate-300 ring-slate-200 hover:ring-gold-300")}
+            className={cn("size-9 rounded-lg text-lg leading-none ring-1 transition", n <= value ? "bg-gold-400 text-ink-900 ring-gold-400" : "bg-white text-slate-300 ring-slate-200 hover:ring-gold-300")}
           >
             ★
           </button>

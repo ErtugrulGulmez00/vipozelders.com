@@ -21,7 +21,7 @@ export async function UserMenu() {
           <span className="sm:hidden">Giriş</span>
           <span className="hidden sm:inline">Giriş yap</span>
         </Link>
-        <Link href="/kayit" className={buttonClasses("primary", "sm")}>
+        <Link href="/kayit" className={buttonClasses("ink", "sm")}>
           Kayıt ol
         </Link>
       </div>
@@ -39,7 +39,7 @@ export async function UserMenu() {
     <div className="flex items-center gap-1">
       {/* Zil: son bildirimler açılır pencerede; tümü için bildirim sayfasına gidilir. */}
       <details className="relative">
-        <summary className="relative inline-flex size-9 cursor-pointer list-none items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100 [&::-webkit-details-marker]:hidden" aria-label={`Bildirimler (${unread} okunmamış)`}>
+        <summary className="relative inline-flex size-10 cursor-pointer list-none items-center justify-center rounded-full text-ink-700 hover:bg-ink-50 [&::-webkit-details-marker]:hidden" aria-label={`Bildirimler (${unread} okunmamış)`}>
           <Bell className="size-5" aria-hidden />
           {unread > 0 ? (
             <span className="absolute right-1 top-1 inline-flex min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white">
@@ -47,7 +47,7 @@ export async function UserMenu() {
             </span>
           ) : null}
         </summary>
-        <div className="fixed inset-x-2 top-16 z-40 rounded-xl border border-slate-200 bg-white shadow-lg sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-96">
+        <div className="fixed inset-x-2 top-20 z-40 rounded-2xl border border-ink-100 bg-white shadow-lg sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-96">
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
             <p className="text-sm font-semibold text-slate-900">Bildirimler</p>
             {unread ? (

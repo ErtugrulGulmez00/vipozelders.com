@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 export default function CenterLoginPage({ searchParams }: PageProps<"/kurum-giris">) {
   return (
     <div className="grid min-h-dvh lg:grid-cols-[1fr_1.1fr]">
-      <aside className="hidden flex-col justify-between bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 p-10 text-white lg:flex">
+      <aside className="hidden flex-col justify-between bg-ink-900 p-10 text-white lg:flex">
         <Link href="/kurumlar-icin" className="inline-flex items-center gap-2.5">
           <span className="inline-flex size-10 items-center justify-center rounded-xl bg-white/10 text-gold-300">
             <PiMark className="size-6" />

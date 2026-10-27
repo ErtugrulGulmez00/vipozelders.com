@@ -58,7 +58,7 @@ test("kaynak atanır, program yazılır, veli işaretler", async ({ page }) => {
   await page.getByLabel("Not (isteğe bağlı)").fill(`e2e ${stamp}`);
   await page.getByRole("button", { name: "Programa ekle" }).click();
   await expect(page.getByText("Programa eklendi.")).toBeVisible();
-  const card = page.locator("div.rounded-2xl", { hasText: resourceName }).last();
+  const card = page.locator("div", { hasText: resourceName, has: page.getByText("İlerleme gir") }).last();
   await card.getByText("İlerleme gir").click();
   await card.getByLabel("Çarpanlar ve Katlar doğru").fill("18");
   await card.getByLabel("Çarpanlar ve Katlar yanlış").fill("2");

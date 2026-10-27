@@ -160,12 +160,12 @@ export function NetTrendChart({ points, maxNet }: { points: { name: string; net:
           </g>
         ))}
         <path d={line("average")} fill="none" stroke="#94a3b8" strokeWidth="2" strokeDasharray="5 4" />
-        <path d={line("net")} fill="none" stroke="#4f46e5" strokeWidth="3" />
+        <path d={line("net")} fill="none" stroke="#d63f1c" strokeWidth="3" />
         {points.map((p, i) => (
           <g key={`${p.name}-${i}`}>
             <title>{`${p.name}: ${p.net.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} net (kurum ort. ${p.average.toLocaleString("tr-TR", { maximumFractionDigits: 2 })})`}</title>
-            <circle cx={x(i)} cy={y(p.net)} r="4" fill="#4f46e5" />
-            <text x={x(i)} y={y(p.net) - 9} textAnchor={anchor(i)} fontSize="11" fontWeight="600" fill="#312e81">
+            <circle cx={x(i)} cy={y(p.net)} r="4" fill="#d63f1c" />
+            <text x={x(i)} y={y(p.net) - 9} textAnchor={anchor(i)} fontSize="11" fontWeight="600" fill="#1b1f3b">
               {p.net.toLocaleString("tr-TR", { maximumFractionDigits: 1 })}
             </text>
             <text x={x(i)} y={height - pad.bottom + 16} textAnchor={anchor(i)} fontSize="10" fill="#475569">

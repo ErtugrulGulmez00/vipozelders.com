@@ -47,7 +47,7 @@ export function ReportCard({
         <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
           <div className="rounded-xl bg-brand-50 p-3">
             <p className="text-xs font-semibold text-brand-700">Toplam net</p>
-            <p className="text-2xl font-bold text-brand-900">{formatNet(result.net)}</p>
+            <p className="text-2xl font-bold text-ink-900">{formatNet(result.net)}</p>
             <p className="text-xs text-brand-700">{totalQuestions} soru</p>
           </div>
           <div className="rounded-xl bg-slate-50 p-3">

@@ -36,7 +36,7 @@ export default async function BecomeTeacherPage() {
 
   return (
     <>
-      <section className="bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 text-white">
+      <section className="bg-ink-900 text-white">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:py-16">
           <p className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-gold-300">
             <Users className="size-3.5" aria-hidden /> Öğretmen ağımıza katılın

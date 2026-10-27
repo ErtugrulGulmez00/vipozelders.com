@@ -63,7 +63,7 @@ export default async function ForCentersPage() {
   const trialDays = settings.centerTrialDays;
   return (
     <>
-      <section className="relative overflow-hidden bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 text-white">
+      <section className="relative overflow-hidden bg-ink-900 text-white">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 sm:py-20 lg:grid-cols-[1.1fr_1fr]">
           <div>
             <p className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-gold-300">

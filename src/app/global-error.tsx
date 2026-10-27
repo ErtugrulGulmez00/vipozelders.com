@@ -13,7 +13,7 @@ export default function GlobalError({ error, retry }: { error: Error & { digest?
           <button
             type="button"
             onClick={() => retry()}
-            style={{ marginTop: 16, padding: "10px 18px", borderRadius: 8, border: 0, background: "#4f46e5", color: "#fff", fontWeight: 600, cursor: "pointer" }}
+            style={{ marginTop: 16, padding: "10px 18px", borderRadius: 999, border: 0, background: "#d63f1c", color: "#fff", fontWeight: 600, cursor: "pointer" }}
           >
             Tekrar dene
           </button>

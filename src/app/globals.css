@@ -1,27 +1,53 @@
 @import "tailwindcss";
 
+/* Pi Kampüs teması ("Canlı"): mercan ana renk, lacivert mürekkep, ayçiçeği sarısı vurgu; yuvarlak, renkli yüzeyler. */
 @theme {
-  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-dm-sans), ui-sans-serif, system-ui, sans-serif;
 
-  --color-brand-50: #eef2ff;
-  --color-brand-100: #e0e7ff;
-  --color-brand-200: #c7d2fe;
-  --color-brand-300: #a5b4fc;
-  --color-brand-400: #818cf8;
-  --color-brand-500: #6366f1;
-  --color-brand-600: #4f46e5;
-  --color-brand-700: #4338ca;
-  --color-brand-800: #3730a3;
-  --color-brand-900: #312e81;
-  --color-brand-950: #1e1b4b;
+  /* Ana renk: mercan (düğmeler, bağlantılar, vurgu). 600 beyaz üzerinde 4.6:1 */
+  --color-brand-50: #fff3ef;
+  --color-brand-100: #ffe3da;
+  --color-brand-200: #ffc6b3;
+  --color-brand-300: #ffa184;
+  --color-brand-400: #f77a57;
+  --color-brand-500: #ec5a34;
+  --color-brand-600: #d63f1c;
+  --color-brand-700: #b23214;
+  --color-brand-800: #8e2911;
+  --color-brand-900: #6f2210;
+  --color-brand-950: #3d1107;
 
-  --color-gold-50: #fffbeb;
-  --color-gold-100: #fef3c7;
-  --color-gold-300: #fcd34d;
-  --color-gold-400: #fbbf24;
-  --color-gold-500: #f59e0b;
-  --color-gold-600: #d97706;
-  --color-gold-700: #b45309;
+  /* Mürekkep: lacivert (metin, koyu yüzeyler, panel menüsü); 50 lavanta bölüm zemini */
+  --color-ink-50: #f3f1fa;
+  --color-ink-100: #e8e6f4;
+  --color-ink-200: #c9cce6;
+  --color-ink-300: #a3a7cc;
+  --color-ink-400: #7b80a8;
+  --color-ink-500: #5a5f80;
+  --color-ink-600: #464b6b;
+  --color-ink-700: #33385a;
+  --color-ink-800: #252a4a;
+  --color-ink-900: #1b1f3b;
+  --color-ink-950: #12152a;
+
+  /* Vurgu: ayçiçeği sarısı (rozet, sayaç, ikincil düğme); 700 açık zeminde metin */
+  --color-gold-50: #fff8e6;
+  --color-gold-100: #fff1d6;
+  --color-gold-300: #ffd873;
+  --color-gold-400: #ffc845;
+  --color-gold-500: #f5b014;
+  --color-gold-600: #c98a00;
+  --color-gold-700: #7a4a00;
+
+  /* Ders kutuları ve çizimler için yardımcı renkler */
+  --color-iris-100: #e3e6ff;
+  --color-iris-500: #5b6cff;
+  --color-iris-700: #3b48c9;
+  --color-mint-100: #ddf6f3;
+  --color-mint-400: #2ec4b6;
+  --color-mint-800: #0d5c55;
+  --color-cream-50: #fff6ee;
 }
 
 :root {
@@ -30,8 +56,18 @@
 
 body {
   background: var(--color-slate-50);
-  color: var(--color-slate-900);
+  color: var(--color-ink-900);
   -webkit-font-smoothing: antialiased;
+}
+
+/* Başlıklar Bricolage Grotesque; bileşen istemezse font-sans ile değiştirilir */
+@layer base {
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
 }
 
 /* Yasal sayfa ve uzun metinler */

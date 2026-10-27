@@ -38,7 +38,7 @@ async function CenterProfile({ params }: { params: Promise<{ slug: string }> }) 
   const programs = center.groups.filter((g) => g.targetExam || g.gradeName);
   return (
     <>
-      <section className="bg-gradient-to-br from-brand-950 via-brand-900 to-brand-700 text-white">
+      <section className="bg-ink-900 text-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-5 px-4 py-10 sm:py-14">
           {logo ? (
             <Image src={logo} alt="" width={80} height={80} unoptimized className="size-20 rounded-2xl bg-white object-contain p-1" />

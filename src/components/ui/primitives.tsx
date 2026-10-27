@@ -5,7 +5,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 export function Card({ className, ...props }: ComponentProps<"div">) {
-  return <div className={cn("rounded-2xl border border-slate-200 bg-white shadow-xs", className)} {...props} />;
+  return <div className={cn("rounded-3xl border border-ink-100 bg-white shadow-xs", className)} {...props} />;
 }
 
 export function CardHeader({ title, description, action, className }: { title: ReactNode; description?: ReactNode; action?: ReactNode; className?: string }) {
@@ -66,7 +66,7 @@ export function PageHeader({ title, description, actions }: { title: ReactNode; 
   return (
     <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900">{title}</h1>
+        <h1 className="text-2xl font-extrabold tracking-tight text-ink-900 sm:text-3xl">{title}</h1>
         {description ? <p className="mt-1 text-sm text-slate-500">{description}</p> : null}
       </div>
       {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
@@ -76,7 +76,7 @@ export function PageHeader({ title, description, actions }: { title: ReactNode; 
 
 export function EmptyState({ icon, title, description, action }: { icon?: ReactNode; title: ReactNode; description?: ReactNode; action?: ReactNode }) {
   return (
-    <div className="flex flex-col items-center rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+    <div className="flex flex-col items-center rounded-3xl border-2 border-dashed border-ink-100 bg-white px-6 py-12 text-center">
       {icon ? <div className="mb-3 text-slate-400">{icon}</div> : null}
       <p className="font-semibold text-slate-800">{title}</p>
       {description ? <p className="mt-1 max-w-md text-sm text-slate-500">{description}</p> : null}
@@ -92,7 +92,7 @@ export function StatCard({ label, value, hint, icon }: { label: string; value: R
         <p className="text-sm font-medium text-slate-500">{label}</p>
         {icon ? <span className="hidden text-brand-500 sm:inline">{icon}</span> : null}
       </div>
-      <p className="mt-2 text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">{value}</p>
+      <p className="mt-2 font-display text-xl font-extrabold tracking-tight text-ink-900 sm:text-2xl">{value}</p>
       {hint ? <p className="mt-1 text-xs text-slate-500">{hint}</p> : null}
     </Card>
   );
@@ -120,6 +120,15 @@ export function RatingSummary({ average, count }: { average: number; count: numb
   );
 }
 
+// Fotoğrafsız avatar: renk addan sabit seçilir (aynı kişi hep aynı renk)
+const AVATAR_TONES = ["bg-brand-600 text-white", "bg-iris-500 text-white", "bg-mint-400 text-ink-950", "bg-gold-400 text-ink-900", "bg-ink-800 text-white"];
+
+function avatarTone(name: string): string {
+  let sum = 0;
+  for (const ch of name) sum = (sum + ch.charCodeAt(0)) % 997;
+  return AVATAR_TONES[sum % AVATAR_TONES.length];
+}
+
 export function Avatar({ src, name, initials, size = 48, className }: { src: string | null; name: string; initials: string; size?: number; className?: string }) {
   if (src) {
     return (
@@ -137,7 +146,7 @@ export function Avatar({ src, name, initials, size = 48, className }: { src: str
   return (
     <span
       aria-label={name}
-      className={cn("inline-flex shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 font-bold text-white ring-2 ring-white", className)}
+      className={cn("inline-flex shrink-0 items-center justify-center rounded-full font-display font-extrabold ring-2 ring-white", avatarTone(name), className)}
       style={{ width: size, height: size, fontSize: Math.round(size * 0.36) }}
     >
       {initials}

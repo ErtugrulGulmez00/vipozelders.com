@@ -56,6 +56,6 @@ function escapeHtml(value: string): string {
 export function maintenanceHtml(state: MaintenanceState): string {
   const site = escapeHtml(state.siteName);
   return `<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Bakımdayız · ${site}</title>
-<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1e1b4b,#3730a3);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#fff;padding:16px}main{max-width:460px;text-align:center}h1{font-size:28px;margin:16px 0 8px}p{color:#c7d2fe;line-height:1.6;margin:0}.logo{font-weight:700;font-size:18px;color:#fcd34d}a{display:inline-block;margin-top:28px;color:#c7d2fe;font-size:13px;text-decoration:underline}</style></head>
+<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#1b1f3b;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:#fff;padding:16px}main{max-width:460px;text-align:center}h1{font-size:28px;margin:16px 0 8px}p{color:#c9cce6;line-height:1.6;margin:0}.logo{font-weight:800;font-size:18px;color:#ffc845}a{display:inline-block;margin-top:28px;color:#c9cce6;font-size:13px;text-decoration:underline}</style></head>
 <body><main><div class="logo">${site}</div><h1>Bakımdayız</h1><p>${escapeHtml(state.message)}</p><a href="/giris?next=/">Yönetici girişi</a></main></body></html>`;
 }

@@ -50,7 +50,7 @@ export function InviteLinkBox() {
   const whatsapp = `https://wa.me/?text=${encodeURIComponent(`Veli portalı davetiniz: ${url}`)}`;
   return (
     <div className="mt-2 rounded-xl border border-brand-200 bg-brand-50 p-3 text-sm">
-      <p className="break-all font-mono text-xs text-brand-900" data-testid="invite-url">
+      <p className="break-all font-mono text-xs text-ink-900" data-testid="invite-url">
         {url}
       </p>
       <div className="mt-2 flex flex-wrap gap-2">

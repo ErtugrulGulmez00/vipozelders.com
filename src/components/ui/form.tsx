@@ -2,10 +2,10 @@ import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
 const control =
-  "block w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 shadow-xs placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:bg-slate-100 disabled:text-slate-500";
+  "block w-full rounded-xl border border-slate-300 bg-white px-3.5 text-sm text-ink-900 shadow-xs placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 disabled:bg-slate-100 disabled:text-slate-500";
 
 export function Input({ className, ...props }: ComponentProps<"input">) {
-  return <input className={cn(control, "h-10", className)} {...props} />;
+  return <input className={cn(control, "h-11", className)} {...props} />;
 }
 
 export function Textarea({ className, rows = 4, ...props }: ComponentProps<"textarea">) {
@@ -14,7 +14,7 @@ export function Textarea({ className, rows = 4, ...props }: ComponentProps<"text
 
 export function Select({ className, children, ...props }: ComponentProps<"select">) {
   return (
-    <select className={cn(control, "h-10 pr-8", className)} {...props}>
+    <select className={cn(control, "h-11 pr-8", className)} {...props}>
       {children}
     </select>
   );

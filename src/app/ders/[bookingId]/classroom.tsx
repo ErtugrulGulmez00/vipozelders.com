@@ -187,7 +187,7 @@ function Stage({
             {state === ConnectionState.Connected ? (minutesLeft > 0 ? `Dersin bitmesine ${minutesLeft} dakika` : "Ders süresi doldu") : state === ConnectionState.Reconnecting ? "Yeniden bağlanılıyor…" : "Bağlanılıyor…"}
           </p>
         </div>
-        <StartAudio label="Sesi aç" className="rounded-lg bg-gold-400 px-3 py-1.5 text-xs font-semibold text-brand-950" />
+        <StartAudio label="Sesi aç" className="rounded-lg bg-gold-400 px-3 py-1.5 text-xs font-semibold text-ink-900" />
       </header>
       {teacherNotice ? <PlatformRules compact /> : null}
       {observer ? <p className="bg-brand-700 px-4 py-1.5 text-center text-xs text-white">İzleyici modundasınız: dersi görüyor ve duyuyorsunuz; kameranız ve mikrofonunuz kapalı, odada görünmüyorsunuz.</p> : null}
@@ -262,7 +262,7 @@ function Stage({
             </button>
             <button type="button" onClick={toggleChat} className={cn("relative text-white", chatOpen ? "bg-brand-600" : "bg-slate-800 hover:bg-slate-700")}>
               <MessageSquare className="size-4" aria-hidden /> <span className={LABEL}>Sohbet</span>
-              {unread ? <span className="rounded-full bg-gold-400 px-1.5 text-xs text-brand-950">{unread}</span> : null}
+              {unread ? <span className="rounded-full bg-gold-400 px-1.5 text-xs text-ink-900">{unread}</span> : null}
             </button>
           </>
         )}

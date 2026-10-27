@@ -1,11 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Bricolage_Grotesque, DM_Sans } from "next/font/google";
 import { getSiteSettings } from "@/server/site";
 import "./globals.css";
 
-const font = Plus_Jakarta_Sans({
+// Gövde: DM Sans; başlıklar: Bricolage Grotesque (ikisi de Türkçe karakterli latin-ext ile)
+const sans = DM_Sans({
   subsets: ["latin", "latin-ext"],
-  variable: "--font-jakarta",
+  variable: "--font-dm-sans",
+  display: "swap",
+});
+const display = Bricolage_Grotesque({
+  subsets: ["latin", "latin-ext"],
+  variable: "--font-bricolage",
   display: "swap",
 });
 
@@ -23,14 +29,14 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export const viewport: Viewport = { themeColor: "#4f46e5" };
+export const viewport: Viewport = { themeColor: "#d63f1c" };
 
 // Pi Kampüs mobil uygulaması WebView'ı user-agent'a "PiKampusApp" ekler; sayfa boyanmadan önce işaretlenir.
 const APP_MODE_SCRIPT = "if(/PiKampusApp/.test(navigator.userAgent))document.documentElement.classList.add('pk-app')";
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="tr" className={font.variable} suppressHydrationWarning>
+    <html lang="tr" className={`${sans.variable} ${display.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: APP_MODE_SCRIPT }} />
       </head>
