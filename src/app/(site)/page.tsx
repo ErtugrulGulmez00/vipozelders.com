@@ -70,6 +70,13 @@ export default async function HomePage() {
               </Link>
             ))}
           </div>
+          <Link href="/kurumlar-icin" className="group mt-8 inline-flex items-center gap-2 rounded-xl bg-white/10 px-4 py-3 text-sm text-white ring-1 ring-white/20 hover:bg-white/15">
+            <Building2 className="size-4 text-gold-300" aria-hidden />
+            <span>
+              Etüt merkezi ya da dershane mi yönetiyorsunuz? <span className="font-semibold text-gold-300">Kurum paneline göz atın</span>
+            </span>
+            <ArrowRight className="size-4 transition group-hover:translate-x-0.5" aria-hidden />
+          </Link>
         </div>
       </section>
 

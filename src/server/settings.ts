@@ -98,7 +98,8 @@ export const settingsSchema = z.object({
 
   // Kurum paneli abonelik planları (aylık, KDV dahil, tam TL)
   centerTrialDays: z.number().int().min(0).max(90).default(14),
-  // Kurum kapasite kademeleri (iki pakette de aynı): indirimli aylık ve yıllık fiyat, öğrenci sınırı.
+  // Kurum kapasite kademeleri: öğrenci sınırı iki pakette ortak. Aşağıdaki fiyatlar Dershane paketinin; Etüt Merkezi
+  // paketinin fiyatları ayrıca (centerEtut…). Aylık fiyat indirimli olarak gösterilir.
   // Kurumsal (200+) kademede öğrenci sınırı yeni kurum için başlangıç değeridir; yönetici kuruma göre değiştirir.
   centerTier20PriceTl: z.number().int().min(0).max(1_000_000).default(3999),
   centerTier20YearlyTl: z.number().int().min(0).max(10_000_000).default(44999),
@@ -112,6 +113,15 @@ export const settingsSchema = z.object({
   centerTierPlusPriceTl: z.number().int().min(0).max(1_000_000).default(9999),
   centerTierPlusYearlyTl: z.number().int().min(0).max(10_000_000).default(99999),
   centerTierPlusStudents: z.number().int().min(1).max(100_000).default(1000),
+  // Etüt Merkezi paketi fiyatları (Dershane'nin sınıf programı, yoklama, deneme, derslik ve rapor modülleri yok)
+  centerEtut20PriceTl: z.number().int().min(0).max(1_000_000).default(2499),
+  centerEtut20YearlyTl: z.number().int().min(0).max(10_000_000).default(24990),
+  centerEtut100PriceTl: z.number().int().min(0).max(1_000_000).default(3999),
+  centerEtut100YearlyTl: z.number().int().min(0).max(10_000_000).default(39990),
+  centerEtut200PriceTl: z.number().int().min(0).max(1_000_000).default(5499),
+  centerEtut200YearlyTl: z.number().int().min(0).max(10_000_000).default(54990),
+  centerEtutPlusPriceTl: z.number().int().min(0).max(1_000_000).default(7999),
+  centerEtutPlusYearlyTl: z.number().int().min(0).max(10_000_000).default(79990),
   // Havale/EFT ile abonelik ödemesi için banka bilgisi (kurumun abonelik sayfasında görünür)
   centerBankInfo: z.string().default(""),
 

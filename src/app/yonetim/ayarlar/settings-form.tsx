@@ -166,25 +166,33 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
         <NumberField name="referralRewardCredits" label="Davet edene ödül" value={settings.referralRewardCredits} suffix="soru kredisi" />
       </Section>
 
-      <Section title="Kurum paneli abonelikleri" description="Etüt Merkezi ve Dershane paketleri öğrenci sayısına göre aynı fiyatla satılır; paket yalnızca açık modülleri belirler. Fiyatlar KDV dahil; “Kurumlar için” sayfasında görünür.">
+      <Section title="Kurum paneli abonelikleri" description="Paket açık modülleri, öğrenci kademesi fiyatı belirler. Önce Dershane fiyatları ve öğrenci sınırları, altında Etüt Merkezi fiyatları. Fiyatlar KDV dahil; “Kurumlar için” sayfasında görünür.">
         <NumberField name="centerTrialDays" label="Yeni kuruma tanınan ilk kullanım süresi" hint="Sitede ilan edilmez; kurum hesabı açılırken uygulanır." value={settings.centerTrialDays} suffix="gün" />
         <div className="hidden sm:block" />
-        <NumberField name="centerTier20PriceTl" label="20 öğrenciye kadar · aylık (indirimli)" value={settings.centerTier20PriceTl} suffix="TL / ay" />
-        <NumberField name="centerTier20YearlyTl" label="20 öğrenciye kadar · yıllık" value={settings.centerTier20YearlyTl} suffix="TL / yıl" />
+        <NumberField name="centerTier20PriceTl" label="Dershane · 20 öğrenciye kadar · aylık (indirimli)" value={settings.centerTier20PriceTl} suffix="TL / ay" />
+        <NumberField name="centerTier20YearlyTl" label="Dershane · 20 öğrenciye kadar · yıllık" value={settings.centerTier20YearlyTl} suffix="TL / yıl" />
         <NumberField name="centerTier20Students" label="20 öğrenciye kadar · öğrenci sınırı" value={settings.centerTier20Students} suffix="öğrenci" />
         <div className="hidden sm:block" />
-        <NumberField name="centerTier100PriceTl" label="100 öğrenciye kadar · aylık (indirimli)" value={settings.centerTier100PriceTl} suffix="TL / ay" />
-        <NumberField name="centerTier100YearlyTl" label="100 öğrenciye kadar · yıllık" value={settings.centerTier100YearlyTl} suffix="TL / yıl" />
+        <NumberField name="centerTier100PriceTl" label="Dershane · 100 öğrenciye kadar · aylık (indirimli)" value={settings.centerTier100PriceTl} suffix="TL / ay" />
+        <NumberField name="centerTier100YearlyTl" label="Dershane · 100 öğrenciye kadar · yıllık" value={settings.centerTier100YearlyTl} suffix="TL / yıl" />
         <NumberField name="centerTier100Students" label="100 öğrenciye kadar · öğrenci sınırı" value={settings.centerTier100Students} suffix="öğrenci" />
         <div className="hidden sm:block" />
-        <NumberField name="centerTier200PriceTl" label="200 öğrenciye kadar · aylık (indirimli)" value={settings.centerTier200PriceTl} suffix="TL / ay" />
-        <NumberField name="centerTier200YearlyTl" label="200 öğrenciye kadar · yıllık" value={settings.centerTier200YearlyTl} suffix="TL / yıl" />
+        <NumberField name="centerTier200PriceTl" label="Dershane · 200 öğrenciye kadar · aylık (indirimli)" value={settings.centerTier200PriceTl} suffix="TL / ay" />
+        <NumberField name="centerTier200YearlyTl" label="Dershane · 200 öğrenciye kadar · yıllık" value={settings.centerTier200YearlyTl} suffix="TL / yıl" />
         <NumberField name="centerTier200Students" label="200 öğrenciye kadar · öğrenci sınırı" value={settings.centerTier200Students} suffix="öğrenci" />
         <div className="hidden sm:block" />
-        <NumberField name="centerTierPlusPriceTl" label="Kurumsal (200+) · aylık (indirimli)" value={settings.centerTierPlusPriceTl} suffix="TL / ay" />
-        <NumberField name="centerTierPlusYearlyTl" label="Kurumsal (200+) · yıllık" value={settings.centerTierPlusYearlyTl} suffix="TL / yıl" />
+        <NumberField name="centerTierPlusPriceTl" label="Dershane · Kurumsal (200+) · aylık (indirimli)" value={settings.centerTierPlusPriceTl} suffix="TL / ay" />
+        <NumberField name="centerTierPlusYearlyTl" label="Dershane · Kurumsal (200+) · yıllık" value={settings.centerTierPlusYearlyTl} suffix="TL / yıl" />
         <NumberField name="centerTierPlusStudents" label="Kurumsal (200+) · öğrenci sınırı" hint="Yeni Kurumsal kurum için başlangıç sınırı; kurum sayfasından değiştirilir." value={settings.centerTierPlusStudents} suffix="öğrenci" />
         <div className="hidden sm:block" />
+        <NumberField name="centerEtut20PriceTl" label="Etüt Merkezi · 20 öğrenciye kadar · aylık" value={settings.centerEtut20PriceTl} suffix="TL / ay" />
+        <NumberField name="centerEtut20YearlyTl" label="Etüt Merkezi · 20 öğrenciye kadar · yıllık" value={settings.centerEtut20YearlyTl} suffix="TL / yıl" />
+        <NumberField name="centerEtut100PriceTl" label="Etüt Merkezi · 100 öğrenciye kadar · aylık" value={settings.centerEtut100PriceTl} suffix="TL / ay" />
+        <NumberField name="centerEtut100YearlyTl" label="Etüt Merkezi · 100 öğrenciye kadar · yıllık" value={settings.centerEtut100YearlyTl} suffix="TL / yıl" />
+        <NumberField name="centerEtut200PriceTl" label="Etüt Merkezi · 200 öğrenciye kadar · aylık" value={settings.centerEtut200PriceTl} suffix="TL / ay" />
+        <NumberField name="centerEtut200YearlyTl" label="Etüt Merkezi · 200 öğrenciye kadar · yıllık" value={settings.centerEtut200YearlyTl} suffix="TL / yıl" />
+        <NumberField name="centerEtutPlusPriceTl" label="Etüt Merkezi · Kurumsal (200+) · aylık" value={settings.centerEtutPlusPriceTl} suffix="TL / ay" />
+        <NumberField name="centerEtutPlusYearlyTl" label="Etüt Merkezi · Kurumsal (200+) · yıllık" value={settings.centerEtutPlusYearlyTl} suffix="TL / yıl" />
         <Field label="Havale / EFT bilgileri" hint="Banka, alıcı adı ve IBAN. Kurumların abonelik sayfasında gösterilir." className="sm:col-span-2">
           <Textarea name="centerBankInfo" rows={3} defaultValue={settings.centerBankInfo} placeholder={"Örn: X Bankası · Pi Kampüs Eğitim Teknolojileri Ltd. Şti.\nTR00 0000 0000 0000 0000 0000 00"} />
         </Field>

@@ -1,4 +1,8 @@
+"use client";
+
 import { Check } from "lucide-react";
+import Link from "next/link";
+import { useState } from "react";
 import { buttonClasses } from "@/components/ui/button";
 import { Badge } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
@@ -7,9 +11,21 @@ import { formatMoney } from "@/lib/money";
 import type { CenterPlanInfo, CenterPlanName } from "@/server/center/plans";
 
 // Kurum paketleri ve kapasite kademeleri: "Kurumlar için" sayfasında ve kurumun abonelik sayfasında.
+// cta verilirse düğmeler başvuru formuna paket ve öğrenci sayısını seçili olarak götürür (?paket=…&ogrenci=…#basvuru).
 
-/** İki paketin özellikleri yan yana. */
-export function EditionCards({ current, cta }: { current?: CenterEditionName; cta?: { href: string; label: string } }) {
+/** Başvuru formundaki "Öğrenci sayısı" seçeneği, kademeye göre */
+export const TIER_STUDENT_OPTION: Record<CenterPlanName, string> = {
+  STARTER: "20’ye kadar",
+  PRO: "21-100",
+  BUSINESS: "101-200",
+  ENTERPRISE: "200’den fazla",
+};
+
+const applyHref = (edition: CenterEditionName, plan?: CenterPlanName) =>
+  `?${new URLSearchParams({ paket: edition, ...(plan ? { ogrenci: TIER_STUDENT_OPTION[plan] } : {}) }).toString()}#basvuru`;
+
+/** İki paketin özellikleri yan yana; fromPrice verilirse "aylık ₺… ’den başlayan". */
+export function EditionCards({ current, cta, fromPrice }: { current?: CenterEditionName; cta?: string; fromPrice?: Record<CenterEditionName, number> }) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
       {CENTER_EDITIONS.map((edition) => {
@@ -22,6 +38,11 @@ export function EditionCards({ current, cta }: { current?: CenterEditionName; ct
               {isCurrent ? <Badge tone="brand">Mevcut paketiniz</Badge> : !current && edition === "DERSHANE" ? <Badge tone="brand">Kapsayıcı</Badge> : null}
             </div>
             <p className="mt-0.5 text-sm text-slate-500">{info.tagline}</p>
+            {fromPrice ? (
+              <p className="mt-3 text-sm text-slate-600">
+                aylık <span className="text-2xl font-black text-slate-900">{formatMoney(fromPrice[edition] * 100)}</span>’den başlayan
+              </p>
+            ) : null}
             <ul className="mt-4 flex-1 space-y-2 text-sm text-slate-700">
               {info.features.map((f) => (
                 <li key={f} className="flex gap-2">
@@ -30,9 +51,9 @@ export function EditionCards({ current, cta }: { current?: CenterEditionName; ct
               ))}
             </ul>
             {cta ? (
-              <a href={cta.href} className={buttonClasses(edition === "DERSHANE" ? "primary" : "outline", "md", "mt-6 w-full")}>
-                {cta.label}
-              </a>
+              <Link href={applyHref(edition)} className={buttonClasses(edition === "DERSHANE" ? "primary" : "outline", "md", "mt-6 w-full")}>
+                {cta}
+              </Link>
             ) : null}
           </div>
         );
@@ -41,22 +62,22 @@ export function EditionCards({ current, cta }: { current?: CenterEditionName; ct
   );
 }
 
-/** Öğrenci sayısına göre fiyatlar (iki pakette aynı). */
-export function TierCards({ plans, current }: { plans: CenterPlanInfo[]; current?: CenterPlanName }) {
+/** Öğrenci sayısına göre fiyatlar. */
+export function TierCards({ plans, current, edition, cta }: { plans: CenterPlanInfo[]; current?: CenterPlanName; edition?: CenterEditionName; cta?: string }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {plans.map((plan) => {
         const isCurrent = current === plan.plan;
         const yearlySaving = plan.yearlyPriceTl ? plan.priceTl * 12 - plan.yearlyPriceTl : 0;
         return (
-          <div key={plan.plan} className={cn("relative rounded-2xl border bg-white p-5", isCurrent || (!current && plan.highlight) ? "border-brand-500 ring-2 ring-brand-200" : "border-slate-200")}>
+          <div key={plan.plan} className={cn("relative flex flex-col rounded-2xl border bg-white p-5", isCurrent || (!current && plan.highlight) ? "border-brand-500 ring-2 ring-brand-200" : "border-slate-200")}>
             {isCurrent ? (
               <span className="absolute -top-3 left-5 rounded-full bg-brand-600 px-3 py-0.5 text-xs font-bold text-white">Mevcut kademe</span>
             ) : !current && plan.highlight ? (
               <span className="absolute -top-3 left-5 rounded-full bg-brand-600 px-3 py-0.5 text-xs font-bold text-white">En çok tercih edilen</span>
             ) : null}
             <p className="font-bold text-slate-900">{plan.name}</p>
-            <span className="mt-2 inline-block rounded-full bg-gold-50 px-2 py-0.5 text-xs font-bold text-gold-700">İndirimli</span>
+            <span className="mt-2 inline-block w-fit rounded-full bg-gold-50 px-2 py-0.5 text-xs font-bold text-gold-700">İndirimli</span>
             <p className="mt-1 text-2xl font-black text-slate-900">{formatMoney(plan.priceTl * 100)}</p>
             <p className="text-xs text-slate-500">aylık · KDV dahil</p>
             {plan.yearlyPriceTl ? (
@@ -65,9 +86,38 @@ export function TierCards({ plans, current }: { plans: CenterPlanInfo[]; current
                 {yearlySaving > 0 ? <span className="block text-xs text-emerald-700">{formatMoney(yearlySaving * 100)} tasarruf</span> : null}
               </p>
             ) : null}
+            {cta && edition ? (
+              <Link href={applyHref(edition, plan.plan)} className={buttonClasses(!current && plan.highlight ? "primary" : "outline", "sm", "mt-4 w-full")}>
+                {cta}
+              </Link>
+            ) : null}
           </div>
         );
       })}
     </div>
+  );
+}
+
+/** "Kurumlar için" fiyat tablosu: paket seçimiyle (Etüt Merkezi / Dershane) fiyatlar değişir. */
+export function PricingTable({ plans, cta }: { plans: Record<CenterEditionName, CenterPlanInfo[]>; cta: string }) {
+  const [edition, setEdition] = useState<CenterEditionName>("DERSHANE");
+  return (
+    <>
+      <div role="radiogroup" aria-label="Paket" className="mb-6 inline-flex rounded-xl bg-slate-100 p-1">
+        {CENTER_EDITIONS.map((e) => (
+          <button
+            key={e}
+            type="button"
+            role="radio"
+            aria-checked={edition === e}
+            onClick={() => setEdition(e)}
+            className={cn("min-h-11 rounded-lg px-4 text-sm font-semibold", edition === e ? "bg-white text-slate-900 shadow-xs" : "text-slate-600 hover:text-slate-900")}
+          >
+            {EDITIONS[e].name}
+          </button>
+        ))}
+      </div>
+      <TierCards plans={plans[edition]} edition={edition} cta={cta} />
+    </>
   );
 }

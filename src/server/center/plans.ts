@@ -2,7 +2,7 @@ import { EDITIONS, type CenterEditionName } from "@/lib/center/editions";
 import type { SiteSettings } from "../settings";
 
 // Kurum paneli abonelikleri iki eksende: paket (Etüt Merkezi / Dershane; açık modülleri belirler) ve öğrenci
-// kapasitesi kademesi (fiyatı belirler; iki pakette aynı). Fiyat ve sınırlar yönetimdeki site ayarlarından gelir.
+// kapasitesi kademesi (fiyatı belirler; Etüt Merkezi paketi daha uygun fiyatlı). Fiyat ve sınırlar yönetimdeki site ayarlarından gelir.
 
 export type CenterPlanName = "STARTER" | "PRO" | "BUSINESS" | "ENTERPRISE";
 export const CENTER_PLANS: CenterPlanName[] = ["STARTER", "PRO", "BUSINESS", "ENTERPRISE"];
@@ -19,12 +19,16 @@ export type CenterPlanInfo = {
   highlight?: boolean;
 };
 
-export function centerPlans(settings: SiteSettings): CenterPlanInfo[] {
+/** Paketin kademe fiyatları (öğrenci sınırları iki pakette ortak). */
+export function centerPlans(settings: SiteSettings, edition: CenterEditionName = "DERSHANE"): CenterPlanInfo[] {
+  const etut = edition === "ETUT";
+  const price = (dershane: number, etutPrice: number) => (etut ? etutPrice : dershane);
+  const yearly = (dershane: number, etutPrice: number) => price(dershane, etutPrice) || null;
   return [
-    { plan: "STARTER", name: `${settings.centerTier20Students} öğrenciye kadar`, priceTl: settings.centerTier20PriceTl, yearlyPriceTl: settings.centerTier20YearlyTl || null, students: settings.centerTier20Students },
-    { plan: "PRO", name: `${settings.centerTier100Students} öğrenciye kadar`, priceTl: settings.centerTier100PriceTl, yearlyPriceTl: settings.centerTier100YearlyTl || null, students: settings.centerTier100Students, highlight: true },
-    { plan: "BUSINESS", name: `${settings.centerTier200Students} öğrenciye kadar`, priceTl: settings.centerTier200PriceTl, yearlyPriceTl: settings.centerTier200YearlyTl || null, students: settings.centerTier200Students },
-    { plan: "ENTERPRISE", name: `Kurumsal · ${settings.centerTier200Students}+ öğrenci`, priceTl: settings.centerTierPlusPriceTl, yearlyPriceTl: settings.centerTierPlusYearlyTl || null, students: null },
+    { plan: "STARTER", name: `${settings.centerTier20Students} öğrenciye kadar`, priceTl: price(settings.centerTier20PriceTl, settings.centerEtut20PriceTl), yearlyPriceTl: yearly(settings.centerTier20YearlyTl, settings.centerEtut20YearlyTl), students: settings.centerTier20Students },
+    { plan: "PRO", name: `${settings.centerTier100Students} öğrenciye kadar`, priceTl: price(settings.centerTier100PriceTl, settings.centerEtut100PriceTl), yearlyPriceTl: yearly(settings.centerTier100YearlyTl, settings.centerEtut100YearlyTl), students: settings.centerTier100Students, highlight: true },
+    { plan: "BUSINESS", name: `${settings.centerTier200Students} öğrenciye kadar`, priceTl: price(settings.centerTier200PriceTl, settings.centerEtut200PriceTl), yearlyPriceTl: yearly(settings.centerTier200YearlyTl, settings.centerEtut200YearlyTl), students: settings.centerTier200Students },
+    { plan: "ENTERPRISE", name: `Kurumsal · ${settings.centerTier200Students}+ öğrenci`, priceTl: price(settings.centerTierPlusPriceTl, settings.centerEtutPlusPriceTl), yearlyPriceTl: yearly(settings.centerTierPlusYearlyTl, settings.centerEtutPlusYearlyTl), students: null },
   ];
 }
 
@@ -38,6 +42,6 @@ export function planStudentLimit(plan: CenterPlanName, settings: SiteSettings, c
 
 /** Paket ve kademe birlikte: "Dershane · 100 öğrenciye kadar" */
 export function subscriptionLabel(settings: SiteSettings, edition: CenterEditionName, plan: CenterPlanName): string {
-  const tier = centerPlans(settings).find((p) => p.plan === plan);
+  const tier = centerPlans(settings, edition).find((p) => p.plan === plan);
   return `${EDITIONS[edition].name} · ${tier?.name ?? plan}`;
 }

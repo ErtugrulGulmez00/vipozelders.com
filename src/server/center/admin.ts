@@ -137,7 +137,7 @@ export async function submitCenterApplication(input: CenterApplicationInput, ipA
   if (ipAddress) await recordLoginAttempt(`center-apply:${ipAddress}`, null, false);
   const email = input.email.toLowerCase();
   const application = await db.centerApplication.create({
-    data: { centerName: input.centerName, kind: input.kind, edition: input.edition ?? null, contactName: input.contactName, phone, email, cityId: input.cityId ?? null, studentCount: input.studentCount || null, message: input.message || null },
+    data: { centerName: input.centerName, kind: input.edition ?? input.kind, edition: input.edition ?? null, contactName: input.contactName, phone, email, cityId: input.cityId ?? null, studentCount: input.studentCount || null, message: input.message || null },
   });
   await notifyRole("ADMIN", { type: "center.application", title: "Yeni kurum başvurusu", body: `${input.centerName} · ${input.contactName} · ${phone}`, link: "/yonetim/kurum-basvurulari", email: false });
   const settings = await loadSettings();

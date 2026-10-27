@@ -102,7 +102,7 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
               </div>
               <ul className="mt-4 grid gap-2 text-sm text-slate-600 sm:grid-cols-2">
                 <li className="flex items-center gap-2">
-                  <Users className="size-4 text-slate-400" aria-hidden /> {teacher.experienceYears} yıl deneyim · {teacher.completedLessons} ders
+                  <Users className="size-4 text-slate-400" aria-hidden /> {teacher.experienceYears} yıl deneyim{teacher.completedLessons > 0 ? ` · ${teacher.completedLessons} ders` : ""}
                 </li>
                 {teacher.avgResponseMinutes !== null ? (
                   <li className="flex items-center gap-2">

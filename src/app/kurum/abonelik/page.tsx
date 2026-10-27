@@ -21,7 +21,7 @@ export default async function SubscriptionPage() {
     db.centerSubscriptionPayment.findMany({ where: { centerId: ctx.center.id }, orderBy: { createdAt: "desc" } }),
   ]);
   const access = CENTER_ACCESS_LABEL[ctx.access.state];
-  const plans = centerPlans(settings);
+  const plans = centerPlans(settings, ctx.center.edition);
   const usage = activeStudents / Math.max(ctx.center.studentLimit, 1);
   return (
     <>

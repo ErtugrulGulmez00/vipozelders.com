@@ -33,7 +33,8 @@ export function TeacherCard({ teacher }: { teacher: TeacherCardData }) {
           </div>
           {teacher.headline ? <p className="mt-0.5 line-clamp-2 text-sm text-slate-600">{teacher.headline}</p> : null}
           <div className="mt-2">
-            <RatingSummary average={teacher.ratingAvg} count={teacher.ratingCount} />
+            {/* Yeni öğretmende "0 ders / değerlendirme yok" yerine olumlu bir etiket */}
+            {teacher.ratingCount > 0 ? <RatingSummary average={teacher.ratingAvg} count={teacher.ratingCount} /> : <Badge tone="sky">Yeni öğretmen</Badge>}
           </div>
         </div>
       </div>
@@ -59,7 +60,7 @@ export function TeacherCard({ teacher }: { teacher: TeacherCardData }) {
         </li>
         <li className="flex items-center gap-1.5">
           <Users className="size-3.5" aria-hidden />
-          {teacher.experienceYears} yıl deneyim · {teacher.completedLessons} tamamlanan ders
+          {teacher.experienceYears} yıl deneyim{teacher.completedLessons > 0 ? ` · ${teacher.completedLessons} tamamlanan ders` : ""}
         </li>
         {response ? (
           <li className="flex items-center gap-1.5">

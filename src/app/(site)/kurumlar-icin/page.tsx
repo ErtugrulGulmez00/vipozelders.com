@@ -15,12 +15,14 @@ import {
   Wallet,
 } from "lucide-react";
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
-import { EditionCards, TierCards } from "@/components/center/pricing";
+import { Suspense } from "react";
+import { EditionCards, PricingTable } from "@/components/center/pricing";
 import { buttonClasses } from "@/components/ui/button";
 import { Card } from "@/components/ui/primitives";
 import { centerPlans } from "@/server/center/plans";
-import { getCities, getSiteSettings } from "@/server/site";
+import { getSiteSettings } from "@/server/site";
 import { CenterApplicationForm } from "./center-application-form";
 
 export const metadata: Metadata = {
@@ -55,8 +57,9 @@ const faq = (trialDays: number) => [
 ];
 
 export default async function ForCentersPage() {
-  const [settings, cities] = await Promise.all([getSiteSettings(), getCities()]);
-  const plans = centerPlans(settings);
+  const settings = await getSiteSettings();
+  const plans = { ETUT: centerPlans(settings, "ETUT"), DERSHANE: centerPlans(settings, "DERSHANE") };
+  const fromPrice = { ETUT: Math.min(...plans.ETUT.map((p) => p.priceTl)), DERSHANE: Math.min(...plans.DERSHANE.map((p) => p.priceTl)) };
   const trialDays = settings.centerTrialDays;
   return (
     <>
@@ -175,17 +178,30 @@ export default async function ForCentersPage() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-6xl px-4 pt-16">
+        <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">Panelden görüntüler</h2>
+        <p className="mt-2 text-slate-600">Örnek verilerle gerçek panel ekranları.</p>
+        <div className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+          {SCREENSHOTS.slice(0, 1).map((s) => (
+            <Screenshot key={s.src} {...s} />
+          ))}
+          <div className="grid gap-6">
+            {SCREENSHOTS.slice(1).map((s) => (
+              <Screenshot key={s.src} {...s} />
+            ))}
+          </div>
+        </div>
+      </section>
+
       <section id="planlar" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16">
         <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">Paketler</h2>
-        <p className="mt-2 text-slate-600">Kurumunuzun çalışma şekline göre paketi seçin; fiyat yalnızca aktif öğrenci sayısına göre değişir. Tüm paketlerde sınırsız personel ve veli portalı.</p>
+        <p className="mt-2 text-slate-600">Kurumunuzun çalışma şekline göre paketi seçin. Etüt Merkezi paketi birebir takip ve etüt odaklı, daha uygun fiyatlı; Dershane paketi sınıf programı, deneme analizi, derslik ve raporları da kapsar. Tüm paketlerde sınırsız personel ve veli portalı.</p>
         <div className="mt-8">
-          <EditionCards cta={{ href: "#basvuru", label: trialDays > 0 ? "Ücretsiz deneyin" : "Başvurun" }} />
+          <EditionCards cta={trialDays > 0 ? "Ücretsiz deneyin" : "Başvurun"} fromPrice={fromPrice} />
         </div>
         <h3 className="mt-12 text-xl font-bold text-slate-900">Öğrenci sayısına göre fiyat</h3>
-        <p className="mt-1 text-sm text-slate-600">İki pakette de aynı. Yıllık ödemede daha avantajlı.</p>
-        <div className="mt-6">
-          <TierCards plans={plans} />
-        </div>
+        <p className="mt-1 mb-5 text-sm text-slate-600">Yıllık ödemede yaklaşık 2 ay ücretsiz.</p>
+        <PricingTable plans={plans} cta="Bu kademeyle başvur" />
       </section>
 
       <section className="bg-white py-16">
@@ -206,11 +222,31 @@ export default async function ForCentersPage() {
             <p className="mt-1 mb-5 text-sm text-slate-500">
               Ekibimiz sizi arayıp paneli birlikte kurar.{trialDays > 0 ? ` İlk ${trialDays} gün ücretsizdir.` : ""}
             </p>
-            <CenterApplicationForm cities={cities.map((c) => ({ id: c.id, name: c.name }))} />
+            <Suspense>
+              <CenterApplicationForm />
+            </Suspense>
           </Card>
         </div>
       </section>
     </>
+  );
+}
+
+const SCREENSHOTS = [
+  { src: "/kurumlar/raporlar.png", width: 1366, height: 820, title: "Kurum → sınıf → öğrenci raporları", text: "Devam, ödev, son deneme neti ve geciken ödeme tek tabloda." },
+  { src: "/kurumlar/deneme.png", width: 1366, height: 820, title: "Deneme analizi", text: "Net, sıralama ve konu bazında eksikler." },
+  { src: "/kurumlar/veli-portali.png", width: 780, height: 1100, title: "Veli portalı (telefon)", text: "Veli devamsızlığı, sonuçları ve ödemeleri telefonundan izler." },
+];
+
+function Screenshot({ src, width, height, title, text }: (typeof SCREENSHOTS)[number]) {
+  return (
+    <figure className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <Image src={src} alt={title} width={width} height={height} className="h-auto w-full border-b border-slate-100 object-cover object-top" sizes="(min-width: 1024px) 600px, 100vw" />
+      <figcaption className="px-4 py-3">
+        <p className="text-sm font-semibold text-slate-900">{title}</p>
+        <p className="text-xs text-slate-500">{text}</p>
+      </figcaption>
+    </figure>
   );
 }
 

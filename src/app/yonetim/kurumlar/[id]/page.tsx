@@ -40,7 +40,7 @@ export default async function AdminCenterPage({ params }: PageProps<"/yonetim/ku
   ]);
   const access = centerAccess(center);
   const accessLabel = CENTER_ACCESS_LABEL[access.state];
-  const plan = centerPlans(settings).find((p) => p.plan === center.plan);
+  const plan = centerPlans(settings, center.edition).find((p) => p.plan === center.plan);
   return (
     <>
       <PageHeader
