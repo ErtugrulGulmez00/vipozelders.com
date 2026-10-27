@@ -142,7 +142,7 @@ async function GeneralTab({
   memberId: string;
   isManager: boolean;
 }) {
-  const account = await db.centerGuardian.findFirst({ where: { studentId: student.id, isStudentAccount: true }, include: { user: { select: { username: true, lastLoginAt: true } } } });
+  const account = await db.centerGuardian.findFirst({ where: { studentId: student.id, isStudentAccount: true }, include: { user: { select: { username: true, email: true, lastLoginAt: true } } } });
   const notes = await db.centerNote.findMany({
     where: { studentId: student.id },
     orderBy: { createdAt: "desc" },
@@ -215,9 +215,19 @@ async function GeneralTab({
           <CardHeader title="Öğrenci girişi" />
           <CardBody>
             {canEdit ? (
-              <StudentAccountCard studentId={student.id} account={account?.user ? { username: account.user.username, lastLoginAt: account.user.lastLoginAt ? formatCompact(account.user.lastLoginAt) : null } : null} />
+              <StudentAccountCard
+                studentId={student.id}
+                defaultEmail={student.email}
+                account={
+                  account?.user
+                    ? { username: account.user.username, email: account.user.email, lastLoginAt: account.user.lastLoginAt ? formatCompact(account.user.lastLoginAt) : null }
+                    : account?.email
+                      ? { pendingEmail: account.email }
+                      : null
+                }
+              />
             ) : (
-              <p className="text-sm text-slate-600">{account ? `Öğrencinin giriş hesabı var (${account.user?.username ?? ""}).` : "Öğrencinin giriş hesabı yok."}</p>
+              <p className="text-sm text-slate-600">{account?.user ? `Öğrencinin giriş hesabı var (${account.user.username ?? ""}).` : account ? "Öğrenciye hesap daveti gönderildi." : "Öğrencinin giriş hesabı yok."}</p>
             )}
           </CardBody>
         </Card>

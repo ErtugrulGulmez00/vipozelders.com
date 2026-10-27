@@ -33,8 +33,8 @@ export function AddStaffForm({ allowOwner }: { allowOwner: boolean }) {
           <Input name="lastName" required />
           <FieldError name="lastName" />
         </Field>
-        <Field label="E-posta" hint="Sitede öğretmen hesabı varsa aynı e-postayla kuruma eklenir.">
-          <Input name="email" type="email" />
+        <Field label="E-posta" hint="Sitede hesabı (özel ders öğretmeni, veli) varsa aynı hesap kuruma eklenir.">
+          <Input name="email" type="email" required />
           <FieldError name="email" />
         </Field>
         <Field label="Cep telefonu">

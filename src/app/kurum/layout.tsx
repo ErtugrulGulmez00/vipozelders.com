@@ -32,16 +32,19 @@ import type { PanelNavItem } from "@/components/panel/nav-links";
 import { dershaneSectionForPath, editionAllows } from "@/lib/center/editions";
 import { moduleForPath } from "@/lib/center/modules";
 import { CENTER_ROLE_LABEL, type CenterPermission } from "@/lib/center/permissions";
+import { notificationScope, notificationScopeWhere, sideSwitches } from "@/lib/sides";
 import { requireCenter } from "@/server/center/context";
 import { db } from "@/server/db";
 import { loadSettings } from "@/server/settings";
+import { sideFacts } from "@/server/sides";
 
 export const instant = false;
 
 export default async function CenterLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireCenter();
+  const facts = await sideFacts(ctx.user.id, ctx.user.role);
   const [unread, newLeads, openQuestions, settings] = await Promise.all([
-    db.notification.count({ where: { userId: ctx.user.id, readAt: null } }),
+    db.notification.count({ where: { userId: ctx.user.id, readAt: null, ...notificationScopeWhere(notificationScope(facts, "kurum")) } }),
     ctx.can("leads.manage") ? db.centerLead.count({ where: { centerId: ctx.center.id, status: "NEW" } }) : Promise.resolve(0),
     ctx.can("questions.answer") ? db.centerQuestion.count({ where: { centerId: ctx.center.id, status: "OPEN" } }) : Promise.resolve(0),
     loadSettings(),
@@ -87,6 +90,8 @@ export default async function CenterLayout({ children }: { children: React.React
       title={ctx.center.name}
       roleLabel={ctx.member.title || CENTER_ROLE_LABEL[ctx.member.role]}
       nav={nav}
+      switchLinks={sideSwitches(facts, "center")}
+      hideSiteLink
       banner={<SubscriptionBanner access={ctx.access} canManage={ctx.can("subscription.view")} />}
       headerSlot={
         ctx.can("students.view") ? (

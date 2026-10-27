@@ -89,15 +89,17 @@ Demo veriler `@demo.vipozelders.local` uzantılı hesaplar ve bunlara bağlı ö
 
 ## Kim nereden giriş yapar?
 
-Tek hesap sistemi, iki giriş kapısı. Giriş sayfasının üstündeki sekmelerle iki kapı arasında geçilir; girişten sonra herkes rolüne göre kendi paneline gider (yanlış kapıdan giren de doğru panele düşer).
+Tek hesap (bir e-posta = bir hesap), iki taraf, iki giriş kapısı: **Özel ders girişi** (`/giris`) özel ders tarafını, **Kurum girişi** (`/kurum-giris` ya da `kurum.<alan adı>`) kurum tarafını açar. Veriler zaten ayrıdır; kapı yalnızca hangi panelin, menünün ve bildirimlerin görüneceğini belirler. Kişinin girdiği tarafta hesabı yoksa kendi tarafına yönlenir. İki tarafı olan kişi (kurumda da çalışan öğretmen, özel ders de alan kurum velisi) panelin altındaki “… geç” bağlantısıyla taraf değiştirir; bildirimler de taraflara ayrılır. Kural tek yerde: `src/lib/sides.ts`.
 
-| Kişi | Giriş | Gittiği panel |
+| Kişi | Özel ders girişi | Kurum girişi |
 | --- | --- | --- |
-| Veli | Kişisel giriş (`/giris`), e-posta | Hesabım (özel dersler + Kurumum) |
-| Öğrenci (bireysel ya da kurumun açtığı hesap) | Kişisel giriş, e-posta ya da kullanıcı adı | Hesabım (Kurumum: devam, ödev, deneme, soru sor) |
-| Pazaryeri öğretmeni | Kişisel giriş, kullanıcı adı | Öğretmen paneli (kurumda da çalışıyorsa “Kurum paneli” bağlantısı) |
-| Kurum personeli (sahip, müdür, öğretmen, muhasebe) | Kurum girişi (`/kurum-giris` ya da `kurum.<alan adı>`) | Kurum paneli; rolüne göre bölümler |
-| Pi Kampüs yöneticisi | Kişisel giriş, kullanıcı adı + 2 adımlı doğrulama | Yönetim paneli |
+| Veli | Hesabım (özel dersler) | Kurumum (veli portalı); özel derse geçiş yalnızca özel derste işlemi varsa |
+| Kurumun açtığı öğrenci hesabı (e-postalı) | Kurumum (özel ders tarafı yok) | Kurumum |
+| Pazaryeri öğretmeni | Öğretmen paneli | Kurumda da çalışıyorsa kurum paneli |
+| Kurum personeli (sahip, müdür, öğretmen, muhasebe) | Kurum paneli | Kurum paneli; rolüne göre bölümler |
+| Pi Kampüs yöneticisi | Yönetim paneli (2 adımlı doğrulama) | — |
+
+Bildirimler e-postayla gittiği için kurumun açtığı her hesapta (personel, kurum sahibi, öğrenci) e-posta zorunludur. Kurum personel eklerken sitede kayıtlı bir e-posta (özel ders öğretmeni, veli) yazarsa aynı hesap kuruma eklenir; kurum personeli aynı e-postayla öğretmen başvurusu yaparsa onayda kurum hesabına öğretmen paneli eklenir. Öğrencinin e-postası sitede kayıtlıysa ona davet gider, kabul edince bağlanır.
 
 ## Kurum paneli (etüt merkezi / dershane)
 

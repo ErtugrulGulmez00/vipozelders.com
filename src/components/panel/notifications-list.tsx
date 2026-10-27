@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Card, EmptyState, PageHeader } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
 import { formatCompact } from "@/lib/dates";
+import { notificationScopeWhere, type NotificationScope } from "@/lib/sides";
 import { db } from "@/server/db";
 
-/** Tüm panellerde ortak bildirim sayfası içeriği. */
-export async function NotificationsPage({ userId }: { userId: string }) {
-  const notifications = await db.notification.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 100 });
+/** Tüm panellerde ortak bildirim sayfası içeriği; scope: kurum ve özel ders tarafı olan kişide yalnızca o tarafın bildirimleri. */
+export async function NotificationsPage({ userId, scope = "all" }: { userId: string; scope?: NotificationScope }) {
+  const notifications = await db.notification.findMany({ where: { userId, ...notificationScopeWhere(scope) }, orderBy: { createdAt: "desc" }, take: 100 });
   const unread = notifications.filter((n) => !n.readAt).length;
   return (
     <>
@@ -19,6 +20,7 @@ export async function NotificationsPage({ userId }: { userId: string }) {
         actions={
           unread ? (
             <form action={markNotificationsReadAction}>
+              <input type="hidden" name="scope" value={scope} />
               <Button type="submit" variant="outline" size="sm">
                 <CheckCheck className="size-4" aria-hidden /> Tümünü okundu işaretle
               </Button>

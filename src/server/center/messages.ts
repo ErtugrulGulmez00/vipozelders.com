@@ -46,6 +46,9 @@ export function centerContact(center: { name: string; phone?: string | null }) {
 
 export type MessageCounts = { whatsapp: number; email: number; app: number };
 
+/** Öğrencinin kendi hesabına da e-postayla giden mesajlar (devamsızlık, ödeme, davet gibi veli mesajları gitmez). */
+const STUDENT_EMAIL_KINDS = new Set(["question_answered", "homework", "homework_missing", "exam_result", "announcement"]);
+
 const LIMIT_ERROR = "Aylık WhatsApp sınırı doldu";
 
 function monthStart(now = new Date()) {
@@ -64,7 +67,7 @@ export async function centerWhatsappUsage(centerId: string, tx: Tx = db) {
 export async function messageGuardians(input: GuardianMessageInput, tx: Tx = db): Promise<MessageCounts> {
   const guardians = await tx.centerGuardian.findMany({
     where: { studentId: input.studentId, centerId: input.centerId, ...(input.guardianIds ? { id: { in: input.guardianIds } } : {}) },
-    select: { id: true, phone: true, email: true, notifyWhatsapp: true, notifyEmail: true, userId: true, fullName: true, isStudentAccount: true, user: { select: { whatsappOptOut: true } } },
+    select: { id: true, phone: true, email: true, notifyWhatsapp: true, notifyEmail: true, userId: true, fullName: true, isStudentAccount: true, user: { select: { whatsappOptOut: true, email: true } } },
   });
   const counts: MessageCounts = { whatsapp: 0, email: 0, app: 0 };
   const sentTo = new Set<string>();
@@ -81,9 +84,29 @@ export async function messageGuardians(input: GuardianMessageInput, tx: Tx = db)
 
   for (const guardian of guardians) {
     if (guardian.isStudentAccount) {
-      if (input.notification && guardian.userId) {
+      // Bağlanmamış (davet bekleyen) öğrenci hesabına bir şey gitmez
+      if (!guardian.userId) continue;
+      if (input.notification) {
         await tx.notification.create({ data: { userId: guardian.userId, type: `center.${input.kind}`, title: input.notification.title, body: input.notification.body, link: `/hesabim/kurum/${guardian.id}` } });
         counts.app++;
+      }
+      const studentEmail = guardian.user?.email;
+      const text = message ?? input.notification?.body;
+      if (studentEmail && text && STUDENT_EMAIL_KINDS.has(input.kind) && input.channels?.email !== false && !sentTo.has(`email:${studentEmail}`)) {
+        sentTo.add(`email:${studentEmail}`);
+        const content = input.email ?? { subject, title: subject, lines: text.split(/\r?\n/).filter(Boolean), action: { label: "Ayrıntıları görüntüle", url: `/hesabim/kurum/${guardian.id}` } };
+        const queued = await NotificationService.email.enqueue(tx, {
+          userId: guardian.userId,
+          to: studentEmail,
+          subject: `${content.subject} · ${input.centerName}`,
+          senderName: input.centerName,
+          greetingName: guardian.fullName.split(" ")[0],
+          title: content.title,
+          lines: content.lines,
+          action: content.action,
+        });
+        await tx.centerMessage.create({ data: { centerId: input.centerId, channel: "EMAIL", to: studentEmail, subject: content.subject, body: queued.text, kind: input.kind, studentId: input.studentId, providerId: queued.id } });
+        counts.email++;
       }
       continue;
     }

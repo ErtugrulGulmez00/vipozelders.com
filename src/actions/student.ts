@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { failure, success, zodFieldErrors, type ActionState } from "@/lib/action-state";
+import { notificationScopeWhere, parseNotificationScope } from "@/lib/sides";
 import { normalizePhone } from "@/lib/text";
 import { actionUser } from "@/server/auth/current-user";
 import { requestMeta } from "@/server/auth/session";
@@ -224,9 +225,10 @@ export async function removeLearnerAction(formData: FormData) {
   refresh();
 }
 
-export async function markNotificationsReadAction() {
+export async function markNotificationsReadAction(formData?: FormData) {
   const user = await actionUser();
   if (!user) return;
-  await db.notification.updateMany({ where: { userId: user.id, readAt: null }, data: { readAt: new Date() } });
+  const scope = parseNotificationScope(formData?.get("scope"));
+  await db.notification.updateMany({ where: { userId: user.id, readAt: null, ...notificationScopeWhere(scope) }, data: { readAt: new Date() } });
   refresh();
 }

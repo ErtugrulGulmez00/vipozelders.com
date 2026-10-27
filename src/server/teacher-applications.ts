@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { normalizePhone } from "@/lib/text";
-import { AccountError, createTeacherAccount } from "./accounts";
+import { AccountError, createTeacherAccount, type TeacherAccountResult } from "./accounts";
 import { audit } from "./audit";
 import { countRecentAttempts, recordLoginAttempt } from "./auth/rate-limit";
 import { db } from "./db";
@@ -47,7 +47,9 @@ export async function submitTeacherApplication(input: ApplicationInput, ipAddres
   if (ipAddress && (await countRecentAttempts(`apply:${ipAddress}`, 60 * 60 * 1000)) >= 5) {
     throw new ApplicationError("Bu bağlantıdan çok fazla başvuru yapıldı. Lütfen daha sonra tekrar deneyin.");
   }
-  if (await db.user.findUnique({ where: { email }, select: { id: true } })) {
+  // Kurum personeli aynı e-postayla başvurabilir: onaylanınca kurum hesabına öğretmen paneli eklenir
+  const existing = await db.user.findUnique({ where: { email }, select: { role: true } });
+  if (existing && existing.role !== "CENTER") {
     throw new ApplicationError("Bu e-posta adresiyle zaten bir hesap var. Giriş yapmayı deneyin ya da bizimle iletişime geçin.", { email: "Bu e-posta kayıtlı." });
   }
   if (await db.teacherApplication.findFirst({ where: { email, status: "NEW" }, select: { id: true } })) {
@@ -91,7 +93,7 @@ export async function approveApplication(applicationId: string, adminId: string)
   if (!application) throw new ApplicationError("Başvuru bulunamadı.");
   if (application.status !== "NEW") throw new ApplicationError("Bu başvuru zaten sonuçlandırılmış.");
 
-  let result: Awaited<ReturnType<typeof createTeacherAccount>>;
+  let result: TeacherAccountResult;
   try {
     result = await createTeacherAccount({ firstName: application.firstName, lastName: application.lastName, email: application.email, phone: application.phone }, adminId);
   } catch (error) {

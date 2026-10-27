@@ -3,7 +3,8 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { failure, success, zodFieldErrors, type ActionState } from "@/lib/action-state";
-import { roleHome, safeNextPath } from "@/lib/auth-constants";
+import { safeNextPath } from "@/lib/auth-constants";
+import { sideHome, type Side } from "@/lib/sides";
 import { normalizePhone } from "@/lib/text";
 import { AccountError, registerStudent, sendPasswordResetEmail, sendVerificationEmail } from "@/server/accounts";
 import { DELETION_REQUEST_MESSAGE, requestAccountDeletion } from "@/server/account-deletion";
@@ -15,14 +16,21 @@ import { consumeUserToken } from "@/server/auth/tokens";
 import { checkUserTotp, endTwoFactorChallenge, pendingTwoFactor, startTwoFactorChallenge } from "@/server/auth/two-factor";
 import { db } from "@/server/db";
 import { referrerForCode } from "@/server/discounts";
+import { sideFacts } from "@/server/sides";
 import { cookies } from "next/headers";
 
 const text = (formData: FormData, key: string) => String(formData.get(key) ?? "").trim();
+
+/** Girilen kapıya göre açılış sayfası: kurum girişi kurum tarafını, normal giriş özel ders tarafını açar. */
+async function landingFor(user: { id: string; role: Parameters<typeof sideFacts>[1] }, side: Side) {
+  return sideHome(await sideFacts(user.id, user.role), side);
+}
 
 export async function loginAction(_: ActionState, formData: FormData): Promise<ActionState> {
   const identifier = text(formData, "identifier").toLocaleLowerCase("tr-TR").replace(/ı/g, "i");
   const password = String(formData.get("password") ?? "");
   const next = safeNextPath(text(formData, "next"));
+  const gate: Side = text(formData, "gate") === "kurum" ? "kurum" : "ozel";
   if (!identifier || !password) return failure("Kullanıcı adı/e-posta ve şifre gerekli.");
 
   const { ipAddress } = await requestMeta();
@@ -40,14 +48,15 @@ export async function loginAction(_: ActionState, formData: FormData): Promise<A
   // İki adımlı doğrulama açıksa oturum, doğrulayıcı uygulamadaki kod girilince açılır.
   if (user.totpEnabledAt && user.totpSecretEnc) {
     await startTwoFactorChallenge(user.id);
-    redirect(`/giris/dogrulama${next ? `?next=${encodeURIComponent(next)}` : ""}`);
+    const after = next ?? (gate === "kurum" ? "/panel?taraf=kurum" : null);
+    redirect(`/giris/dogrulama${after ? `?next=${encodeURIComponent(after)}` : ""}`);
   }
 
   await createSession(user.id);
   await db.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
 
   if (user.mustChangePassword) redirect("/sifre-degistir");
-  redirect(next ?? roleHome(user.role));
+  redirect(next ?? (await landingFor(user, gate)));
 }
 
 export async function verifyTwoFactorAction(_: ActionState, formData: FormData): Promise<ActionState> {
@@ -72,7 +81,7 @@ export async function verifyTwoFactorAction(_: ActionState, formData: FormData):
 
   const next = safeNextPath(text(formData, "next"));
   if (user.mustChangePassword) redirect("/sifre-degistir");
-  redirect(next ?? roleHome(user.role));
+  redirect(next ?? (await landingFor(user, "ozel")));
 }
 
 const registerSchema = z.object({
@@ -185,7 +194,7 @@ export async function changePasswordAction(_: ActionState, formData: FormData): 
   await db.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(password), mustChangePassword: false } });
   await revokeOtherSessions(user.id);
 
-  if (record.mustChangePassword) redirect(roleHome(user.role));
+  if (record.mustChangePassword) redirect(await landingFor(user, "ozel"));
   return success("Şifreniz değiştirildi. Diğer cihazlardaki oturumlarınız kapatıldı.");
 }
 

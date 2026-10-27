@@ -12,7 +12,7 @@ export default function LoginPage() {
     <Card className="p-6 sm:p-8">
       <LoginTabs active="personal" />
       <h1 className="text-2xl font-bold text-slate-900">Giriş yap</h1>
-      <p className="mt-1 text-sm text-slate-500">Veliler e-posta adresiyle; öğretmenler ve kurumunun hesap açtığı öğrenciler kendilerine verilen kullanıcı adıyla giriş yapar.</p>
+      <p className="mt-1 text-sm text-slate-500">E-posta adresiniz ya da size verilen kullanıcı adıyla giriş yapın. Etüt merkezi veya dershane hesabı için “Kurum girişi” sekmesini kullanın.</p>
       <div className="mt-6">
         <Suspense fallback={<Skeleton className="h-56" />}>
           <LoginForm />

@@ -37,9 +37,9 @@ export async function addStaffAction(_: ActionState, formData: FormData): Promis
     await centerAudit(auth.ctx, "staff.add", "CenterMember", result.member.id, { role: result.member.role });
     if (result.linkedExisting) {
       refresh();
-      return success("Bu e-postayla kayıtlı hesap kuruma eklendi; kişi mevcut şifresiyle giriş yapabilir.");
+      return success("Bu e-postayla kayıtlı hesap kuruma eklendi; kişi mevcut şifresiyle “Kurum girişi”nden girer.");
     }
-    return success("Personel hesabı açıldı.", { username: result.username, password: result.temporaryPassword, emailSent: Boolean(str(formData, "email")) });
+    return success("Personel hesabı açıldı.", { username: result.username, password: result.temporaryPassword, emailSent: true });
   });
 }
 

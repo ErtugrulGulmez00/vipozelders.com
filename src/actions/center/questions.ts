@@ -3,7 +3,8 @@
 import { refresh } from "next/cache";
 import { success, type ActionState } from "@/lib/action-state";
 import { centerAction, centerAudit } from "@/server/center/context";
-import { guard, opt, str } from "@/server/center/form";
+import { CenterError } from "@/server/center/errors";
+import { email, guard, opt, str } from "@/server/center/form";
 import { answerQuestion } from "@/server/center/questions";
 import { createStudentAccount, removeStudentAccount, resetStudentAccountPassword } from "@/server/center/students";
 
@@ -27,9 +28,16 @@ export async function createStudentAccountAction(_: ActionState, formData: FormD
   const auth = await centerAction("students.edit");
   if (!auth.ok) return auth.state;
   return guard(async () => {
-    const result = await createStudentAccount(auth.ctx, str(formData, "studentId"));
-    await centerAudit(auth.ctx, "student.account_create", "CenterStudent", str(formData, "studentId"));
-    return success("Öğrenci giriş hesabı açıldı.", { username: result.username, password: result.temporaryPassword, loginPath: "/giris" });
+    // Bildirimler e-postayla gittiği için öğrenci hesabında e-posta zorunlu
+    const address = email(formData, "email");
+    if (!address) throw new CenterError("Öğrencinin e-posta adresini yazın.", { email: "E-posta gerekli." });
+    const result = await createStudentAccount(auth.ctx, str(formData, "studentId"), address);
+    await centerAudit(auth.ctx, "student.account_create", "CenterStudent", str(formData, "studentId"), { invited: result.kind === "invited" });
+    if (result.kind === "invited") {
+      refresh();
+      return success(`Bu e-posta sitede kayıtlı bir hesaba ait. Öğrenciye davet gönderildi (${result.email}); kabul edince hesabı bağlanır.`);
+    }
+    return success("Öğrenci giriş hesabı açıldı.", { username: result.username, password: result.temporaryPassword, emailSent: true, loginPath: "/kurum-giris" });
   });
 }
 
@@ -39,7 +47,7 @@ export async function resetStudentAccountAction(_: ActionState, formData: FormDa
   return guard(async () => {
     const result = await resetStudentAccountPassword(auth.ctx, str(formData, "studentId"));
     await centerAudit(auth.ctx, "student.account_reset", "CenterStudent", str(formData, "studentId"));
-    return success("Yeni geçici şifre oluşturuldu.", { username: result.username, password: result.temporaryPassword, loginPath: "/giris" });
+    return success("Yeni geçici şifre oluşturuldu.", { username: result.username, password: result.temporaryPassword, loginPath: "/kurum-giris" });
   });
 }
 

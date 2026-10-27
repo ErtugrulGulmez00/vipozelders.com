@@ -38,18 +38,20 @@ async function queueWelcomeEmail(userId: string, email: string, firstName: strin
   await db.emailMessage.create({ data: { userId, to: email, subject: `Kurum paneli daveti · ${centerName}`, html, text } });
 }
 
-/** Yeni personel hesabı açar ya da e-postası kayıtlı kurum/öğretmen hesabını kuruma ekler. */
+/**
+ * Yeni personel hesabı açar ya da e-postası sitede kayıtlı hesabı (özel ders öğretmeni, veli) kuruma ekler: tek kişi,
+ * tek hesap; kurum girişinden kurum panelini, özel ders girişinden kendi tarafını görür. E-posta zorunlu (bildirimler).
+ */
 export async function createCenterUser(centerId: string, centerName: string, input: StaffInput) {
   const email = input.email?.trim().toLowerCase() || null;
-  if (email) {
-    const existing = await db.user.findUnique({ where: { email } });
-    if (existing) {
-      if (existing.role !== "CENTER" && existing.role !== "TEACHER") throw new CenterError("Bu e-posta bir veli/öğrenci ya da yönetici hesabında kayıtlı; farklı bir e-posta kullanın.", { email: "E-posta kullanımda." });
-      if (await db.centerMember.findUnique({ where: { centerId_userId: { centerId, userId: existing.id } } })) throw new CenterError("Bu kişi zaten kurum personeli.", { email: "Zaten ekli." });
-      const member = await db.centerMember.create({ data: { centerId, userId: existing.id, role: input.role, title: input.title, branch: input.branch } });
-      await db.notification.create({ data: { userId: existing.id, type: "center.staff", title: `${centerName} sizi kurum paneline ekledi`, body: `Rolünüz: ${CENTER_ROLE_LABEL[input.role]}`, link: "/kurum" } });
-      return { member, username: existing.username, temporaryPassword: null, linkedExisting: true };
-    }
+  if (!email) throw new CenterError("E-posta adresini yazın; giriş bilgileri ve bildirimler e-postayla gider.", { email: "E-posta gerekli." });
+  const existing = await db.user.findUnique({ where: { email } });
+  if (existing) {
+    if (existing.role === "ADMIN") throw new CenterError("Bu e-posta bir yönetici hesabında kayıtlı; farklı bir e-posta kullanın.", { email: "E-posta kullanımda." });
+    if (await db.centerMember.findUnique({ where: { centerId_userId: { centerId, userId: existing.id } } })) throw new CenterError("Bu kişi zaten kurum personeli.", { email: "Zaten ekli." });
+    const member = await db.centerMember.create({ data: { centerId, userId: existing.id, role: input.role, title: input.title, branch: input.branch } });
+    await db.notification.create({ data: { userId: existing.id, type: "center.staff", title: `${centerName} sizi kurum paneline ekledi`, body: `Rolünüz: ${CENTER_ROLE_LABEL[input.role]}`, link: "/kurum" } });
+    return { member, username: existing.username, temporaryPassword: null, linkedExisting: true };
   }
   const username = await generateUsername(input.firstName, input.lastName);
   const temporaryPassword = generateTemporaryPassword();
@@ -67,7 +69,7 @@ export async function createCenterUser(centerId: string, centerName: string, inp
     },
     include: { centerMemberships: true },
   });
-  if (email) await queueWelcomeEmail(user.id, email, user.firstName, centerName, username, input.role);
+  await queueWelcomeEmail(user.id, email, user.firstName, centerName, username, input.role);
   return { member: user.centerMemberships[0], username, temporaryPassword, linkedExisting: false };
 }
 

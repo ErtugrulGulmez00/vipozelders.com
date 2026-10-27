@@ -19,7 +19,7 @@ export default async function GuardianPortalPage({ searchParams }: PageProps<"/h
   const summaries = await portalChildSummaries(children.map((c) => c.studentId));
   return (
     <>
-      <PageHeader title="Kurumum" description="Çocuğunuzun etüt merkezi / dershanesindeki devam, deneme ve ödeme bilgileri" />
+      <PageHeader title="Kurumum" description="Etüt merkezi / dershanedeki devam, ödev, deneme ve ödeme bilgileri" />
       <CenterFlash code={sp.durum} />
       {children.length === 0 ? (
         <EmptyState

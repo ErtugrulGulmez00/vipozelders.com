@@ -3,13 +3,14 @@ import Link from "next/link";
 import { logoutAction } from "@/actions/auth";
 import { markNotificationsReadAction } from "@/actions/student";
 import { buttonClasses } from "@/components/ui/button";
-import { roleHome } from "@/lib/auth-constants";
 import { cn } from "@/lib/cn";
 import { formatCompact } from "@/lib/dates";
 import { ROLE_LABEL } from "@/lib/labels";
+import { notificationScope, notificationScopeWhere, sideHome, sideOfPath } from "@/lib/sides";
 import { initials } from "@/lib/text";
 import { getCurrentUser } from "@/server/auth/current-user";
 import { db } from "@/server/db";
+import { sideFacts } from "@/server/sides";
 
 /** Üst menüdeki kullanıcı alanı. Oturum okuduğu için Suspense içinde çizilir. */
 export async function UserMenu() {
@@ -28,11 +29,14 @@ export async function UserMenu() {
     );
   }
 
+  // Vitrin özel ders tarafıdır: "Panelim" ve zil o tarafı gösterir (yalnızca kurum tarafı olan hesapta kurumu)
+  const facts = await sideFacts(user.id, user.role);
+  const home = sideHome(facts, "ozel");
+  const scope = notificationScope(facts, sideOfPath(home));
   const [unread, latest] = await Promise.all([
-    db.notification.count({ where: { userId: user.id, readAt: null } }),
-    db.notification.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 8 }),
+    db.notification.count({ where: { userId: user.id, readAt: null, ...notificationScopeWhere(scope) } }),
+    db.notification.findMany({ where: { userId: user.id, ...notificationScopeWhere(scope) }, orderBy: { createdAt: "desc" }, take: 8 }),
   ]);
-  const home = roleHome(user.role);
   const notificationsHref = `${home}/bildirimler`;
 
   return (
@@ -52,6 +56,7 @@ export async function UserMenu() {
             <p className="text-sm font-semibold text-slate-900">Bildirimler</p>
             {unread ? (
               <form action={markNotificationsReadAction}>
+                <input type="hidden" name="scope" value={scope} />
                 <button type="submit" className="inline-flex items-center gap-1 text-xs font-medium text-brand-700 hover:underline">
                   <CheckCheck className="size-3.5" aria-hidden /> Tümünü okundu yap
                 </button>
@@ -99,7 +104,7 @@ export async function UserMenu() {
             <LayoutDashboard className="size-4" aria-hidden /> Panelim
           </Link>
           {user.role === "STUDENT" ? (
-            <Link href="/hesabim/profil" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+            <Link href={facts.privateSide ? "/hesabim/profil" : "/hesabim/kurum/hesap"} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
               <UserRound className="size-4" aria-hidden /> Hesap ayarları
             </Link>
           ) : null}

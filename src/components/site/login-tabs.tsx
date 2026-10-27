@@ -3,14 +3,14 @@ import { cn } from "@/lib/cn";
 
 /**
  * İki giriş kapısı, tek hesap sistemi:
- *  - Kişisel giriş (/giris): veli, öğrenci (kurumun açtığı öğrenci hesabı dahil), öğretmen, yönetici
- *  - Kurum girişi (/kurum-giris): etüt merkezi / dershane personeli (sahip, müdür, öğretmen, muhasebe)
- * Girişten sonra herkes rolüne göre kendi paneline gider.
+ *  - Özel ders girişi (/giris): özel ders tarafı (veli, öğrenci, öğretmen, yönetici)
+ *  - Kurum girişi (/kurum-giris): kurum tarafı (personel, kurumun öğrencisi ve velisi)
+ * Kişi hangi kapıdan girerse o tarafı görür; o tarafta hesabı yoksa kendi tarafına yönlenir (src/lib/sides.ts).
  */
 export function LoginTabs({ active }: { active: "personal" | "center" }) {
   const tabs = [
-    { key: "personal", href: "/giris", label: "Kişisel giriş", hint: "Veli · öğrenci · öğretmen" },
-    { key: "center", href: "/kurum-giris", label: "Kurum girişi", hint: "Etüt merkezi / dershane personeli" },
+    { key: "personal", href: "/giris", label: "Özel ders girişi", hint: "Veli · öğrenci · öğretmen" },
+    { key: "center", href: "/kurum-giris", label: "Kurum girişi", hint: "Etüt merkezi / dershane" },
   ] as const;
   return (
     <nav className="mb-6 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1" aria-label="Giriş türü">

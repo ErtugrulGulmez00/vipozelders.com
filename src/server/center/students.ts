@@ -2,9 +2,12 @@ import type { Prisma } from "@/generated/prisma/client";
 import { dateStringToDbDate } from "@/lib/dates";
 import type { ImportedStudent } from "@/lib/center/import";
 import { generateUsername } from "../accounts";
-import { generateTemporaryPassword, hashPassword } from "../auth/password";
+import { generateTemporaryPassword, hashPassword, hashToken, randomToken } from "../auth/password";
+import { issueUserToken } from "../auth/tokens";
 import { encryptText } from "../crypto";
 import { db, type DbTransaction } from "../db";
+import { appUrl, renderEmail } from "../email";
+import { loadSettings } from "../settings";
 import type { CenterContext } from "./context";
 import { CenterError, isUniqueViolation } from "./errors";
 
@@ -266,19 +269,51 @@ export async function importStudents(ctx: CenterContext, rows: ImportedStudent[]
   return summary;
 }
 
+const STUDENT_INVITE_DAYS = 14;
+
+async function queueStudentEmail(to: string, greetingName: string, subject: string, lines: string[], action: { label: string; url: string }, centerName: string) {
+  const settings = await loadSettings();
+  const { html, text } = renderEmail({ siteName: settings.siteName, greetingName, title: subject, lines, action });
+  await db.emailMessage.create({ data: { to, subject: `${subject} · ${centerName}`, html, text } });
+}
+
+export type StudentAccountResult = { kind: "created"; username: string; temporaryPassword: string } | { kind: "invited"; email: string };
+
 /**
- * Öğrencinin kendi giriş hesabı: sitedeki öğrenci hesabı açılır (kullanıcı adı + geçici şifre) ve öğrenciye
- * “öğrenci hesabı” olarak bağlanır. Öğrenci veli portalının aynısını görür, fotoğrafla soru sorar.
+ * Öğrencinin kendi giriş hesabı (e-posta zorunlu; bildirimler e-postayla gider). E-posta sitede kayıtlı değilse
+ * hesap açılır (kullanıcı adı + geçici şifre, ayrıca şifre belirleme e-postası). Öğrencinin sitede kendi hesabı
+ * varsa ona davet gider; öğrenci kabul edince hesabı bağlanır. Öğrenci kurum girişinden yalnızca kurum tarafını görür.
  */
-export async function createStudentAccount(ctx: CenterContext, studentId: string) {
+export async function createStudentAccount(ctx: CenterContext, studentId: string, email: string): Promise<StudentAccountResult> {
   const student = await getStudentOrThrow(ctx, studentId);
   const existing = await db.centerGuardian.findFirst({ where: { studentId, isStudentAccount: true } });
   if (existing?.userId) throw new CenterError("Bu öğrencinin zaten giriş hesabı var; şifresini sıfırlayabilirsiniz.");
+  // Yanıtlanmamış eski davet yenisiyle değişir
+  if (existing) await db.centerGuardian.delete({ where: { id: existing.id } });
+  const fullName = `${student.firstName} ${student.lastName}`;
+  const base = { centerId: ctx.center.id, studentId, fullName, relation: "Öğrenci", isStudentAccount: true, notifyWhatsapp: false, notifyEmail: true, email };
+  if (!student.email) await db.centerStudent.update({ where: { id: studentId }, data: { email } });
+
+  const owner = await db.user.findUnique({ where: { email }, select: { id: true, role: true } });
+  if (owner) {
+    if (owner.role !== "STUDENT") throw new CenterError("Bu e-posta bir öğretmen ya da kurum personeli hesabında kayıtlı; öğrencinin kendi e-postasını yazın.", { email: "E-posta kullanımda." });
+    if (await db.centerGuardian.findFirst({ where: { studentId, userId: owner.id } })) throw new CenterError("Bu e-postanın sahibi öğrencinin velisi olarak zaten bağlı; öğrencinin kendi e-postasını yazın.", { email: "Veli e-postası." });
+    const token = randomToken(24);
+    await db.centerGuardian.create({ data: { ...base, inviteTokenHash: hashToken(token), inviteExpiresAt: new Date(Date.now() + STUDENT_INVITE_DAYS * 86_400_000) } });
+    await queueStudentEmail(email, student.firstName, "Öğrenci hesabı daveti", [
+      `${ctx.center.name}, sitedeki hesabınızı öğrenci kaydınıza bağlamak istiyor.`,
+      "Bağlayınca devamsızlığınızı, ödevlerinizi ve deneme sonuçlarınızı görür, öğretmenlerinize fotoğrafla soru gönderirsiniz.",
+      `Bağlantı ${STUDENT_INVITE_DAYS} gün geçerlidir; hesabınızla giriş yapıp onaylamanız yeterli.`,
+    ], { label: "Daveti aç", url: `/kurum-davet/${token}` }, ctx.center.name);
+    return { kind: "invited", email };
+  }
+
   const username = await generateUsername(student.firstName, student.lastName);
   const temporaryPassword = generateTemporaryPassword();
   const user = await db.user.create({
     data: {
       role: "STUDENT",
+      email,
       username,
       firstName: student.firstName,
       lastName: student.lastName,
@@ -288,10 +323,15 @@ export async function createStudentAccount(ctx: CenterContext, studentId: string
       studentProfile: { create: { accountType: "STUDENT", kvkkConsentAt: new Date() } },
     },
   });
-  await db.centerGuardian.create({
-    data: { centerId: ctx.center.id, studentId, fullName: `${student.firstName} ${student.lastName}`, relation: "Öğrenci", isStudentAccount: true, notifyWhatsapp: false, notifyEmail: false, userId: user.id, linkedAt: new Date() },
-  });
-  return { username, temporaryPassword };
+  await db.centerGuardian.create({ data: { ...base, userId: user.id, linkedAt: new Date() } });
+  const token = await issueUserToken(user.id, "PASSWORD_RESET", 3 * 24 * 60 * 60 * 1000);
+  await queueStudentEmail(email, student.firstName, "Öğrenci hesabınız açıldı", [
+    `${ctx.center.name} size öğrenci hesabı açtı.`,
+    `Giriş adresi: ${appUrl("/kurum-giris")}`,
+    `Kullanıcı adınız: ${username} (e-posta adresinizle de girebilirsiniz)`,
+    "Aşağıdaki bağlantıdan şifrenizi belirleyin (3 gün geçerli). Kurumunuz size geçici bir şifre de vermiş olabilir.",
+  ], { label: "Şifremi belirle", url: `/sifre-sifirla/${token}` }, ctx.center.name);
+  return { kind: "created", username, temporaryPassword };
 }
 
 export async function resetStudentAccountPassword(ctx: CenterContext, studentId: string) {

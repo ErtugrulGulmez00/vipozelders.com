@@ -37,14 +37,26 @@ async function Invite({ params }: { params: Promise<{ token: string }> }) {
   }
   const studentName = `${invite.student.firstName} ${invite.student.lastName}`;
   const next = encodeURIComponent(`/kurum-davet/${token}`);
+  // Öğrencinin kendi hesabını bağlaması için gönderilen davet (kurum, sitede kayıtlı e-postasını yazdı)
+  const forStudent = invite.isStudentAccount;
   return (
     <Card className="p-6 sm:p-8">
       <span className="inline-flex size-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
         <Users className="size-6" aria-hidden />
       </span>
-      <h1 className="mt-4 text-2xl font-bold text-slate-900">{invite.student.center.name} veli portalı</h1>
+      <h1 className="mt-4 text-2xl font-bold text-slate-900">
+        {invite.student.center.name} {forStudent ? "öğrenci hesabı" : "veli portalı"}
+      </h1>
       <p className="mt-2 text-slate-600">
-        <strong>{studentName}</strong> için devamsızlık, etüt, deneme sonuçları, eksik konular, ödeme planı ve duyuruları buradan takip edebilirsiniz.
+        {forStudent ? (
+          <>
+            Kurum, sitedeki hesabınızı <strong>{studentName}</strong> öğrenci kaydına bağlamak istiyor. Devamsızlığınızı, ödevlerinizi, deneme sonuçlarınızı görür ve öğretmenlerinize fotoğrafla soru gönderirsiniz.
+          </>
+        ) : (
+          <>
+            <strong>{studentName}</strong> için devamsızlık, etüt, deneme sonuçları, eksik konular, ödeme planı ve duyuruları buradan takip edebilirsiniz.
+          </>
+        )}
       </p>
       <ul className="mt-4 space-y-1.5 text-sm text-slate-700">
         {["Derse gelmeyince anında bildirim", "Deneme karnesi ve net gelişimi", "Taksit ve ödeme geçmişi"].map((t) => (
@@ -65,13 +77,13 @@ async function Invite({ params }: { params: Promise<{ token: string }> }) {
         </div>
       ) : user ? (
         <Alert tone="warning" className="mt-6">
-          Şu an {user.role === "TEACHER" ? "öğretmen" : user.role === "CENTER" ? "kurum" : "yönetici"} hesabıyla giriş yaptınız. Daveti kabul etmek için çıkış yapıp veli hesabınızla giriş yapın.
+          Şu an {user.role === "TEACHER" ? "öğretmen" : user.role === "CENTER" ? "kurum" : "yönetici"} hesabıyla giriş yaptınız. Daveti kabul etmek için çıkış yapıp {forStudent ? "kendi" : "veli"} hesabınızla giriş yapın.
         </Alert>
       ) : (
         <div className="mt-6 space-y-3">
-          <p className="text-sm text-slate-600">Devam etmek için ücretsiz veli hesabınızla giriş yapın ya da yeni hesap açın.</p>
+          <p className="text-sm text-slate-600">{forStudent ? "Devam etmek için hesabınızla giriş yapın." : "Devam etmek için ücretsiz veli hesabınızla giriş yapın ya da yeni hesap açın."}</p>
           <div className="flex flex-wrap gap-2">
-            <LinkButton href={`/giris?next=${next}`}>Giriş yap</LinkButton>
+            <LinkButton href={`/kurum-giris?next=${next}`}>Giriş yap</LinkButton>
             <LinkButton href={`/kayit?next=${next}`} variant="outline">
               Ücretsiz hesap aç
             </LinkButton>

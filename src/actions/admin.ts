@@ -62,6 +62,7 @@ export async function createTeacherAction(_: ActionState, formData: FormData): P
   if (input.phone && !phone) return failure("Telefon 05XX XXX XX XX biçiminde olmalı.", { phone: "Geçersiz numara." });
   try {
     const result = await createTeacherAccount({ ...input, phone, email: input.email || null }, user.id);
+    if (result.upgraded) return success("Bu e-posta bir kurum personeli hesabına ait; o hesaba öğretmen paneli eklendi. Kişi mevcut kullanıcı adı ve şifresiyle “Özel ders girişi”nden girer.", { teacherId: result.user.id });
     return success("Öğretmen hesabı oluşturuldu.", {
       teacherId: result.user.id,
       username: result.username,

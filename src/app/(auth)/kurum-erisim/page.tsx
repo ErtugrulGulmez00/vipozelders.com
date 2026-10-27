@@ -4,7 +4,9 @@ import { logoutAction } from "@/actions/auth";
 import { Button, LinkButton } from "@/components/ui/button";
 import { Alert, Card } from "@/components/ui/primitives";
 import { roleHome } from "@/lib/auth-constants";
+import { sideHome } from "@/lib/sides";
 import { resolveCenter } from "@/server/center/context";
+import { sideFacts } from "@/server/sides";
 import { getSiteSettings } from "@/server/site";
 
 export const metadata: Metadata = { title: "Kurum paneli erişimi" };
@@ -16,8 +18,8 @@ export default async function CenterAccessPage() {
   if (resolved.kind === "anonymous") redirect("/kurum-giris");
   if (resolved.kind === "password") redirect("/sifre-degistir");
   if (resolved.kind === "ok") redirect("/kurum");
-  // Kurum girişinden giren veli/öğrenci/öğretmen kendi paneline gider (yanlış kapı sorun olmasın).
-  if (resolved.kind === "none" && resolved.user.role !== "CENTER") redirect(roleHome(resolved.user.role));
+  // Personel olmayan veli/öğrenci kurum portalına, kurumla bağı olmayan kişi kendi paneline gider (yanlış kapı sorun olmasın).
+  if (resolved.kind === "none" && resolved.user.role !== "CENTER") redirect(sideHome(await sideFacts(resolved.user.id, resolved.user.role), "kurum"));
   const settings = await getSiteSettings();
   const { user } = resolved;
   return (

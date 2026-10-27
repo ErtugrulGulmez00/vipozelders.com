@@ -184,7 +184,10 @@ test("kurum başvurusu → kurum paneli → yoklama, deneme, makbuz → veli por
   await page.getByRole("button", { name: "Hesabıma bağla" }).click();
   await expect(page.getByText("Hesabınız öğrenciye bağlandı", { exact: false })).toBeVisible();
   await expect(page.getByRole("heading", { name: `Ece Deneme${stamp}` })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Kurumum (etüt / dershane)" }).first()).toBeVisible();
+  // Kurum davetiyle gelen veli kurum tarafını görür: özel ders menüsü ve özel derse geçiş yok
+  await expect(page.getByRole("link", { name: "Bildirimler" }).first()).toBeVisible();
+  await expect(page.getByRole("link", { name: "Derslerim" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Özel ders tarafına geç" })).toHaveCount(0);
   await page.getByRole("link", { name: "Devam ve etüt" }).click();
   await expect(page.getByText("Gelmedi").first()).toBeVisible();
   // Yayınlanmamış deneme veliye görünmez
@@ -229,7 +232,7 @@ test("ödev verilir, kontrol edilir; veli portalda görür; tüm veriler Excel o
 
     await login(page, "veli@demo.vipozelders.local", "Veli12345");
     await page.goto("/hesabim/kurum");
-    await page.getByRole("link", { name: /Ali Demirtaş/ }).click();
+    await page.getByRole("link", { name: /Ali Demirtaş/ }).first().click();
     await page.getByRole("link", { name: "Ödevler", exact: true }).click();
     const item = page.locator("li", { hasText: title });
     await expect(item.getByText("Yapmadı")).toBeVisible();
@@ -244,35 +247,43 @@ test("ödev verilir, kontrol edilir; veli portalda görür; tüm veriler Excel o
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
 
 test("öğrenci hesabı → fotoğrafla soru → öğretmen çözümü; yanlış kapıdan giren kendi paneline gider", async ({ page }) => {
-  const [ali] = await sql<{ id: string }>(`SELECT s.id FROM "CenterStudent" s JOIN "Center" c ON c.id = s."centerId" WHERE c.slug = 'basari-etut-merkezi' AND s."firstName" = 'Ali' AND s."lastName" = 'Demirtaş'`);
+  const [ali] = await sql<{ id: string; email: string | null }>(`SELECT s.id, s.email FROM "CenterStudent" s JOIN "Center" c ON c.id = s."centerId" WHERE c.slug = 'basari-etut-merkezi' AND s."firstName" = 'Ali' AND s."lastName" = 'Demirtaş'`);
   const note = `E2e soru ${stamp}`;
+  const studentEmail = `ali.e2e.${stamp}@ornek.test`;
   try {
-    // Veli kurum girişinden girse de kendi paneline gider
+    // Veli kurum girişinden girince kurum tarafını görür (özel ders menüsü yok; özel derste işlemi olduğu için geçiş bağlantısı var)
     await page.context().clearCookies();
     await page.goto("/kurum-giris");
     await page.getByLabel("E-posta veya kullanıcı adı").fill("veli@demo.vipozelders.local");
     await page.getByLabel("Şifre", { exact: true }).fill("Veli12345");
     await page.getByRole("button", { name: "Giriş yap" }).click();
+    await expect(page).toHaveURL(/\/hesabim\/kurum$/);
+    await expect(page.getByRole("link", { name: "Derslerim" })).toHaveCount(0);
+    await page.getByRole("link", { name: "Özel ders tarafına geç" }).first().click();
     await expect(page).toHaveURL(/\/hesabim$/);
+    await expect(page.getByRole("link", { name: "Derslerim" }).first()).toBeVisible();
 
     // Kurum öğrenci giriş hesabı açar
     await login(page, "kurum@demo.vipozelders.local", "Kurum12345");
     await page.goto(`/kurum/ogrenciler/${ali.id}`);
+    await page.getByLabel("Öğrencinin e-postası").fill(studentEmail);
     await page.getByRole("button", { name: "Öğrenci giriş hesabı aç" }).click();
     await expect(page.getByText("Giriş bilgileri hazır")).toBeVisible();
     const username = (await page.getByTestId("new-username").innerText()).trim();
     const password = (await page.getByTestId("new-password").innerText()).trim();
 
-    // Öğrenci kişisel girişten girer, şifresini belirler, soru gönderir
+    // Öğrenci özel ders girişinden girse de kurum tarafına düşer; şifresini belirler, soru gönderir
     await login(page, username, password);
     await expect(page).toHaveURL(/\/sifre-degistir$/);
     await page.getByLabel("Geçici şifre").fill(password);
     await page.getByLabel("Yeni şifre", { exact: true }).fill("OgrenciSifre123");
     await page.getByLabel("Yeni şifre (tekrar)").fill("OgrenciSifre123");
     await page.getByRole("button", { name: "Şifremi kaydet" }).click();
-    await expect(page).toHaveURL(/\/hesabim$/);
-    await page.goto("/hesabim/kurum");
-    await page.getByRole("link", { name: /Ali Demirtaş/ }).click();
+    await expect(page).toHaveURL(/\/hesabim\/kurum$/);
+    await expect(page.getByRole("link", { name: "Derslerim" })).toHaveCount(0);
+    await page.goto("/hesabim/derslerim");
+    await expect(page).toHaveURL(/\/hesabim\/kurum$/);
+    await page.getByRole("link", { name: /Ali Demirtaş/ }).first().click();
     await page.getByRole("link", { name: "Soru sor" }).click();
     await page.locator('input[name="image"]').setInputFiles({ name: "soru.png", mimeType: "image/png", buffer: PNG });
     await page.locator('select[name="subject"]').selectOption("Matematik");
@@ -303,7 +314,7 @@ test("öğrenci hesabı → fotoğrafla soru → öğretmen çözümü; yanlış
     // Öğrenci çözümü görür
     await login(page, username, "OgrenciSifre123");
     await page.goto("/hesabim/kurum");
-    await page.getByRole("link", { name: /Ali Demirtaş/ }).click();
+    await page.getByRole("link", { name: /Ali Demirtaş/ }).first().click();
     await page.getByRole("link", { name: "Soru sor" }).click();
     await expect(page.getByText("Üslü sayılarda tabanları eşitle.")).toBeVisible();
     await expect(page.getByText("Çözüldü").first()).toBeVisible();
@@ -312,6 +323,9 @@ test("öğrenci hesabı → fotoğrafla soru → öğretmen çözümü; yanlış
     await sql(`DELETE FROM "Notification" WHERE type = 'center.question' OR (type = 'center.question_answered')`);
     await sql(`DELETE FROM "CenterQuestion" WHERE note = $1`, [note]);
     await sql(`DELETE FROM "CenterGuardian" WHERE "studentId" = $1 AND "isStudentAccount" = true`, [ali.id]);
+    await sql(`UPDATE "CenterStudent" SET email = $2 WHERE id = $1`, [ali.id, ali.email]);
+    await sql(`DELETE FROM "CenterMessage" WHERE "to" = $1`, [studentEmail]);
+    await sql(`DELETE FROM "EmailMessage" WHERE "to" = $1`, [studentEmail]);
     for (const { userId } of links) {
       await sql(`DELETE FROM "AuditLog" WHERE "actorId" = $1`, [userId]);
       await sql(`DELETE FROM "User" WHERE id = $1`, [userId]);

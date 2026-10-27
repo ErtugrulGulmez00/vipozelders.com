@@ -114,7 +114,7 @@ test("öğrenci arama, koçluk, sınıf defteri, salon ve veli portalı", async 
   // Veli portalı: koç notu, salon, işlenen konu
   await login(page, "veli@demo.vipozelders.local", "Veli12345");
   await page.goto("/hesabim/kurum");
-  await page.getByRole("link", { name: /Ali Demirtaş/ }).click();
+  await page.getByRole("link", { name: /Ali Demirtaş/ }).first().click();
   await page.getByRole("link", { name: "Çalışma programı" }).click();
   await expect(page.getByText(`Deneme netleri yükseliyor ${stamp}`)).toBeVisible();
   await page.getByRole("link", { name: "Devam ve etüt" }).click();

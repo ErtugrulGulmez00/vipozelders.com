@@ -104,7 +104,7 @@ export function CreateCenterForm({ cities, trialDays, prefill = {} }: { cities: 
           <FieldError name="ownerLastName" />
         </Field>
         <Field label="E-posta" hint="Şifre belirleme bağlantısı gönderilir.">
-          <Input name="ownerEmail" type="email" defaultValue={prefill.email} />
+          <Input name="ownerEmail" type="email" defaultValue={prefill.email} required />
           <FieldError name="ownerEmail" />
         </Field>
         <Field label="Cep telefonu">
@@ -228,7 +228,7 @@ export function AddOwnerForm({ centerId }: { centerId: string }) {
           <Input name="lastName" required />
         </Field>
         <Field label="E-posta">
-          <Input name="email" type="email" />
+          <Input name="email" type="email" required />
           <FieldError name="email" />
         </Field>
         <Field label="Cep telefonu">

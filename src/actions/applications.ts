@@ -36,6 +36,7 @@ export async function approveApplicationAction(_: ActionState, formData: FormDat
   if (!user) return failure("Bu işlem için yönetici yetkisi gerekli.");
   try {
     const result = await approveApplication(text(formData, "applicationId"), user.id);
+    if (result.upgraded) return success("Bu e-posta bir kurum personeli hesabına ait; o hesaba öğretmen paneli eklendi. Kişi mevcut kullanıcı adı ve şifresiyle “Özel ders girişi”nden girer.", { teacherId: result.user.id });
     // Sayfa yenilenmez: giriş bilgileri yönetici kopyalayana kadar ekranda kalır.
     return success("Öğretmen hesabı açıldı.", { teacherId: result.user.id, username: result.username, password: result.temporaryPassword, emailSent: true });
   } catch (error) {

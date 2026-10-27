@@ -37,15 +37,47 @@ export type NewTeacherInput = {
   headline?: string | null;
 };
 
+export type TeacherAccountResult = { user: { id: string }; username: string | null; temporaryPassword: string | null; upgraded: boolean };
+
+/**
+ * Kurum personeli hesabına öğretmen paneli ekler (tek kişi, tek hesap): rol öğretmen olur, kurum üyelikleri ve
+ * şifresi aynen kalır. Kurum girişinden kurum panelini, özel ders girişinden öğretmen panelini görür.
+ */
+async function upgradeCenterUserToTeacher(user: { id: string; email: string | null; username: string | null; firstName: string; lastName: string }, input: NewTeacherInput, adminId: string): Promise<TeacherAccountResult> {
+  const slug = await generateTeacherSlug(user.firstName, user.lastName);
+  await db.user.update({
+    where: { id: user.id },
+    data: { role: "TEACHER", phone: input.phone || undefined, teacherProfile: { create: { slug, headline: input.headline?.trim() || null } } },
+  });
+  await audit({ actorId: adminId, action: "teacher.create", entityType: "User", entityId: user.id, details: { username: user.username, fromCenterAccount: true } });
+  if (user.email) {
+    const settings = await loadSettings();
+    const { html, text } = renderEmail({
+      siteName: settings.siteName,
+      greetingName: user.firstName,
+      title: "Öğretmen paneliniz açıldı",
+      lines: [
+        `${settings.siteName} öğretmen paneline erişiminiz hazır.`,
+        `Kurum hesabınızdaki kullanıcı adı (${user.username ?? user.email}) ve şifrenizle giriş yapın: “Özel ders girişi” öğretmen panelini, “Kurum girişi” kurum panelini açar.`,
+        "Giriş yaptıktan sonra profilinizi, derslerinizi, fiyatlarınızı ve müsaitlik takviminizi doldurmanız gerekiyor. Kurumunuz özel ders tarafındaki bilgilerinizi görmez.",
+      ],
+      action: { label: "Giriş yap", url: "/giris" },
+    });
+    await db.emailMessage.create({ data: { userId: user.id, to: user.email, subject: `Öğretmen paneliniz açıldı · ${settings.siteName}`, html, text } });
+  }
+  return { user, username: user.username, temporaryPassword: null, upgraded: true };
+}
+
 /**
  * Admin'in "hızlı öğretmen ekle" işlemi: kullanıcı adı ve geçici şifre otomatik üretilir,
  * ilk girişte şifre değiştirme zorunludur. E-posta varsa şifre belirleme bağlantısı gönderilir.
+ * E-posta bir kurum personeli hesabına aitse yeni hesap açılmaz, o hesaba öğretmen paneli eklenir.
  */
-export async function createTeacherAccount(input: NewTeacherInput, adminId: string) {
+export async function createTeacherAccount(input: NewTeacherInput, adminId: string): Promise<TeacherAccountResult> {
   const email = input.email?.trim().toLowerCase() || null;
-  if (email && (await db.user.findUnique({ where: { email } }))) {
-    throw new AccountError("Bu e-posta adresiyle kayıtlı bir kullanıcı var.");
-  }
+  const existing = email ? await db.user.findUnique({ where: { email } }) : null;
+  if (existing?.role === "CENTER") return upgradeCenterUserToTeacher(existing, input, adminId);
+  if (existing) throw new AccountError("Bu e-posta adresiyle kayıtlı bir kullanıcı var.");
   let username = input.username?.trim().toLowerCase() || null;
   if (username) {
     if (!/^[a-z0-9._-]{3,40}$/.test(username)) throw new AccountError("Kullanıcı adı 3-40 karakter; harf, rakam, nokta, tire içerebilir.");
@@ -89,7 +121,7 @@ export async function createTeacherAccount(input: NewTeacherInput, adminId: stri
     await db.emailMessage.create({ data: { userId: user.id, to: email, subject: `Öğretmen hesabınız hazır · ${settings.siteName}`, html, text } });
   }
 
-  return { user, username, temporaryPassword };
+  return { user, username, temporaryPassword, upgraded: false };
 }
 
 export type StudentRegistration = {

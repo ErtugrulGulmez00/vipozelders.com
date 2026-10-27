@@ -71,7 +71,7 @@ test("kaynak atanır, program yazılır, veli işaretler", async ({ page }) => {
   // Veli: çalışma programı sekmesi
   await login(page, "veli@demo.vipozelders.local", "Veli12345");
   await page.goto("/hesabim/kurum");
-  await page.getByRole("link", { name: /Ali Demirtaş/ }).click();
+  await page.getByRole("link", { name: /Ali Demirtaş/ }).first().click();
   await page.getByRole("link", { name: "Çalışma programı" }).click();
   const item = page.locator("li", { hasText: `e2e ${stamp}` });
   await expect(item.getByText("Üslü İfadeler", { exact: false })).toBeVisible();

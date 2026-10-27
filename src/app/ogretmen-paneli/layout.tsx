@@ -1,17 +1,19 @@
-import { Bell, Building2, CalendarClock, CalendarDays, LayoutDashboard, MessageCircle, MessageCircleQuestion, MessageSquareQuote, Repeat, Settings, Users, UserRound, Wallet } from "lucide-react";
+import { Bell, CalendarClock, CalendarDays, LayoutDashboard, MessageCircle, MessageCircleQuestion, MessageSquareQuote, Repeat, Settings, Users, UserRound, Wallet } from "lucide-react";
 import { PanelShell } from "@/components/panel/panel-shell";
+import { notificationScope, notificationScopeWhere, sideSwitches } from "@/lib/sides";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { unreadThreadCount } from "@/server/messages";
+import { sideFacts } from "@/server/sides";
 
 export const instant = false;
 
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
   const user = await requireRole("TEACHER");
-  const [pending, unread, centerMemberships, poolActive, unreadMessages] = await Promise.all([
+  const facts = await sideFacts(user.id, user.role);
+  const [pending, unread, poolActive, unreadMessages] = await Promise.all([
     db.booking.count({ where: { teacherId: user.id, status: "PENDING_APPROVAL" } }),
-    db.notification.count({ where: { userId: user.id, readAt: null } }),
-    db.centerMember.count({ where: { userId: user.id, isActive: true } }),
+    db.notification.count({ where: { userId: user.id, readAt: null, ...notificationScopeWhere(notificationScope(facts, "ozel")) } }),
     db.poolQuestion.count({ where: { claimedById: user.id, OR: [{ status: "CLAIMED" }, { followUpText: { not: null }, followUpAnswer: null, status: { in: ["ANSWERED", "CLOSED", "DISPUTED"] } }] } }),
     unreadThreadCount(user.id, "teacher"),
   ]);
@@ -19,6 +21,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
     <PanelShell
       user={user}
       title="Öğretmen paneli"
+      switchLinks={sideSwitches(facts, "teacher")}
       nav={[
         { href: "/ogretmen-paneli", label: "Özet", icon: <LayoutDashboard />, exact: true },
         // Bekleyen talep varsa başlık doğrudan taleplere götürür
@@ -33,8 +36,6 @@ export default async function TeacherLayout({ children }: { children: React.Reac
         { href: "/ogretmen-paneli/yorumlar", label: "Yorumlar", icon: <MessageSquareQuote /> },
         { href: "/ogretmen-paneli/bildirimler", label: "Bildirimler", icon: <Bell />, badge: unread || undefined },
         { href: "/ogretmen-paneli/ayarlar", label: "Hesap ayarları", icon: <Settings /> },
-        // Bir etüt merkezinde/dershanede de görevli öğretmenler için
-        ...(centerMemberships ? [{ href: "/kurum", label: "Kurum paneli", icon: <Building2 /> }] : []),
       ]}
     >
       {children}

@@ -6,12 +6,13 @@ import { loginAction } from "@/actions/auth";
 import { ActionForm, SubmitButton } from "@/components/forms/action-form";
 import { Field, Input } from "@/components/ui/form";
 
-/** defaultNext: girişten sonra gidilecek sayfa (ör. kurum girişinde /kurum); adresteki ?next= önceliklidir. */
-export function LoginForm({ defaultNext = "" }: { defaultNext?: string }) {
-  const next = useSearchParams().get("next") ?? defaultNext;
+/** gate: girilen kapı (kurum girişi kurum tarafını açar); adresteki ?next= önceliklidir. */
+export function LoginForm({ gate }: { gate?: "kurum" }) {
+  const next = useSearchParams().get("next") ?? "";
   return (
     <ActionForm action={loginAction} className="space-y-4">
       <input type="hidden" name="next" value={next} />
+      {gate ? <input type="hidden" name="gate" value={gate} /> : null}
       <Field label="E-posta veya kullanıcı adı" htmlFor="identifier">
         <Input id="identifier" name="identifier" autoComplete="username" required autoFocus />
       </Field>

@@ -1,7 +1,7 @@
 import { Mail, MapPin, Monitor, Phone, UserPlus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Badge, Card, CardBody, CardHeader, EmptyState, PageHeader, Table, Td, Th } from "@/components/ui/primitives";
+import { Alert, Badge, Card, CardBody, CardHeader, EmptyState, PageHeader, Table, Td, Th } from "@/components/ui/primitives";
 import { formatCompact } from "@/lib/dates";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
@@ -15,6 +15,10 @@ export default async function ApplicationsPage() {
     db.teacherApplication.findMany({ where: { status: "NEW" }, orderBy: { createdAt: "asc" }, include: { city: true } }),
     db.teacherApplication.findMany({ where: { status: { not: "NEW" } }, orderBy: { reviewedAt: "desc" }, take: 50 }),
   ]);
+  // Kurum personeli aynı e-postayla başvurduysa onayda yeni hesap açılmaz, o hesaba öğretmen paneli eklenir
+  const centerAccounts = new Set(
+    (await db.user.findMany({ where: { role: "CENTER", email: { in: open.map((a) => a.email) } }, select: { email: true } })).map((u) => u.email),
+  );
 
   return (
     <>
@@ -63,6 +67,11 @@ export default async function ApplicationsPage() {
                     </>
                   ) : null}
                 </dl>
+                {centerAccounts.has(a.email) ? (
+                  <Alert tone="info" title="Bu e-posta bir kurum personeli hesabına ait">
+                    Onaylarsanız yeni hesap açılmaz; kişinin kurum hesabına öğretmen paneli eklenir. Mevcut kullanıcı adı ve şifresiyle girer, kurum özel ders bilgilerini görmez.
+                  </Alert>
+                ) : null}
                 <ApplicationDecision applicationId={a.id} />
               </CardBody>
             </Card>

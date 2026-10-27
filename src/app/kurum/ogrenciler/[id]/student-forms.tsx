@@ -330,14 +330,30 @@ export function CancelPlanForm({ planId }: { planId: string }) {
   );
 }
 
-export function StudentAccountCard({ studentId, account }: { studentId: string; account: { username: string | null; lastLoginAt: string | null } | null }) {
+type StudentAccountInfo = { username: string | null; email: string | null; lastLoginAt: string | null } | { pendingEmail: string } | null;
+
+export function StudentAccountCard({ studentId, account, defaultEmail }: { studentId: string; account: StudentAccountInfo; defaultEmail: string | null }) {
   return (
     <div className="space-y-3">
-      {account ? (
+      {account && "pendingEmail" in account ? (
+        <>
+          <p className="text-sm text-slate-700">
+            Davet gönderildi: <span className="font-semibold">{account.pendingEmail}</span>
+            <span className="block text-xs text-slate-500">Bu e-posta sitede kayıtlı; öğrenci kendi hesabıyla davet bağlantısını onaylayınca bağlanır.</span>
+          </p>
+          <ActionForm action={removeStudentAccountAction}>
+            <input type="hidden" name="studentId" value={studentId} />
+            <SubmitButton size="sm" variant="ghost" className="text-rose-600" pendingText="…" confirmMessage="Davet iptal edilsin mi?">
+              Daveti iptal et
+            </SubmitButton>
+          </ActionForm>
+        </>
+      ) : account ? (
         <>
           <p className="text-sm text-slate-700">
             Kullanıcı adı: <span className="font-mono font-semibold">{account.username}</span>
-            <span className="block text-xs text-slate-500">{account.lastLoginAt ? `Son giriş ${account.lastLoginAt}` : "Henüz giriş yapmadı"} · Giriş adresi: sitenin “Giriş yap” sayfası</span>
+            {account.email ? <span className="block text-slate-600">E-posta: {account.email}</span> : null}
+            <span className="block text-xs text-slate-500">{account.lastLoginAt ? `Son giriş ${account.lastLoginAt}` : "Henüz giriş yapmadı"} · Giriş adresi: “Kurum girişi” sayfası</span>
           </p>
           <ActionForm action={resetStudentAccountAction} className="space-y-2">
             <CredentialsBox who="Öğrenci" />
@@ -358,8 +374,12 @@ export function StudentAccountCard({ studentId, account }: { studentId: string; 
       ) : (
         <ActionForm action={createStudentAccountAction} className="space-y-2">
           <CredentialsBox who="Öğrenci" />
-          <p className="text-sm text-slate-600">Öğrenci kendi hesabıyla devamsızlığını, ödevlerini, deneme sonuçlarını görür ve öğretmene fotoğrafla soru gönderir.</p>
+          <p className="text-sm text-slate-600">Öğrenci kendi hesabıyla devamsızlığını, ödevlerini, deneme sonuçlarını görür ve öğretmene fotoğrafla soru gönderir. Bildirimler bu e-postaya gider.</p>
           <input type="hidden" name="studentId" value={studentId} />
+          <Field label="Öğrencinin e-postası" htmlFor="student-account-email">
+            <Input id="student-account-email" name="email" type="email" defaultValue={defaultEmail ?? ""} required />
+          </Field>
+          <FieldError name="email" />
           <SubmitButton size="sm" variant="secondary">
             Öğrenci giriş hesabı aç
           </SubmitButton>
