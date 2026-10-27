@@ -1,13 +1,12 @@
-import { Check } from "lucide-react";
 import type { Metadata } from "next";
 import { RateBar } from "@/components/center/center-ui";
+import { EditionCards, TierCards } from "@/components/center/pricing";
 import { Badge, Card, CardBody, CardHeader, DescriptionList, PageHeader, Table, Td, Th } from "@/components/ui/primitives";
-import { cn } from "@/lib/cn";
-import { CENTER_ACCESS_LABEL, CENTER_PLAN_LABEL } from "@/lib/center/labels";
+import { CENTER_ACCESS_LABEL } from "@/lib/center/labels";
 import { formatDate } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { requireCenter } from "@/server/center/context";
-import { centerPlans } from "@/server/center/plans";
+import { centerPlans, subscriptionLabel } from "@/server/center/plans";
 import { db } from "@/server/db";
 import { getSiteSettings } from "@/server/site";
 
@@ -33,7 +32,7 @@ export default async function SubscriptionPage() {
           <CardBody className="space-y-4">
             <DescriptionList
               items={[
-                { label: "Plan", value: CENTER_PLAN_LABEL[ctx.center.plan] },
+                { label: "Paket", value: subscriptionLabel(settings, ctx.center.edition, ctx.center.plan) },
                 {
                   label: ctx.center.status === "TRIAL" ? "Deneme bitişi" : "Geçerlilik",
                   value: ctx.access.endsAt ? `${formatDate(ctx.access.endsAt)}${ctx.access.daysLeft !== null && ctx.access.daysLeft > 0 ? ` (${ctx.access.daysLeft} gün)` : ""}` : "Süresiz",
@@ -64,27 +63,11 @@ export default async function SubscriptionPage() {
           </CardBody>
         </Card>
       </div>
-      <h2 className="mb-3 mt-8 text-lg font-bold text-slate-900">Planlar</h2>
-      <div className="grid gap-4 md:grid-cols-3">
-        {plans.map((plan) => (
-          <div key={plan.plan} className={cn("rounded-2xl border bg-white p-5", plan.plan === ctx.center.plan ? "border-brand-500 ring-2 ring-brand-200" : "border-slate-200")}>
-            <div className="flex items-center justify-between">
-              <p className="font-bold text-slate-900">{plan.name}</p>
-              {plan.plan === ctx.center.plan ? <Badge tone="brand">Mevcut plan</Badge> : null}
-            </div>
-            <p className="mt-2 text-2xl font-black text-slate-900">{plan.priceTl !== null ? `${formatMoney(plan.priceTl * 100)}` : "Teklif"}</p>
-            <p className="text-xs text-slate-500">{plan.priceTl !== null ? "aylık, KDV dahil" : "kurumunuza özel"}</p>
-            {plan.yearlyPriceTl ? <p className="mt-1 text-sm font-semibold text-emerald-700">Yıllık {formatMoney(plan.yearlyPriceTl * 100)}</p> : null}
-            <ul className="mt-4 space-y-1.5 text-sm text-slate-700">
-              {plan.features.map((f) => (
-                <li key={f} className="flex gap-2">
-                  <Check className="mt-0.5 size-4 shrink-0 text-emerald-600" aria-hidden /> {f}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
+      <h2 className="mb-3 mt-8 text-lg font-bold text-slate-900">Paketler</h2>
+      <EditionCards current={ctx.center.edition} />
+      <h2 className="mb-1 mt-8 text-lg font-bold text-slate-900">Öğrenci sayısına göre fiyat</h2>
+      <p className="mb-4 text-sm text-slate-500">Paket ya da kademe değiştirmek için bizimle iletişime geçin; ödemeniz kaydedilince yeni paketiniz hemen açılır.</p>
+      <TierCards plans={plans} current={ctx.center.plan} />
       {payments.length ? (
         <Card className="mt-8">
           <CardHeader title="Abonelik ödemeleriniz" />

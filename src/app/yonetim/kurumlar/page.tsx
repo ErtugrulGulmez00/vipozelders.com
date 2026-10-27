@@ -42,6 +42,7 @@ export default async function AdminCentersPage({ searchParams }: PageProps<"/yon
         applicationId: application.id,
         name: application.centerName,
         kind: application.kind,
+        edition: application.edition ?? undefined,
         cityId: application.cityId,
         phone: application.phone,
         email: application.email,

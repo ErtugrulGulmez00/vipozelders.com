@@ -6,7 +6,8 @@ import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-
 import { CopyButton } from "@/components/ui/copy-button";
 import { FileInput } from "@/components/ui/file-input";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
-import { OPTIONAL_MODULES } from "@/lib/center/modules";
+import type { CenterEditionName } from "@/lib/center/editions";
+import { editionModules } from "@/lib/center/modules";
 import { CENTER_KIND_LABEL } from "@/lib/center/labels";
 
 export type CenterSettingsValues = {
@@ -27,6 +28,7 @@ export type CenterSettingsValues = {
   reminderDaysBefore: number;
   showTeacherSuggestions: boolean;
   disabledModules: string[];
+  edition: CenterEditionName;
   loginUrl: string;
   logoUrl: string | null;
   slug: string;
@@ -145,7 +147,7 @@ export function CenterSettingsForm({ values, cities, initialDistricts }: { value
         </div>
       </Section>
       <Section title="Modüller" description="Kullanmadığınız modülleri kapatın; menüde görünmezler. Kayıtlar silinmez, istediğiniz zaman tekrar açabilirsiniz.">
-        {OPTIONAL_MODULES.map((m) => (
+        {editionModules(values.edition).map((m) => (
           <div key={m.key}>
             <Checkbox name={`module:${m.key}`} defaultChecked={!values.disabledModules.includes(m.key)} label={m.label} />
             <p className="mt-0.5 pl-6.5 text-xs text-slate-500">{m.hint}</p>

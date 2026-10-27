@@ -4,7 +4,7 @@ import Link from "next/link";
 import { applyCenterAction } from "@/actions/center-public";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
-import { CENTER_KIND_LABEL } from "@/lib/center/labels";
+import { CENTER_EDITION_LABEL, CENTER_KIND_LABEL } from "@/lib/center/labels";
 
 export function CenterApplicationForm({ cities }: { cities: { id: number; name: string }[] }) {
   return (
@@ -24,13 +24,23 @@ export function CenterApplicationForm({ cities }: { cities: { id: number; name: 
             ))}
           </Select>
         </Field>
+        <Field label="İlgilendiğiniz paket" htmlFor="c-edition">
+          <Select id="c-edition" name="edition" defaultValue="">
+            <option value="">Henüz bilmiyorum</option>
+            {Object.entries(CENTER_EDITION_LABEL).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </Select>
+        </Field>
         <Field label="Öğrenci sayısı" htmlFor="c-count">
           <Select id="c-count" name="studentCount" defaultValue="">
             <option value="">Seçin</option>
-            <option>50’den az</option>
-            <option>50-100</option>
-            <option>100-300</option>
-            <option>300’den fazla</option>
+            <option>20’ye kadar</option>
+            <option>21-100</option>
+            <option>101-200</option>
+            <option>200’den fazla</option>
           </Select>
         </Field>
       </div>

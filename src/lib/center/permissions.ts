@@ -23,6 +23,7 @@ export const CENTER_PERMISSIONS = [
   "staff.manage",
   "settings.manage",
   "subscription.view",
+  "reports.view",
 ] as const;
 
 export type CenterPermission = (typeof CENTER_PERMISSIONS)[number];

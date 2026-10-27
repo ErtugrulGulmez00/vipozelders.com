@@ -59,7 +59,8 @@ test("kurum başvurusu → kurum paneli → yoklama, deneme, makbuz → veli por
   await page.getByLabel("Yetkili adı soyadı").fill("Kemal Kurucu");
   await page.getByLabel("Cep telefonu").fill("0532 777 88 99");
   await page.getByLabel("E-posta").fill(ownerEmail);
-  await page.getByLabel("Öğrenci sayısı").selectOption("50-100");
+  await page.getByLabel("İlgilendiğiniz paket").selectOption("DERSHANE");
+  await page.getByLabel("Öğrenci sayısı").selectOption("21-100");
   await page.getByLabel(/KVKK Aydınlatma Metni/).check();
   await page.getByRole("button", { name: "Başvuruyu gönder" }).click();
   await expect(page.getByText("Başvurunuz alındı!", { exact: false })).toBeVisible();

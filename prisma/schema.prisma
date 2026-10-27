@@ -904,10 +904,18 @@ enum CenterStatus {
   SUSPENDED
 }
 
+// Öğrenci kapasitesi kademesi: STARTER 20, PRO 100, BUSINESS 200, ENTERPRISE 200+ (sınırlar Site ayarlarında)
 enum CenterPlan {
   STARTER
   PRO
+  BUSINESS
   ENTERPRISE
+}
+
+// Paket: ETUT (birebir takip, etüt, ödev, çalışma salonu), DERSHANE (ETUT + sınıf programı, yoklama, deneme, derslik, raporlar)
+enum CenterEdition {
+  ETUT
+  DERSHANE
 }
 
 enum CenterRole {
@@ -1011,6 +1019,7 @@ model Center {
   kind                   CenterKind   @default(ETUT)
   status                 CenterStatus @default(TRIAL)
   plan                   CenterPlan   @default(STARTER)
+  edition                CenterEdition @default(DERSHANE)
   studentLimit           Int          @default(100)
   trialEndsAt            DateTime?
   paidUntil              DateTime?
@@ -1043,6 +1052,7 @@ model Center {
 
   members              CenterMember[]
   subscriptionPayments CenterSubscriptionPayment[]
+  rooms                CenterRoom[]
   students             CenterStudent[]
   groups               CenterGroup[]
   etuds                CenterEtud[]
@@ -1217,6 +1227,20 @@ model CenterGroupStudent {
 
   @@id([groupId, studentId])
   @@index([studentId])
+}
+
+// Derslik (Dershane paketi): program ve etütlerdeki "derslik" alanı adla eşleşir; doluluk ve çakışma bu adla hesaplanır
+model CenterRoom {
+  id        String   @id @default(cuid())
+  centerId  String
+  center    Center   @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  name      String
+  capacity  Int?
+  note      String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@unique([centerId, name])
 }
 
 // Haftalık ders programı
@@ -1553,6 +1577,8 @@ model CenterApplication {
   id           String            @id @default(cuid())
   centerName   String
   kind         CenterKind        @default(ETUT)
+  // Başvuruda ilgilenilen paket
+  edition      CenterEdition?
   contactName  String
   phone        String
   email        String

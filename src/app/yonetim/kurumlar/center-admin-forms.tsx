@@ -6,12 +6,13 @@ import { CredentialsBox } from "@/components/center/center-client";
 import { ActionForm, FieldError, SubmitButton, useActionResult } from "@/components/forms/action-form";
 import { buttonClasses } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/form";
-import { CENTER_KIND_LABEL, CENTER_PLAN_LABEL, CENTER_STATUS } from "@/lib/center/labels";
+import { CENTER_EDITION_LABEL, CENTER_KIND_LABEL, CENTER_PLAN_LABEL, CENTER_STATUS } from "@/lib/center/labels";
 
 export type CenterPrefill = {
   applicationId?: string;
   name?: string;
   kind?: string;
+  edition?: string;
   cityId?: number | null;
   phone?: string;
   email?: string;
@@ -63,7 +64,16 @@ export function CreateCenterForm({ cities, trialDays, prefill = {} }: { cities: 
             ))}
           </Select>
         </Field>
-        <Field label="Plan">
+        <Field label="Paket">
+          <Select name="edition" defaultValue={prefill.edition ?? (prefill.kind === "ETUT" ? "ETUT" : "DERSHANE")}>
+            {Object.entries(CENTER_EDITION_LABEL).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Öğrenci kademesi">
           <Select name="plan" defaultValue="STARTER">
             {Object.entries(CENTER_PLAN_LABEL).map(([value, label]) => (
               <option key={value} value={value}>
@@ -109,7 +119,7 @@ export function CreateCenterForm({ cities, trialDays, prefill = {} }: { cities: 
 
 const toInputDate = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
 
-export function CenterAdminForm({ center }: { center: { id: string; name: string; kind: string; plan: string; status: string; studentLimit: number; trialEndsAt: string | null; paidUntil: string | null } }) {
+export function CenterAdminForm({ center }: { center: { id: string; name: string; kind: string; edition: string; plan: string; status: string; studentLimit: number; trialEndsAt: string | null; paidUntil: string | null } }) {
   return (
     <ActionForm action={updateCenterAdminAction} className="space-y-3">
       <input type="hidden" name="centerId" value={center.id} />
@@ -135,7 +145,16 @@ export function CenterAdminForm({ center }: { center: { id: string; name: string
             ))}
           </Select>
         </Field>
-        <Field label="Plan">
+        <Field label="Paket">
+          <Select name="edition" defaultValue={center.edition}>
+            {Object.entries(CENTER_EDITION_LABEL).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Öğrenci kademesi">
           <Select name="plan" defaultValue={center.plan}>
             {Object.entries(CENTER_PLAN_LABEL).map(([value, label]) => (
               <option key={value} value={value}>

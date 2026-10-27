@@ -27,6 +27,7 @@ export async function uniqueCenterSlug(name: string, ignoreId?: string): Promise
 export type NewCenterInput = {
   name: string;
   kind: "ETUT" | "DERSHANE" | "KURS" | "OTHER";
+  edition: "ETUT" | "DERSHANE";
   cityId: number | null;
   plan: CenterPlanName;
   trialDays: number;
@@ -44,6 +45,7 @@ export async function adminCreateCenter(adminId: string, input: NewCenterInput) 
       name: input.name,
       slug,
       kind: input.kind,
+      edition: input.edition,
       cityId: input.cityId,
       plan: input.plan,
       studentLimit: planStudentLimit(input.plan, settings, 0),
@@ -70,6 +72,7 @@ export async function adminCreateCenter(adminId: string, input: NewCenterInput) 
 export type CenterAdminUpdate = {
   name: string;
   kind: "ETUT" | "DERSHANE" | "KURS" | "OTHER";
+  edition: "ETUT" | "DERSHANE";
   plan: CenterPlanName;
   status: "TRIAL" | "ACTIVE" | "SUSPENDED";
   studentLimit: number;
@@ -83,7 +86,7 @@ export async function adminUpdateCenter(adminId: string, centerId: string, input
   // Süre değiştiyse bitiş hatırlatmaları yeniden başlar.
   const datesChanged = input.trialEndsAt?.getTime() !== center.trialEndsAt?.getTime() || input.paidUntil?.getTime() !== center.paidUntil?.getTime() || input.status !== center.status;
   await db.center.update({ where: { id: centerId }, data: { ...input, ...(datesChanged ? { expiryNoticeDays: null } : {}) } });
-  await audit({ actorId: adminId, action: "center.update", entityType: "Center", entityId: centerId, details: { plan: input.plan, status: input.status, studentLimit: input.studentLimit } });
+  await audit({ actorId: adminId, action: "center.update", entityType: "Center", entityId: centerId, details: { plan: input.plan, edition: input.edition, status: input.status, studentLimit: input.studentLimit } });
 }
 
 /** Havale/EFT ile gelen abonelik ödemesini kaydeder; süre uzar, kurum aktif olur. */
@@ -114,6 +117,7 @@ export async function adminRecordSubscriptionPayment(adminId: string, centerId: 
 export const centerApplicationSchema = z.object({
   centerName: z.string().trim().min(3, "Kurum adını yazın.").max(120),
   kind: z.enum(["ETUT", "DERSHANE", "KURS", "OTHER"]).default("ETUT"),
+  edition: z.enum(["ETUT", "DERSHANE"]).optional(),
   contactName: z.string().trim().min(3, "Adınızı ve soyadınızı yazın.").max(80),
   phone: z.string().trim().min(10, "Telefon numaranızı yazın.").max(20),
   email: z.email("Geçerli bir e-posta yazın.").max(120),
@@ -133,7 +137,7 @@ export async function submitCenterApplication(input: CenterApplicationInput, ipA
   if (ipAddress) await recordLoginAttempt(`center-apply:${ipAddress}`, null, false);
   const email = input.email.toLowerCase();
   const application = await db.centerApplication.create({
-    data: { centerName: input.centerName, kind: input.kind, contactName: input.contactName, phone, email, cityId: input.cityId ?? null, studentCount: input.studentCount || null, message: input.message || null },
+    data: { centerName: input.centerName, kind: input.kind, edition: input.edition ?? null, contactName: input.contactName, phone, email, cityId: input.cityId ?? null, studentCount: input.studentCount || null, message: input.message || null },
   });
   await notifyRole("ADMIN", { type: "center.application", title: "Yeni kurum başvurusu", body: `${input.centerName} · ${input.contactName} · ${phone}`, link: "/yonetim/kurum-basvurulari", email: false });
   const settings = await loadSettings();

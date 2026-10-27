@@ -1,4 +1,7 @@
+import { editionAllows, type CenterEditionName } from "./editions";
+
 // Kurumun açıp kapatabildiği modüller. Kapalı modül menüde görünmez, sayfaları açılmaz; kayıtlar silinmez.
+// Paket (Etüt Merkezi / Dershane) ayrıca bazı bölümleri kapatır (editions.ts).
 // Öğrenciler, sınıflar, program, yoklama, duyurular, personel, ayarlar ve abonelik her zaman açıktır.
 
 export const OPTIONAL_MODULES = [
@@ -22,8 +25,13 @@ export function isModuleKey(value: string): value is CenterModuleKey {
   return KEYS.has(value);
 }
 
-export function moduleEnabled(center: { disabledModules: string[] }, key: CenterModuleKey): boolean {
-  return !center.disabledModules.includes(key);
+export function moduleEnabled(center: { disabledModules: string[]; edition?: CenterEditionName }, key: CenterModuleKey): boolean {
+  return !center.disabledModules.includes(key) && editionAllows(center.edition ?? "DERSHANE", key);
+}
+
+/** Kurumun açıp kapatabildiği modüller arasında bu paketin içerdikleri (kurum ayarlarında listelenir). */
+export function editionModules(edition: CenterEditionName) {
+  return OPTIONAL_MODULES.filter((m) => editionAllows(edition, m.key));
 }
 
 /** /kurum/<modül>/... adresinin modülü (isteğe bağlı modül değilse null). */

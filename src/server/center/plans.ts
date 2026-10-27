@@ -1,75 +1,43 @@
+import { EDITIONS, type CenterEditionName } from "@/lib/center/editions";
 import type { SiteSettings } from "../settings";
 
-// Kurum paneli abonelik planları. Fiyat ve öğrenci sınırları yönetimdeki site ayarlarından gelir.
+// Kurum paneli abonelikleri iki eksende: paket (Etüt Merkezi / Dershane; açık modülleri belirler) ve öğrenci
+// kapasitesi kademesi (fiyatı belirler; iki pakette aynı). Fiyat ve sınırlar yönetimdeki site ayarlarından gelir.
 
-export type CenterPlanName = "STARTER" | "PRO" | "ENTERPRISE";
+export type CenterPlanName = "STARTER" | "PRO" | "BUSINESS" | "ENTERPRISE";
+export const CENTER_PLANS: CenterPlanName[] = ["STARTER", "PRO", "BUSINESS", "ENTERPRISE"];
 
 export type CenterPlanInfo = {
   plan: CenterPlanName;
   name: string;
-  /** Aylık, KDV dahil TL; null = teklif usulü */
-  priceTl: number | null;
-  /** İndirim öncesi aylık fiyat (üstü çizili); null = gösterilmez */
-  listPriceTl: number | null;
+  /** Aylık indirimli fiyat, KDV dahil TL */
+  priceTl: number;
+  /** Yıllık fiyat, KDV dahil TL; 0 = gösterilmez */
   yearlyPriceTl: number | null;
-  yearlyListPriceTl: number | null;
-  /** null = sınırsız / anlaşmaya göre */
+  /** Aktif öğrenci sınırı; Kurumsal kademede null (200+, kuruma göre) */
   students: number | null;
   highlight?: boolean;
-  features: string[];
 };
-
-/** İki planda da tüm özellikler aynıdır; yalnızca aktif öğrenci sınırı değişir. */
-const ALL_FEATURES = [
-  "Öğrenci ve veli kayıtları, Excel'den aktarım",
-  "Yoklama, devamsızlık bildirimi, sınıf defteri",
-  "Deneme sonuçları, optik okuma, konu bazında eksik analizi",
-  "Ödev, etüt, ders programı, çalışma salonu",
-  "Koçluk, çalışma programı, kaynak takibi",
-  "Ödeme planı, tahsilat, makbuz, gider takibi",
-  "Veli ve öğrenci portalı, fotoğrafla soru",
-  "Sınırsız personel hesabı",
-];
 
 export function centerPlans(settings: SiteSettings): CenterPlanInfo[] {
   return [
-    {
-      plan: "STARTER",
-      name: "Başlangıç",
-      priceTl: settings.centerStarterPriceTl,
-      listPriceTl: settings.centerStarterListPriceTl || null,
-      yearlyPriceTl: settings.centerStarterYearlyPriceTl || null,
-      yearlyListPriceTl: settings.centerStarterYearlyListPriceTl || null,
-      students: settings.centerStarterStudents,
-      features: [`${settings.centerStarterStudents} aktif öğrenciye kadar`, ...ALL_FEATURES],
-    },
-    {
-      plan: "PRO",
-      name: "Profesyonel",
-      priceTl: settings.centerProPriceTl,
-      listPriceTl: settings.centerProListPriceTl || null,
-      yearlyPriceTl: settings.centerProYearlyPriceTl || null,
-      yearlyListPriceTl: settings.centerProYearlyListPriceTl || null,
-      students: settings.centerProStudents,
-      highlight: true,
-      features: [`${settings.centerProStudents} aktif öğrenciye kadar`, ...ALL_FEATURES],
-    },
-    {
-      plan: "ENTERPRISE",
-      name: "Kurumsal",
-      priceTl: null,
-      listPriceTl: null,
-      yearlyPriceTl: null,
-      yearlyListPriceTl: null,
-      students: null,
-      features: ["Daha fazla öğrenci", "Birden çok şube", "Toplu veri aktarımı ve eğitim", "Öncelikli destek"],
-    },
+    { plan: "STARTER", name: `${settings.centerTier20Students} öğrenciye kadar`, priceTl: settings.centerTier20PriceTl, yearlyPriceTl: settings.centerTier20YearlyTl || null, students: settings.centerTier20Students },
+    { plan: "PRO", name: `${settings.centerTier100Students} öğrenciye kadar`, priceTl: settings.centerTier100PriceTl, yearlyPriceTl: settings.centerTier100YearlyTl || null, students: settings.centerTier100Students, highlight: true },
+    { plan: "BUSINESS", name: `${settings.centerTier200Students} öğrenciye kadar`, priceTl: settings.centerTier200PriceTl, yearlyPriceTl: settings.centerTier200YearlyTl || null, students: settings.centerTier200Students },
+    { plan: "ENTERPRISE", name: `Kurumsal · ${settings.centerTier200Students}+ öğrenci`, priceTl: settings.centerTierPlusPriceTl, yearlyPriceTl: settings.centerTierPlusYearlyTl || null, students: null },
   ];
 }
 
-/** Planın öğrenci sınırı (Kurumsal planda yönetici elle belirler). */
+/** Kademenin öğrenci sınırı (Kurumsal kademede mevcut sınır korunur, en az başlangıç sınırı). */
 export function planStudentLimit(plan: CenterPlanName, settings: SiteSettings, current: number): number {
-  if (plan === "STARTER") return settings.centerStarterStudents;
-  if (plan === "PRO") return settings.centerProStudents;
-  return Math.max(current, settings.centerProStudents);
+  if (plan === "STARTER") return settings.centerTier20Students;
+  if (plan === "PRO") return settings.centerTier100Students;
+  if (plan === "BUSINESS") return settings.centerTier200Students;
+  return Math.max(current, settings.centerTierPlusStudents);
+}
+
+/** Paket ve kademe birlikte: "Dershane · 100 öğrenciye kadar" */
+export function subscriptionLabel(settings: SiteSettings, edition: CenterEditionName, plan: CenterPlanName): string {
+  const tier = centerPlans(settings).find((p) => p.plan === plan);
+  return `${EDITIONS[edition].name} · ${tier?.name ?? plan}`;
 }

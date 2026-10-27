@@ -5,6 +5,7 @@ import { percent } from "@/components/center/center-ui";
 import { LinkButton } from "@/components/ui/button";
 import { Badge, Card, CardBody, CardHeader, PageHeader, Table, Td, Th } from "@/components/ui/primitives";
 import { WEEKDAY_NAMES, addDaysToDateString, minutesToTime, toLocalDateString } from "@/lib/dates";
+import { editionAllows } from "@/lib/center/editions";
 import { attendanceReport } from "@/server/center/attendance";
 import { requireCenter } from "@/server/center/context";
 import { centerTeachers } from "@/server/center/groups";
@@ -15,6 +16,8 @@ export const metadata: Metadata = { title: "Sınıf" };
 
 export default async function GroupPage({ params }: PageProps<"/kurum/siniflar/[id]">) {
   const ctx = await requireCenter("students.view");
+  // Haftalık toplu program ve sınıf yoklaması Dershane paketinde
+  const classProgram = editionAllows(ctx.center.edition, "program");
   const { id } = await params;
   const centerId = ctx.center.id;
   const group = await db.centerGroup.findFirst({
@@ -42,7 +45,7 @@ export default async function GroupPage({ params }: PageProps<"/kurum/siniflar/[
         description={[group.gradeName, group.targetExam, group.room, group.teacher ? `Rehber: ${group.teacher.user.firstName} ${group.teacher.user.lastName}` : null].filter(Boolean).join(" · ")}
         actions={
           <>
-            {ctx.can("attendance.take") ? (
+            {ctx.can("attendance.take") && classProgram ? (
               <LinkButton href={`/kurum/yoklama?grup=${group.id}`} size="sm" variant="outline">
                 Yoklama
               </LinkButton>
@@ -90,33 +93,35 @@ export default async function GroupPage({ params }: PageProps<"/kurum/siniflar/[
             </CardBody>
           )}
         </Card>
-        <Card>
-          <CardHeader title="Haftalık program" />
-          {group.slots.length ? (
-            <ul className="divide-y divide-slate-100">
-              {group.slots.map((slot) => (
-                <li key={slot.id} className="flex items-center justify-between gap-3 px-5 py-3">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">
-                      {WEEKDAY_NAMES[slot.weekday - 1]} {minutesToTime(slot.startMinute)}–{minutesToTime(slot.endMinute)} · {slot.subject}
-                    </p>
-                    <p className="text-xs text-slate-500">{[slot.teacher ? `${slot.teacher.user.firstName} ${slot.teacher.user.lastName}` : null, slot.room].filter(Boolean).join(" · ") || "—"}</p>
-                  </div>
-                  {canManage ? <DeleteSlotButton slotId={slot.id} /> : null}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <CardBody>
-              <p className="text-sm text-slate-500">Henüz ders saati yok.</p>
-            </CardBody>
-          )}
-          {canManage ? (
-            <CardBody className="border-t border-slate-100">
-              <SlotForm groupId={group.id} teachers={teachers} defaultRoom={group.room} />
-            </CardBody>
-          ) : null}
-        </Card>
+        {classProgram ? (
+          <Card>
+            <CardHeader title="Haftalık program" />
+            {group.slots.length ? (
+              <ul className="divide-y divide-slate-100">
+                {group.slots.map((slot) => (
+                  <li key={slot.id} className="flex items-center justify-between gap-3 px-5 py-3">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">
+                        {WEEKDAY_NAMES[slot.weekday - 1]} {minutesToTime(slot.startMinute)}–{minutesToTime(slot.endMinute)} · {slot.subject}
+                      </p>
+                      <p className="text-xs text-slate-500">{[slot.teacher ? `${slot.teacher.user.firstName} ${slot.teacher.user.lastName}` : null, slot.room].filter(Boolean).join(" · ") || "—"}</p>
+                    </div>
+                    {canManage ? <DeleteSlotButton slotId={slot.id} /> : null}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <CardBody>
+                <p className="text-sm text-slate-500">Henüz ders saati yok.</p>
+              </CardBody>
+            )}
+            {canManage ? (
+              <CardBody className="border-t border-slate-100">
+                <SlotForm groupId={group.id} teachers={teachers} defaultRoom={group.room} />
+              </CardBody>
+            ) : null}
+          </Card>
+        ) : null}
         {canManage ? (
           <>
             <Card>

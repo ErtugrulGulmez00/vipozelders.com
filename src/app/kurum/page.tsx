@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CenterFlash, shortDate } from "@/components/center/center-ui";
 import { LinkButton } from "@/components/ui/button";
+import { editionAllows } from "@/lib/center/editions";
 import { moduleEnabled, type CenterModuleKey } from "@/lib/center/modules";
 import { Badge, Card, CardBody, CardHeader, EmptyState, PageHeader, StatCard } from "@/components/ui/primitives";
 import { CENTER_ACCESS_LABEL } from "@/lib/center/labels";
@@ -24,9 +25,11 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
   const today = toLocalDateString(new Date());
   const teacherOnly = ctx.member.role === "TEACHER";
   const on = (key: CenterModuleKey) => moduleEnabled(ctx.center, key);
+  // Sınıf programı ve yoklama Dershane paketinde
+  const classes = ctx.can("attendance.take") && editionAllows(ctx.center.edition, "yoklama");
   const [activeStudents, lessons, absentToday, etudsToday, finance, overdue, exams, newLeads, groupCount, weeklySlots] = await Promise.all([
     db.centerStudent.count({ where: { centerId, status: "ACTIVE" } }),
-    ctx.can("attendance.take") ? lessonsForDate(centerId, today, teacherOnly ? { teacherId: ctx.member.id } : {}) : Promise.resolve([]),
+    classes ? lessonsForDate(centerId, today, teacherOnly ? { teacherId: ctx.member.id } : {}) : Promise.resolve([]),
     db.centerAttendance.count({ where: { status: "ABSENT", session: { centerId, date: dateStringToDbDate(today) } } }),
     (ctx.can("etud.manage") && on("etutler"))
       ? db.centerEtud.findMany({
@@ -80,7 +83,7 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
                 <PlusCircle className="size-4" aria-hidden /> Öğrenci ekle
               </LinkButton>
             ) : null}
-            {ctx.can("attendance.take") ? (
+            {classes ? (
               <LinkButton href="/kurum/yoklama" size="sm" variant="outline">
                 <ClipboardCheck className="size-4" aria-hidden /> Yoklama al
               </LinkButton>
@@ -97,12 +100,16 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         <StatCard label="Aktif öğrenci" value={activeStudents} hint={ctx.can("subscription.view") ? `Plan sınırı ${ctx.center.studentLimit}` : undefined} icon={<Users className="size-5" />} />
-        <StatCard
-          label="Bugünkü dersler"
-          value={lessons.length}
-          hint={lessons.length ? (pendingAttendance ? `${pendingAttendance} dersin yoklaması bekliyor` : "Tüm yoklamalar alındı") : "Programda ders yok"}
-          icon={<ClipboardCheck className="size-5" />}
-        />
+        {classes ? (
+          <StatCard
+            label="Bugünkü dersler"
+            value={lessons.length}
+            hint={lessons.length ? (pendingAttendance ? `${pendingAttendance} dersin yoklaması bekliyor` : "Tüm yoklamalar alındı") : "Programda ders yok"}
+            icon={<ClipboardCheck className="size-5" />}
+          />
+        ) : (
+          <StatCard label="Bugünkü etütler" value={etudsToday.length} icon={<ClipboardCheck className="size-5" />} />
+        )}
         <StatCard label="Bugün gelmeyen" value={absentToday} hint={`${etudsToday.length} etüt planlı`} icon={<CalendarClock className="size-5" />} />
         {finance ? (
           <StatCard label="Bu ay tahsilat" value={formatMoney(finance.collectedThisMonth)} hint={finance.overdue ? `Geciken: ${formatMoney(finance.overdue)}` : "Geciken ödeme yok"} icon={<Wallet className="size-5" />} />
@@ -115,7 +122,7 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
         <Card>
-          <CardHeader title="Bugün gelmeyenler" action={ctx.can("attendance.take") ? <Link href="/kurum/yoklama/rapor" className="text-sm font-semibold text-brand-700 hover:underline">Rapor</Link> : undefined} />
+          <CardHeader title="Bugün gelmeyenler" action={classes ? <Link href="/kurum/yoklama/rapor" className="text-sm font-semibold text-brand-700 hover:underline">Rapor</Link> : undefined} />
           {absentList.length === 0 ? (
             <CardBody>
               <p className="text-sm text-slate-500">Bugün devamsızlık yok.</p>
@@ -197,7 +204,7 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        {ctx.can("attendance.take") ? (
+        {classes ? (
           <Card>
             <CardHeader title="Bugünkü dersler" description={formatDate(new Date())} action={ctx.can("attendance.take") ? <Link href="/kurum/yoklama" className="text-sm font-semibold text-brand-700 hover:underline">Yoklama ekranı</Link> : undefined} />
             {lessons.length === 0 ? (

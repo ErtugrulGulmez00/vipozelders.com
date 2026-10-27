@@ -14,6 +14,7 @@ const FLASH: Record<string, { tone: "success" | "warning"; text: string }> = {
   silindi: { tone: "success", text: "Öğrenci silindi." },
   yetki: { tone: "warning", text: "Bu bölüm için yetkiniz yok. Kurum yöneticinizden yetki isteyebilirsiniz." },
   modul: { tone: "warning", text: "Bu modül kurum ayarlarından kapatılmış. Kurum ayarları → Modüller bölümünden açabilirsiniz." },
+  paket: { tone: "warning", text: "Bu bölüm Dershane paketinde: sınıf programı, sınıf yoklaması, sınıf defteri, denemeler, derslikler ve raporlar. Paket yükseltmek için Abonelik sayfasına bakın." },
   "sinif-silindi": { tone: "success", text: "Sınıf silindi." },
   "sinif-arsiv": { tone: "success", text: "Sınıfın yoklama geçmişi olduğu için silinmedi, arşive alındı." },
   "etut-planlandi": { tone: "success", text: "Etüt planlandı." },

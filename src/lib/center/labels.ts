@@ -23,10 +23,17 @@ export const CENTER_ACCESS_LABEL: Record<string, { label: string; tone: Tone }> 
   suspended: { label: "Askıda", tone: "rose" },
 };
 
+/** Kapasite kademesi (sınırlar Site ayarlarında; varsayılanlar) */
 export const CENTER_PLAN_LABEL: Record<string, string> = {
-  STARTER: "Başlangıç",
-  PRO: "Profesyonel",
-  ENTERPRISE: "Kurumsal",
+  STARTER: "20 öğrenci",
+  PRO: "100 öğrenci",
+  BUSINESS: "200 öğrenci",
+  ENTERPRISE: "Kurumsal (200+)",
+};
+
+export const CENTER_EDITION_LABEL: Record<string, string> = {
+  ETUT: "Etüt Merkezi",
+  DERSHANE: "Dershane",
 };
 
 export const STUDENT_STATUS: Record<string, { label: string; tone: Tone }> = {

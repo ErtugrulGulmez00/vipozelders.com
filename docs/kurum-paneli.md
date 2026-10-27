@@ -46,13 +46,20 @@ Sitede öğretmen hesabı olan biri aynı e-postayla personel olarak eklenirse k
 
 ## Abonelik
 
-- Planlar (yönetimdeki site ayarlarından değişir): Başlangıç ve Profesyonel (aylık fiyat + öğrenci sınırı), Kurumsal (teklif). Varsayılan deneme süresi 14 gün.
+- İki eksen: **paket** (açık modülleri belirler) ve **öğrenci kademesi** (fiyatı belirler; iki pakette aynı).
+- **Etüt Merkezi paketi:** öğrenci/veli kayıtları, birebir takip ve koçluk, etüt planı ve etüt yoklaması, ödev, çalışma salonu, kaynaklar ve çalışma programı, fotoğrafla soru, muhasebe, veli/öğrenci portalı.
+- **Dershane paketi:** Etüt Merkezi'ndeki her şey + haftalık sınıf programı, sınıf yoklaması, sınıf defteri, denemeler (optik, analiz), **derslikler** (doluluk, çakışma, kapasite) ve **raporlar** (kurum → sınıf → öğrenci: devam, ödev, son deneme neti, geciken ödeme). Pakette olmayan bölüm menüde görünmez, adresi açılmaz; kayıtlar silinmez (`src/lib/center/editions.ts`).
+- Kademeler (Yönetim → Site ayarları, KDV dahil; aylık fiyat indirimli olarak gösterilir): 20 öğrenciye kadar 3.999 TL / yıllık 44.999 TL; 100 öğrenci 4.999 / 49.999; 200 öğrenci 6.999 / 69.999; Kurumsal (200+) 9.999 / 99.999 (öğrenci sınırı kuruma göre). Varsayılan deneme süresi 14 gün.
+- Mevcut kurumlar Dershane paketinde kalır; paket ve kademe kurum sayfasından (Yönetim → Kurumlar) değiştirilir.
 - Yönetici kurumu açar ya da başvurudan oluşturur; ödeme havale/EFT ile alınır, yönetici “Abonelik ödemesi kaydet” ile süreyi uzatır (süre bitmemişse bitişin üzerine eklenir).
 - Süre dolunca 7 gün ek süre (uyarıyla), sonra panel salt okunur; kayıtlar silinmez. Askıya alınan kurumun personeli giriş yapamaz, vitrin ve veli portalı gizlenir.
 - Bitişten 7, 3 ve 1 gün önce ve süre dolunca kurum sahiplerine (site + e-posta), 3 gün kala ve dolunca Pi Kampüs yöneticilerine bildirim gider; süre uzayınca hatırlatmalar sıfırlanır.
 - Öğrenci sınırı aktif öğrenci sayısına uygulanır (ayrılan ve pasif öğrenciler sayılmaz).
 
-## Veli iletişimi: WhatsApp
+## Veli iletişimi: WhatsApp ve e-posta
+
+Kanal tek ayardan seçilir (Yönetim → Site ayarları → Bildirim kanalı): **Yalnızca e-posta** (WhatsApp şablonları Meta'da onaylanana kadar varsayılan), **WhatsApp öncelikli** (telefonu olmayan, WhatsApp'ı kapatan ya da kotası dolan veliye e-posta) ya da **ikisi birden**. Kanal kodu `NotificationService` + `planChannels` (`src/server/notification-service.ts`, `src/lib/notification-channels.ts`); WhatsApp kapalıyken arayüzdeki WhatsApp seçenekleri “Çok yakında · Onay aşamasında” etiketiyle devre dışı görünür. Rollere göre deneme: `npm run bildirim-testi -- --kanal=hybrid --eposta=ad@gmail.com`.
+
 
 SMS yok. Velilere her şey WhatsApp (Pi Kampüs numarası, LetsBot, Meta onaylı şablon) ve site/uygulama bildirimiyle gider; e-posta yalnızca kurumun “e-postayla da gönder” seçtiği duyuru ve mesajlarda. Mesajlar genel WhatsApp kuyruğuna girer (dakikada 60, kurum mesajları 12 saat bekleyebilir), durum kurumun mesaj geçmişine eşitlenir. Kurum başına aylık WhatsApp sınırı Site ayarlarındadır (varsayılan 3000); dolunca o ay yalnızca bildirim gider, kurum yöneticilerine bir kez haber verilir. Veli WhatsApp'ı öğrenci kartından kapatılabilir; hesabı bağlı veli kendi profilinden de kapatabilir.
 

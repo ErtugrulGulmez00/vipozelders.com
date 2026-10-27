@@ -166,20 +166,25 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
         <NumberField name="referralRewardCredits" label="Davet edene ödül" value={settings.referralRewardCredits} suffix="soru kredisi" />
       </Section>
 
-      <Section title="Kurum paneli abonelikleri" description="Etüt merkezi ve dershanelere satılan paneller. Fiyatlar KDV dahil; “Kurumlar için” sayfasında görünür. “Eski fiyat” üstü çizili gösterilir; 0 yazarsanız gösterilmez.">
+      <Section title="Kurum paneli abonelikleri" description="Etüt Merkezi ve Dershane paketleri öğrenci sayısına göre aynı fiyatla satılır; paket yalnızca açık modülleri belirler. Fiyatlar KDV dahil; “Kurumlar için” sayfasında görünür.">
         <NumberField name="centerTrialDays" label="Yeni kuruma tanınan ilk kullanım süresi" hint="Sitede ilan edilmez; kurum hesabı açılırken uygulanır." value={settings.centerTrialDays} suffix="gün" />
         <div className="hidden sm:block" />
-        <NumberField name="centerStarterPriceTl" label="Başlangıç planı · aylık" value={settings.centerStarterPriceTl} suffix="TL / ay" />
-        <NumberField name="centerStarterListPriceTl" label="Başlangıç planı · aylık eski fiyat" value={settings.centerStarterListPriceTl} suffix="TL / ay" />
-        <NumberField name="centerStarterYearlyPriceTl" label="Başlangıç planı · yıllık" value={settings.centerStarterYearlyPriceTl} suffix="TL / yıl" />
-        <NumberField name="centerStarterYearlyListPriceTl" label="Başlangıç planı · yıllık eski fiyat" value={settings.centerStarterYearlyListPriceTl} suffix="TL / yıl" />
-        <NumberField name="centerStarterStudents" label="Başlangıç planı öğrenci sınırı" value={settings.centerStarterStudents} suffix="öğrenci" />
+        <NumberField name="centerTier20PriceTl" label="20 öğrenciye kadar · aylık (indirimli)" value={settings.centerTier20PriceTl} suffix="TL / ay" />
+        <NumberField name="centerTier20YearlyTl" label="20 öğrenciye kadar · yıllık" value={settings.centerTier20YearlyTl} suffix="TL / yıl" />
+        <NumberField name="centerTier20Students" label="20 öğrenciye kadar · öğrenci sınırı" value={settings.centerTier20Students} suffix="öğrenci" />
         <div className="hidden sm:block" />
-        <NumberField name="centerProPriceTl" label="Profesyonel plan · aylık" value={settings.centerProPriceTl} suffix="TL / ay" />
-        <NumberField name="centerProListPriceTl" label="Profesyonel plan · aylık eski fiyat" value={settings.centerProListPriceTl} suffix="TL / ay" />
-        <NumberField name="centerProYearlyPriceTl" label="Profesyonel plan · yıllık" value={settings.centerProYearlyPriceTl} suffix="TL / yıl" />
-        <NumberField name="centerProYearlyListPriceTl" label="Profesyonel plan · yıllık eski fiyat" value={settings.centerProYearlyListPriceTl} suffix="TL / yıl" />
-        <NumberField name="centerProStudents" label="Profesyonel plan öğrenci sınırı" value={settings.centerProStudents} suffix="öğrenci" />
+        <NumberField name="centerTier100PriceTl" label="100 öğrenciye kadar · aylık (indirimli)" value={settings.centerTier100PriceTl} suffix="TL / ay" />
+        <NumberField name="centerTier100YearlyTl" label="100 öğrenciye kadar · yıllık" value={settings.centerTier100YearlyTl} suffix="TL / yıl" />
+        <NumberField name="centerTier100Students" label="100 öğrenciye kadar · öğrenci sınırı" value={settings.centerTier100Students} suffix="öğrenci" />
+        <div className="hidden sm:block" />
+        <NumberField name="centerTier200PriceTl" label="200 öğrenciye kadar · aylık (indirimli)" value={settings.centerTier200PriceTl} suffix="TL / ay" />
+        <NumberField name="centerTier200YearlyTl" label="200 öğrenciye kadar · yıllık" value={settings.centerTier200YearlyTl} suffix="TL / yıl" />
+        <NumberField name="centerTier200Students" label="200 öğrenciye kadar · öğrenci sınırı" value={settings.centerTier200Students} suffix="öğrenci" />
+        <div className="hidden sm:block" />
+        <NumberField name="centerTierPlusPriceTl" label="Kurumsal (200+) · aylık (indirimli)" value={settings.centerTierPlusPriceTl} suffix="TL / ay" />
+        <NumberField name="centerTierPlusYearlyTl" label="Kurumsal (200+) · yıllık" value={settings.centerTierPlusYearlyTl} suffix="TL / yıl" />
+        <NumberField name="centerTierPlusStudents" label="Kurumsal (200+) · öğrenci sınırı" hint="Yeni Kurumsal kurum için başlangıç sınırı; kurum sayfasından değiştirilir." value={settings.centerTierPlusStudents} suffix="öğrenci" />
+        <div className="hidden sm:block" />
         <Field label="Havale / EFT bilgileri" hint="Banka, alıcı adı ve IBAN. Kurumların abonelik sayfasında gösterilir." className="sm:col-span-2">
           <Textarea name="centerBankInfo" rows={3} defaultValue={settings.centerBankInfo} placeholder={"Örn: X Bankası · Pi Kampüs Eğitim Teknolojileri Ltd. Şti.\nTR00 0000 0000 0000 0000 0000 00"} />
         </Field>

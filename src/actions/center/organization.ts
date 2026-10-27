@@ -10,7 +10,7 @@ import { CENTERS_CACHE_TAG } from "@/server/center/public";
 import { bool, email, guard, int, opt, phone, requiredText, str } from "@/server/center/form";
 import { addStaff, resetStaffPassword, updateStaff } from "@/server/center/staff";
 import { db } from "@/server/db";
-import { OPTIONAL_MODULES } from "@/lib/center/modules";
+import { editionModules } from "@/lib/center/modules";
 import { deleteUpload, saveUpload, UploadError } from "@/server/storage";
 
 const ROLES: CenterRoleName[] = ["OWNER", "MANAGER", "TEACHER", "ACCOUNTANT"];
@@ -106,7 +106,11 @@ export async function updateCenterSettingsAction(_: ActionState, formData: FormD
         remindPayments: bool(formData, "remindPayments"),
         reminderDaysBefore: int(formData, "reminderDaysBefore", 3, 0, 14),
         showTeacherSuggestions: bool(formData, "showTeacherSuggestions"),
-        disabledModules: OPTIONAL_MODULES.filter((m) => !bool(formData, `module:${m.key}`)).map((m) => m.key),
+        // Pakette olmayan modüllerin eski durumu korunur (paket yükseltilince kurumun tercihiyle açılır)
+        disabledModules: [
+          ...ctx.center.disabledModules.filter((key) => !editionModules(ctx.center.edition).some((m) => m.key === key)),
+          ...editionModules(ctx.center.edition).filter((m) => !bool(formData, `module:${m.key}`)).map((m) => m.key),
+        ],
         ...(logoKey !== undefined ? { logoKey } : {}),
       },
     });

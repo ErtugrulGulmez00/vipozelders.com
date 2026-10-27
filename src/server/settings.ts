@@ -98,17 +98,20 @@ export const settingsSchema = z.object({
 
   // Kurum paneli abonelik planları (aylık, KDV dahil, tam TL)
   centerTrialDays: z.number().int().min(0).max(90).default(14),
-  // Kurum planları: indirimli aylık/yıllık fiyat ve üstü çizili liste fiyatı (0 = gösterilmez)
-  centerStarterPriceTl: z.number().int().min(0).max(1_000_000).default(4000),
-  centerStarterListPriceTl: z.number().int().min(0).max(10_000_000).default(10000),
-  centerStarterYearlyPriceTl: z.number().int().min(0).max(10_000_000).default(40000),
-  centerStarterYearlyListPriceTl: z.number().int().min(0).max(10_000_000).default(100000),
-  centerStarterStudents: z.number().int().min(1).max(100_000).default(50),
-  centerProPriceTl: z.number().int().min(0).max(1_000_000).default(7000),
-  centerProListPriceTl: z.number().int().min(0).max(10_000_000).default(17500),
-  centerProYearlyPriceTl: z.number().int().min(0).max(10_000_000).default(80000),
-  centerProYearlyListPriceTl: z.number().int().min(0).max(10_000_000).default(200000),
-  centerProStudents: z.number().int().min(1).max(100_000).default(100),
+  // Kurum kapasite kademeleri (iki pakette de aynı): indirimli aylık ve yıllık fiyat, öğrenci sınırı.
+  // Kurumsal (200+) kademede öğrenci sınırı yeni kurum için başlangıç değeridir; yönetici kuruma göre değiştirir.
+  centerTier20PriceTl: z.number().int().min(0).max(1_000_000).default(3999),
+  centerTier20YearlyTl: z.number().int().min(0).max(10_000_000).default(44999),
+  centerTier20Students: z.number().int().min(1).max(100_000).default(20),
+  centerTier100PriceTl: z.number().int().min(0).max(1_000_000).default(4999),
+  centerTier100YearlyTl: z.number().int().min(0).max(10_000_000).default(49999),
+  centerTier100Students: z.number().int().min(1).max(100_000).default(100),
+  centerTier200PriceTl: z.number().int().min(0).max(1_000_000).default(6999),
+  centerTier200YearlyTl: z.number().int().min(0).max(10_000_000).default(69999),
+  centerTier200Students: z.number().int().min(1).max(100_000).default(200),
+  centerTierPlusPriceTl: z.number().int().min(0).max(1_000_000).default(9999),
+  centerTierPlusYearlyTl: z.number().int().min(0).max(10_000_000).default(99999),
+  centerTierPlusStudents: z.number().int().min(1).max(100_000).default(1000),
   // Havale/EFT ile abonelik ödemesi için banka bilgisi (kurumun abonelik sayfasında görünür)
   centerBankInfo: z.string().default(""),
 

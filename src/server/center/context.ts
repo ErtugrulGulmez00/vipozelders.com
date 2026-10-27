@@ -2,6 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
+import { editionAllows, type CenterEditionName, type DershaneSection } from "@/lib/center/editions";
 import { moduleEnabled, type CenterModuleKey } from "@/lib/center/modules";
 import { failure, type ActionState } from "@/lib/action-state";
 import { centerAccess, type CenterAccess } from "@/lib/center/subscription";
@@ -21,6 +22,7 @@ const centerSelect = {
   kind: true,
   status: true,
   plan: true,
+  edition: true,
   studentLimit: true,
   trialEndsAt: true,
   paidUntil: true,
@@ -43,7 +45,8 @@ export type CenterSummary = {
   slug: string;
   kind: "ETUT" | "DERSHANE" | "KURS" | "OTHER";
   status: "TRIAL" | "ACTIVE" | "SUSPENDED";
-  plan: "STARTER" | "PRO" | "ENTERPRISE";
+  plan: "STARTER" | "PRO" | "BUSINESS" | "ENTERPRISE";
+  edition: CenterEditionName;
   studentLimit: number;
   trialEndsAt: Date | null;
   paidUntil: Date | null;
@@ -147,9 +150,17 @@ export async function selectCenterCookie(centerId: string) {
   (await cookies()).set(CENTER_COOKIE, centerId, { httpOnly: true, secure: secureCookies(), sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 365 });
 }
 
+/** Pakette olmayan bölümün (ör. Etüt Merkezi'nde ders programı) sayfaları açılmaz (bölüm klasörünün layout'unda çağrılır). */
+export async function requireCenterSection(section: DershaneSection): Promise<CenterContext> {
+  const ctx = await requireCenter();
+  if (!editionAllows(ctx.center.edition, section)) redirect("/kurum?durum=paket");
+  return ctx;
+}
+
 /** Kurumun kapattığı modülün sayfaları açılmaz (modül klasörünün layout'unda çağrılır). */
 export async function requireCenterModule(key: CenterModuleKey): Promise<CenterContext> {
   const ctx = await requireCenter();
+  if (!editionAllows(ctx.center.edition, key)) redirect("/kurum?durum=paket");
   if (!moduleEnabled(ctx.center, key)) redirect("/kurum?durum=modul");
   return ctx;
 }

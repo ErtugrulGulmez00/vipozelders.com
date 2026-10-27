@@ -16,11 +16,10 @@ import {
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { EditionCards, TierCards } from "@/components/center/pricing";
 import { buttonClasses } from "@/components/ui/button";
 import { Card } from "@/components/ui/primitives";
-import { cn } from "@/lib/cn";
-import { formatMoney } from "@/lib/money";
-import { type CenterPlanInfo, centerPlans } from "@/server/center/plans";
+import { centerPlans } from "@/server/center/plans";
 import { getCities, getSiteSettings } from "@/server/site";
 import { CenterApplicationForm } from "./center-application-form";
 
@@ -177,26 +176,15 @@ export default async function ForCentersPage() {
       </section>
 
       <section id="planlar" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16">
-        <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">Planlar</h2>
-        <p className="mt-2 text-slate-600">Aylık ya da yıllık abonelik. Tüm planlarda sınırsız personel ve veli portalı; yıllık ödemede daha avantajlı.</p>
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          {plans.map((plan) => (
-            <div key={plan.plan} className={cn("relative flex flex-col rounded-2xl border bg-white p-6", plan.highlight ? "border-brand-500 shadow-lg ring-2 ring-brand-200" : "border-slate-200")}>
-              {plan.highlight ? <span className="absolute -top-3 left-6 rounded-full bg-brand-600 px-3 py-0.5 text-xs font-bold text-white">Önerilen</span> : null}
-              <p className="text-lg font-bold text-slate-900">{plan.name}</p>
-              <PlanPrice plan={plan} />
-              <ul className="mt-5 flex-1 space-y-2 text-sm text-slate-700">
-                {plan.features.map((f) => (
-                  <li key={f} className="flex gap-2">
-                    <Check className="mt-0.5 size-4 shrink-0 text-emerald-600" aria-hidden /> {f}
-                  </li>
-                ))}
-              </ul>
-              <a href="#basvuru" className={buttonClasses(plan.highlight ? "primary" : "outline", "md", "mt-6 w-full")}>
-                {plan.priceTl === null ? "İletişime geçin" : trialDays > 0 ? "Ücretsiz deneyin" : "Başvurun"}
-              </a>
-            </div>
-          ))}
+        <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">Paketler</h2>
+        <p className="mt-2 text-slate-600">Kurumunuzun çalışma şekline göre paketi seçin; fiyat yalnızca aktif öğrenci sayısına göre değişir. Tüm paketlerde sınırsız personel ve veli portalı.</p>
+        <div className="mt-8">
+          <EditionCards cta={{ href: "#basvuru", label: trialDays > 0 ? "Ücretsiz deneyin" : "Başvurun" }} />
+        </div>
+        <h3 className="mt-12 text-xl font-bold text-slate-900">Öğrenci sayısına göre fiyat</h3>
+        <p className="mt-1 text-sm text-slate-600">İki pakette de aynı. Yıllık ödemede daha avantajlı.</p>
+        <div className="mt-6">
+          <TierCards plans={plans} />
         </div>
       </section>
 
@@ -223,33 +211,6 @@ export default async function ForCentersPage() {
         </div>
       </section>
     </>
-  );
-}
-
-/** Plan fiyatı: aylık ve yıllık fiyat. Liste fiyatı girilmişse "Lansman fiyatı" olarak belirtilir (üstü çizili eski fiyat gösterilmez). */
-function PlanPrice({ plan }: { plan: CenterPlanInfo }) {
-  if (plan.priceTl === null) {
-    return (
-      <>
-        <p className="mt-3 text-3xl font-black text-slate-900">Teklif alın</p>
-        <p className="text-sm text-slate-500">çok şubeli kurumlar için</p>
-      </>
-    );
-  }
-  const launch = Boolean(plan.listPriceTl && plan.listPriceTl > plan.priceTl);
-  const yearlySaving = plan.yearlyPriceTl ? plan.priceTl * 12 - plan.yearlyPriceTl : 0;
-  return (
-    <div className="mt-3">
-      {launch ? <span className="inline-block rounded-full bg-gold-50 px-2 py-0.5 text-xs font-bold text-gold-700">Lansman fiyatı</span> : null}
-      <p className="mt-1 text-3xl font-black text-slate-900">{formatMoney(plan.priceTl * 100)}</p>
-      <p className="text-sm text-slate-500">aylık · KDV dahil</p>
-      {plan.yearlyPriceTl ? (
-        <p className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-          Yıllık: <span className="font-bold">{formatMoney(plan.yearlyPriceTl * 100)}</span>
-          {yearlySaving > 0 ? <span className="ml-1.5 text-emerald-700">({formatMoney(yearlySaving * 100)} tasarruf)</span> : null}
-        </p>
-      ) : null}
-    </div>
   );
 }
 

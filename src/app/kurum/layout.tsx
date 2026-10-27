@@ -10,7 +10,9 @@ import {
   CalendarClock,
   CalendarRange,
   ClipboardCheck,
+  ChartColumn,
   CreditCard,
+  DoorOpen,
   LayoutDashboard,
   Megaphone,
   NotebookPen,
@@ -27,6 +29,7 @@ import { SubscriptionBanner } from "@/components/center/center-ui";
 import { NotificationChannelProvider } from "@/components/notification-channel";
 import { PanelShell } from "@/components/panel/panel-shell";
 import type { PanelNavItem } from "@/components/panel/nav-links";
+import { dershaneSectionForPath, editionAllows } from "@/lib/center/editions";
 import { moduleForPath } from "@/lib/center/modules";
 import { CENTER_ROLE_LABEL, type CenterPermission } from "@/lib/center/permissions";
 import { requireCenter } from "@/server/center/context";
@@ -57,6 +60,8 @@ export default async function CenterLayout({ children }: { children: React.React
     { href: "/kurum/sinif-defteri", label: "Sınıf defteri", icon: <BookText />, permission: "students.view" },
     { href: "/kurum/sorular", label: "Öğrenci soruları", icon: <Camera />, permission: "questions.answer", badge: openQuestions || undefined },
     { href: "/kurum/denemeler", label: "Denemeler", icon: <BookOpenCheck />, permission: "exams.manage" },
+    { href: "/kurum/derslikler", label: "Derslikler", icon: <DoorOpen />, permission: "students.view" },
+    { href: "/kurum/raporlar", label: "Raporlar", icon: <ChartColumn />, permission: "reports.view" },
     { href: "/kurum/muhasebe", label: "Muhasebe", icon: <Wallet />, permission: "finance.view" },
     { href: "/kurum/duyurular", label: "Duyurular", icon: <Megaphone />, permission: "messages.send" },
     { href: "/kurum/mesajlar", label: "Mesaj geçmişi", icon: <MessagesSquare />, permission: "messages.send" },
@@ -72,7 +77,8 @@ export default async function CenterLayout({ children }: { children: React.React
     .filter((item) => !item.permission || ctx.can(item.permission))
     .filter((item) => {
       const key = moduleForPath(item.href);
-      return !key || !ctx.center.disabledModules.includes(key);
+      const section = dershaneSectionForPath(item.href);
+      return (!key || !ctx.center.disabledModules.includes(key)) && (!section || editionAllows(ctx.center.edition, section));
     })
     .map((item) => ({ href: item.href, label: item.label, icon: item.icon, badge: item.badge, exact: item.exact }));
   return (

@@ -38,6 +38,7 @@ export default async function CenterSettingsPage() {
           reminderDaysBefore: center.reminderDaysBefore,
           showTeacherSuggestions: center.showTeacherSuggestions,
           disabledModules: center.disabledModules,
+          edition: center.edition,
           loginUrl: appUrl(`/kurum-giris?kurum=${center.slug}`),
           logoUrl: uploadUrl(center.logoKey),
           slug: center.slug,
