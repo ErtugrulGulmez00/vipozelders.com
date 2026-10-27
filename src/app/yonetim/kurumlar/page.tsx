@@ -71,7 +71,7 @@ export default async function AdminCentersPage({ searchParams }: PageProps<"/yon
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr] lg:items-start">
         <div className="space-y-3">
           <Form action="/yonetim/kurumlar" className="flex gap-2">
-            <Input name="q" defaultValue={q} placeholder="Kurum ara" className="w-72" />
+            <Input name="q" defaultValue={q} placeholder="Kurum ara" className="min-w-0 flex-1 sm:w-72 sm:flex-none" />
             <button type="submit" className={buttonClasses("secondary")}>
               Ara
             </button>

@@ -224,12 +224,15 @@ test("mobil API: kurum çalışma programı, kaynak ilerlemesi, soru geri çekme
     const withQuestion = await (await parent.get(`/kurum/${guardianId}`)).json();
     const centerQuestion = withQuestion.questions.find((q: { id: string }) => q.id === questionId);
     expect(centerQuestion).toMatchObject({ mine: true, status: "OPEN" });
+    // Kurum öğretmenine "Yeni soru" bildirimi gitti; geri çekilince kalkmalı
+    expect((await sql(`SELECT 1 FROM "Notification" WHERE link = $1`, [`/kurum/sorular/${questionId}`])).length).toBeGreaterThan(0);
     expect((await parent.get(centerQuestion.imageUrl)).status()).toBe(200);
     expect((await stranger.get(centerQuestion.imageUrl)).status()).toBe(403);
     expect((await stranger.delete(`/kurum/${guardianId}/sorular/${questionId}`)).status()).toBe(404);
     expect((await parent.delete(`/kurum/${guardianId}/sorular/${questionId}`)).status()).toBe(204);
     const afterWithdraw = await (await parent.get(`/kurum/${guardianId}`)).json();
     expect(afterWithdraw.questions.map((q: { id: string }) => q.id)).not.toContain(questionId);
+    expect(await sql(`SELECT 1 FROM "Notification" WHERE link = $1`, [`/kurum/sorular/${questionId}`])).toHaveLength(0);
 
     // Bağlantıyı kaldırma
     expect((await parent.delete(`/kurum/${guardianId}`)).status()).toBe(204);

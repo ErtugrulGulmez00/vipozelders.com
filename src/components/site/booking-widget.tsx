@@ -139,7 +139,7 @@ export function BookingWidget({
                   setService(name);
                   pickOffering(offerings.find((o) => o.serviceName === name));
                 }}
-                className={cn("rounded-lg px-1 py-2 text-center text-sm font-semibold leading-tight ring-1", service === name ? "bg-brand-50 text-brand-700 ring-brand-400" : "bg-white text-slate-700 ring-slate-300")}
+                className={cn("rounded-xl px-1 py-2 text-center text-sm font-semibold leading-tight ring-1", service === name ? "bg-brand-50 text-brand-700 ring-brand-400" : "bg-white text-slate-700 ring-slate-300")}
               >
                 {name}
               </button>
@@ -176,7 +176,7 @@ export function BookingWidget({
               key={d}
               type="button"
               onClick={() => setDuration(d)}
-              className={cn("rounded-lg px-3 py-1.5 text-sm font-semibold ring-1", d === duration ? "bg-brand-600 text-white ring-brand-600" : "bg-white text-slate-700 ring-slate-300 hover:bg-slate-50")}
+              className={cn("rounded-xl px-3 py-1.5 text-sm font-semibold ring-1", d === duration ? "bg-brand-600 text-white ring-brand-600" : "bg-white text-slate-700 ring-slate-300 hover:bg-slate-50")}
             >
               {durationLabel(d)}
             </button>
@@ -185,7 +185,7 @@ export function BookingWidget({
             <button
               type="button"
               onClick={() => setDuration(INTRO_MINUTES)}
-              className={cn("rounded-lg px-3 py-1.5 text-sm font-semibold ring-1", intro ? "bg-emerald-600 text-white ring-emerald-600" : "bg-emerald-50 text-emerald-800 ring-emerald-200 hover:bg-emerald-100")}
+              className={cn("rounded-xl px-3 py-1.5 text-sm font-semibold ring-1", intro ? "bg-emerald-600 text-white ring-emerald-600" : "bg-emerald-50 text-emerald-800 ring-emerald-200 hover:bg-emerald-100")}
             >
               15 dk tanışma · ücretsiz
             </button>
@@ -202,7 +202,7 @@ export function BookingWidget({
                 key={value}
                 type="button"
                 onClick={() => setMode(value)}
-                className={cn("inline-flex items-center justify-center gap-1.5 rounded-lg px-1 py-2 text-center text-sm font-semibold leading-tight ring-1", mode === value ? "bg-brand-50 text-brand-700 ring-brand-400" : "bg-white text-slate-700 ring-slate-300")}
+                className={cn("inline-flex items-center justify-center gap-1.5 rounded-xl px-1 py-2 text-center text-sm font-semibold leading-tight ring-1", mode === value ? "bg-brand-50 text-brand-700 ring-brand-400" : "bg-white text-slate-700 ring-slate-300")}
               >
                 <Icon className="size-4" aria-hidden /> {label}
               </button>
@@ -222,11 +222,11 @@ export function BookingWidget({
               aria-label="Önceki hafta"
               disabled={weekStart <= today}
               onClick={() => setWeekStart(addDaysToDateString(weekStart, -7) < today ? today : addDaysToDateString(weekStart, -7))}
-              className="inline-flex size-8 items-center justify-center rounded-lg ring-1 ring-slate-300 disabled:opacity-40"
+              className="inline-flex size-8 items-center justify-center rounded-xl ring-1 ring-slate-300 disabled:opacity-40"
             >
               <ChevronLeft className="size-4" aria-hidden />
             </button>
-            <button type="button" aria-label="Sonraki hafta" onClick={() => setWeekStart(addDaysToDateString(weekStart, 7))} className="inline-flex size-8 items-center justify-center rounded-lg ring-1 ring-slate-300">
+            <button type="button" aria-label="Sonraki hafta" onClick={() => setWeekStart(addDaysToDateString(weekStart, 7))} className="inline-flex size-8 items-center justify-center rounded-xl ring-1 ring-slate-300">
               <ChevronRight className="size-4" aria-hidden />
             </button>
           </div>
@@ -254,7 +254,7 @@ export function BookingWidget({
                       aria-label={`${day.day} ${day.weekday}${free ? `, ${free} boş saat` : ", boş saat yok"}`}
                       onClick={() => setActiveDate(day.date)}
                       className={cn(
-                        "flex flex-col items-center rounded-lg py-1.5 ring-1 transition",
+                        "flex flex-col items-center rounded-xl py-1.5 ring-1 transition",
                         active ? "bg-brand-600 text-white ring-brand-600" : free ? "bg-white text-slate-800 ring-slate-200 hover:ring-brand-300" : "cursor-not-allowed bg-slate-50 text-slate-400 ring-slate-100",
                       )}
                     >

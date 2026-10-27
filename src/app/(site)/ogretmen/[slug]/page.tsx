@@ -368,7 +368,7 @@ async function FavoriteButton({ teacherId, slug }: { teacherId: string; slug: st
   const isFavorite = user ? Boolean(await db.favorite.findUnique({ where: { studentId_teacherId: { studentId: user.id, teacherId } } })) : false;
   if (!user) {
     return (
-      <Link href={`/giris?next=/ogretmen/${slug}`} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50">
+      <Link href={`/giris?next=/ogretmen/${slug}`} className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-ink-700 ring-2 ring-ink-100 hover:bg-ink-50">
         <Heart className="size-4" aria-hidden /> Favorilere ekle
       </Link>
     );
@@ -377,7 +377,7 @@ async function FavoriteButton({ teacherId, slug }: { teacherId: string; slug: st
     <form action={toggleFavoriteAction}>
       <input type="hidden" name="teacherId" value={teacherId} />
       <input type="hidden" name="returnTo" value={`/ogretmen/${slug}`} />
-      <button type="submit" className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50">
+      <button type="submit" className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold text-ink-700 ring-2 ring-ink-100 hover:bg-ink-50">
         <Heart className={isFavorite ? "size-4 fill-rose-500 text-rose-500" : "size-4"} aria-hidden /> {isFavorite ? "Favorilerde" : "Favorilere ekle"}
       </button>
     </form>

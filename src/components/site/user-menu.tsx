@@ -83,7 +83,7 @@ export async function UserMenu() {
         </div>
       </details>
       <details className="group relative">
-        <summary className="flex cursor-pointer list-none items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-slate-100 [&::-webkit-details-marker]:hidden">
+        <summary className="flex cursor-pointer list-none items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-slate-100 [&::-webkit-details-marker]:hidden">
           <span className="inline-flex size-8 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">{initials(user)}</span>
           <span className="hidden text-sm font-semibold text-slate-800 sm:inline">{user.firstName}</span>
           <ChevronDown className="size-4 text-slate-500 transition-transform group-open:rotate-180" aria-hidden />
@@ -95,16 +95,16 @@ export async function UserMenu() {
             </p>
             <p className="text-xs text-slate-500">{ROLE_LABEL[user.role]}</p>
           </div>
-          <Link href={home} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+          <Link href={home} className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
             <LayoutDashboard className="size-4" aria-hidden /> Panelim
           </Link>
           {user.role === "STUDENT" ? (
-            <Link href="/hesabim/profil" className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+            <Link href="/hesabim/profil" className="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
               <UserRound className="size-4" aria-hidden /> Hesap ayarları
             </Link>
           ) : null}
           <form action={logoutAction}>
-            <button type="submit" className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-rose-600 hover:bg-rose-50">
+            <button type="submit" className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-rose-600 hover:bg-rose-50">
               <LogOut className="size-4" aria-hidden /> Çıkış yap
             </button>
           </form>
@@ -115,5 +115,5 @@ export async function UserMenu() {
 }
 
 export function UserMenuFallback() {
-  return <div className="h-9 w-40 animate-pulse rounded-lg bg-slate-100" />;
+  return <div className="h-9 w-40 animate-pulse rounded-xl bg-slate-100" />;
 }

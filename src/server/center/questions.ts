@@ -54,6 +54,8 @@ export async function withdrawQuestion(userId: string, questionId: string) {
   const question = await db.centerQuestion.findFirst({ where: { id: questionId, askedByUserId: userId, status: "OPEN" } });
   if (!question) throw new CenterError("Soru bulunamadı ya da cevaplanmış.");
   await db.centerQuestion.delete({ where: { id: questionId } });
+  // Öğretmenlere giden "Yeni soru" bildirimi de kalkar (yoksa tıklayan "bulunamadı" görür)
+  await db.notification.deleteMany({ where: { type: "center.question", link: `/kurum/sorular/${questionId}` } });
   await deleteUpload(question.imageKey);
 }
 

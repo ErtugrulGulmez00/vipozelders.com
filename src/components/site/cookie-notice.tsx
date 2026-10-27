@@ -31,7 +31,7 @@ export function CookieNotice() {
           document.cookie = `${COOKIE}=1; max-age=${60 * 60 * 24 * 365}; path=/; samesite=lax`;
           setVisible(false);
         }}
-        className="mt-3 h-9 shrink-0 rounded-lg bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700 sm:mt-0"
+        className="mt-3 h-9 shrink-0 rounded-xl bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700 sm:mt-0"
       >
         Anladım
       </button>

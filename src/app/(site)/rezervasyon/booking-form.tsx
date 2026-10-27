@@ -104,7 +104,7 @@ export function BookingForm({
                   { value: "STUDENT_HOME", label: "Bizim adresimizde" },
                   { value: "TEACHER_PLACE", label: "Öğretmenin yerinde" },
                 ].map((o) => (
-                  <label key={o.value} className="cursor-pointer rounded-lg bg-white px-3 py-2 text-sm font-medium ring-1 ring-slate-300 has-checked:ring-2 has-checked:ring-brand-500">
+                  <label key={o.value} className="cursor-pointer rounded-xl bg-white px-3 py-2 text-sm font-medium ring-1 ring-slate-300 has-checked:ring-2 has-checked:ring-brand-500">
                     <input type="radio" name="place" value={o.value} checked={place === o.value} onChange={() => setPlace(o.value)} className="sr-only" />
                     {o.label}
                   </label>

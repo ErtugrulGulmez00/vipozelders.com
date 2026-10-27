@@ -4,8 +4,9 @@ import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
+// min-w-0: ızgara/esnek kutuda kart içeriğe göre büyümez; geniş tablo kendi kutusunda yana kayar (telefonda sayfa taşmaz)
 export function Card({ className, ...props }: ComponentProps<"div">) {
-  return <div className={cn("rounded-3xl border border-ink-100 bg-white shadow-xs", className)} {...props} />;
+  return <div className={cn("min-w-0 rounded-3xl border border-ink-100 bg-white shadow-xs", className)} {...props} />;
 }
 
 export function CardHeader({ title, description, action, className }: { title: ReactNode; description?: ReactNode; action?: ReactNode; className?: string }) {
@@ -156,7 +157,7 @@ export function Avatar({ src, name, initials, size = 48, className }: { src: str
 
 export function Table({ className, ...props }: ComponentProps<"table">) {
   return (
-    <div className="overflow-x-auto">
+    <div className="max-w-full overflow-x-auto">
       <table className={cn("w-full text-left text-sm", className)} {...props} />
     </div>
   );
@@ -200,7 +201,8 @@ export function DescriptionList({ items }: { items: { label: string; value: Reac
       {items.map((item) => (
         <div key={item.label} className="grid grid-cols-3 gap-4 py-2.5 text-sm">
           <dt className="text-slate-500">{item.label}</dt>
-          <dd className="col-span-2 text-slate-800">{item.value}</dd>
+          {/* Uzun e-posta/bağlantı satır kırar, kartı taşırmaz */}
+          <dd className="col-span-2 break-words text-ink-900 [overflow-wrap:anywhere]">{item.value}</dd>
         </div>
       ))}
     </dl>

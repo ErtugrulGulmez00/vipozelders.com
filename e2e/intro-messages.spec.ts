@@ -38,6 +38,9 @@ test.beforeAll(async () => {
   await sql(`UPDATE "TeacherProfile" SET "offersIntro" = true WHERE "userId" = ${TEACHER}`);
   // Önceki çalıştırmalardan kalan tanışma ve konuşma varsa temizlenir
   await sql(`DELETE FROM "Booking" WHERE "isIntro" AND "teacherId" = ${TEACHER} AND "studentId" = ${PARENT}`);
+  // Eski yazışmaya giden bildirimler de silinir (yoksa bağlantı "bulunamadı"ya düşer)
+  const old = await sql<{ id: string }>(`SELECT id FROM "MessageThread" WHERE "teacherId" = ${TEACHER} AND "studentId" = ${PARENT}`);
+  if (old.length) await sql(`DELETE FROM "Notification" WHERE link LIKE ANY($1)`, [old.map((t) => `%/${t.id}%`)]);
   await sql(`DELETE FROM "MessageThread" WHERE "teacherId" = ${TEACHER} AND "studentId" = ${PARENT}`);
 });
 

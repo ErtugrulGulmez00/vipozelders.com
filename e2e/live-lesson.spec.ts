@@ -184,7 +184,8 @@ test("iki tarayıcı: veli kayıt olur, ders alır; öğretmen onaylar; canlı d
 
   // --- Öğretmen tarayıcısı: ders tamamlandı, hakediş beklemede
   await teacher.goto("/ogretmen-paneli/kazanclar");
-  await expect(teacher.getByText(booking.code, { exact: false }).first()).toBeVisible();
+  // Masaüstünde tablo görünür (telefon listesi gizli)
+  await expect(teacher.getByRole("table").getByText(booking.code, { exact: false }).first()).toBeVisible();
 
   // --- Veli tarayıcısı: değerlendirme
   await student.goto(`/hesabim/derslerim/${booking.id}`);

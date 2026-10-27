@@ -19,7 +19,7 @@ export function LoginTabs({ active }: { active: "personal" | "center" }) {
           key={tab.key}
           href={tab.href}
           aria-current={active === tab.key ? "page" : undefined}
-          className={cn("rounded-lg px-3 py-2 text-center", active === tab.key ? "bg-white shadow-sm" : "hover:bg-white/60")}
+          className={cn("rounded-xl px-3 py-2 text-center", active === tab.key ? "bg-white shadow-sm" : "hover:bg-white/60")}
         >
           <span className={cn("block text-sm font-semibold", active === tab.key ? "text-brand-700" : "text-slate-700")}>{tab.label}</span>
           <span className="block text-[11px] text-slate-500">{tab.hint}</span>
