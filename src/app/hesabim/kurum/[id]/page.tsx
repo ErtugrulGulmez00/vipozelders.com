@@ -80,10 +80,14 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
                 <tbody>
                   {attendance.map((a) => (
                     <tr key={a.id}>
-                      <Td className="whitespace-nowrap text-xs">
+                      <Td className="hidden whitespace-nowrap text-xs sm:table-cell">
                         {shortDate(a.session.date)} {minutesToTime(a.session.startMinute)}
                       </Td>
                       <Td className="text-sm">
+                        {/* Telefonda tarih ayrı sütun yerine dersin üstünde: konu metnine yer kalsın */}
+                        <p className="text-xs text-slate-500 sm:hidden">
+                          {shortDate(a.session.date)} {minutesToTime(a.session.startMinute)}
+                        </p>
                         {a.session.subject} <span className="text-xs text-slate-500">· {a.session.group.name}</span>
                         {a.session.topic ? <p className="text-xs text-slate-600">İşlenen: {a.session.topic}</p> : null}
                       </Td>
