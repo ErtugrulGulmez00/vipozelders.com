@@ -47,13 +47,21 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
     db.centerGroup.count({ where: { centerId, isActive: true } }),
     db.centerScheduleSlot.count({ where: { centerId, group: { isActive: true }, ...(teacherOnly ? { teacherId: ctx.member.id } : {}) } }),
   ]);
-  const [absentList, homeworkDue, coaching, gradeCounts, hallToday] = await Promise.all([
+  const [classAbsent, etudAbsent, homeworkDue, coaching, gradeCounts, hallToday] = await Promise.all([
     db.centerAttendance.findMany({
       where: { status: "ABSENT", session: { centerId, date: dateStringToDbDate(today) } },
       select: { student: { select: { id: true, firstName: true, lastName: true } }, session: { select: { subject: true, startMinute: true, group: { select: { name: true } } } } },
       orderBy: { session: { startMinute: "asc" } },
       take: 12,
     }),
+    // Etütte gelmeyenler (Etüt Merkezi paketinde sınıf yoklaması yok, devamsızlık etütten gelir)
+    (ctx.can("etud.manage") && on("etutler"))
+      ? db.centerEtudStudent.findMany({
+          where: { attendance: "ABSENT", etud: { centerId, date: dateStringToDbDate(today), status: { not: "CANCELLED" }, ...(teacherOnly ? { teacherId: ctx.member.id } : {}) } },
+          select: { student: { select: { id: true, firstName: true, lastName: true } }, etud: { select: { subject: true, startMinute: true } } },
+          orderBy: { etud: { startMinute: "asc" } },
+        })
+      : Promise.resolve([]),
     ctx.can("homework.manage")
       ? db.centerHomework.findMany({ where: { centerId, dueDate: dateStringToDbDate(today), ...(teacherOnly ? { teacherId: ctx.member.id } : {}) }, include: { group: { select: { name: true } }, _count: { select: { students: true } } }, take: 8 })
       : Promise.resolve([]),
@@ -61,6 +69,10 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
     db.centerStudent.groupBy({ by: ["gradeName"], where: { centerId, status: "ACTIVE" }, _count: true }),
     ctx.can("attendance.take") ? db.centerHallDay.findMany({ where: { date: dateStringToDbDate(today), hall: { centerId } }, select: { marks: true } }) : Promise.resolve([]),
   ]);
+  const absentList = [
+    ...classAbsent.map((a) => ({ student: a.student, startMinute: a.session.startMinute, label: `${a.session.subject} · ${a.session.group.name}` })),
+    ...etudAbsent.map((a) => ({ student: a.student, startMinute: a.etud.startMinute, label: `${a.etud.subject} etüdü` })),
+  ].sort((a, b) => a.startMinute - b.startMinute);
   const coachToday = coaching?.rows.filter((r) => r.status === "TODAY" || r.status === "OVERDUE") ?? [];
   const grades = gradeCounts.map((g) => ({ name: g.gradeName ?? "Sınıf belirtilmemiş", count: g._count })).sort((a, b) => a.name.localeCompare(b.name, "tr", { numeric: true }));
   const pendingAttendance = lessons.filter((l) => !l.session?.takenAt).length;
@@ -110,7 +122,7 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
         ) : (
           <StatCard label="Bugünkü etütler" value={etudsToday.length} icon={<ClipboardCheck className="size-5" />} />
         )}
-        <StatCard label="Bugün gelmeyen" value={absentToday} hint={`${etudsToday.length} etüt planlı`} icon={<CalendarClock className="size-5" />} />
+        <StatCard label="Bugün gelmeyen" value={absentToday + etudAbsent.length} hint={`${etudsToday.length} etüt planlı`} icon={<CalendarClock className="size-5" />} />
         {finance ? (
           <StatCard label="Bu ay tahsilat" value={formatMoney(finance.collectedThisMonth)} hint={finance.overdue ? `Geciken: ${formatMoney(finance.overdue)}` : "Geciken ödeme yok"} icon={<Wallet className="size-5" />} />
         ) : (ctx.can("leads.manage") && on("on-kayit")) ? (
@@ -129,14 +141,14 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
             </CardBody>
           ) : (
             <ul className="divide-y divide-slate-100">
-              {absentList.map((a) => (
-                <li key={`${a.student.id}-${a.session.startMinute}`}>
+              {absentList.slice(0, 12).map((a) => (
+                <li key={`${a.student.id}-${a.startMinute}`}>
                   <Link href={`/kurum/ogrenciler/${a.student.id}?sekme=devam`} className="flex justify-between gap-2 px-5 py-2 text-sm hover:bg-slate-50">
                     <span className="font-medium text-slate-900">
                       {a.student.firstName} {a.student.lastName}
                     </span>
                     <span className="text-xs text-slate-500">
-                      {minutesToTime(a.session.startMinute)} {a.session.subject} · {a.session.group.name}
+                      {minutesToTime(a.startMinute)} {a.label}
                     </span>
                   </Link>
                 </li>

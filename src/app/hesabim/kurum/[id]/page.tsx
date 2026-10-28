@@ -10,7 +10,9 @@ import { CenterFlash, NetTrendChart, percent, RateBar, rateTone, shortDate, Tabs
 import { ActionForm, SubmitButton } from "@/components/forms/action-form";
 import { Badge, Card, CardBody, CardHeader, EmptyState, PageHeader, StatCard, Table, Td, Th } from "@/components/ui/primitives";
 import { ATTENDANCE_STATUS, INSTALLMENT_STATE, NOTE_KIND_LABEL, PAYMENT_METHOD_LABEL } from "@/lib/center/labels";
+import { editionAllows } from "@/lib/center/editions";
 import { EXAM_PRESETS, formatNet } from "@/lib/center/exams";
+import { type CenterModuleKey, moduleEnabled } from "@/lib/center/modules";
 import { installmentState } from "@/lib/center/finance";
 import { WEEKDAY_NAMES, dbDateToString, formatCompact, formatDate, minutesToTime } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
@@ -27,7 +29,7 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
   const user = await requireRole("STUDENT");
   const { id } = await params;
   const sp = await searchParams;
-  const tab = String(sp.sekme ?? "ozet");
+  const requested = String(sp.sekme ?? "ozet");
   const data = await portalChildDetail(user.id, id);
   if (!data) notFound();
   const { student, attendance, etuds, results, installments, payments, announcements, notes, weakTopics, balance, today, trend, homeworks, questions } = data;
@@ -38,6 +40,19 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
   const base = `/hesabim/kurum/${id}`;
   const slots = student.groups.flatMap((g) => g.group.slots.map((s) => ({ ...s, groupName: g.group.name }))).sort((a, b) => a.weekday - b.weekday || a.startMinute - b.startMinute);
   const trendKind = last?.exam.kind;
+  // Kurumun paketinde olmayan ya da kapattığı bölümler portalda da görünmez
+  const on = (key: CenterModuleKey) => moduleEnabled(student.center, key);
+  const tabs = [
+    { key: "ozet", label: "Özet", href: base },
+    { key: "devam", label: "Devam ve etüt", href: `${base}?sekme=devam` },
+    ...(on("denemeler") ? [{ key: "denemeler", label: "Denemeler", href: `${base}?sekme=denemeler` }] : []),
+    ...(on("muhasebe") ? [{ key: "odemeler", label: "Ödemeler", href: `${base}?sekme=odemeler` }] : []),
+    ...(on("odevler") ? [{ key: "odevler", label: "Ödevler", href: `${base}?sekme=odevler` }] : []),
+    ...(on("kaynaklar") ? [{ key: "calisma", label: "Çalışma programı", href: `${base}?sekme=calisma` }] : []),
+    ...(on("sorular") ? [{ key: "sorular", label: "Soru sor", href: `${base}?sekme=sorular` }] : []),
+    ...(editionAllows(student.center.edition, "program") ? [{ key: "program", label: "Ders programı", href: `${base}?sekme=program` }] : []),
+  ];
+  const tab = tabs.some((t) => t.key === requested) ? requested : "ozet";
   return (
     <>
       <PageHeader
@@ -53,16 +68,7 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
       </div>
       <Tabs
         active={tab}
-        tabs={[
-          { key: "ozet", label: "Özet", href: base },
-          { key: "devam", label: "Devam ve etüt", href: `${base}?sekme=devam` },
-          { key: "denemeler", label: "Denemeler", href: `${base}?sekme=denemeler` },
-          { key: "odemeler", label: "Ödemeler", href: `${base}?sekme=odemeler` },
-          { key: "odevler", label: "Ödevler", href: `${base}?sekme=odevler` },
-          { key: "calisma", label: "Çalışma programı", href: `${base}?sekme=calisma` },
-          { key: "sorular", label: "Soru sor", href: `${base}?sekme=sorular` },
-          { key: "program", label: "Ders programı", href: `${base}?sekme=program` },
-        ]}
+        tabs={tabs}
       />
       {tab === "devam" ? (
         <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
