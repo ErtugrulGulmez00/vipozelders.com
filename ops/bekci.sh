@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Pi Kampüs sunucu bekçisi (cron, 5 dakikada bir, root). Siteye, servislere, diske, sertifikaya, alan adına, yedeğe (sunucu ve Google Drive),
 # e-posta kuyruğuna ve yeni hatalara bakar; sorun başlayınca, sürdükçe 3 saatte bir ve düzelince e-posta + Telegram gönderir.
-# Ayarlar: /etc/pikampus/bekci.env (ALERT_EMAILS, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). E-posta uygulamanın SMTP hesabıyla gider.
+# Ayarlar: /etc/pikampus/bekci.env (ALERT_EMAILS, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, HC_PING_URL). E-posta uygulamanın SMTP hesabıyla gider.
+# Sunucu tamamen kapanırsa bekçi de susar: her turun sonunda Healthchecks.io'ya ping atılır, ping kesilince haberi oradan gelir.
 #   pikampus-bekci          kontrolleri çalıştırır
 #   pikampus-bekci deneme   uyarı kanallarına deneme mesajı gönderir
 set -u
@@ -17,6 +18,7 @@ REMIND_EVERY=$((3 * 3600))
 ALERT_EMAILS=""
 TELEGRAM_BOT_TOKEN=""
 TELEGRAM_CHAT_ID=""
+HC_PING_URL=""
 # shellcheck disable=SC1090
 [ -f "$CONF" ] && . "$CONF"
 mkdir -p "$STATE"
@@ -169,4 +171,7 @@ if [ -n "$url" ]; then
     [ -n "$errors" ] && send "⚠️ Sitede hata" "$errors"$'\n\n'"Ayrıntı: https://$SITE/yonetim/hatalar"
   fi
 fi
+
+# Dış izleme: bekçi çalıştıkça ping gider
+[ -n "$HC_PING_URL" ] && curl -fsS -m 10 --retry 3 -o /dev/null "$HC_PING_URL"
 exit 0

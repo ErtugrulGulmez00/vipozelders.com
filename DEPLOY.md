@@ -212,7 +212,7 @@ pikampus-bekci deneme                                   # uyarı kanallarını d
   - Sorun başlayınca, sürdükçe 3 saatte bir ve düzelince haber verir.
   - Uyarılar `/etc/pikampus/bekci.env` dosyasındaki e-postalara ve Telegram grubuna gider.
   - E-posta, uygulamanın SMTP hesabıyla gönderilir.
-- **Sunucu tamamen kapanırsa** bekçi de susar. Bunun için dış izleme (ör. UptimeRobot) `https://pikampus.com/api/saglik` adresini yoklamalı; yanıt `{"ok":true}` olmalı.
+- **Sunucu tamamen kapanırsa** bekçi de susar. Bunun için bekçi her turun sonunda Healthchecks.io'ya ping atar (`HC_PING_URL`, bekci.env). Ping 15 dakika gelmezse Healthchecks Telegram grubuna ve e-postaya kendisi haber verir.
 
 **Geri yükleme:**
 

@@ -11,10 +11,11 @@ install -d -m 700 /etc/pikampus /var/lib/pikampus-bekci
 if [ ! -f /etc/pikampus/bekci.env ]; then
   umask 077
   cat > /etc/pikampus/bekci.env <<EOF
-# Uyarıların gideceği e-postalar (virgülle) ve Telegram botu
+# Uyarıların gideceği e-postalar (virgülle), Telegram botu ve Healthchecks.io ping adresi
 ALERT_EMAILS="${1:-}"
 TELEGRAM_BOT_TOKEN=""
 TELEGRAM_CHAT_ID=""
+HC_PING_URL=""
 EOF
 fi
 if [ ! -f /etc/pikampus/yedek.key ]; then
