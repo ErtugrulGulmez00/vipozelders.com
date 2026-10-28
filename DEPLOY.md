@@ -194,6 +194,31 @@ crontab -e
 
 Yedekleri ara sıra sunucu dışına (ör. kendi bilgisayarınıza) da kopyalayın.
 
+#### Şifreli yedek ve sunucu bekçisi (`ops/`)
+
+```bash
+bash /home/vipozelders/app/ops/kur.sh uyari@ornek.com   # root olarak; tekrar çalıştırmak güvenli
+pikampus-yedek                                          # ilk yedeği hemen al
+pikampus-bekci deneme                                   # uyarı kanallarını dene
+```
+
+- **Şifreli gece yedeği** (`pikampus-yedek`, 03:45): veritabanı, yüklenen dosyalar ve `.env` tek dosyada AES-256 ile şifrelenir → `/home/vipozelders/yedek/disari/` (7 gün). `.env` yedeğe girer, çünkü `APP_SECRET` olmadan T.C. kimlik numaraları çözülemez.
+- **Anahtar** `/etc/pikampus/yedek.key` dosyasında durur. Bir kopyasını sunucu dışında (parola yöneticisi, USB) saklayın; anahtar olmadan yedek açılmaz.
+- **Bilgisayara çekme:** `ops/yedek-cek.ps1` Windows Görev Zamanlayıcı'yla her gün ve oturum açılınca çalışır, son 30 yedeği tutar.
+- **Sunucu bekçisi** (`pikampus-bekci`, 5 dakikada bir) şunlara bakar: servisler, site ve veritabanı, DNS, disk, SSL bitişi, alan adı askısı ve bitişi, gece yedeği, bilgisayara çekim, e-posta kuyruğu, sitedeki yeni hatalar.
+  - Sorun başlayınca, sürdükçe 3 saatte bir ve düzelince haber verir.
+  - Uyarılar `/etc/pikampus/bekci.env` dosyasındaki e-postalara ve Telegram grubuna gider.
+  - E-posta, uygulamanın SMTP hesabıyla gönderilir.
+- **Sunucu tamamen kapanırsa** bekçi de susar. Bunun için dış izleme (ör. UptimeRobot) `https://pikampus.com/api/saglik` adresini yoklamalı; yanıt `{"ok":true}` olmalı.
+
+**Geri yükleme:**
+
+```bash
+openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass file:yedek.key -in pikampus-<tarih>.tar.enc | tar xf -
+# çıkan dosyalar: db.dump (pg_restore ile), dosyalar.tgz (storage klasörü), env (.env)
+pg_restore --clean --if-exists -d "postgresql://..." db.dump
+```
+
 ### 8. Güncelleme
 
 ```bash
