@@ -29,8 +29,10 @@ echo "$(date '+%F %T') tamam: $(basename "$file") $(du -h "$file" | cut -f1)"
 # Google Drive'a kopya (rclone, yalnızca kendi oluşturduğu dosyalara erişir); Drive'da 30 gün tutulur
 RCLONE_CONF=/etc/pikampus/rclone.conf
 if [ -f "$RCLONE_CONF" ]; then
-  rclone --config "$RCLONE_CONF" copy "$file" gdrive:PiKampusYedek
-  rclone --config "$RCLONE_CONF" delete --min-age 30d gdrive:PiKampusYedek
+  # rclone'un ortak Google hesabı yoğun saatlerde istek sınırına takılabiliyor; sabırla yeniden dener
+  retry=(--retries 5 --low-level-retries 20 --retries-sleep 30s)
+  rclone --config "$RCLONE_CONF" "${retry[@]}" copy "$file" gdrive:PiKampusYedek
+  rclone --config "$RCLONE_CONF" "${retry[@]}" delete --min-age 30d gdrive:PiKampusYedek
   touch /var/lib/pikampus-bekci/drive-son
   echo "$(date '+%F %T') Drive'a yüklendi"
 fi
