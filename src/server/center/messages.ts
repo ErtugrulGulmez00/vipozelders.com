@@ -112,7 +112,8 @@ export async function messageGuardians(input: GuardianMessageInput, tx: Tx = db)
     }
     const path = input.link ?? (guardian.userId ? `/hesabim/kurum/${guardian.id}` : "/hesabim/kurum");
     const phone = guardian.phone;
-    const email = guardian.email;
+    // Kurum kaydında e-posta yoksa portala bağlı velinin hesap e-postası
+    const email = guardian.email ?? guardian.user?.email ?? null;
 
     if (message) {
       const waWanted =

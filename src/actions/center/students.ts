@@ -176,7 +176,8 @@ export async function importStudentsAction(_: ActionState, formData: FormData): 
     if (!students.length) return failure(problems[0]?.message ?? "Dosyada öğrenci bulunamadı.");
     const summary = await importStudents(auth.ctx, students);
     await centerAudit(auth.ctx, "student.import", "CenterStudent", null, { created: summary.created, updated: summary.updated });
-    const notes = [...problems, ...summary.skipped].sort((a, b) => a.row - b.row).slice(0, 30).map((p) => `${p.row}. satır: ${p.message}`);
+    const noEmail = students.filter((s) => s.guardian && !s.guardian.email).map((s) => ({ row: s.row, message: "Velinin e-postası yok; bildirim gitmez. Öğrenci kartından ekleyin." }));
+    const notes = [...problems, ...summary.skipped, ...noEmail].sort((a, b) => a.row - b.row).slice(0, 30).map((p) => `${p.row}. satır: ${p.message}`);
     refresh();
     return success(
       `${summary.created} yeni öğrenci eklendi, ${summary.updated} öğrenci güncellendi${summary.groupsCreated ? `, ${summary.groupsCreated} yeni sınıf açıldı` : ""}.`,

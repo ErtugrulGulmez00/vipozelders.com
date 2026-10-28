@@ -53,7 +53,7 @@ function GuardianFields({ prefix, title, required }: { prefix: string; title: st
         <Input id={`${prefix}Phone`} name={`${prefix}Phone`} type="tel" placeholder="05XX XXX XX XX" />
         <FieldError name={`${prefix}Phone`} />
       </Field>
-      <Field label="E-posta" htmlFor={`${prefix}Email`}>
+      <Field label="E-posta" htmlFor={`${prefix}Email`} hint="Veli eklenirse zorunlu; bildirimler bu adrese gider.">
         <Input id={`${prefix}Email`} name={`${prefix}Email`} type="email" />
         <FieldError name={`${prefix}Email`} />
       </Field>

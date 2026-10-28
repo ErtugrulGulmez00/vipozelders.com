@@ -48,7 +48,12 @@ export async function findInvite(token: string) {
 export async function acceptInvite(userId: string, token: string) {
   const guardian = await findInvite(token);
   if (!guardian) throw new CenterError("Davet bağlantısı geçersiz ya da süresi dolmuş. Kurumdan yeni bir davet isteyin.");
-  await db.centerGuardian.update({ where: { id: guardian.id }, data: { userId, linkedAt: new Date(), inviteTokenHash: null, inviteExpiresAt: null } });
+  // Kurum velinin e-postasını yazmadıysa hesabın e-postası kayda geçer (bildirimler e-postayla gider)
+  const user = guardian.email ? null : await db.user.findUnique({ where: { id: userId }, select: { email: true } });
+  await db.centerGuardian.update({
+    where: { id: guardian.id },
+    data: { userId, linkedAt: new Date(), inviteTokenHash: null, inviteExpiresAt: null, ...(user?.email ? { email: user.email } : {}) },
+  });
   return guardian;
 }
 

@@ -51,6 +51,15 @@ describe("Kurum bildirim akışları", () => {
     expect(counts).toMatchObject({ whatsapp: 1, email: 2 });
   });
 
+  it("portala bağlı velinin kurum kaydında e-postası yoksa hesabının e-postasına gider", async () => {
+    const { center, noPhone, input } = await centerWithGuardians();
+    const parent = await createStudent(`veli${randomUUID().slice(0, 8)}`);
+    await db.centerGuardian.update({ where: { id: noPhone.id }, data: { email: null, userId: parent.id } });
+    const counts = await messageGuardians({ ...input, guardianIds: [noPhone.id] });
+    expect(counts).toMatchObject({ whatsapp: 0, email: 1 });
+    expect(await channelsOf(center.id)).toEqual([`EMAIL:${parent.email}`]);
+  });
+
   it("kurum yöneticisine bildirim e-postayla da gider", async () => {
     const { center, owner } = await centerWithGuardians();
     await notifyCenterManagers(center.id, { type: "center.lead", title: "Yeni ön kayıt", body: "Can Aday", link: "/kurum/on-kayit" });

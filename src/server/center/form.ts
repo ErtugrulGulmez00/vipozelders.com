@@ -91,6 +91,8 @@ export function parseGuardianForm(fd: FormData, prefix = ""): GuardianInput | nu
   const guardianEmail = email(fd, key("email"));
   if (!fullName && !guardianPhone && !guardianEmail) return null;
   if (fullName.length < 3) throw new CenterError("Velinin adını ve soyadını yazın.", { [key("fullName")]: "Ad soyad gerekli." });
+  // Devamsızlık, ödeme ve deneme bildirimleri şimdilik e-postayla gider
+  if (!guardianEmail) throw new CenterError("Velinin e-posta adresini yazın; bildirimler e-postayla gider.", { [key("email")]: "E-posta gerekli." });
   // İşaretsiz kutular forma hiç gelmez; formda tercih kutuları varsa gizli "prefs" alanı gönderilir.
   const hasPrefs = fd.has(key("prefs"));
   return {

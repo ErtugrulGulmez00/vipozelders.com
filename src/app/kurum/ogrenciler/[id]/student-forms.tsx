@@ -54,8 +54,8 @@ function GuardianFields({ guardian }: { guardian?: GuardianView }) {
         <Input name="phone" type="tel" defaultValue={guardian?.phone ?? ""} placeholder="05XX XXX XX XX" />
         <FieldError name="phone" />
       </Field>
-      <Field label="E-posta">
-        <Input name="email" type="email" defaultValue={guardian?.email ?? ""} />
+      <Field label="E-posta" hint="Bildirimler bu adrese gider.">
+        <Input name="email" type="email" defaultValue={guardian?.email ?? ""} required />
         <FieldError name="email" />
       </Field>
       <div className="space-y-2 sm:col-span-2">
@@ -87,6 +87,7 @@ export function GuardianCard({ studentId, guardian, canEdit }: { studentId: stri
             )}
             {guardian.email ? ` · ${guardian.email}` : ""}
           </p>
+          {guardian.email ? null : <p className="mt-1 text-xs font-semibold text-rose-600">E-postası yok: bildirim gitmez. Düzenle&apos;den ekleyin.</p>}
           <p className="mt-1 text-xs text-slate-500">
             {guardian.notifyWhatsapp ? "WhatsApp açık" : "WhatsApp kapalı"} · {guardian.notifyEmail ? "E-posta açık" : "E-posta kapalı"} ·{" "}
             {guardian.linked ? <span className="font-semibold text-brand-700">Veli portalına bağlı</span> : guardian.inviteExpiresAt ? "Davet gönderildi" : "Portala bağlı değil"}
