@@ -34,8 +34,8 @@ const CARDS = [
     Icon: Building2,
     title: "Dershane",
     audience: "Dershaneler ve kurslar için",
-    text: "Etüt Merkezi'ndeki her şeye ek olarak sınıf bazlı ders programı, yoklama, sınıf defteri, derslikler ve raporlar.",
-    image: { src: "/kurumlar/raporlar.png", width: 1366, height: 820 },
+    text: "Haftalık ders programı, sınıf yoklaması, sınıf defteri, derslikler ve kurum raporları; Etüt Merkezi'ndeki her şey dahil.",
+    image: { src: "/tanitim/dershane/04-program.jpg", width: 1440, height: 940 },
     tone: "bg-iris-100 text-iris-700",
   },
 ];
