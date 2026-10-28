@@ -10,7 +10,7 @@ const NAV = [
   { href: "/soru-sor", label: "Soru sor" },
   { href: "/grup-dersleri", label: "Grup dersleri" },
   { href: "/ogretmenler?service=kocluk", label: "Koçluk" },
-  { href: "/sayfa/nasil-calisir", label: "Nasıl çalışır?" },
+  { href: "/nasil-calisir", label: "Nasıl çalışır?" },
   { href: "/kurumlar-icin", label: "Kurumlar için" },
 ];
 

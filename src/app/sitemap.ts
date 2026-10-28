@@ -33,6 +33,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/rehber`, changeFrequency: "weekly", priority: 0.7 },
     ...posts.map((p) => ({ url: `${base}/rehber/${p.slug}`, lastModified: p.updatedAt, changeFrequency: "monthly" as const, priority: 0.6 })),
     { url: `${base}/ogretmen-ol`, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${base}/nasil-calisir`, changeFrequency: "monthly", priority: 0.6 },
+    ...["ozel-ders", "etut-merkezi", "dershane"].map((g) => ({ url: `${base}/nasil-calisir/${g}`, changeFrequency: "monthly" as const, priority: 0.6 })),
     { url: `${base}/kurumlar-icin`, changeFrequency: "monthly", priority: 0.6 },
     { url: `${base}/kurumlar`, changeFrequency: "weekly", priority: 0.5 },
     ...centers.map((c) => ({ url: `${base}/kurumlar/${c.slug}`, changeFrequency: "weekly" as const, priority: 0.5 })),
@@ -41,6 +43,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       ...level.subjectIds.map((id) => ({ url: `${base}/ozel-ders/${level.slug}/${subjectSlug.get(id)}`, changeFrequency: "daily" as const, priority: 0.7 })),
     ]),
     ...teachers.map((t) => ({ url: `${base}/ogretmen/${t.slug}`, lastModified: t.updatedAt, changeFrequency: "weekly" as const, priority: 0.6 })),
-    ...pages.map((p) => ({ url: `${base}/sayfa/${p.slug}`, lastModified: p.updatedAt, changeFrequency: "monthly" as const, priority: 0.3 })),
+    // "Nasıl çalışır" yazısı /nasil-calisir/ozel-ders'e yönlenir (next.config)
+    ...pages.filter((p) => p.slug !== "nasil-calisir").map((p) => ({ url: `${base}/sayfa/${p.slug}`, lastModified: p.updatedAt, changeFrequency: "monthly" as const, priority: 0.3 })),
   ];
 }
