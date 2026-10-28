@@ -204,8 +204,11 @@ pikampus-bekci deneme                                   # uyarı kanallarını d
 
 - **Şifreli gece yedeği** (`pikampus-yedek`, 03:45): veritabanı, yüklenen dosyalar ve `.env` tek dosyada AES-256 ile şifrelenir → `/home/vipozelders/yedek/disari/` (7 gün). `.env` yedeğe girer, çünkü `APP_SECRET` olmadan T.C. kimlik numaraları çözülemez.
 - **Anahtar** `/etc/pikampus/yedek.key` dosyasında durur. Bir kopyasını sunucu dışında (parola yöneticisi, USB) saklayın; anahtar olmadan yedek açılmaz.
-- **Bilgisayara çekme:** `ops/yedek-cek.ps1` Windows Görev Zamanlayıcı'yla her gün ve oturum açılınca çalışır, son 30 yedeği tutar.
-- **Sunucu bekçisi** (`pikampus-bekci`, 5 dakikada bir) şunlara bakar: servisler, site ve veritabanı, DNS, disk, SSL bitişi, alan adı askısı ve bitişi, gece yedeği, bilgisayara çekim, e-posta kuyruğu, sitedeki yeni hatalar.
+- **Google Drive:** `/etc/pikampus/rclone.conf` varsa her yedek Drive'daki `PiKampusYedek` klasörüne kopyalanır ve orada 30 gün tutulur.
+  - Erişim kapsamı `drive.file`: rclone yalnızca kendi oluşturduğu dosyaları görür.
+  - İzin vermek için, PC'den tünelle: `ssh -L 53682:127.0.0.1:53682 root@sunucu "rclone authorize drive --drive-scope drive.file --auth-no-open-browser"`. Çıkan bağlantıyı tarayıcıda açın; dönen token `[gdrive] type=drive scope=drive.file token=...` olarak `rclone.conf`'a yazılır.
+- **Bilgisayara elle indirme** (isteğe bağlı): `ops/yedek-cek.ps1`.
+- **Sunucu bekçisi** (`pikampus-bekci`, 5 dakikada bir) şunlara bakar: servisler, site ve veritabanı, DNS, disk, SSL bitişi, alan adı askısı ve bitişi, gece yedeği ve Drive'a yüklenmesi, e-posta kuyruğu, sitedeki yeni hatalar.
   - Sorun başlayınca, sürdükçe 3 saatte bir ve düzelince haber verir.
   - Uyarılar `/etc/pikampus/bekci.env` dosyasındaki e-postalara ve Telegram grubuna gider.
   - E-posta, uygulamanın SMTP hesabıyla gönderilir.

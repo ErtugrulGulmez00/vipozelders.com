@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Pi Kampüs şifreli gece yedeği (cron, 03:45, root): veritabanı + yüklenen dosyalar + .env tek dosyada,
-# AES-256 ile şifreli → /home/vipozelders/yedek/disari/pikampus-<tarih>.tar.enc (sunucuda 7 gün; bilgisayara her gün çekilir).
+# AES-256 ile şifreli → /home/vipozelders/yedek/disari/pikampus-<tarih>.tar.enc (sunucuda 7 gün, Google Drive'da 30 gün).
 # .env yedeğe girer: APP_SECRET olmadan T.C. kimlik numaraları çözülemez.
 # Geri açma: openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -pass file:yedek.key -in pikampus-<tarih>.tar.enc | tar xf -
 set -euo pipefail
@@ -25,3 +25,12 @@ chmod 600 "$file.part"
 mv "$file.part" "$file"
 find "$OUT" -name 'pikampus-*.tar.enc' -mtime +7 -delete
 echo "$(date '+%F %T') tamam: $(basename "$file") $(du -h "$file" | cut -f1)"
+
+# Google Drive'a kopya (rclone, yalnızca kendi oluşturduğu dosyalara erişir); Drive'da 30 gün tutulur
+RCLONE_CONF=/etc/pikampus/rclone.conf
+if [ -f "$RCLONE_CONF" ]; then
+  rclone --config "$RCLONE_CONF" copy "$file" gdrive:PiKampusYedek
+  rclone --config "$RCLONE_CONF" delete --min-age 30d gdrive:PiKampusYedek
+  touch /var/lib/pikampus-bekci/drive-son
+  echo "$(date '+%F %T') Drive'a yüklendi"
+fi

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Pi Kampüs sunucu bekçisi (cron, 5 dakikada bir, root). Siteye, servislere, diske, sertifikaya, alan adına, yedeğe,
+# Pi Kampüs sunucu bekçisi (cron, 5 dakikada bir, root). Siteye, servislere, diske, sertifikaya, alan adına, yedeğe (sunucu ve Google Drive),
 # e-posta kuyruğuna ve yeni hatalara bakar; sorun başlayınca, sürdükçe 3 saatte bir ve düzelince e-posta + Telegram gönderir.
 # Ayarlar: /etc/pikampus/bekci.env (ALERT_EMAILS, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID). E-posta uygulamanın SMTP hesabıyla gider.
 #   pikampus-bekci          kontrolleri çalıştırır
@@ -109,10 +109,10 @@ check_backup() {
   [ -n "$newest" ] || { echo "Son 26 saatte gece yedeği alınmamış (/var/log/pikampus-yedek.log)."; return 1; }
 }
 
-check_pc_pull() {
-  local mark="$STATE/pc-son-cekim"
-  [ -f "$mark" ] || return 0
-  [ $(( $(date +%s) - $(stat -c %Y "$mark") )) -lt $((3 * 86400)) ] || { echo "Yedekler 3 gündür bilgisayara çekilmedi (bilgisayar kapalı olabilir)."; return 1; }
+check_drive() {
+  local mark="$STATE/drive-son"
+  [ -f /etc/pikampus/rclone.conf ] || return 0
+  [ -f "$mark" ] && [ $(( $(date +%s) - $(stat -c %Y "$mark") )) -lt $((26 * 3600)) ] || { echo "Gece yedeği Google Drive'a yüklenemedi (/var/log/pikampus-yedek.log). Drive izni kaldırılmış ya da Drive dolmuş olabilir."; return 1; }
 }
 
 db_url() { env_get DATABASE_URL | sed -E 's/\?.*$//'; }
@@ -156,7 +156,7 @@ run_check disk check_disk "Disk doluyor"
 run_check sertifika check_cert "SSL sertifikası"
 run_check alan-adi check_domain "Alan adı kaydı"
 run_check yedek check_backup "Gece yedeği"
-run_check pc-yedek check_pc_pull "Bilgisayara yedek"
+run_check drive-yedek check_drive "Google Drive yedeği"
 run_check eposta check_email_queue "E-posta gönderimi"
 
 # Sitede yeni (ya da tekrar eden) hata: uygulama aynı hata için 6 saatte bir işaretler, bekçi bunları iletir
