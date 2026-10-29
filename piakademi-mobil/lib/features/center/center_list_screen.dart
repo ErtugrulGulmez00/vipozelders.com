@@ -11,7 +11,7 @@ import '../shared/data.dart';
 import '../shared/widgets.dart';
 import 'invite_screen.dart';
 
-/// Kurumum: kuruma (etüt merkezi / dershane) bağlı öğrenciler.
+/// Kurumum: kuruma (etüt merkezi / dershane) bağlı öğrenciler (kurum portalı alt menüsünün ilk sekmesi).
 class CenterListScreen extends ConsumerWidget {
   const CenterListScreen({super.key});
 
@@ -35,7 +35,6 @@ class CenterListScreen extends ConsumerWidget {
         title: const Text('Kurumum'),
         actions: [
           IconButton(tooltip: 'Davet bağlantısı gir', onPressed: () => showInviteCodeSheet(context), icon: const Icon(Icons.add_link_rounded)),
-          const NotificationBell(),
         ],
       ),
       body: AsyncBody(
@@ -50,7 +49,7 @@ class CenterListScreen extends ConsumerWidget {
                     icon: Icons.school_outlined,
                     title: 'Bağlı öğrenci yok',
                     message:
-                        'Çocuğunuzun etüt merkezi ya da dershanesi Pi Kampüs kullanıyorsa, kurumun SMS/e-posta ile gönderdiği davet bağlantısına dokunarak ya da bağlantıyı buraya yapıştırarak bağlanabilirsiniz.',
+                        'Çocuğunuzun etüt merkezi ya da dershanesi Pi Kampüs kullanıyorsa, kurumun e-postayla gönderdiği davet bağlantısına dokunarak ya da bağlantıyı buraya yapıştırarak bağlanabilirsiniz.',
                     action: FilledButton.icon(onPressed: () => showInviteCodeSheet(context), icon: const Icon(Icons.add_link_rounded), label: const Text('Davet bağlantısı gir')),
                   ),
                 )
@@ -75,7 +74,7 @@ class CenterListScreen extends ConsumerWidget {
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(link.student.fullName, style: Theme.of(context).textTheme.titleMedium),
+                                        Text(link.isStudentAccount ? 'Bilgilerim' : link.student.fullName, style: Theme.of(context).textTheme.titleMedium),
                                         const SizedBox(height: 2),
                                         Text(
                                           [link.student.gradeName, ...link.student.groups].whereType<String>().join(' · '),

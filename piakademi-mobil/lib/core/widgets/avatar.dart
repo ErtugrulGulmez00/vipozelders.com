@@ -16,17 +16,16 @@ class Avatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final r = BorderRadius.circular(radius ?? size * 0.32);
+    // Sitedeki gibi ada göre sabit renk (mercan, iris, nane, sarı, lacivert)
+    final (background, foreground) = Brand.avatarTone(name);
     final placeholder = Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        borderRadius: r,
-        gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Brand.b100, Brand.b200]),
-      ),
+      decoration: BoxDecoration(borderRadius: r, color: background),
       alignment: Alignment.center,
       child: Text(
         initialsOf(name),
-        style: TextStyle(color: Brand.b800, fontWeight: FontWeight.w800, fontSize: size * 0.34),
+        style: TextStyle(fontFamily: AppTheme.displayFamily, color: foreground, fontWeight: FontWeight.w800, fontSize: size * 0.36),
       ),
     );
     if (photoUrl == null || photoUrl!.isEmpty) return Semantics(label: name, child: placeholder);

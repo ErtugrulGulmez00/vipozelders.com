@@ -218,21 +218,21 @@ class _BalanceCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: const LinearGradient(colors: [Color(0xFF312E81), Color(0xFF4F46E5)], begin: Alignment.topLeft, end: Alignment.bottomRight),
+        borderRadius: BorderRadius.circular(28),
+        color: Brand.ink900,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text('Soru krediniz', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w600)),
           const SizedBox(height: 4),
-          Text('$balance', style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.w800, height: 1.1)),
+          Text('$balance', style: const TextStyle(fontFamily: AppTheme.displayFamily, color: Colors.white, fontSize: 44, fontWeight: FontWeight.w800, height: 1.1)),
           const SizedBox(height: 4),
           const Text('Her soru 1 kredi. Fotoğrafını çek, branş öğretmeni adım adım çözsün.', style: TextStyle(color: Colors.white, height: 1.35)),
           const SizedBox(height: 16),
           if (balance > 0 && hasSubjects)
             FilledButton.icon(
-              style: FilledButton.styleFrom(backgroundColor: const Color(0xFFFBBF24), foregroundColor: const Color(0xFF1E1B4B)),
+              style: FilledButton.styleFrom(backgroundColor: Brand.gold400, foregroundColor: Brand.ink900),
               onPressed: () => context.push(Routes.askQuestion),
               icon: const Icon(Icons.add_a_photo_rounded),
               label: const Text('Soru gönder'),

@@ -200,6 +200,14 @@ class _TeacherFiltersSheetState extends ConsumerState<TeacherFiltersSheet> {
                   title: const Text('Yalnızca onaylı öğretmenler'),
                   subtitle: Text('Kimlik ve diploması kontrol edilenler', style: TextStyle(color: scheme.onSurfaceVariant)),
                 ),
+                if (catalog.rules.subscriptionsEnabled)
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    value: _q.subscription,
+                    onChanged: (v) => setState(() => _q = _q.copyWith(subscription: v)),
+                    title: const Text('Aylık soru aboneliği verenler'),
+                    subtitle: Text('Her gün kendi öğretmeninize soru gönderin', style: TextStyle(color: scheme.onSurfaceVariant)),
+                  ),
               ],
             ),
           ),

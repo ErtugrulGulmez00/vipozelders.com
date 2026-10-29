@@ -14,7 +14,13 @@ class RatingLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final muted = Theme.of(context).colorScheme.onSurfaceVariant;
     if (count == 0) {
-      return Text('Yeni öğretmen', style: TextStyle(fontSize: size - 1, color: muted, fontWeight: FontWeight.w600));
+      // Sitedeki gibi "değerlendirme yok" yerine mavi "Yeni öğretmen" rozeti
+      final tone = ToneColors.of(Tone.sky, Theme.of(context).brightness);
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        decoration: BoxDecoration(color: tone.background, borderRadius: BorderRadius.circular(999)),
+        child: Text('Yeni öğretmen', style: TextStyle(fontSize: size - 1.5, color: tone.foreground, fontWeight: FontWeight.w700)),
+      );
     }
     return Row(
       mainAxisSize: MainAxisSize.min,

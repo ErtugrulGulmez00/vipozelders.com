@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/auth/sides.dart';
 import '../../core/providers.dart';
 import '../shared/data.dart';
 
@@ -47,7 +48,7 @@ class _ShellScaffold extends StatelessWidget {
   }
 }
 
-/// Veli / öğrenci (ve misafir) alt menüsü. "Kurumum" yalnızca kuruma bağlı hesaplarda görünür.
+/// Özel ders tarafı: veli / öğrenci (ve misafir) alt menüsü. Kurum portalı ayrı tarafta (PortalShell).
 class StudentShell extends ConsumerWidget {
   const StudentShell({super.key, required this.shell});
 
@@ -56,15 +57,34 @@ class StudentShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionProvider);
-    final hasCenter = session.isStudent && (ref.watch(centerLinksProvider).valueOrNull?.isNotEmpty ?? false);
     return _ShellScaffold(
       shell: shell,
       destinations: [
         const _Destination(0, 'Keşfet', Icons.explore_outlined, Icons.explore_rounded),
         const _Destination(1, 'Derslerim', Icons.event_note_outlined, Icons.event_note_rounded),
-        if (hasCenter || shell.currentIndex == 2) const _Destination(2, 'Kurumum', Icons.school_outlined, Icons.school_rounded),
-        const _Destination(3, 'Favoriler', Icons.favorite_border_rounded, Icons.favorite_rounded),
-        _Destination(4, session.isSignedIn ? 'Hesabım' : 'Giriş', Icons.person_outline_rounded, Icons.person_rounded),
+        const _Destination(2, 'Favoriler', Icons.favorite_border_rounded, Icons.favorite_rounded),
+        _Destination(3, session.isSignedIn ? 'Hesabım' : 'Giriş', Icons.person_outline_rounded, Icons.person_rounded),
+      ],
+    );
+  }
+}
+
+/// Kurum tarafı: veli / öğrenci portalı alt menüsü (sitedeki /hesabim/kurum).
+class PortalShell extends ConsumerWidget {
+  const PortalShell({super.key, required this.shell});
+
+  final StatefulNavigationShell shell;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(sessionProvider);
+    final unread = session.me == null ? 0 : unreadFor(session.me!, session.view);
+    return _ShellScaffold(
+      shell: shell,
+      destinations: [
+        const _Destination(0, 'Kurumum', Icons.school_outlined, Icons.school_rounded),
+        _Destination(1, 'Bildirimler', Icons.notifications_none_rounded, Icons.notifications_rounded, badge: unread),
+        const _Destination(2, 'Hesap', Icons.person_outline_rounded, Icons.person_rounded),
       ],
     );
   }

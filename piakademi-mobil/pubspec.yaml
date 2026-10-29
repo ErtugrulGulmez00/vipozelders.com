@@ -58,19 +58,29 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # Sitedeki yazı tipi (SIL Open Font License, assets/fonts/OFL.txt)
+  # Sitedeki yazı tipleri (SIL Open Font License, assets/fonts/OFL.txt): gövde DM Sans, başlıklar Bricolage Grotesque
   fonts:
-    - family: PlusJakartaSans
+    - family: DMSans
       fonts:
-        - asset: assets/fonts/PlusJakartaSans-Regular.ttf
+        - asset: assets/fonts/DMSans-Regular.ttf
           weight: 400
-        - asset: assets/fonts/PlusJakartaSans-Medium.ttf
+        - asset: assets/fonts/DMSans-Medium.ttf
           weight: 500
-        - asset: assets/fonts/PlusJakartaSans-SemiBold.ttf
+        - asset: assets/fonts/DMSans-SemiBold.ttf
           weight: 600
-        - asset: assets/fonts/PlusJakartaSans-Bold.ttf
+        - asset: assets/fonts/DMSans-Bold.ttf
           weight: 700
-        - asset: assets/fonts/PlusJakartaSans-ExtraBold.ttf
+        - asset: assets/fonts/DMSans-ExtraBold.ttf
+          weight: 800
+    - family: BricolageGrotesque
+      fonts:
+        - asset: assets/fonts/BricolageGrotesque-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/BricolageGrotesque-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/BricolageGrotesque-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/BricolageGrotesque-ExtraBold.ttf
           weight: 800
 
 # Simgeler: dart run flutter_launcher_icons
@@ -86,14 +96,14 @@ flutter_launcher_icons:
   web:
     generate: true
     image_path: "assets/branding/icon.png"
-    background_color: "#1E1B4B"
-    theme_color: "#4F46E5"
+    background_color: "#1B1F3B"
+    theme_color: "#D63F1C"
 
 # Açılış ekranı: dart run flutter_native_splash:create
 flutter_native_splash:
-  color: "#1E1B4B"
+  color: "#1B1F3B"
   image: assets/branding/splash_logo.png
   android_12:
     image: assets/branding/splash_android12.png
-    color: "#1E1B4B"
+    color: "#1B1F3B"
   web: false

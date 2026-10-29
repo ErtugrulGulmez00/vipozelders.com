@@ -75,22 +75,91 @@ void main() {
     expect(find.text('Kullanıcı adı/e-posta veya şifre hatalı.'), findsOneWidget);
   });
 
-  testWidgets('kurum personeli hesabı web paneline yönlendirilir', (tester) async {
+  testWidgets('kurum personeli kurum girişinden girer, kurum paneli açılır', (tester) async {
     final api = studentApi();
-    api.json('POST', '/oturum', {
-      'error': {'code': 'CENTER_NOT_SUPPORTED', 'message': 'Kurum paneli hesabı mobil uygulamada henüz kullanılamıyor; web panelini kullanın.'},
-    }, status: 403);
-    await pumpApp(tester, api);
+    final staff = meJson(role: 'CENTER', sides: {'kurum': true, 'ozel': false, 'staff': true, 'portal': false, 'privateActivity': false});
+    api.json('POST', '/oturum', {'token': 'tok-kurum', 'user': staff});
+    // Testte WebView yok: panel bağlantısı hata döner, ekran hata görünümüyle açılır
+    api.json('POST', '/web-oturum', {
+      'error': {'code': 'NOT_FOUND', 'message': 'Panel bağlantısı alınamadı.'},
+    }, status: 404);
+    final store = MemoryKeyValueStore();
+    await pumpApp(tester, api, store: store);
     await tester.tap(find.text('Giriş'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'Giriş yap'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Kurum girişi'));
     await tester.pumpAndSettle();
     await tester.enterText(find.widgetWithText(TextFormField, 'E-posta veya kullanıcı adı'), 'kurum@ornek.com');
     await tester.enterText(find.widgetWithText(TextFormField, 'Şifre'), 'Kurum12345');
     await tester.tap(find.widgetWithText(FilledButton, 'Giriş yap'));
     await tester.pumpAndSettle();
-    expect(find.text('Bu hesap web panelinde kullanılır'), findsOneWidget);
-    expect(find.text('Web panelini aç'), findsOneWidget);
+
+    expect(find.text('Kurum paneli'), findsOneWidget);
+    expect(find.text('Panel bağlantısı alınamadı.'), findsOneWidget);
+    expect(api.calls('POST', '/web-oturum').first.data, {'path': '/kurum'});
+    expect(store.values['pk_view'], 'centerPanel');
+    // Özel ders alt menüsü yok
+    expect(find.text('Keşfet'), findsNothing);
+  });
+
+  testWidgets('kurumun açtığı öğrenci hesabı yalnızca kurum tarafını görür; sekmeler pakete göre', (tester) async {
+    final api = FakeApi()..withPublicData();
+    api.json('GET', '/ben', meJson(sides: {'kurum': true, 'ozel': false, 'staff': false, 'portal': true, 'privateActivity': false}));
+    api.json('GET', '/kurum', {'items': [centerLinkJson(studentAccount: true)]});
+    api.json('GET', '/kurum/g1', centerChildJson(studentAccount: true));
+    final store = MemoryKeyValueStore()..values['pk_session_token'] = 'tok-ogrenci';
+    await pumpApp(tester, api, store: store);
+
+    // Kurum portalı alt menüsü; tek bağlantıda doğrudan öğrencinin sayfası
+    expect(find.text('Bilgilerim'), findsOneWidget);
+    expect(find.text('Kurumum'), findsOneWidget);
+    expect(find.text('Keşfet'), findsNothing);
+    // Etüt Merkezi paketi, denemeler kapalı: Denemeler ve Ders programı sekmesi yok
+    expect(find.text('Ödevler'), findsWidgets);
+    expect(find.text('Denemeler'), findsNothing);
+    expect(find.text('Ders programı'), findsNothing);
+
+    // Hesap: özel ders tarafına geçiş ve başka öğrenci bağlama yok
+    await tester.tap(find.text('Hesap'));
+    await tester.pumpAndSettle();
+    expect(find.text('Özel ders tarafına geç'), findsNothing);
+    expect(find.text('Davet bağlantısıyla öğrenci bağla'), findsNothing);
+  });
+
+  testWidgets('iki taraflı veli özel ders tarafından kurum tarafına geçer ve geri döner', (tester) async {
+    final api = studentApi();
+    api.json('GET', '/ben', meJson(sides: {'kurum': true, 'ozel': true, 'staff': false, 'portal': true, 'privateActivity': true}));
+    api.json('GET', '/kurum', {
+      'items': [
+        centerLinkJson(),
+        {...centerLinkJson(), 'id': 'g2', 'student': {'firstName': 'Ece', 'lastName': 'Demirtaş', 'groups': <Object>[]}},
+      ],
+    });
+    final store = MemoryKeyValueStore()..values['pk_session_token'] = 'tok-veli';
+    await pumpApp(tester, api, store: store);
+
+    // Varsayılan özel ders tarafı: Kurumum sekmesi yok
+    expect(find.text('Keşfet'), findsOneWidget);
+    expect(find.text('Kurumum'), findsNothing);
+    await tester.tap(find.text('Hesabım'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Kurum tarafına geç'));
+    await tester.pumpAndSettle();
+
+    // Kurum portalı: iki öğrenci listelenir, tercih saklanır
+    expect(find.text('Ali Demirtaş'), findsOneWidget);
+    expect(find.text('Ece Demirtaş'), findsOneWidget);
+    expect(find.text('Keşfet'), findsNothing);
+    expect(store.values['pk_view'], 'portal');
+
+    // Özel derste işlemi olduğu için "Özel ders tarafına geç" görünür
+    await tester.tap(find.text('Hesap'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Özel ders tarafına geç'));
+    await tester.pumpAndSettle();
+    expect(find.text('Keşfet'), findsOneWidget);
   });
 
   testWidgets('geçici şifreyle giren öğretmen önce şifresini değiştirir, sonra paneline geçer', (tester) async {

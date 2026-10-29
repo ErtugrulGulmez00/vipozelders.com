@@ -230,7 +230,7 @@ class _Header extends StatelessWidget {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
-        gradient: Brand.heroGradient,
+        color: Brand.hero,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -261,10 +261,10 @@ class _Header extends StatelessWidget {
                                 const Icon(Icons.star_rounded, color: Brand.gold400, size: 20),
                                 const SizedBox(width: 3),
                                 Text(formatRating(t.ratingAvg), style: const TextStyle(fontWeight: FontWeight.w800, color: Colors.white)),
-                                Text(' (${t.ratingCount} yorum)', style: const TextStyle(color: Brand.b100)),
+                                Text(' (${t.ratingCount} yorum)', style: const TextStyle(color: Brand.ink200)),
                               ],
                             )
-                          : const Text('Yeni öğretmen', style: TextStyle(color: Brand.b100, fontWeight: FontWeight.w600)),
+                          : const Text('Yeni öğretmen', style: TextStyle(color: Brand.ink200, fontWeight: FontWeight.w600)),
                     ),
                   ],
                 ),
@@ -273,7 +273,7 @@ class _Header extends StatelessWidget {
           ),
           if (t.headline != null) ...[
             const SizedBox(height: 14),
-            Text(t.headline!, style: const TextStyle(color: Brand.b50, fontSize: 15, height: 1.4, fontWeight: FontWeight.w600)),
+            Text(t.headline!, style: const TextStyle(color: Brand.ink100, fontSize: 15, height: 1.4, fontWeight: FontWeight.w600)),
           ],
           const SizedBox(height: 14),
           Wrap(
@@ -281,7 +281,7 @@ class _Header extends StatelessWidget {
             runSpacing: 8,
             children: [
               if (t.experienceYears != null) _HeaderChip(icon: Icons.workspace_premium_rounded, text: '${t.experienceYears} yıl deneyim'),
-              _HeaderChip(icon: Icons.check_circle_rounded, text: '${t.completedLessons} ders'),
+              if (t.completedLessons > 0) _HeaderChip(icon: Icons.check_circle_rounded, text: '${t.completedLessons} tamamlanan ders'),
               if (t.avgResponseMinutes != null) _HeaderChip(icon: Icons.bolt_rounded, text: 'Ortalama ${_response(t.avgResponseMinutes!)} içinde yanıt'),
               if (location.isNotEmpty) _HeaderChip(icon: Icons.place_rounded, text: location),
             ],

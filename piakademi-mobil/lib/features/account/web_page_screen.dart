@@ -15,9 +15,13 @@ import '../shared/widgets.dart';
 /// Sitedeki yasal/bilgi sayfaları uygulama içinde açılır (KVKK, sözleşmeler, SSS).
 /// Site içindeki diğer bağlantılar tarayıcıda açılır.
 class WebPageScreen extends ConsumerStatefulWidget {
-  const WebPageScreen({super.key, required this.url, this.title, this.panelPath, this.guide = false});
+  const WebPageScreen({super.key, required this.url, this.title, this.panelPath, this.guide = false, this.section});
 
   factory WebPageScreen.page({Key? key, required String slug}) => WebPageScreen(key: key, url: '${AppConfig.siteUrl}/sayfa/$slug', title: null);
+
+  /// "Nasıl çalışır?": sitedeki ekran ekran rehberler (özel ders, etüt merkezi, dershane); rehberler arasında gezinilir.
+  factory WebPageScreen.howItWorks({Key? key}) =>
+      WebPageScreen(key: key, url: '${AppConfig.siteUrl}/nasil-calisir', title: 'Nasıl çalışır?', section: '/nasil-calisir');
 
   /// Öğretmen web paneli sayfası (profil, fotoğraf, fiyatlar, belgeler): tek kullanımlık bağlantıyla oturum açık açılır
   /// ve panel içinde gezinilebilir.
@@ -30,6 +34,9 @@ class WebPageScreen extends ConsumerStatefulWidget {
 
   /// Rehber (blog): /rehber ve yazıları uygulama içinde gezilir.
   final bool guide;
+
+  /// Bu adresle başlayan site sayfaları uygulama içinde kalır (diğerleri tarayıcıda açılır)
+  final String? section;
 
   @override
   ConsumerState<WebPageScreen> createState() => _WebPageScreenState();
@@ -73,6 +80,7 @@ class _WebPageScreenState extends ConsumerState<WebPageScreen> {
           // Yalnızca aynı sayfa içinde kalınır; diğer bağlantılar tarayıcıda açılır.
           if (uri != null && uri.path == start.path && uri.host == start.host) return NavigationDecision.navigate;
           if (widget.guide && uri != null && uri.host == start.host && uri.path.startsWith('/rehber')) return NavigationDecision.navigate;
+          if (widget.section != null && uri != null && uri.host == start.host && uri.path.startsWith(widget.section!)) return NavigationDecision.navigate;
           // Panel sayfasında giriş bağlantısı ve panelin kendi sayfaları uygulamada kalır.
           if (panel && uri != null && uri.host == entry.host && (uri.path.startsWith('/ogretmen-paneli') || uri.path.startsWith('/api/mobil/v1/web-giris'))) {
             return NavigationDecision.navigate;

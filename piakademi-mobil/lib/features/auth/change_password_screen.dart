@@ -50,7 +50,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
       ref.read(sessionProvider.notifier).passwordChanged();
       if (mounted) showSnack(context, message);
       if (forced) {
-        router.go(session.isTeacher ? Routes.teacherHome : Routes.explore);
+        router.go(Routes.homeOf(session.view));
       } else if (mounted && context.canPop()) {
         context.pop();
       }

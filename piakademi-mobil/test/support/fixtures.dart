@@ -141,12 +141,14 @@ Map<String, dynamic> slotsJson(DateTime now) {
   };
 }
 
-Map<String, dynamic> meJson({String role = 'STUDENT', bool mustChangePassword = false}) => {
+/// sides: GET /ben taraf bilgisi (kurum / özel ders); verilmezse yalnızca özel ders tarafı
+Map<String, dynamic> meJson({String role = 'STUDENT', bool mustChangePassword = false, Map<String, dynamic>? sides}) => {
       'id': 'u1',
       'role': role,
-      'firstName': role == 'TEACHER' ? 'Ayşe' : 'Fatma',
-      'lastName': role == 'TEACHER' ? 'Yılmaz' : 'Demirtaş',
+      'firstName': role == 'TEACHER' ? 'Ayşe' : (role == 'CENTER' ? 'Kemal' : 'Fatma'),
+      'lastName': role == 'TEACHER' ? 'Yılmaz' : (role == 'CENTER' ? 'Arslan' : 'Demirtaş'),
       'email': role == 'TEACHER' ? null : 'veli@ornek.com',
+      'sides': sides ?? {'kurum': false, 'ozel': role != 'CENTER', 'staff': false, 'portal': false, 'privateActivity': role == 'TEACHER'},
       'username': role == 'TEACHER' ? 'ayse.yilmaz' : null,
       'phone': '05321112233',
       'emailVerified': true,
@@ -227,3 +229,22 @@ Map<String, dynamic> bookingDetailJson({required String status, DateTime? startA
     },
   };
 }
+
+/// GET /kurum bağlantısı
+Map<String, dynamic> centerLinkJson({bool studentAccount = false}) => {
+      'id': 'g1',
+      'relation': studentAccount ? null : 'Anne',
+      'isStudentAccount': studentAccount,
+      'student': {'firstName': 'Ali', 'lastName': 'Demirtaş', 'gradeName': '8. Sınıf', 'groups': ['LGS-A']},
+      'center': {'name': 'Başarı Etüt Merkezi', 'phone': '0212 000 00 00', 'logoUrl': null},
+    };
+
+/// GET /kurum/{id}: Etüt Merkezi paketi (ders programı yok), deneme modülü kapalı
+Map<String, dynamic> centerChildJson({bool studentAccount = false}) => {
+      'id': 'g1',
+      'isStudentAccount': studentAccount,
+      'modules': {'exams': false, 'payments': true, 'homework': true, 'study': true, 'questions': true, 'etuds': true, 'hall': true, 'schedule': false},
+      'student': {'firstName': 'Ali', 'lastName': 'Demirtaş', 'gradeName': '8. Sınıf', 'studentNumber': '12'},
+      'center': {'name': 'Başarı Etüt Merkezi', 'phone': '0212 000 00 00', 'email': null, 'address': null, 'logoUrl': null},
+      'balance': {'total': 0, 'paid': 0, 'remaining': 0, 'overdue': 0},
+    };

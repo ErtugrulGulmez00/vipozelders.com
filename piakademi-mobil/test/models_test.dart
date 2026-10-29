@@ -70,7 +70,8 @@ void main() {
     expect(Me.fromJson(meJson()).student!.isParent, isTrue);
     expect(Me.fromJson(meJson(role: 'TEACHER')).isTeacher, isTrue);
     expect(Me.fromJson(meJson()).initials, 'FD');
-    expect(Me.fromJson(meJson(role: 'CENTER')).role, UserRole.other);
+    expect(Me.fromJson(meJson(role: 'CENTER')).role, UserRole.center);
+    expect(Me.fromJson(meJson(role: 'ADMIN')).role, UserRole.other);
   });
 
   test('deneme karnesi: kurum ortalaması sayı ya da nesne olabilir', () {

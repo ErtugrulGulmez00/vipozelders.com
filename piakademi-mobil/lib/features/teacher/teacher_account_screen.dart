@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/auth/sides.dart';
 import '../../core/providers.dart';
 import '../../core/router/app_router.dart';
 import '../../core/widgets/feedback.dart';
@@ -31,6 +32,8 @@ class TeacherAccountScreen extends ConsumerWidget {
               if (teacher?.verified ?? false) 'Onaylı',
             ].join(' · '),
           ),
+          // Kurum personeliyse "Kurum paneline geç"
+          SideSwitchTiles(me: me, current: AppView.teacher),
           const MenuTitle('Kazanç ve geri bildirim'),
           MenuTile(icon: Icons.payments_outlined, title: 'Kazançlar', subtitle: 'Bekleyen, ödenebilir ve ödenen tutarlar', onTap: () => context.push(Routes.earnings)),
           MenuTile(icon: Icons.reviews_outlined, title: 'Yorumlar', subtitle: 'Gelen yorumlar ve cevaplarınız', onTap: () => context.push(Routes.teacherReviews)),

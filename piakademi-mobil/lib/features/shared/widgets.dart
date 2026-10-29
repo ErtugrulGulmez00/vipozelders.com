@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/auth/sides.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/format/dates.dart';
 import '../../core/format/money.dart';
@@ -29,7 +30,7 @@ class AppBackButton extends ConsumerWidget {
         if (context.canPop()) {
           context.pop();
         } else {
-          context.go(fallback ?? (ref.read(sessionProvider).isTeacher ? Routes.teacherHome : Routes.explore));
+          context.go(fallback ?? (ref.read(sessionProvider).isSignedIn ? Routes.homeOf(ref.read(sessionProvider).view) : Routes.explore));
         }
       },
     );
@@ -46,7 +47,7 @@ class NotificationBell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionProvider);
     if (!session.isSignedIn) return const SizedBox.shrink();
-    final unread = session.me!.unreadNotifications;
+    final unread = unreadFor(session.me!, session.view);
     return IconButton(
       tooltip: unread > 0 ? 'Bildirimler ($unread okunmamış)' : 'Bildirimler',
       color: light ? Colors.white : null,

@@ -9,9 +9,19 @@ void main() {
       expect(mapWebPath(Uri.parse('/hesabim/derslerim/cmv47abc')), '/ders/cmv47abc');
       expect(mapWebPath(Uri.parse('/ogretmen-paneli/dersler/cmv47abc')), '/ders/cmv47abc');
       expect(mapWebPath(Uri.parse('/odeme/sonuc/cmv47abc')), '/ders/cmv47abc');
-      expect(mapWebPath(Uri.parse('/hesabim/kurum/g1')), '/kurum/g1');
-      expect(mapWebPath(Uri.parse('/hesabim/kurum/g1/deneme/e1')), '/kurum/g1/deneme/e1');
+      expect(mapWebPath(Uri.parse('/hesabim/kurum/g1')), '/kurum-ogrenci/g1');
+      expect(mapWebPath(Uri.parse('/hesabim/kurum/g1?sekme=odevler')), '/kurum-ogrenci/g1?sekme=odevler');
+      expect(mapWebPath(Uri.parse('/hesabim/kurum/g1/deneme/e1')), '/kurum-ogrenci/g1/deneme/e1');
       expect(mapWebPath(Uri.parse('/hesabim/kurum')), '/kurumum');
+      expect(mapWebPath(Uri.parse('/hesabim/kurum/bildirimler')), '/kurumum/bildirimler');
+      // Kurum paneli (personel) sayfaları uygulamadaki web görünümünde
+      expect(mapWebPath(Uri.parse('/kurum')), '/kurum-paneli');
+      expect(mapWebPath(Uri.parse('/kurum/sorular/q1')), '/kurum-paneli?yol=%2Fkurum%2Fsorular%2Fq1');
+      expect(mapWebPath(Uri.parse('/kurum-giris')), '/giris?kapi=kurum');
+      expect(mapWebPath(Uri.parse('/sayfa/nasil-calisir')), '/nasil-calisir');
+      // Uygulamanın kendi kurum adresleri değişmez
+      expect(mapWebPath(Uri.parse('/kurum-paneli?yol=%2Fkurum')), isNull);
+      expect(mapWebPath(Uri.parse('/kurum-ogrenci/g1')), isNull);
       expect(mapWebPath(Uri.parse('/ogretmen-paneli/talepler')), '/panel/talepler');
       expect(mapWebPath(Uri.parse('/ogretmen-paneli')), '/panel');
       expect(mapWebPath(Uri.parse('/ozel-ders/lgs/matematik')), '/ogretmenler?level=lgs&subject=matematik');
@@ -32,7 +42,9 @@ void main() {
   test('bildirim hedefleri', () {
     expect(routeForTarget('booking', 'b1'), '/ders/b1');
     expect(routeForTarget('requests', null), '/panel/talepler');
-    expect(routeForTarget('centerStudent', 'g1'), '/kurum/g1');
+    expect(routeForTarget('centerStudent', 'g1'), '/kurum-ogrenci/g1');
+    expect(routeForTarget('centerPanel', '/kurum/sorular/q1'), '/kurum-paneli?yol=%2Fkurum%2Fsorular%2Fq1');
+    expect(routeForTarget('centerInvite', 'tok'), '/kurum-davet/tok');
     expect(routeForTarget('teacher', 'ayse-yilmaz'), '/ogretmen/ayse-yilmaz');
     expect(routeForTarget('bilinmeyen', null), '/bildirimler');
   });

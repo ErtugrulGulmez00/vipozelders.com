@@ -59,18 +59,64 @@ class CenterStudent {
 
 /// Veli portalı bağlantısı (`GET /kurum`). [id] bağlantı kimliğidir.
 class CenterLink {
-  const CenterLink({required this.id, this.relation, required this.student, required this.center});
+  const CenterLink({required this.id, this.relation, this.isStudentAccount = false, required this.student, required this.center});
 
   final String id;
   final String? relation;
+
+  /// Kurumun açtığı öğrenci hesabı: bağlantı öğrencinin kendisi (portalda "Bilgilerim")
+  final bool isStudentAccount;
   final CenterStudent student;
   final CenterInfo center;
 
   factory CenterLink.fromJson(Json json) => CenterLink(
         id: asString(json['id']),
         relation: asStringOrNull(json['relation']),
+        isStudentAccount: asBool(json['isStudentAccount']),
         student: CenterStudent.fromJson(asJson(json['student'])),
         center: CenterInfo.fromJson(asJson(json['center'])),
+      );
+}
+
+/// Kurumun paketinde açık ve kurumun kapatmadığı bölümler (sitedeki portal sekmeleriyle aynı).
+class CenterModules {
+  const CenterModules({
+    this.exams = true,
+    this.payments = true,
+    this.homework = true,
+    this.study = true,
+    this.questions = true,
+    this.etuds = true,
+    this.hall = true,
+    this.schedule = true,
+  });
+
+  final bool exams;
+  final bool payments;
+  final bool homework;
+
+  /// Kaynaklar ve haftalık çalışma programı
+  final bool study;
+
+  /// Fotoğrafla soru
+  final bool questions;
+  final bool etuds;
+
+  /// Çalışma salonu
+  final bool hall;
+
+  /// Sınıf ders programı (yalnızca Dershane paketi)
+  final bool schedule;
+
+  factory CenterModules.fromJson(Json json) => CenterModules(
+        exams: asBool(json['exams'], true),
+        payments: asBool(json['payments'], true),
+        homework: asBool(json['homework'], true),
+        study: asBool(json['study'], true),
+        questions: asBool(json['questions'], true),
+        etuds: asBool(json['etuds'], true),
+        hall: asBool(json['hall'], true),
+        schedule: asBool(json['schedule'], true),
       );
 }
 
@@ -415,6 +461,8 @@ class HallDay {
 class CenterChild {
   const CenterChild({
     required this.id,
+    this.isStudentAccount = false,
+    this.modules = const CenterModules(),
     required this.student,
     required this.center,
     this.balance = const Balance(),
@@ -435,6 +483,10 @@ class CenterChild {
   });
 
   final String id;
+
+  /// Öğrencinin kendi hesabı (veli değil)
+  final bool isStudentAccount;
+  final CenterModules modules;
   final CenterStudent student;
   final CenterInfo center;
   final Balance balance;
@@ -464,6 +516,8 @@ class CenterChild {
 
   factory CenterChild.fromJson(Json json) => CenterChild(
         id: asString(json['id']),
+        isStudentAccount: asBool(json['isStudentAccount']),
+        modules: json['modules'] is Map ? CenterModules.fromJson(asJson(json['modules'])) : const CenterModules(),
         student: CenterStudent.fromJson(asJson(json['student'])),
         center: CenterInfo.fromJson(asJson(json['center'])),
         balance: Balance.fromJson(asJson(json['balance'])),

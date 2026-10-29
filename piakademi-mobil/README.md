@@ -5,11 +5,13 @@ Pi Kampüs web sitesinin Android ve iOS uygulaması. Uygulama yalnızca sitenin 
 ## Neler var?
 
 - **Veli / öğrenci:** keşfet, öğretmen arama ve filtreler, öğretmen profili (tanıtım videosu, yorumlar, favori), saat seçip randevu, **ücretsiz 15 dk tanışma**, kartla ödeme (sitenin güvenli ödeme sayfası uygulama içinde açılır), derslerim, ders ayrıntısı (iptal ve iade önizlemesi, değerlendirme, sorun bildirme, takvime ekleme), sanal sınıf, **soru kredisi ve soru sor** (paket satın alma, fotoğrafla soru, çözüm, bir kez ek soru, puan, sorun bildirme, kredi iadesi), **paket ve düzenli ders** (paketten ders, Paketlerim, iade), **ders erteleme**, **aylık soru aboneliği**, **grup dersleri** (kayıt, ödeme, sanal sınıf), **indirim kodu** ve **arkadaşını davet et**, **öğretmen talep formu**, **Rehber**, **öğretmenle mesajlaşma**, favoriler, bildirimler, profil, şifre, hesap silme talebi.
-- **Kurumum (veli portalı):** kurum davet bağlantısıyla bağlanma; özet, devam ve etüt, çalışma salonu, çalışma programı ve kaynak ilerlemesi, koçluk görüşmeleri, denemeler (net grafiği, karne), ödemeler, ödevler, kuruma fotoğrafla soru, ders programı, duyurular.
+- **Kurum tarafı (veli / öğrenci portalı):** ayrı alt menü (Kurumum · Bildirimler · Hesap); sekmeler kurumun paketine (Etüt Merkezi / Dershane) ve kapattığı bölümlere göre; kurum davet bağlantısıyla bağlanma; özet, devam ve etüt, çalışma salonu, çalışma programı ve kaynak ilerlemesi, koçluk görüşmeleri, denemeler (net grafiği, karne), ödemeler, ödevler, kuruma fotoğrafla soru, ders programı, duyurular.
 - **Öğretmen:** özet, talepler (onay/red, tanışma), **soru havuzu** (üstlen, çöz, geri çevir, ek soruya cevap), **mesajlar**, paket taleplerini toplu onay, erteleme, grup derslerim, abonelik planları ve profil/fotoğraf/fiyat/belge/IBAN sayfaları (uygulama içinde oturum açık), dersler, haftalık müsaitlik ve izinler, kazançlar, yorumlara cevap.
 - **Ortak:** push bildirimleri (Firebase), bildirime dokununca ilgili ekran, site bağlantılarının uygulamada açılması, çevrimdışı uyarısı, bakım modu uyarısı.
 
-Yönetici ve kurum personeli hesapları uygulamaya giremez (sunucu `ADMIN_NOT_SUPPORTED` / `CENTER_NOT_SUPPORTED` döner); uygulama bu durumda web panelini açan bir düğme gösterir.
+**Tek hesap, iki kapı** (sitedeki gibi): giriş ekranında “Özel ders girişi” ve “Kurum girişi”. Kişi hangi kapıdan girerse o tarafı görür, o tarafta hesabı yoksa kendi tarafına geçer; iki tarafı olanlarda Hesap ekranında “… tarafına geç” vardır, son açılan taraf hatırlanır (`lib/core/auth/sides.dart`). **Kurum personeli** kurum panelini (sitedeki `/kurum`) uygulama içinde tek kullanımlık girişle açar; panelin taraf bağlantıları uygulamadaki tarafa geçer, panelde çıkış uygulamadan da çıkarır, Excel dışa aktarımları tarayıcıda iner. Kurumun açtığı öğrenci hesabında yalnızca kurum tarafı vardır.
+
+Yönetici hesabı uygulamaya giremez (sunucu `ADMIN_NOT_SUPPORTED` döner); uygulama web panelini açan bir düğme gösterir.
 
 ## Gereksinimler
 
@@ -43,7 +45,7 @@ flutter run --dart-define=API_BASE_URL=http://localhost:3000/api/mobil/v1
 
 `adb reverse`, cihazın `localhost:3000` adresini bilgisayara yönlendirir. Sunucunun ürettiği ödeme ve sanal sınıf bağlantıları da `APP_URL` (`http://localhost:3000`) ile başladığı için `10.0.2.2` yerine bu yöntem önerilir. Şifresiz `http` yalnızca debug derlemesinde açıktır (`android/app/src/debug/AndroidManifest.xml`).
 
-Demo hesaplar web projesinin README'sindedir (ör. veli `veli@demo.vipozelders.local` / `Veli12345`, öğretmen `ayse.yilmaz` / `Ogretmen123`). Demo veli, demo kurumdaki öğrenciye bağlıdır (Hesabım → Kurumum).
+Demo hesaplar web projesinin README'sindedir (ör. veli `veli@demo.vipozelders.local` / `Veli12345`, öğretmen `ayse.yilmaz` / `Ogretmen123`). Demo veli, demo kurumdaki öğrenciye bağlıdır (Hesabım → Kurum tarafına geç). Kurum sahibi `kurum@demo.vipozelders.local` / `Kurum12345` kurum panelini açar; `ayse.yilmaz` hem özel ders öğretmeni hem kurum öğretmenidir.
 
 ## Derleme ayarları (`--dart-define`)
 
@@ -116,7 +118,7 @@ Kamera, mikrofon ve fotoğraf izin metinleri `ios/Runner/Info.plist` içindedir.
 ## Site bağlantılarının uygulamada açılması
 
 - `pikampus://kurum-davet/<kod>`, `pikampus://ders/<id>` gibi bağlantılar her zaman çalışır.
-- `https://pikampus.com/kurum-davet/…`, `/ogretmen/…`, `/hesabim/derslerim/…`, `/hesabim/kurum…`, `/ogretmen-paneli/dersler/…` bağlantıları doğrulama yapılınca tarayıcı yerine uygulamada açılır:
+- `https://pikampus.com/kurum-davet/…`, `/ogretmen/…`, `/hesabim/derslerim/…`, `/hesabim/kurum…`, `/ogretmen-paneli/dersler/…`, `/kurum/…` (kurum paneli) bağlantıları doğrulama yapılınca tarayıcı yerine uygulamada açılır:
   - **Android:** web sunucusunun `.env` dosyasına `ANDROID_APP_SHA256` olarak imza sertifikasının SHA-256 parmak izini yazın (Play'den dağıtımda Play Console → Uygulama bütünlüğü → Uygulama imzalama anahtarı; elle kurulan APK için `keytool -list -v -keystore pikampus-upload.jks`). Birden fazlaysa virgülle ayırın. Site `/.well-known/assetlinks.json` adresini kendisi üretir.
   - **iOS:** `.env` dosyasına `IOS_APP_ID=<TeamID>.com.pikampus.app` yazın (site `/.well-known/apple-app-site-association` üretir) ve Xcode'da **Associated Domains** yeteneğine `applinks:pikampus.com` ekleyin.
 - Yol listesi değişirse `android/app/src/main/AndroidManifest.xml` ile web projesindeki `src/lib/mobile-app.ts` birlikte güncellenir.
@@ -144,7 +146,8 @@ flutter test integration_test/booking_flow_test.dart -d <cihaz>   # emülatörde
 
 - `test/format_test.dart`, `test/models_test.dart`: para, tarih (Europe/Istanbul) biçimleri ve JSON modelleri
 - `test/routing_test.dart`: site adreslerinin ve bildirim hedeflerinin uygulama ekranlarına eşlenmesi
-- `test/app_flow_test.dart`: giriş, hatalı şifre, kurum hesabı uyarısı, zorunlu şifre değişikliği, süresi dolan oturum
+- `test/app_flow_test.dart`: giriş, hatalı şifre, kurum kapısından personel girişi (kurum paneli), kurumun açtığı öğrenci hesabı (paket sekmeleri), iki taraflı veli taraf geçişi, zorunlu şifre değişikliği, süresi dolan oturum
+- `test/sides_test.dart`: kapıya göre taraf, taraf geçiş bağlantıları, taraf başına okunmamış bildirim
 - `integration_test/booking_flow_test.dart`: misafir → öğretmen profili → giriş → saat seçimi → ödeme WebView'ı → “Ödemeniz alındı”
 - Sahte API: `test/support/fake_api.dart` (Dio adaptörü), örnek veriler `test/support/fixtures.dart`
 
@@ -162,7 +165,7 @@ lib/core/push/                Firebase ve yerel bildirimler
 lib/core/format/              para (kuruş → ₺), tarih ve metin biçimleri
 lib/core/widgets/             ortak bileşenler (kartlar, durumlar, WebView, medya, fotoğraf seçici)
 lib/features/<özellik>/       ekranlar: auth, explore, teachers, booking, lessons, classroom, center, teacher, account …
-assets/branding, assets/fonts simge, açılış görselleri, Plus Jakarta Sans (OFL)
+assets/branding, assets/fonts simge ve açılış görselleri (sitedeki mercan π), DM Sans + Bricolage Grotesque (OFL); renkler sitedeki “Canlı” tema (mercan, lacivert, ayçiçeği sarısı)
 ```
 
 ## Mağaza notları

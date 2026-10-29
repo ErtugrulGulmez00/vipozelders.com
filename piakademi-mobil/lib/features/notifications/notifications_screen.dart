@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/api/api_exception.dart';
+import '../../core/auth/sides.dart';
 import '../../core/format/dates.dart';
 import '../../core/models/notification.dart';
 import '../../core/providers.dart';
@@ -12,8 +13,12 @@ import '../../core/widgets/states.dart';
 import '../shared/widgets.dart';
 
 /// Bildirimler: dokununca ilgili ekran açılır ve bildirim okundu sayılır.
+/// İki taraflı hesapta (kurum + özel ders) yalnızca açık tarafın bildirimleri listelenir.
 class NotificationsScreen extends ConsumerStatefulWidget {
-  const NotificationsScreen({super.key});
+  const NotificationsScreen({super.key, this.tab = false});
+
+  /// Kurum portalında alt menü sekmesi (geri düğmesi yok)
+  final bool tab;
 
   @override
   ConsumerState<NotificationsScreen> createState() => _NotificationsScreenState();
@@ -23,9 +28,11 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   final _listKey = GlobalKey<PagedListViewState<AppNotification>>();
   final _read = <String>{};
 
+  String get _side => sideParam(ref.read(sessionProvider).view);
+
   Future<void> _markAll() async {
     try {
-      final unread = await ref.read(apiProvider).markNotificationsRead();
+      final unread = await ref.read(apiProvider).markNotificationsRead(null, _side);
       ref.read(sessionProvider.notifier).setUnread(unread);
       await _listKey.currentState?.refresh();
       if (mounted) showSnack(context, 'Tüm bildirimler okundu olarak işaretlendi.');
@@ -37,7 +44,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   Future<void> _open(AppNotification n) async {
     if (!n.isRead && !_read.contains(n.id)) {
       setState(() => _read.add(n.id));
-      ref.read(apiProvider).markNotificationsRead([n.id]).then((unread) => ref.read(sessionProvider.notifier).setUnread(unread)).catchError((_) {});
+      ref.read(apiProvider).markNotificationsRead([n.id], _side).then((unread) => ref.read(sessionProvider.notifier).setUnread(unread)).catchError((_) {});
     }
     final target = n.target;
     if (target != null) {
@@ -51,11 +58,14 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     final api = ref.watch(apiProvider);
-    final unread = ref.watch(sessionProvider.select((s) => s.me?.unreadNotifications ?? 0));
+    final session = ref.watch(sessionProvider);
+    final unread = session.me == null ? 0 : unreadFor(session.me!, session.view);
+    final side = sideParam(session.view);
     final scheme = Theme.of(context).colorScheme;
     return Scaffold(
       appBar: AppBar(
-        leading: const AppBackButton(),
+        leading: widget.tab ? null : const AppBackButton(),
+        automaticallyImplyLeading: !widget.tab,
         title: const Text('Bildirimler'),
         actions: [if (unread > 0) TextButton(onPressed: _markAll, child: const Text('Tümünü okundu say'))],
       ),
@@ -64,7 +74,7 @@ class _NotificationsScreenState extends ConsumerState<NotificationsScreen> {
         padding: const EdgeInsets.symmetric(vertical: 8),
         separator: 0,
         load: (page) async {
-          final result = await api.notifications(page: page);
+          final result = await api.notifications(page: page, side: side);
           if (page == 1) ref.read(sessionProvider.notifier).setUnread(result.unread);
           return (result.items, result.nextPage);
         },

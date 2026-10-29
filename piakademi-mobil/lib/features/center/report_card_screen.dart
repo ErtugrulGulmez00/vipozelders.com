@@ -49,13 +49,13 @@ class _ReportBody extends StatelessWidget {
       children: [
         Container(
           padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(gradient: Brand.heroGradient, borderRadius: BorderRadius.circular(22)),
+          decoration: BoxDecoration(color: Brand.hero, borderRadius: BorderRadius.circular(22)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 [examKindLabels[r.examKind] ?? r.examKind, formatDayLong(r.examDate), if (r.publisher != null) r.publisher!].join(' · '),
-                style: const TextStyle(color: Brand.b100, fontSize: 13, fontWeight: FontWeight.w600),
+                style: const TextStyle(color: Brand.ink200, fontSize: 13, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 10),
               Row(
@@ -65,7 +65,7 @@ class _ReportBody extends StatelessWidget {
                   const SizedBox(width: 6),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 6),
-                    child: Text('net${questionCount > 0 ? ' / $questionCount soru' : ''}', style: const TextStyle(color: Brand.b100, fontWeight: FontWeight.w600)),
+                    child: Text('net${questionCount > 0 ? ' / $questionCount soru' : ''}', style: const TextStyle(color: Brand.ink200, fontWeight: FontWeight.w600)),
                   ),
                   const Spacer(),
                   if (r.rank != null)
@@ -73,7 +73,7 @@ class _ReportBody extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text('${r.rank}.', style: const TextStyle(color: Brand.gold300, fontSize: 28, fontWeight: FontWeight.w800)),
-                        Text('${r.participants} öğrenci içinde', style: const TextStyle(color: Brand.b100, fontSize: 12)),
+                        Text('${r.participants} öğrenci içinde', style: const TextStyle(color: Brand.ink200, fontSize: 12)),
                       ],
                     ),
                 ],

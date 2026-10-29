@@ -25,7 +25,7 @@ class AuthScaffold extends StatelessWidget {
         slivers: [
           SliverToBoxAdapter(
             child: Container(
-              decoration: const BoxDecoration(gradient: Brand.heroGradient),
+              decoration: const BoxDecoration(color: Brand.hero),
               padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 8, 20, 36),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -54,10 +54,10 @@ class AuthScaffold extends StatelessWidget {
                   const SizedBox(height: 8),
                   const PiLogo(light: true, size: 40),
                   const SizedBox(height: 22),
-                  Text(title, style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                  Text(title, style: const TextStyle(fontFamily: AppTheme.displayFamily, color: Colors.white, fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -0.6)),
                   if (subtitle != null) ...[
                     const SizedBox(height: 6),
-                    Text(subtitle!, style: const TextStyle(color: Brand.b100, height: 1.4)),
+                    Text(subtitle!, style: const TextStyle(color: Brand.ink200, height: 1.4)),
                   ],
                 ],
               ),
@@ -69,7 +69,7 @@ class AuthScaffold extends StatelessWidget {
               child: Container(
                 decoration: BoxDecoration(
                   color: scheme.surface,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
                 ),
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
                 child: AutofillGroup(

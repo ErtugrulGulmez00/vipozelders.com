@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../../core/auth/sides.dart';
 import '../../core/config.dart';
 import '../../core/models/catalog.dart';
 import '../../core/models/me.dart';
@@ -12,7 +13,6 @@ import '../../core/theme/app_theme.dart';
 import '../../core/widgets/avatar.dart';
 import '../../core/widgets/feedback.dart';
 import '../center/invite_screen.dart';
-import '../shared/data.dart';
 import '../shared/widgets.dart';
 
 final appVersionProvider = FutureProvider<String>((ref) async {
@@ -52,20 +52,21 @@ class AccountScreen extends ConsumerWidget {
       );
     }
     final me = session.me!;
-    final links = ref.watch(centerLinksProvider).valueOrNull ?? const [];
+    final unread = unreadFor(me, session.view);
     return Scaffold(
       appBar: AppBar(title: const Text('Hesabım'), actions: const [NotificationBell()]),
       body: ListView(
         padding: const EdgeInsets.only(bottom: 24),
         children: [
           ProfileHeader(me: me),
+          SideSwitchTiles(me: me, current: AppView.student),
           const MenuTitle('Hesap'),
           MenuTile(icon: Icons.badge_outlined, title: 'Profil bilgileri', subtitle: 'Ad, telefon, il, hesap tipi', onTap: () => context.push(Routes.profileEdit)),
           MenuTile(icon: Icons.lock_reset_rounded, title: 'Şifre değiştir', onTap: () => context.push(Routes.changePassword)),
           MenuTile(
             icon: Icons.notifications_none_rounded,
             title: 'Bildirimler',
-            trailing: me.unreadNotifications > 0 ? Badge(label: Text('${me.unreadNotifications}')) : null,
+            trailing: unread > 0 ? Badge(label: Text('$unread')) : null,
             onTap: () => context.push(Routes.notifications),
           ),
           MenuTile(
@@ -99,13 +100,6 @@ class AccountScreen extends ConsumerWidget {
               onTap: () => context.push(Routes.invite),
             ),
           const MenuTitle('Kurum (etüt merkezi / dershane)'),
-          if (links.isNotEmpty)
-            MenuTile(
-              icon: Icons.school_outlined,
-              title: 'Kurumum',
-              subtitle: links.map((l) => l.student.fullName).join(', '),
-              onTap: () => context.go(Routes.center),
-            ),
           MenuTile(
             icon: Icons.link_rounded,
             title: 'Davet bağlantısıyla öğrenci bağla',
@@ -144,12 +138,13 @@ class ProfileHeader extends StatelessWidget {
         [
           if (me.student != null) me.student!.isParent ? 'Veli' : 'Öğrenci',
           if (me.isTeacher) 'Öğretmen',
+          if (me.isCenter) 'Kurum personeli',
           if (me.student?.cityName != null) me.student!.cityName!,
         ].join(' · ');
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(gradient: Brand.heroGradient, borderRadius: BorderRadius.circular(22)),
+      decoration: BoxDecoration(color: Brand.hero, borderRadius: BorderRadius.circular(28)),
       child: Row(
         children: [
           Avatar(name: me.fullName, photoUrl: me.teacher?.photoUrl, size: 60),
@@ -158,9 +153,9 @@ class ProfileHeader extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(me.fullName, style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w800)),
+                Text(me.fullName, style: const TextStyle(fontFamily: AppTheme.displayFamily, color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 2),
-                Text(me.email ?? me.username ?? '', style: const TextStyle(color: Brand.b100)),
+                Text(me.email ?? me.username ?? '', style: const TextStyle(color: Brand.ink200)),
                 if (info.isNotEmpty) ...[
                   const SizedBox(height: 6),
                   Text(info, style: const TextStyle(color: Brand.gold300, fontWeight: FontWeight.w700, fontSize: 13)),
@@ -168,6 +163,49 @@ class ProfileHeader extends StatelessWidget {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "Kurum tarafına geç" / "Özel ders tarafına geç" (sitedeki üst çubuk bağlantıları). Tarafı olmayan hesapta boş.
+class SideSwitchTiles extends ConsumerWidget {
+  const SideSwitchTiles({super.key, required this.me, required this.current});
+
+  final Me me;
+  final AppView current;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final switches = sideSwitches(me, current);
+    if (switches.isEmpty) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+      child: Column(
+        children: [
+          for (final s in switches)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Material(
+                color: scheme.tertiaryContainer,
+                borderRadius: BorderRadius.circular(20),
+                clipBehavior: Clip.antiAlias,
+                child: ListTile(
+                  leading: Icon(s.target.isKurum ? Icons.apartment_rounded : Icons.school_rounded, color: scheme.primary),
+                  title: Text(s.label, style: TextStyle(fontWeight: FontWeight.w700, color: scheme.onTertiaryContainer)),
+                  subtitle: Text(switch (s.target) {
+                    AppView.centerPanel => 'Kurum personeli paneli',
+                    AppView.portal => 'Devam, etüt, ödev, deneme ve ödemeler',
+                    AppView.teacher => 'Dersleriniz, talepler ve takvim',
+                    AppView.student => 'Öğretmen bul, dersler ve soru çözüm',
+                  }),
+                  trailing: const Icon(Icons.swap_horiz_rounded),
+                  onTap: () => ref.read(sessionProvider.notifier).switchView(s.target),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -232,7 +270,13 @@ class InfoLinks extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const MenuTitle('Destek'),
-        for (final page in support) MenuTile(icon: Icons.help_outline_rounded, title: page.title, onTap: () => context.push(Routes.page(page.slug))),
+        // "Nasıl çalışır?" artık sitede ekran ekran rehber (özel ders, etüt merkezi, dershane)
+        for (final page in support)
+          MenuTile(
+            icon: Icons.help_outline_rounded,
+            title: page.title,
+            onTap: () => context.push(page.slug == 'nasil-calisir' ? Routes.howItWorks : Routes.page(page.slug)),
+          ),
         if (whatsapp != null)
           MenuTile(icon: Icons.chat_outlined, title: 'WhatsApp ile yazın', subtitle: catalog.site.supportWhatsapp, onTap: () => openExternal(context, whatsapp)),
         if (email != null && email.isNotEmpty && !email.endsWith('example.com'))

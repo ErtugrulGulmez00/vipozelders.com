@@ -13,7 +13,7 @@ class SplashScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return const Scaffold(
       body: DecoratedBox(
-        decoration: BoxDecoration(gradient: Brand.heroGradient),
+        decoration: BoxDecoration(color: Brand.hero),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -39,7 +39,7 @@ class OfflineScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       body: DecoratedBox(
-        decoration: const BoxDecoration(gradient: Brand.heroGradient),
+        decoration: const BoxDecoration(color: Brand.hero),
         child: SafeArea(
           child: Center(
             child: Padding(
@@ -54,11 +54,11 @@ class OfflineScreen extends ConsumerWidget {
                   const Text(
                     'Pi Kampüs’e ulaşamadık. İnternet bağlantınızı kontrol edip tekrar deneyin.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Brand.b100, height: 1.45),
+                    style: TextStyle(color: Brand.ink200, height: 1.45),
                   ),
                   const SizedBox(height: 24),
                   FilledButton.icon(
-                    style: FilledButton.styleFrom(backgroundColor: Brand.gold400, foregroundColor: Brand.b950),
+                    style: FilledButton.styleFrom(backgroundColor: Brand.gold400, foregroundColor: Brand.ink900),
                     onPressed: () => ref.read(sessionProvider.notifier).restore(),
                     icon: const Icon(Icons.refresh_rounded),
                     label: const Text('Tekrar dene'),

@@ -17,8 +17,9 @@ import '../../features/booking/payment_screen.dart';
 import '../../features/booking/payment_status_screen.dart';
 import '../../features/booking/question_screen.dart';
 import '../../features/center/center_child_screen.dart';
-import '../../features/center/center_list_screen.dart';
+import '../../features/center/center_panel_screen.dart';
 import '../../features/center/invite_screen.dart';
+import '../../features/center/portal_screens.dart';
 import '../../features/center/report_card_screen.dart';
 import '../../features/classroom/classroom_screen.dart';
 import '../../features/explore/explore_screen.dart';
@@ -53,6 +54,7 @@ import '../../features/teachers/teacher_list_screen.dart';
 import '../../features/teachers/teacher_profile_screen.dart';
 import '../api/pi_api.dart';
 import '../auth/session.dart';
+import '../auth/sides.dart';
 import '../models/booking.dart';
 import '../providers.dart';
 
@@ -67,7 +69,12 @@ class Routes {
   static const offline = '/baglanti';
   static const explore = '/kesfet';
   static const lessons = '/derslerim';
+
+  // Kurum tarafı: veli / öğrenci portalı (alt menü) ve personel paneli (web görünümü)
   static const center = '/kurumum';
+  static const portalNotifications = '/kurumum/bildirimler';
+  static const portalAccount = '/kurumum/hesap';
+  static const centerPanel = '/kurum-paneli';
   static const favorites = '/favoriler';
   static const account = '/hesabim';
   static const login = '/giris';
@@ -102,6 +109,7 @@ class Routes {
   static const invite = '/davet';
   static const lessonRequest = '/ogretmen-talebi';
   static const guide = '/rehber';
+  static const howItWorks = '/nasil-calisir';
 
   static String teacher(String slug) => '/ogretmen/$slug';
   static String booking(String slug, {String? offeringId}) => Uri(path: '/ogretmen/$slug/randevu', queryParameters: offeringId == null ? null : {'ders': offeringId}).toString();
@@ -124,8 +132,15 @@ class Routes {
   static String classroom(String id) => '/ders/$id/sinif';
   static String payment(String bookingId) => '/odeme/$bookingId';
   static String paymentStatus(String bookingId) => '/odeme-durumu/$bookingId';
-  static String centerChild(String id, {String? tab}) => Uri(path: '/kurum/$id', queryParameters: tab == null ? null : {'sekme': tab}).toString();
-  static String reportCard(String id, String examId) => '/kurum/$id/deneme/$examId';
+  static String centerChild(String id, {String? tab}) => Uri(path: '/kurum-ogrenci/$id', queryParameters: tab == null ? null : {'sekme': tab}).toString();
+  static String reportCard(String id, String examId) => '/kurum-ogrenci/$id/deneme/$examId';
+
+  /// Kurum paneli (personel) sitedeki bir sayfada: /kurum, /kurum/sorular/... (bildirim bağlantıları)
+  static String centerPanelAt(String webPath) => webPath == '/kurum' ? centerPanel : Uri(path: centerPanel, queryParameters: {'yol': webPath}).toString();
+
+  /// Giriş: kurum kapısı (personel, kurumun öğrencisi ve velisi) ya da özel ders kapısı
+  static String loginAt({bool kurum = false, String? next}) =>
+      Uri(path: login, queryParameters: {if (kurum) 'kapi': 'kurum', 'devam': ?next}).toString();
   static String centerInvite(String token) => '/kurum-davet/$token';
   static String page(String slug) => '/sayfa/$slug';
   static String teacherWeb(String panelPath, String title) => Uri(path: '/panel/web', queryParameters: {'yol': panelPath, 'baslik': title}).toString();
@@ -144,7 +159,9 @@ class Routes {
       path.startsWith(myGroups) ||
       path.startsWith('/grup-oturum') ||
       path == invite ||
-      path.startsWith('/kurum/') ||
+      path.startsWith('/kurum-ogrenci/') ||
+      path.startsWith(center) ||
+      path.startsWith(centerPanel) ||
       path.startsWith('/kurum-davet/') ||
       path.startsWith('/hesap/') ||
       path.startsWith('/panel') ||
@@ -154,7 +171,18 @@ class Routes {
 
   static bool isAuthPage(String path) => path == login || path == register || path == forgot;
 
-  static const studentOnly = [explore, lessons, center, favorites, account];
+  /// Alt menü kökleri: özel ders (veli/öğrenci, öğretmen) ve kurum portalı
+  static const studentRoots = [explore, lessons, favorites, account];
+  static const teacherRoots = [teacherHome, teacherRequests, teacherLessons, teacherCalendar, teacherAccount];
+  static const portalRoots = [center, portalNotifications, portalAccount];
+
+  /// Görünümün açılış sayfası.
+  static String homeOf(AppView view) => switch (view) {
+        AppView.student => explore,
+        AppView.teacher => teacherHome,
+        AppView.portal => center,
+        AppView.centerPanel => centerPanel,
+      };
 }
 
 /// Sitenin adresleri uygulamadaki karşılıklarına çevrilir (bildirim bağlantıları ve App Links).
@@ -162,11 +190,18 @@ String? mapWebPath(Uri uri) {
   final path = uri.path;
   final lesson = RegExp(r'^/(?:hesabim/derslerim|ogretmen-paneli/dersler|odeme/sonuc)/([A-Za-z0-9]+)').firstMatch(path);
   if (lesson != null) return Routes.lesson(lesson.group(1)!);
+  // Kurum portalı (veli / öğrenci)
+  if (path == '/hesabim/kurum/bildirimler') return Routes.portalNotifications;
+  if (path == '/hesabim/kurum/hesap') return Routes.portalAccount;
   final center = RegExp(r'^/hesabim/kurum/([A-Za-z0-9]+)(?:/deneme/([A-Za-z0-9]+))?').firstMatch(path);
   if (center != null) {
-    return center.group(2) != null ? Routes.reportCard(center.group(1)!, center.group(2)!) : Routes.centerChild(center.group(1)!);
+    return center.group(2) != null ? Routes.reportCard(center.group(1)!, center.group(2)!) : Routes.centerChild(center.group(1)!, tab: uri.queryParameters['sekme']);
   }
   if (path == '/hesabim/kurum') return Routes.center;
+  // Kurum paneli (personel): sitedeki sayfa uygulamadaki web görünümünde açılır
+  if (path == '/kurum' || path.startsWith('/kurum/')) return Routes.centerPanelAt(uri.hasQuery ? '$path?${uri.query}' : path);
+  if (path == '/kurum-giris') return Routes.loginAt(kurum: true);
+  if (path == '/sayfa/nasil-calisir') return Routes.howItWorks;
   if (path == '/hesabim/derslerim' || path == '/hesabim') return path == '/hesabim' ? Routes.account : Routes.lessons;
   if (path == '/hesabim/favoriler') return Routes.favorites;
   final question = RegExp(r'^/hesabim/sorularim/([A-Za-z0-9]+)').firstMatch(path);
@@ -204,11 +239,11 @@ class _RouterRefresh extends ChangeNotifier {
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = _RouterRefresh();
   ref.listen(
-    sessionProvider.select((s) => (s.status, s.me?.id, s.me?.role, s.me?.mustChangePassword)),
+    sessionProvider.select((s) => (s.status, s.me?.id, s.me?.role, s.me?.mustChangePassword, s.view)),
     (_, _) => refresh.ping(),
   );
 
-  String home(SessionState s) => s.isTeacher ? Routes.teacherHome : Routes.explore;
+  String home(SessionState s) => s.isSignedIn ? Routes.homeOf(s.view) : Routes.explore;
 
   final router = GoRouter(
     navigatorKey: rootNavigatorKey,
@@ -241,13 +276,29 @@ final routerProvider = Provider<GoRouter>((ref) {
           final next = state.uri.queryParameters['devam'];
           return (next != null && next.startsWith('/')) ? next : home(session);
         }
-        if (session.isTeacher && Routes.studentOnly.contains(path)) return Routes.teacherHome;
-        if (!session.isTeacher && path.startsWith('/panel')) return Routes.explore;
+        // Alt menüler açık tarafa göre: başka tarafın kök sayfası o tarafın açılışına döner
+        final view = session.view;
+        final teacherArea = path.startsWith('/panel');
+        final ok = switch (view) {
+          AppView.student => !teacherArea && !Routes.portalRoots.contains(path) && path != Routes.centerPanel,
+          AppView.teacher => !Routes.studentRoots.contains(path) && !Routes.portalRoots.contains(path),
+          AppView.portal => !teacherArea && !Routes.studentRoots.contains(path) && path != Routes.centerPanel,
+          AppView.centerPanel => !teacherArea && !Routes.studentRoots.contains(path) && !Routes.portalRoots.contains(path),
+        };
+        if (!ok) {
+          // Personel panelinin bir sayfası (bildirim): kurum paneli olan herkes açabilir
+          if (path == Routes.centerPanel && session.me!.sides.staff) return null;
+          return home(session);
+        }
         return null;
       }
 
       // Misafir
-      if (Routes.needsAuth(path)) return Uri(path: Routes.login, queryParameters: {'devam': target}).toString();
+      if (Routes.needsAuth(path)) {
+        // Bir tarafın açılış sayfası (çıkıştan sonra) hatırlanmaz: sonraki giriş kendi kapısının tarafını açar
+        final home = Routes.teacherRoots.contains(path) || Routes.portalRoots.contains(path) || (path == Routes.centerPanel && !state.uri.queryParameters.containsKey('yol'));
+        return Uri(path: Routes.login, queryParameters: home ? null : {'devam': target}).toString();
+      }
       return null;
     },
     routes: [
@@ -261,9 +312,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         branches: [
           StatefulShellBranch(routes: [GoRoute(path: Routes.explore, builder: (_, _) => const ExploreScreen())]),
           StatefulShellBranch(routes: [GoRoute(path: Routes.lessons, builder: (_, _) => const LessonsScreen())]),
-          StatefulShellBranch(routes: [GoRoute(path: Routes.center, builder: (_, _) => const CenterListScreen())]),
           StatefulShellBranch(routes: [GoRoute(path: Routes.favorites, builder: (_, _) => const FavoritesScreen())]),
           StatefulShellBranch(routes: [GoRoute(path: Routes.account, builder: (_, _) => const AccountScreen())]),
+        ],
+      ),
+
+      // Kurum tarafı: veli / öğrenci portalı alt menüsü
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, shell) => PortalShell(shell: shell),
+        branches: [
+          StatefulShellBranch(routes: [GoRoute(path: Routes.center, builder: (_, _) => const PortalHomeScreen())]),
+          StatefulShellBranch(routes: [GoRoute(path: Routes.portalNotifications, builder: (_, _) => const NotificationsScreen(tab: true))]),
+          StatefulShellBranch(routes: [GoRoute(path: Routes.portalAccount, builder: (_, _) => const PortalAccountScreen())]),
         ],
       ),
 
@@ -283,7 +343,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
         path: Routes.login,
-        builder: (_, state) => LoginScreen(next: state.uri.queryParameters['devam']),
+        builder: (_, state) => LoginScreen(next: state.uri.queryParameters['devam'], kurum: state.uri.queryParameters['kapi'] == 'kurum'),
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
@@ -386,6 +446,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, state) => LessonRequestScreen(levelSlug: state.uri.queryParameters['kademe'], subjectSlug: state.uri.queryParameters['ders']),
       ),
       GoRoute(parentNavigatorKey: rootNavigatorKey, path: Routes.guide, builder: (_, _) => const WebPageScreen(url: '', title: 'Rehber', guide: true)),
+      GoRoute(parentNavigatorKey: rootNavigatorKey, path: Routes.howItWorks, builder: (_, _) => WebPageScreen.howItWorks()),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
         path: Routes.ask,
@@ -426,7 +487,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
-        path: '/kurum/:id',
+        path: '/kurum-ogrenci/:id',
         builder: (_, state) => CenterChildScreen(id: state.pathParameters['id']!, initialTab: state.uri.queryParameters['sekme']),
         routes: [
           GoRoute(
@@ -435,6 +496,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (_, state) => ReportCardScreen(id: state.pathParameters['id']!, examId: state.pathParameters['examId']!),
           ),
         ],
+      ),
+      GoRoute(
+        parentNavigatorKey: rootNavigatorKey,
+        path: Routes.centerPanel,
+        builder: (_, state) => CenterPanelScreen(path: state.uri.queryParameters['yol'] ?? '/kurum'),
       ),
       GoRoute(
         parentNavigatorKey: rootNavigatorKey,
@@ -516,6 +582,10 @@ String routeForTarget(String screen, String? id) {
       return id == null ? Routes.center : Routes.centerChild(id);
     case 'center':
       return Routes.center;
+    case 'centerPanel':
+      return Routes.centerPanelAt(id ?? '/kurum');
+    case 'centerInvite':
+      return id == null ? Routes.center : Routes.centerInvite(id);
     case 'question':
       return id == null ? Routes.myQuestions : Routes.myQuestion(id);
     case 'questions':

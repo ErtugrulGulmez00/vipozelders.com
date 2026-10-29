@@ -122,9 +122,7 @@ class ApiClient {
         } else if (exception.code == 'PASSWORD_CHANGE_REQUIRED') {
           _events.add(AuthEvent.passwordChangeRequired);
         } else if (sentToken &&
-            (exception.code == 'ACCOUNT_SUSPENDED' ||
-                exception.code == 'ADMIN_NOT_SUPPORTED' ||
-                exception.code == 'CENTER_NOT_SUPPORTED')) {
+            (exception.code == 'ACCOUNT_SUSPENDED' || exception.code == 'ADMIN_NOT_SUPPORTED')) {
           _events.add(AuthEvent.accountBlocked);
         }
         return exception;

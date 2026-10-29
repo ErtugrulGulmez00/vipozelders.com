@@ -56,7 +56,7 @@ class _PiPainter extends CustomPainter {
   bool shouldRepaint(_PiPainter oldDelegate) => oldDelegate.color != color;
 }
 
-/// Gradyanlı kare içinde altın π (uygulama simgesiyle aynı).
+/// Hafif eğik mercan kare içinde beyaz π (sitedeki logo ve uygulama simgesiyle aynı).
 class PiBadge extends StatelessWidget {
   const PiBadge({super.key, this.size = 40});
 
@@ -64,16 +64,19 @@ class PiBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        gradient: Brand.logoGradient,
-        borderRadius: BorderRadius.circular(size * 0.28),
-        boxShadow: [BoxShadow(color: Brand.b900.withValues(alpha: 0.18), blurRadius: size * 0.2, offset: Offset(0, size * 0.06))],
+    return Transform.rotate(
+      angle: -0.105, // -6°
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: Brand.b600,
+          borderRadius: BorderRadius.circular(size * 0.4),
+          boxShadow: [BoxShadow(color: Brand.ink900.withValues(alpha: 0.14), blurRadius: size * 0.16, offset: Offset(0, size * 0.05))],
+        ),
+        alignment: Alignment.center,
+        child: PiMark(size: size * 0.6, color: Colors.white),
       ),
-      alignment: Alignment.center,
-      child: PiMark(size: size * 0.66, color: Brand.gold300),
     );
   }
 }
@@ -96,10 +99,11 @@ class PiLogo extends StatelessWidget {
         Text(
           name,
           style: TextStyle(
-            fontSize: size * 0.5,
+            fontFamily: AppTheme.displayFamily,
+            fontSize: size * 0.52,
             fontWeight: FontWeight.w800,
-            letterSpacing: -0.3,
-            color: light ? Colors.white : (Theme.of(context).brightness == Brightness.dark ? Colors.white : Brand.b950),
+            letterSpacing: -0.4,
+            color: light ? Colors.white : (Theme.of(context).brightness == Brightness.dark ? Colors.white : Brand.ink900),
           ),
         ),
       ],

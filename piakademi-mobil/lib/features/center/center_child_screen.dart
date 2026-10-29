@@ -19,16 +19,17 @@ import 'center_questions_tab.dart';
 import 'center_study_tab.dart';
 import 'net_trend_chart.dart';
 
-const _tabs = [
-  ('ozet', 'Özet'),
-  ('devam', 'Devam ve etüt'),
-  ('denemeler', 'Denemeler'),
-  ('odemeler', 'Ödemeler'),
-  ('odevler', 'Ödevler'),
-  ('calisma', 'Çalışma programı'),
-  ('sorular', 'Soru sor'),
-  ('program', 'Ders programı'),
-];
+/// Portal sekmeleri: kurumun paketinde olmayan ya da kapattığı bölümler gösterilmez (sitedeki sekmelerle aynı).
+List<(String, String)> _tabsFor(CenterModules m) => [
+      ('ozet', 'Özet'),
+      ('devam', 'Devam ve etüt'),
+      if (m.exams) ('denemeler', 'Denemeler'),
+      if (m.payments) ('odemeler', 'Ödemeler'),
+      if (m.homework) ('odevler', 'Ödevler'),
+      if (m.study) ('calisma', 'Çalışma programı'),
+      if (m.questions) ('sorular', 'Soru sor'),
+      if (m.schedule) ('program', 'Ders programı'),
+    ];
 
 Tone attendanceTone(String status) => switch (status) {
       'PRESENT' => Tone.green,
@@ -38,52 +39,69 @@ Tone attendanceTone(String status) => switch (status) {
       _ => Tone.slate,
     };
 
-/// Veli portalı: kuruma kayıtlı öğrencinin ayrıntısı.
+/// Veli portalı: kuruma kayıtlı öğrencinin ayrıntısı (öğrencinin kendi hesabında "Bilgilerim").
 class CenterChildScreen extends ConsumerWidget {
-  const CenterChildScreen({super.key, required this.id, this.initialTab});
+  const CenterChildScreen({super.key, required this.id, this.initialTab, this.tab = false});
 
   final String id;
   final String? initialTab;
 
+  /// Kurum portalında alt menü sekmesi olarak açıldı (tek öğrenci): geri düğmesi yok
+  final bool tab;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final child = ref.watch(centerChildProvider(id));
-    final initialIndex = _tabs.indexWhere((t) => t.$1 == initialTab).clamp(0, _tabs.length - 1);
+    final data = child.valueOrNull;
+    final title = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(data == null ? 'Öğrenci' : (data.isStudentAccount ? 'Bilgilerim' : data.student.fullName)),
+        if (data != null)
+          Text(data.center.name, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurfaceVariant)),
+      ],
+    );
+    final leading = tab ? null : BackButton(onPressed: () => context.canPop() ? context.pop() : context.go(Routes.center));
+    if (data == null) {
+      return Scaffold(
+        appBar: AppBar(title: title, leading: leading, automaticallyImplyLeading: !tab),
+        body: AsyncBody(value: child, onRetry: () => ref.invalidate(centerChildProvider(id)), builder: (_) => const SizedBox.shrink()),
+      );
+    }
+    final tabs = _tabsFor(data.modules);
+    final initialIndex = tabs.indexWhere((t) => t.$1 == initialTab).clamp(0, tabs.length - 1);
+    final pages = <String, Widget>{
+      'ozet': _Refreshable(id: id, child: _Overview(data: data, tabs: tabs)),
+      'devam': _Refreshable(id: id, child: _Attendance(data: data)),
+      'denemeler': _Refreshable(id: id, child: _Exams(data: data)),
+      'odemeler': _Refreshable(id: id, child: _Payments(data: data)),
+      'odevler': _Refreshable(id: id, child: _Homeworks(data: data)),
+      'calisma': CenterStudyTab(guardianId: id),
+      'sorular': CenterQuestionsTab(data: data),
+      'program': _Refreshable(id: id, child: _Schedule(data: data)),
+    };
     return DefaultTabController(
-      length: _tabs.length,
+      // Paket değişip sekme sayısı değişirse denetleyici yeniden kurulur
+      key: ValueKey(tabs.length),
+      length: tabs.length,
       initialIndex: initialIndex,
       child: Scaffold(
         appBar: AppBar(
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(child.valueOrNull?.student.fullName ?? 'Öğrenci'),
-              if (child.valueOrNull != null)
-                Text(child.value!.center.name, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: Theme.of(context).colorScheme.onSurfaceVariant)),
-            ],
-          ),
-          leading: BackButton(onPressed: () => context.canPop() ? context.pop() : context.go(Routes.center)),
-          bottom: TabBar(isScrollable: true, tabs: [for (final t in _tabs) Tab(text: t.$2)]),
+          title: title,
+          leading: leading,
+          automaticallyImplyLeading: !tab,
+          bottom: TabBar(isScrollable: true, tabs: [for (final t in tabs) Tab(text: t.$2)]),
         ),
-        body: AsyncBody(
-          value: child,
-          onRetry: () => ref.invalidate(centerChildProvider(id)),
-          builder: (data) => TabBarView(
-            children: [
-              _Refreshable(id: id, child: _Overview(data: data)),
-              _Refreshable(id: id, child: _Attendance(data: data)),
-              _Refreshable(id: id, child: _Exams(data: data)),
-              _Refreshable(id: id, child: _Payments(data: data)),
-              _Refreshable(id: id, child: _Homeworks(data: data)),
-              CenterStudyTab(guardianId: id),
-              CenterQuestionsTab(data: data),
-              _Refreshable(id: id, child: _Schedule(data: data)),
-            ],
-          ),
-        ),
+        body: TabBarView(children: [for (final t in tabs) pages[t.$1]!]),
       ),
     );
   }
+}
+
+/// Özet kutusundan ilgili sekmeye geçer (sekme pakette yoksa bir şey yapmaz).
+void _goTab(BuildContext context, List<(String, String)> tabs, String key) {
+  final index = tabs.indexWhere((t) => t.$1 == key);
+  if (index >= 0) DefaultTabController.of(context).animateTo(index);
 }
 
 class _Refreshable extends ConsumerWidget {
@@ -117,9 +135,10 @@ class _TabList extends StatelessWidget {
 }
 
 class _Overview extends ConsumerWidget {
-  const _Overview({required this.data});
+  const _Overview({required this.data, required this.tabs});
 
   final CenterChild data;
+  final List<(String, String)> tabs;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -135,26 +154,37 @@ class _Overview extends ConsumerWidget {
           crossAxisSpacing: 10,
           childAspectRatio: 1.45,
           children: [
-            StatTile(icon: Icons.how_to_reg_rounded, label: 'Devam (60 gün)', value: formatPercent(data.attendanceRate), hint: '${data.absences} devamsızlık', onTap: () => DefaultTabController.of(context).animateTo(1)),
+            StatTile(icon: Icons.how_to_reg_rounded, label: 'Devam (60 gün)', value: formatPercent(data.attendanceRate), hint: '${data.absences} devamsızlık', onTap: () => _goTab(context, tabs, 'devam')),
+            if (data.modules.exams)
             StatTile(
               icon: Icons.insights_rounded,
               label: 'Son deneme',
               value: last == null ? '—' : '${formatNet(last.net)} net',
               hint: last == null ? null : '${last.name}${last.rank != null ? ' · ${last.rank}/${last.participants}' : ''}',
-              onTap: () => DefaultTabController.of(context).animateTo(2),
+              onTap: () => _goTab(context, tabs, 'denemeler'),
             ),
+            if (data.modules.payments)
             StatTile(
               icon: Icons.account_balance_wallet_rounded,
               label: 'Kalan ödeme',
               value: formatMoney(data.balance.remaining),
               hint: data.balance.overdue > 0 ? 'Geciken ${formatMoney(data.balance.overdue)}' : 'Geciken yok',
               hintColor: data.balance.overdue > 0 ? scheme.error : null,
-              onTap: () => DefaultTabController.of(context).animateTo(3),
+              onTap: () => _goTab(context, tabs, 'odemeler'),
             ),
-            StatTile(icon: Icons.flag_rounded, label: 'Eksik konu', value: '${data.weakTopics.length}'),
+            if (data.modules.exams) StatTile(icon: Icons.flag_rounded, label: 'Eksik konu', value: '${data.weakTopics.length}'),
+            if (data.modules.homework)
+              StatTile(
+                icon: Icons.assignment_rounded,
+                label: 'Ödevler',
+                value: '${data.homeworks.where((h) => h.status == 'PENDING').length}',
+                hint: 'kontrol bekliyor',
+                onTap: () => _goTab(context, tabs, 'odevler'),
+              ),
           ],
         ),
         const SizedBox(height: 14),
+        if (data.modules.exams) ...[
         SectionCard(
           title: 'Eksik konular',
           subtitle: 'Yayınlanan denemelerde en fazla yarısını doğru yapabildiği konular',
@@ -163,6 +193,7 @@ class _Overview extends ConsumerWidget {
               : Column(children: [for (final t in data.weakTopics) WeakTopicRow(topic: t)]),
         ),
         const SizedBox(height: 12),
+        ],
         SectionCard(
           title: 'Duyurular',
           child: data.announcements.isEmpty
@@ -355,6 +386,8 @@ class _Attendance extends StatelessWidget {
           ),
           const SizedBox(height: 12),
         ],
+        // Sınıf yoklaması Dershane paketinde; Etüt Merkezi'nde devamsızlık etütten gelir
+        if (data.modules.schedule || data.attendance.isNotEmpty) ...[
         SectionCard(
           title: 'Ders yoklamaları',
           subtitle: 'Son 60 gün',
@@ -374,6 +407,8 @@ class _Attendance extends StatelessWidget {
                 ),
         ),
         const SizedBox(height: 12),
+        ],
+        if (data.modules.etuds || data.etuds.isNotEmpty)
         SectionCard(
           title: 'Etütler',
           padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),

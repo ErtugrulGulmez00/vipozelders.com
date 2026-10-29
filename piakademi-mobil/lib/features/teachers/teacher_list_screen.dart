@@ -173,6 +173,10 @@ class _TeacherListScreenState extends ConsumerState<TeacherListScreen> {
                       selected: _query.verified,
                       onSelected: (v) => _apply(_query.copyWith(verified: v)),
                     ),
+                    if (_query.subscription) ...[
+                      const SizedBox(width: 8),
+                      InputChip(label: const Text('Soru aboneliği'), onDeleted: () => _apply(_query.copyWith(subscription: false))),
+                    ],
                   ],
                 ),
               ),

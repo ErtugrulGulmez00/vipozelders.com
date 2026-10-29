@@ -44,6 +44,7 @@ class TeacherQuery {
     this.gender,
     this.time,
     this.verified = false,
+    this.subscription = false,
     this.q,
     this.sort,
   });
@@ -64,6 +65,9 @@ class TeacherQuery {
   final String? gender;
   final String? time;
   final bool verified;
+
+  /// Aylık soru aboneliği veren öğretmenler
+  final bool subscription;
   final String? q;
   final String? sort;
 
@@ -80,13 +84,14 @@ class TeacherQuery {
         'gender': gender,
         'time': time,
         'verified': verified ? '1' : null,
+        'abonelik': subscription ? '1' : null,
         'q': (q?.trim().isEmpty ?? true) ? null : q!.trim(),
         'sort': sort,
         'page': page,
       };
 
   /// Sıralama ve arama metni dışında seçili filtre sayısı.
-  int get activeFilters => [level, subject, service, mode, city, district, minPrice, maxPrice, rating, gender, time].where((v) => v != null).length + (verified ? 1 : 0);
+  int get activeFilters => [level, subject, service, mode, city, district, minPrice, maxPrice, rating, gender, time].where((v) => v != null).length + (verified ? 1 : 0) + (subscription ? 1 : 0);
 
   TeacherQuery copyWith({
     Object? level = _keep,
@@ -101,6 +106,7 @@ class TeacherQuery {
     Object? gender = _keep,
     Object? time = _keep,
     bool? verified,
+    bool? subscription,
     Object? q = _keep,
     Object? sort = _keep,
   }) =>
@@ -117,6 +123,7 @@ class TeacherQuery {
         gender: gender == _keep ? this.gender : gender as String?,
         time: time == _keep ? this.time : time as String?,
         verified: verified ?? this.verified,
+        subscription: subscription ?? this.subscription,
         q: q == _keep ? this.q : q as String?,
         sort: sort == _keep ? this.sort : sort as String?,
       );
@@ -145,6 +152,7 @@ class TeacherQuery {
         gender: params['gender'],
         time: params['time'],
         verified: params['verified'] == '1',
+        subscription: params['abonelik'] == '1',
         q: params['q'],
         sort: params['sort'],
       );
@@ -343,7 +351,8 @@ class PiApi {
 
   Future<BookingDetail> reject(String id, String reason) async => BookingDetail.fromJson(asJson(await client.post('/rezervasyonlar/$id/red', data: {'reason': reason})));
 
-  /// Öğretmen web panelinin bir sayfası için tek kullanımlık, oturum açan bağlantı (WebView'da açılır).
+  /// Web panelinin bir sayfası için tek kullanımlık, oturum açan bağlantı (WebView'da açılır):
+  /// öğretmen paneli sayfaları ya da kurum personeli için /kurum ve alt sayfaları.
   Future<String> teacherPanelLink(String path) async => asString(asJson(await client.post('/web-oturum', data: {'path': path}))['url']);
 
   Future<ClassroomAccess> classroom(String id) async => ClassroomAccess.fromJson(asJson(await client.get('/rezervasyonlar/$id/sinif')));
@@ -524,10 +533,12 @@ class PiApi {
     return asBool(json['isFavorite']);
   }
 
-  Future<NotificationPage> notifications({int page = 1}) async => NotificationPage.fromJson(asJson(await client.get('/bildirimler', query: {'sayfa': page})));
+  /// side: kurum | ozel (iki taraflı hesapta yalnızca o tarafın bildirimleri)
+  Future<NotificationPage> notifications({int page = 1, String? side}) async =>
+      NotificationPage.fromJson(asJson(await client.get('/bildirimler', query: {'sayfa': page, 'taraf': ?side})));
 
-  Future<int> markNotificationsRead([List<String>? ids]) async =>
-      asInt(asJson(await client.post('/bildirimler/okundu', data: {'ids': ?ids}))['unread']);
+  Future<int> markNotificationsRead([List<String>? ids, String? side]) async =>
+      asInt(asJson(await client.post('/bildirimler/okundu', data: {'ids': ?ids, 'taraf': ?side}))['unread']);
 
   Future<void> registerDevice(String token, String platform) => client.post<Object?>('/cihazlar', data: {'token': token, 'platform': platform});
 

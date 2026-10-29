@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/auth/sides.dart';
 import '../../core/api/api_exception.dart';
 import '../../core/providers.dart';
 import '../../core/router/app_router.dart';
@@ -110,16 +111,21 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
 
   Future<void> _accept() async {
     final session = ref.read(sessionProvider);
-    if (session.isTeacher) {
+    // Davet veli/öğrenci hesabıyla kabul edilir (öğretmen ve kurum personeli hesabıyla değil)
+    if (!session.isStudent) {
       setState(() => _teacher = true);
       return;
     }
     setState(() => _error = null);
     try {
+      final router = ref.read(routerProvider);
       final id = await ref.read(apiProvider).acceptInvite(widget.token);
       ref.invalidate(centerLinksProvider);
-      if (!mounted) return;
-      context.pushReplacement(Routes.centerChild(id));
+      // Sitedeki gibi kabulden sonra kurum tarafı (veli portalı) açılır
+      final notifier = ref.read(sessionProvider.notifier);
+      await notifier.refreshMe();
+      await notifier.switchView(AppView.portal);
+      router.go(Routes.centerChild(id));
     } on ApiException catch (error) {
       if (mounted) setState(() => _error = error);
     }
@@ -133,7 +139,7 @@ class _InviteScreenState extends ConsumerState<InviteScreen> {
           ? const EmptyView(
               icon: Icons.person_off_outlined,
               title: 'Davet veli/öğrenci hesabıyla kabul edilir',
-              message: 'Öğretmen hesabından çıkış yapıp veli hesabınızla giriş yapın.',
+              message: 'Öğretmen ya da kurum personeli hesabından çıkış yapıp veli hesabınızla giriş yapın.',
             )
           : _error != null
               ? EmptyView(

@@ -58,6 +58,9 @@
                 <data android:pathPrefix="/hesabim/derslerim/" />
                 <data android:pathPrefix="/hesabim/kurum" />
                 <data android:pathPrefix="/ogretmen-paneli/dersler/" />
+                <!-- Kurum paneli (personel) bildirim bağlantıları -->
+                <data android:path="/kurum" />
+                <data android:pathPrefix="/kurum/" />
             </intent-filter>
         </activity>
 

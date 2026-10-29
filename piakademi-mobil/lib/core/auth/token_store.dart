@@ -52,6 +52,7 @@ class TokenStore {
 
   static const _key = 'pk_session_token';
   static const _pushKey = 'pk_push_token';
+  static const _viewKey = 'pk_view';
 
   final KeyValueStore _store;
   String? _token;
@@ -78,4 +79,9 @@ class TokenStore {
   Future<String?> pushToken() => _store.read(_pushKey);
   Future<void> savePushToken(String token) => _store.write(_pushKey, token);
   Future<void> clearPushToken() => _store.delete(_pushKey);
+
+  /// Son açılan taraf (kurum / özel ders görünümü); açılışta aynı taraf açılır.
+  Future<String?> viewPreference() => _store.read(_viewKey);
+  Future<void> saveViewPreference(String view) => _store.write(_viewKey, view);
+  Future<void> clearViewPreference() => _store.delete(_viewKey);
 }

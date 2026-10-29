@@ -8,12 +8,13 @@ import '../api/api_exception.dart';
 import '../api/pi_api.dart';
 import '../models/me.dart';
 import '../providers.dart';
+import 'sides.dart';
 
 enum SessionStatus { loading, signedOut, signedIn, offline }
 
 @immutable
 class SessionState {
-  const SessionState({required this.status, this.me, this.notice});
+  const SessionState({required this.status, this.me, this.notice, this.view = AppView.student});
 
   const SessionState.loading() : this(status: SessionStatus.loading);
   const SessionState.signedOut([String? notice]) : this(status: SessionStatus.signedOut, notice: notice);
@@ -24,12 +25,25 @@ class SessionState {
   /// Oturum kapanınca giriş ekranında gösterilecek açıklama (ör. süresi doldu).
   final String? notice;
 
+  /// Gösterilen taraf (özel ders: veli/öğrenci ya da öğretmen; kurum: portal ya da personel paneli)
+  final AppView view;
+
   bool get isSignedIn => status == SessionStatus.signedIn && me != null;
   bool get isTeacher => isSignedIn && me!.isTeacher;
   bool get isStudent => isSignedIn && me!.isStudent;
   bool get mustChangePassword => isSignedIn && me!.mustChangePassword;
 
-  SessionState copyWith({Me? me}) => SessionState(status: status, me: me ?? this.me, notice: notice);
+  /// Personel kurum paneli (web görünümü) açık
+  bool get inCenterPanel => isSignedIn && view == AppView.centerPanel;
+
+  /// Veli / öğrenci kurum portalı açık
+  bool get inPortal => isSignedIn && view == AppView.portal;
+
+  /// Kullanıcı değişince görünüm hesabın açabildiği taraflara göre yeniden çözülür.
+  SessionState copyWith({Me? me, AppView? view}) {
+    final next = me ?? this.me;
+    return SessionState(status: status, me: next, notice: notice, view: next == null ? (view ?? this.view) : resolveView(next, view ?? this.view));
+  }
 }
 
 /// Oturumu açar, kapatır ve sunucunun oturum hatalarını (401, şifre değişikliği) dinler.
@@ -58,7 +72,8 @@ class SessionController extends Notifier<SessionState> {
     if (state.status != SessionStatus.loading) state = const SessionState.loading();
     try {
       final me = await _api.me();
-      state = SessionState(status: SessionStatus.signedIn, me: me);
+      final preferred = AppView.fromName(await tokens.viewPreference());
+      state = SessionState(status: SessionStatus.signedIn, me: me, view: resolveView(me, preferred));
     } on ApiException catch (error) {
       if (error.isOffline || error.code == 'INTERNAL') {
         state = const SessionState(status: SessionStatus.offline);
@@ -69,9 +84,10 @@ class SessionController extends Notifier<SessionState> {
     }
   }
 
-  Future<Me> login(String identifier, String password) async {
+  /// door: giriş kapısı (özel ders / kurum); o tarafı olmayan kendi tarafına geçer.
+  Future<Me> login(String identifier, String password, {Side door = Side.ozel}) async {
     final result = await _api.login(identifier: identifier.trim(), password: password, deviceName: deviceName());
-    return _signIn(result);
+    return _signIn(result, viewForSide(result.me, door));
   }
 
   Future<Me> register({
@@ -97,13 +113,24 @@ class SessionController extends Notifier<SessionState> {
       deviceName: deviceName(),
       referralCode: referralCode,
     );
-    return _signIn(result);
+    return _signIn(result, AppView.student);
   }
 
-  Future<Me> _signIn(AuthResult result) async {
-    await ref.read(tokenStoreProvider).save(result.token);
-    state = SessionState(status: SessionStatus.signedIn, me: result.me);
+  Future<Me> _signIn(AuthResult result, AppView view) async {
+    final tokens = ref.read(tokenStoreProvider);
+    await tokens.save(result.token);
+    final resolved = resolveView(result.me, view);
+    await tokens.saveViewPreference(resolved.name);
+    state = SessionState(status: SessionStatus.signedIn, me: result.me, view: resolved);
     return result.me;
+  }
+
+  /// "Diğer tarafa geç": hesap o tarafı açabiliyorsa görünüm değişir ve hatırlanır.
+  Future<void> switchView(AppView view) async {
+    final me = state.me;
+    if (me == null || !availableViews(me).contains(view) || state.view == view) return;
+    state = state.copyWith(view: view);
+    await ref.read(tokenStoreProvider).saveViewPreference(view.name);
   }
 
   /// Kullanıcı bilgisini yeniler (okunmamış bildirim sayısı, şifre durumu vb.).
@@ -121,9 +148,19 @@ class SessionController extends Notifier<SessionState> {
     if (state.isSignedIn) state = state.copyWith(me: me);
   }
 
+  /// Bildirim listesinden gelen okunmamış sayısı (o tarafın sayısı; iki taraflı hesapta taraf sayacı güncellenir).
   void setUnread(int unread) {
     final me = state.me;
-    if (me != null && me.unreadNotifications != unread) state = state.copyWith(me: me.copyWith(unreadNotifications: unread));
+    if (me == null) return;
+    if (me.unreadKurum != null && me.unreadOzel != null) {
+      final kurum = state.view.isKurum ? unread : me.unreadKurum!;
+      final ozel = state.view.isKurum ? me.unreadOzel! : unread;
+      if (kurum != me.unreadKurum || ozel != me.unreadOzel) {
+        state = state.copyWith(me: me.copyWith(unreadKurum: kurum, unreadOzel: ozel, unreadNotifications: kurum + ozel));
+      }
+      return;
+    }
+    if (me.unreadNotifications != unread) state = state.copyWith(me: me.copyWith(unreadNotifications: unread));
   }
 
   void passwordChanged() {
@@ -143,6 +180,7 @@ class SessionController extends Notifier<SessionState> {
     }
     await tokens.clear();
     await tokens.clearPushToken();
+    await tokens.clearViewPreference();
     state = SessionState.signedOut(notice);
   }
 

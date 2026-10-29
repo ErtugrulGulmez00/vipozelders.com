@@ -1,28 +1,53 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-/// Sitedeki marka renkleri (Tailwind brand / gold paleti).
+/// Sitedeki "Canlı" tema renkleri (src/app/globals.css): mercan ana renk, lacivert mürekkep, ayçiçeği sarısı vurgu.
 class Brand {
   Brand._();
 
-  static const b50 = Color(0xFFEEF2FF);
-  static const b100 = Color(0xFFE0E7FF);
-  static const b200 = Color(0xFFC7D2FE);
-  static const b300 = Color(0xFFA5B4FC);
-  static const b400 = Color(0xFF818CF8);
-  static const b500 = Color(0xFF6366F1);
-  static const b600 = Color(0xFF4F46E5);
-  static const b700 = Color(0xFF4338CA);
-  static const b800 = Color(0xFF3730A3);
-  static const b900 = Color(0xFF312E81);
-  static const b950 = Color(0xFF1E1B4B);
+  // Mercan (düğmeler, bağlantılar, vurgu); 600 beyaz üzerinde 4.6:1
+  static const b50 = Color(0xFFFFF3EF);
+  static const b100 = Color(0xFFFFE3DA);
+  static const b200 = Color(0xFFFFC6B3);
+  static const b300 = Color(0xFFFFA184);
+  static const b400 = Color(0xFFF77A57);
+  static const b500 = Color(0xFFEC5A34);
+  static const b600 = Color(0xFFD63F1C);
+  static const b700 = Color(0xFFB23214);
+  static const b800 = Color(0xFF8E2911);
+  static const b900 = Color(0xFF6F2210);
+  static const b950 = Color(0xFF3D1107);
 
-  static const gold50 = Color(0xFFFFFBEB);
-  static const gold100 = Color(0xFFFEF3C7);
-  static const gold300 = Color(0xFFFCD34D);
-  static const gold400 = Color(0xFFFBBF24);
-  static const gold500 = Color(0xFFF59E0B);
-  static const gold700 = Color(0xFFB45309);
+  // Lacivert mürekkep (metin, koyu yüzeyler); 50 lavanta bölüm zemini
+  static const ink50 = Color(0xFFF3F1FA);
+  static const ink100 = Color(0xFFE8E6F4);
+  static const ink200 = Color(0xFFC9CCE6);
+  static const ink300 = Color(0xFFA3A7CC);
+  static const ink400 = Color(0xFF7B80A8);
+  static const ink500 = Color(0xFF5A5F80);
+  static const ink600 = Color(0xFF464B6B);
+  static const ink700 = Color(0xFF33385A);
+  static const ink800 = Color(0xFF252A4A);
+  static const ink900 = Color(0xFF1B1F3B);
+  static const ink950 = Color(0xFF12152A);
+
+  // Ayçiçeği sarısı (rozet, sayaç, ikincil düğme); 700 açık zeminde metin
+  static const gold50 = Color(0xFFFFF8E6);
+  static const gold100 = Color(0xFFFFF1D6);
+  static const gold300 = Color(0xFFFFD873);
+  static const gold400 = Color(0xFFFFC845);
+  static const gold500 = Color(0xFFF5B014);
+  static const gold600 = Color(0xFFC98A00);
+  static const gold700 = Color(0xFF7A4A00);
+
+  // Ders kutuları ve avatarlar için yardımcı renkler
+  static const iris100 = Color(0xFFE3E6FF);
+  static const iris500 = Color(0xFF5B6CFF);
+  static const iris700 = Color(0xFF3B48C9);
+  static const mint100 = Color(0xFFDDF6F3);
+  static const mint400 = Color(0xFF2EC4B6);
+  static const mint800 = Color(0xFF0D5C55);
+  static const cream50 = Color(0xFFFFF6EE);
 
   static const slate50 = Color(0xFFF8FAFC);
   static const slate100 = Color(0xFFF1F5F9);
@@ -35,17 +60,26 @@ class Brand {
   static const slate800 = Color(0xFF1E293B);
   static const slate900 = Color(0xFF0F172A);
 
-  static const heroGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [b950, b900, b700],
-  );
+  /// Koyu yüzeyler (açılış, giriş, keşfet başlığı) düz lacivert; geçiş yok
+  static const hero = ink900;
 
-  static const logoGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [b600, b800],
-  );
+  /// Avatar renkleri (sitedeki Avatar ile aynı sıra): arka plan, yazı
+  static const avatarTones = [
+    (b600, Colors.white),
+    (iris500, Colors.white),
+    (mint400, ink950),
+    (gold400, ink900),
+    (ink800, Colors.white),
+  ];
+
+  /// Sitedeki gibi ada göre sabit avatar rengi
+  static (Color, Color) avatarTone(String name) {
+    var sum = 0;
+    for (final unit in name.runes) {
+      sum = (sum + unit) % 997;
+    }
+    return avatarTones[sum % avatarTones.length];
+  }
 }
 
 /// Durum rozetleri için renk tonları (sitedeki Badge tonlarıyla aynı).
@@ -61,19 +95,19 @@ class ToneColors {
     final dark = brightness == Brightness.dark;
     switch (tone) {
       case Tone.brand:
-        return dark ? const ToneColors(Color(0xFF2E2A6B), Brand.b200) : const ToneColors(Brand.b50, Brand.b700);
+        return dark ? const ToneColors(Color(0xFF4A1B10), Brand.b300) : const ToneColors(Brand.b50, Brand.b700);
       case Tone.green:
         return dark ? const ToneColors(Color(0xFF0B3B2E), Color(0xFF6EE7B7)) : const ToneColors(Color(0xFFECFDF5), Color(0xFF047857));
       case Tone.amber:
-        return dark ? const ToneColors(Color(0xFF452B07), Color(0xFFFCD34D)) : const ToneColors(Color(0xFFFFFBEB), Color(0xFFB45309));
+        return dark ? const ToneColors(Color(0xFF452B07), Color(0xFFFCD34D)) : const ToneColors(Color(0xFFFFFBEB), Color(0xFF92400E));
       case Tone.rose:
         return dark ? const ToneColors(Color(0xFF4C1424), Color(0xFFFDA4AF)) : const ToneColors(Color(0xFFFFF1F2), Color(0xFFBE123C));
       case Tone.sky:
         return dark ? const ToneColors(Color(0xFF0C3550), Color(0xFF7DD3FC)) : const ToneColors(Color(0xFFF0F9FF), Color(0xFF0369A1));
       case Tone.violet:
-        return dark ? const ToneColors(Color(0xFF34195C), Color(0xFFC4B5FD)) : const ToneColors(Color(0xFFF5F3FF), Color(0xFF6D28D9));
+        return dark ? const ToneColors(Color(0xFF2A2F66), Color(0xFFC4CAFF)) : const ToneColors(Brand.iris100, Brand.iris700);
       case Tone.slate:
-        return dark ? const ToneColors(Color(0xFF273244), Color(0xFFCBD5E1)) : const ToneColors(Brand.slate100, Brand.slate700);
+        return dark ? const ToneColors(Brand.ink800, Brand.ink200) : const ToneColors(Brand.slate100, Brand.slate700);
     }
   }
 }
@@ -81,7 +115,11 @@ class ToneColors {
 class AppTheme {
   AppTheme._();
 
-  static const fontFamily = 'PlusJakartaSans';
+  /// Gövde yazı tipi (sitede DM Sans)
+  static const fontFamily = 'DMSans';
+
+  /// Başlık yazı tipi (sitede Bricolage Grotesque)
+  static const displayFamily = 'BricolageGrotesque';
 
   static ThemeData light() => _build(Brightness.light);
   static ThemeData dark() => _build(Brightness.dark);
@@ -94,22 +132,27 @@ class AppTheme {
     ).copyWith(
       primary: dark ? Brand.b400 : Brand.b600,
       onPrimary: Colors.white,
-      primaryContainer: dark ? const Color(0xFF2E2A6B) : Brand.b50,
+      primaryContainer: dark ? const Color(0xFF4A1B10) : Brand.b50,
       onPrimaryContainer: dark ? Brand.b100 : Brand.b800,
       secondary: Brand.gold400,
-      onSecondary: Brand.b950,
+      onSecondary: Brand.ink900,
       secondaryContainer: dark ? const Color(0xFF452B07) : Brand.gold100,
       onSecondaryContainer: dark ? Brand.gold300 : Brand.gold700,
-      surface: dark ? const Color(0xFF111827) : Colors.white,
-      onSurface: dark ? const Color(0xFFE5E7EB) : Brand.slate900,
-      onSurfaceVariant: dark ? Brand.slate400 : Brand.slate500,
-      surfaceContainerLowest: dark ? const Color(0xFF0B1120) : Colors.white,
-      surfaceContainerLow: dark ? const Color(0xFF0F172A) : Brand.slate50,
-      surfaceContainer: dark ? const Color(0xFF1A2234) : Brand.slate100,
-      surfaceContainerHigh: dark ? const Color(0xFF1F2937) : Brand.slate100,
-      surfaceContainerHighest: dark ? const Color(0xFF273244) : Brand.slate200,
-      outline: dark ? const Color(0xFF374151) : Brand.slate300,
-      outlineVariant: dark ? const Color(0xFF1F2937) : Brand.slate200,
+      // Lacivert "ink" düğme ve vurgular
+      tertiary: dark ? Brand.ink100 : Brand.ink900,
+      onTertiary: dark ? Brand.ink900 : Colors.white,
+      tertiaryContainer: dark ? Brand.ink800 : Brand.ink50,
+      onTertiaryContainer: dark ? Brand.ink100 : Brand.ink900,
+      surface: dark ? Brand.ink900 : Colors.white,
+      onSurface: dark ? Brand.ink100 : Brand.ink900,
+      onSurfaceVariant: dark ? Brand.ink300 : Brand.ink500,
+      surfaceContainerLowest: dark ? Brand.ink950 : Colors.white,
+      surfaceContainerLow: dark ? const Color(0xFF161A33) : Brand.slate50,
+      surfaceContainer: dark ? Brand.ink800 : Brand.ink50,
+      surfaceContainerHigh: dark ? Brand.ink800 : Brand.slate100,
+      surfaceContainerHighest: dark ? Brand.ink700 : Brand.ink100,
+      outline: dark ? Brand.ink600 : Brand.slate300,
+      outlineVariant: dark ? Brand.ink800 : Brand.ink100,
       error: dark ? const Color(0xFFFB7185) : const Color(0xFFE11D48),
     );
 
@@ -118,7 +161,7 @@ class AppTheme {
       brightness: brightness,
       colorScheme: scheme,
       fontFamily: fontFamily,
-      scaffoldBackgroundColor: dark ? const Color(0xFF0B1120) : Brand.slate50,
+      scaffoldBackgroundColor: dark ? Brand.ink950 : Brand.slate50,
       visualDensity: VisualDensity.standard,
       materialTapTargetSize: MaterialTapTargetSize.padded,
     );
@@ -129,25 +172,35 @@ class AppTheme {
       displayColor: scheme.onSurface,
     );
 
-    final radius = BorderRadius.circular(14);
+    TextStyle? display(TextStyle? style, FontWeight weight, [double letterSpacing = -0.3]) =>
+        style?.copyWith(fontFamily: displayFamily, fontWeight: weight, letterSpacing: letterSpacing);
+
+    // Alanlar sitede rounded-xl, kartlar rounded-3xl, düğmeler hap
+    final fieldRadius = BorderRadius.circular(14);
+    const pill = StadiumBorder();
+    const buttonText = TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w700, fontSize: 15);
 
     return base.copyWith(
       textTheme: text.copyWith(
-        headlineMedium: text.headlineMedium?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.5),
-        headlineSmall: text.headlineSmall?.copyWith(fontWeight: FontWeight.w800, letterSpacing: -0.3),
-        titleLarge: text.titleLarge?.copyWith(fontWeight: FontWeight.w700, letterSpacing: -0.2),
+        displayLarge: display(text.displayLarge, FontWeight.w800, -1),
+        displayMedium: display(text.displayMedium, FontWeight.w800, -0.8),
+        displaySmall: display(text.displaySmall, FontWeight.w800, -0.6),
+        headlineLarge: display(text.headlineLarge, FontWeight.w800, -0.6),
+        headlineMedium: display(text.headlineMedium, FontWeight.w800, -0.5),
+        headlineSmall: display(text.headlineSmall, FontWeight.w800, -0.3),
+        titleLarge: display(text.titleLarge, FontWeight.w800, -0.2),
         titleMedium: text.titleMedium?.copyWith(fontWeight: FontWeight.w700),
         titleSmall: text.titleSmall?.copyWith(fontWeight: FontWeight.w700),
         labelLarge: text.labelLarge?.copyWith(fontWeight: FontWeight.w700),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: dark ? const Color(0xFF0B1120) : Brand.slate50,
+        backgroundColor: dark ? Brand.ink950 : Brand.slate50,
         foregroundColor: scheme.onSurface,
         elevation: 0,
         scrolledUnderElevation: 0.5,
         surfaceTintColor: Colors.transparent,
         centerTitle: false,
-        titleTextStyle: TextStyle(fontFamily: fontFamily, fontSize: 19, fontWeight: FontWeight.w800, color: scheme.onSurface, letterSpacing: -0.2),
+        titleTextStyle: TextStyle(fontFamily: displayFamily, fontSize: 20, fontWeight: FontWeight.w800, color: scheme.onSurface, letterSpacing: -0.3),
         systemOverlayStyle: dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       ),
       cardTheme: CardThemeData(
@@ -155,40 +208,41 @@ class AppTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18), side: BorderSide(color: scheme.outlineVariant)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: scheme.outlineVariant)),
       ),
       filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          minimumSize: const Size(64, 50),
-          shape: RoundedRectangleBorder(borderRadius: radius),
-          textStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w700, fontSize: 15),
-        ),
+        style: FilledButton.styleFrom(minimumSize: const Size(64, 50), shape: pill, padding: const EdgeInsets.symmetric(horizontal: 24), textStyle: buttonText),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(minimumSize: const Size(64, 50), shape: pill, textStyle: buttonText),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(64, 50),
-          shape: RoundedRectangleBorder(borderRadius: radius),
-          side: BorderSide(color: scheme.outline),
-          textStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w700, fontSize: 15),
+          shape: pill,
+          padding: const EdgeInsets.symmetric(horizontal: 22),
+          foregroundColor: scheme.onSurface,
+          side: BorderSide(color: dark ? Brand.ink600 : Brand.ink900.withValues(alpha: 0.15), width: 2),
+          textStyle: buttonText,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(textStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w700)),
+        style: TextButton.styleFrom(shape: pill, textStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w700)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: dark ? const Color(0xFF111827) : Colors.white,
+        fillColor: dark ? Brand.ink900 : Colors.white,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: scheme.outline)),
-        enabledBorder: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: scheme.outline)),
-        focusedBorder: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: scheme.primary, width: 2)),
-        errorBorder: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: scheme.error)),
-        focusedErrorBorder: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide(color: scheme.error, width: 2)),
+        border: OutlineInputBorder(borderRadius: fieldRadius, borderSide: BorderSide(color: scheme.outline)),
+        enabledBorder: OutlineInputBorder(borderRadius: fieldRadius, borderSide: BorderSide(color: scheme.outline)),
+        focusedBorder: OutlineInputBorder(borderRadius: fieldRadius, borderSide: BorderSide(color: scheme.primary, width: 2)),
+        errorBorder: OutlineInputBorder(borderRadius: fieldRadius, borderSide: BorderSide(color: scheme.error)),
+        focusedErrorBorder: OutlineInputBorder(borderRadius: fieldRadius, borderSide: BorderSide(color: scheme.error, width: 2)),
         errorMaxLines: 3,
         helperMaxLines: 3,
       ),
       chipTheme: base.chipTheme.copyWith(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(999)),
+        shape: const StadiumBorder(),
         labelStyle: TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w600, color: scheme.onSurface),
         secondaryLabelStyle: TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w700, color: scheme.onPrimaryContainer),
         selectedColor: scheme.primaryContainer,
@@ -196,6 +250,14 @@ class AppTheme {
         checkmarkColor: scheme.primary,
         iconTheme: IconThemeData(color: scheme.primary, size: 18),
         side: BorderSide(color: scheme.outlineVariant),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: SegmentedButton.styleFrom(
+          selectedBackgroundColor: scheme.primaryContainer,
+          selectedForegroundColor: scheme.onPrimaryContainer,
+          side: BorderSide(color: scheme.outline),
+          textStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w700),
+        ),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: scheme.surface,
@@ -235,18 +297,19 @@ class AppTheme {
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,
         showDragHandle: true,
-        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: scheme.surface,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        titleTextStyle: TextStyle(fontFamily: displayFamily, fontSize: 20, fontWeight: FontWeight.w800, color: scheme.onSurface),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        backgroundColor: dark ? Brand.slate200 : Brand.slate900,
-        contentTextStyle: TextStyle(fontFamily: fontFamily, color: dark ? Brand.slate900 : Colors.white, fontWeight: FontWeight.w500),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        backgroundColor: dark ? Brand.ink100 : Brand.ink900,
+        contentTextStyle: TextStyle(fontFamily: fontFamily, color: dark ? Brand.ink900 : Colors.white, fontWeight: FontWeight.w500),
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(color: scheme.primary),
     );
