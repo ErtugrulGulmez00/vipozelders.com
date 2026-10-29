@@ -1,5 +1,7 @@
 import { addDaysToDateString, dateStringToDbDate, dbDateToString, isDateString, toLocalDateString } from "@/lib/dates";
+import { editionAllows } from "@/lib/center/editions";
 import { installmentState } from "@/lib/center/finance";
+import { type CenterModuleKey, moduleEnabled } from "@/lib/center/modules";
 import { studentCoachingHistory } from "../center/coaching";
 import { marketplaceLink, studentExamReport } from "../center/exams";
 import { portalChildDetail, portalChildren } from "../center/portal";
@@ -18,6 +20,8 @@ export async function childrenJson(userId: string) {
     items: links.map((link) => ({
       id: link.id,
       relation: link.relation,
+      // Kurumun açtığı öğrenci hesabı (öğrencinin kendisi; uygulamada "Bilgilerim")
+      isStudentAccount: link.isStudentAccount,
       student: {
         firstName: link.student.firstName,
         lastName: link.student.lastName,
@@ -34,10 +38,23 @@ const COMMON_SUBJECTS = ["Matematik", "Türkçe", "Fen Bilimleri", "Fizik", "Kim
 export async function childDetailJson(userId: string, guardianId: string) {
   const data = await portalChildDetail(userId, guardianId);
   if (!data) throw notFound("Öğrenci bulunamadı.");
-  const { student, attendance, etuds, results, installments, payments, announcements, notes, weakTopics, balance, today, trend, homeworks, questions } = data;
+  const { guardian, student, attendance, etuds, results, installments, payments, announcements, notes, weakTopics, balance, today, trend, homeworks, questions } = data;
   const hallDays = await studentHallDays(student.id);
+  const on = (key: CenterModuleKey) => moduleEnabled(student.center, key);
   return {
     id: guardianId,
+    isStudentAccount: guardian.isStudentAccount,
+    // Kurumun paketinde olmayan ya da kapattığı bölümler portalda gösterilmez (webdeki sekmelerle aynı)
+    modules: {
+      exams: on("denemeler"),
+      payments: on("muhasebe"),
+      homework: on("odevler"),
+      study: on("kaynaklar"),
+      questions: on("sorular"),
+      etuds: on("etutler"),
+      hall: on("calisma-salonu"),
+      schedule: editionAllows(student.center.edition, "program"),
+    },
     student: { firstName: student.firstName, lastName: student.lastName, gradeName: student.gradeName, studentNumber: student.studentNumber },
     center: { name: student.center.name, phone: student.center.phone, email: student.center.email, address: student.center.address, logoUrl: absoluteUpload(student.center.logoKey) },
     balance,

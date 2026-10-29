@@ -1,3 +1,4 @@
+import { moduleEnabled } from "@/lib/center/modules";
 import { normalizeSearch } from "@/lib/text";
 import { db } from "../db";
 import { deleteUpload, saveUpload, UploadError } from "../storage";
@@ -25,9 +26,11 @@ async function upload(file: File, kinds: ("image" | "video")[], maxBytes: number
 export async function askQuestion(userId: string, guardianId: string, input: { subject: string; note: string | null; image: File | null }) {
   const link = await db.centerGuardian.findFirst({
     where: { id: guardianId, userId, student: { status: "ACTIVE", center: { status: { not: "SUSPENDED" } } } },
-    include: { student: { select: { id: true, centerId: true, firstName: true, lastName: true, center: { select: { name: true } } } } },
+    include: { student: { select: { id: true, centerId: true, firstName: true, lastName: true, center: { select: { name: true, disabledModules: true, edition: true } } } } },
   });
   if (!link) throw new CenterError("Öğrenci bulunamadı.");
+  // Portal sekmesi gizli olsa da uç nokta açıktı: kurumun kapattığı (ya da paketinde olmayan) modülde soru alınmaz
+  if (!moduleEnabled(link.student.center, "sorular")) throw new CenterError("Kurumunuz fotoğrafla soru göndermeyi kapattı.");
   if (!input.image || input.image.size === 0) throw new CenterError("Sorunun fotoğrafını ekleyin.", { image: "Fotoğraf gerekli." });
   const today = new Date(Date.now() - 24 * 3_600_000);
   const recent = await db.centerQuestion.count({ where: { studentId: link.student.id, createdAt: { gte: today } } });

@@ -5,7 +5,7 @@ import { ApiError, json, readBody } from "@/server/mobile/http";
 import { meJson } from "@/server/mobile/me";
 import { withUser } from "@/server/mobile/route";
 
-export const GET = withUser(async ({ user }) => json(await meJson(user.id)), { allowPasswordChange: true });
+export const GET = withUser(async ({ user }) => json(await meJson(user.id)), { allowPasswordChange: true, allowCenter: true });
 
 const updateSchema = z.object({
   firstName: z.string().trim().min(2, "Adınızı yazın.").max(50).optional(),
@@ -17,7 +17,7 @@ const updateSchema = z.object({
   whatsappNotifications: z.boolean().optional(),
 });
 
-/** Profil güncelleme. Öğretmenler yalnızca telefonunu ve WhatsApp tercihini değiştirebilir (profil web panelinden düzenlenir). */
+/** Profil güncelleme. Öğretmen ve kurum personeli yalnızca telefonunu ve WhatsApp tercihini değiştirebilir (profil web panelinden düzenlenir). */
 export const PATCH = withUser(async ({ request, user }) => {
   const input = await readBody(request, updateSchema);
   let phone: string | null | undefined;
@@ -28,7 +28,7 @@ export const PATCH = withUser(async ({ request, user }) => {
 
   const whatsapp = input.whatsappNotifications !== undefined ? { whatsappOptOut: !input.whatsappNotifications } : {};
 
-  if (user.role === "TEACHER") {
+  if (user.role !== "STUDENT") {
     if (phone !== undefined || input.whatsappNotifications !== undefined) {
       await db.user.update({ where: { id: user.id }, data: { ...(phone !== undefined ? { phone } : {}), ...whatsapp } });
     }
@@ -52,4 +52,4 @@ export const PATCH = withUser(async ({ request, user }) => {
     },
   });
   return json(await meJson(user.id));
-});
+}, { allowCenter: true });

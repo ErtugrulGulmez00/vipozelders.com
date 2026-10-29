@@ -10,6 +10,7 @@ import { ApiError } from "./http";
 export const MOBILE_SESSION_DAYS = 90;
 const WEB_LOGIN_TTL_MS = 5 * 60_000;
 
+/** Veli/öğrenci ya da öğretmen (allowCenter verilmeyen uç noktalarda yalnızca bunlar gelir). */
 export type MobileUser = {
   id: string;
   role: "STUDENT" | "TEACHER";
@@ -22,6 +23,9 @@ export type MobileUser = {
   emailVerified: boolean;
   sessionId: string;
 };
+
+/** allowCenter uç noktalarında gelen hesap: CENTER = yalnızca kurum personeli (uygulamada kurum paneli web görünümüyle açılır). */
+export type MobileAccount = Omit<MobileUser, "role"> & { role: MobileUser["role"] | "CENTER" };
 
 export function clientIp(request: Request): string | null {
   const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
@@ -49,8 +53,14 @@ function bearerToken(request: Request): string | null {
   return match?.[1] ?? null;
 }
 
-/** Yalnızca oturum açmış veli/öğrenci ve öğretmenler; yöneticiler web panelini kullanır. */
-export async function authenticate(request: Request, options: { allowPasswordChange?: boolean } = {}): Promise<MobileUser> {
+export type AuthOptions = {
+  allowPasswordChange?: boolean;
+  /** Yalnızca kurum personeli olan (CENTER) hesaba da açık: profil, şifre, bildirimler, cihaz, kurum paneli bağlantısı */
+  allowCenter?: boolean;
+};
+
+/** Oturum açmış veli/öğrenci ve öğretmenler (kurum personeli yalnızca allowCenter uç noktalarında); yöneticiler web panelini kullanır. */
+export async function authenticate(request: Request, options: AuthOptions = {}): Promise<MobileAccount> {
   const token = bearerToken(request);
   if (!token) throw new ApiError(401, "UNAUTHENTICATED", "Oturum açmanız gerekiyor.");
   const session = await db.session.findUnique({ where: { id: hashToken(token) }, include: { user: true } });
@@ -61,7 +71,8 @@ export async function authenticate(request: Request, options: { allowPasswordCha
   const { user } = session;
   if (user.status !== "ACTIVE") throw new ApiError(403, "ACCOUNT_SUSPENDED", "Hesabınız askıya alınmış. Destek ekibimizle iletişime geçin.");
   if (user.role === "ADMIN") throw new ApiError(403, "ADMIN_NOT_SUPPORTED", "Yönetici hesabı mobil uygulamada kullanılamaz; web panelini kullanın.");
-  if (user.role === "CENTER") throw new ApiError(403, "CENTER_NOT_SUPPORTED", "Kurum paneli hesabı mobil uygulamada henüz kullanılamıyor; web panelini kullanın.");
+  // Oturumu kapatmayan hata: uygulama kurum personelinde bu uç noktaları çağırmaz
+  if (user.role === "CENTER" && !options.allowCenter) throw new ApiError(403, "FORBIDDEN", "Bu işlem kurum paneli hesabıyla yapılamaz.");
   if (user.mustChangePassword && !options.allowPasswordChange) {
     throw new ApiError(403, "PASSWORD_CHANGE_REQUIRED", "Devam etmeden önce size verilen geçici şifreyi değiştirmeniz gerekiyor.");
   }
@@ -83,13 +94,13 @@ export async function authenticate(request: Request, options: { allowPasswordCha
 export async function optionalUser(request: Request): Promise<MobileUser | null> {
   if (!bearerToken(request)) return null;
   try {
-    return await authenticate(request, { allowPasswordChange: true });
+    return (await authenticate(request, { allowPasswordChange: true })) as MobileUser;
   } catch {
     return null;
   }
 }
 
-export function requireRole(user: MobileUser, role: MobileUser["role"]): void {
+export function requireRole(user: MobileAccount, role: MobileUser["role"]): void {
   if (user.role !== role) {
     throw new ApiError(403, "FORBIDDEN", role === "TEACHER" ? "Bu işlem yalnızca öğretmenler içindir." : "Bu işlem yalnızca veli/öğrenci hesapları içindir.");
   }
@@ -110,7 +121,15 @@ export const TEACHER_PANEL_TARGETS = [
   "/ogretmen-paneli/soru-aboneligi",
 ];
 
+/** Kurum paneli (personel): /kurum ve alt sayfaları, isteğe bağlı sorgu ile (bildirim bağlantıları). */
+export const CENTER_PANEL_TARGET = /^\/kurum(?:\/[a-z0-9_-]+)*\/?(?:\?[^\s#]*)?$/i;
+
+/** Kurum panelinden Excel dışa aktarımı: WebView dosya indiremediği için tarayıcıda tek kullanımlık girişle açılır. */
+export const CENTER_EXPORT_TARGET = /^\/api\/kurum\/disa-aktar\/[a-z0-9-]+(?:\?[^\s#]*)?$/i;
+
 const WEB_LOGIN_TARGETS = [
+  CENTER_PANEL_TARGET,
+  CENTER_EXPORT_TARGET,
   /^\/ders\/[a-z0-9]+$/i,
   /^\/odeme\/(garanti|paytr|test)\/[a-z0-9]+$/i,
   /^\/odeme\/sonuc\/[a-z0-9]+$/i,

@@ -25,5 +25,5 @@ export const POST = withUser(
     ]);
     return json({ message: "Şifreniz değiştirildi. Diğer cihazlardaki oturumlarınız kapatıldı." });
   },
-  { allowPasswordChange: true },
+  { allowPasswordChange: true, allowCenter: true },
 );

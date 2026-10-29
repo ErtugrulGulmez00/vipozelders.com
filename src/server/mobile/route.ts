@@ -1,9 +1,10 @@
 import { unstable_rethrow } from "next/navigation";
 import type { NextRequest } from "next/server";
-import { authenticate, type MobileUser } from "./auth";
+import { authenticate, type AuthOptions, type MobileAccount, type MobileUser } from "./auth";
 import { errorJson } from "./http";
 
 type Context<P> = { params: Promise<P> };
+type RouteHandler<P> = (request: NextRequest, context: Context<P>) => Promise<Response>;
 
 /** Next.js'in kendi iç sinyalleri (ör. derlemede "bu uç nokta dinamik" bildirimi) yakalanmadan geçmeli. */
 function handleError(error: unknown): Response {
@@ -11,14 +12,26 @@ function handleError(error: unknown): Response {
   return errorJson(error);
 }
 
-/** Oturum gerektiren mobil uç nokta: Bearer anahtarı doğrulanır, hatalar ortak biçimde döner. */
+/**
+ * Oturum gerektiren mobil uç nokta: Bearer anahtarı doğrulanır, hatalar ortak biçimde döner.
+ * Varsayılan olarak yalnızca veli/öğrenci ve öğretmen; { allowCenter: true } ile kurum personeli (CENTER) de girer.
+ */
+export function withUser<P = Record<string, never>>(
+  handler: (args: { request: NextRequest; user: MobileAccount; params: P }) => Promise<Response>,
+  options: AuthOptions & { allowCenter: true },
+): RouteHandler<P>;
 export function withUser<P = Record<string, never>>(
   handler: (args: { request: NextRequest; user: MobileUser; params: P }) => Promise<Response>,
-  options: { allowPasswordChange?: boolean } = {},
-) {
-  return async (request: NextRequest, context: Context<P>): Promise<Response> => {
+  options?: AuthOptions & { allowCenter?: false },
+): RouteHandler<P>;
+export function withUser<P = Record<string, never>>(
+  handler: (args: { request: NextRequest; user: MobileUser; params: P }) => Promise<Response>,
+  options: AuthOptions = {},
+): RouteHandler<P> {
+  return async (request, context) => {
     try {
-      const user = await authenticate(request, options);
+      // allowCenter olmadan authenticate CENTER hesabını reddeder; tür buna göre daraltılır
+      const user = (await authenticate(request, options)) as MobileUser;
       return await handler({ request, user, params: await context.params });
     } catch (error) {
       return handleError(error);

@@ -14,5 +14,5 @@ export const POST = withUser(
     });
     return json({ ok: true }, 201);
   },
-  { allowPasswordChange: true },
+  { allowPasswordChange: true, allowCenter: true },
 );

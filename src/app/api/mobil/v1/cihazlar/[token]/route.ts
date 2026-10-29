@@ -6,5 +6,5 @@ export const DELETE = withUser<{ token: string }>(
     await db.device.deleteMany({ where: { token: decodeURIComponent(params.token), userId: user.id } });
     return new Response(null, { status: 204 });
   },
-  { allowPasswordChange: true },
+  { allowPasswordChange: true, allowCenter: true },
 );

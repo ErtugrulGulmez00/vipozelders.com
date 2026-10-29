@@ -4,7 +4,7 @@ import pg from "pg";
 /**
  * Mobil API'ye Flutter uygulaması için eklenen uçlar: fotoğrafla soru (multipart), soru yazışması ve çözüm,
  * özel dosyalara Bearer anahtarıyla erişim, kurum (veli portalı) çalışma programı / kaynak ilerlemesi / soru
- * geri çekme / bağlantı kaldırma ve kurum personelinin mobil girişinin engellenmesi.
+ * geri çekme / bağlantı kaldırma ve kurum personelinin mobil girişi.
  */
 
 const DB_URL = process.env.E2E_DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5433/vipozelders";
@@ -74,10 +74,10 @@ test.afterAll(async () => {
 test("mobil API: fotoğrafla soru → ödeme → öğretmen çözümü → özel dosyaya Bearer ile erişim", async ({ request, page }) => {
   const anon = client(request);
 
-  // Kurum personeli mobil uygulamaya giremez (oturum açılmadan reddedilir)
+  // Kurum personeli de girer; uygulama kurum panelini web görünümüyle açar (ayrıntı: mobile-api-sides.spec.ts)
   const center = await anon.post("/oturum", { identifier: "kurum@demo.vipozelders.local", password: "Kurum12345", deviceName: "e2e-test" });
-  expect(center.status()).toBe(403);
-  expect((await center.json()).error.code).toBe("CENTER_NOT_SUPPORTED");
+  expect(center.status()).toBe(200);
+  expect((await center.json()).user).toMatchObject({ role: "CENTER", sides: { kurum: true, ozel: false, staff: true } });
 
   const catalog = await (await anon.get("/katalog")).json();
   expect(typeof catalog.rules.questionAnswerHours).toBe("number");
