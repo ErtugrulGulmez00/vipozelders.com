@@ -89,7 +89,7 @@ export async function updateTeacherProfile(teacherId: string, formData: FormData
 }
 
 export async function updateTeacherPhoto(teacherId: string, file: File) {
-  const key = await saveUpload(file, { visibility: "public", folder: "ogretmen", maxBytes: 5 * 1024 * 1024, kinds: ["image"] });
+  const key = await saveUpload(file, { visibility: "public", folder: "ogretmen", maxBytes: 5 * 1024 * 1024, kinds: ["image"], maxSide: 1200 });
   const previous = await db.teacherProfile.findUniqueOrThrow({ where: { userId: teacherId }, select: { photoKey: true } });
   await db.teacherProfile.update({ where: { userId: teacherId }, data: { photoKey: key } });
   await deleteUpload(previous.photoKey);

@@ -12,7 +12,7 @@ const MAX_SIDE = 2400;
 
 /** Büyük fotoğrafı tarayıcıda en uzun kenarı 2400 px olan JPEG'e çevirir; olmazsa dosyayı olduğu gibi bırakır. */
 async function shrinkImage(file: File): Promise<File> {
-  if (file.size <= SHRINK_ABOVE || !/^image\/(jpeg|png|webp)$/.test(file.type)) return file;
+  if (file.size <= SHRINK_ABOVE || /^image\/(gif|svg)/.test(file.type)) return file;
   const url = URL.createObjectURL(file);
   try {
     const img = new Image();
@@ -44,7 +44,7 @@ function formatMb(bytes: number) {
 
 /**
  * Türkçe dosya seçici: tarayıcının "No file chosen" yazısı yerine seçilen dosyanın adı görünür.
- * Büyük fotoğraflar gönderilmeden küçültülür; sınırı aşan dosya seçilmez ve uyarı gösterilir.
+ * Büyük fotoğraflar gönderilmeden küçültülür; sınırı aşan dosya seçilmez ve uyarı gösterilir (maxMb fotoğraf dışı dosyalar için).
  */
 export function FileInput({
   className,
@@ -84,7 +84,9 @@ export function FileInput({
           if (!picked) return;
 
           let file = picked;
-          if (picked.size > SHRINK_ABOVE && picked.type.startsWith("image/")) {
+          // Bazı telefon ve uygulama içi tarayıcılar dosya türünü boş bırakır; uzantıya bakılır.
+          const isImage = picked.type.startsWith("image/") || (!picked.type && /\.(jpe?g|png|webp|heic|heif)$/i.test(picked.name));
+          if (picked.size > SHRINK_ABOVE && isImage) {
             // Küçültme bitmeden form gönderilmesin
             input.setCustomValidity("Fotoğraf hazırlanıyor, birkaç saniye bekleyin.");
             setStatus({ text: "Fotoğraf hazırlanıyor…" });
@@ -103,10 +105,12 @@ export function FileInput({
               }
             }
           }
-          if (file.size > maxMb * 1024 * 1024) {
+          // Fotoğrafı sunucu da küçültür; burada küçültülemediyse yalnız istek sınırı uygulanır.
+          const limit = isImage ? Math.max(maxMb, DEFAULT_MAX_MB) : maxMb;
+          if (file.size > limit * 1024 * 1024) {
             input.value = "";
             setFileName(null);
-            setStatus({ text: `Dosya ${formatMb(file.size)} MB; en fazla ${maxMb} MB yükleyebilirsiniz.`, error: true });
+            setStatus({ text: `Dosya ${formatMb(file.size)} MB; en fazla ${limit} MB yükleyebilirsiniz.`, error: true });
           }
         }}
         {...props}

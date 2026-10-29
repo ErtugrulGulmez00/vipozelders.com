@@ -50,16 +50,38 @@ function sniffExtension(bytes: Uint8Array): string | null {
 
 export class UploadError extends Error {}
 
+// Telefon fotoğrafları (10-20 MB) kaydedilmeden küçültülür; sınır küçültülmüş dosyaya uygulanır.
+const SHRINK_ABOVE = 1024 * 1024;
+const MAX_SIDE = 2400;
+const RAW_IMAGE_MAX = 25 * 1024 * 1024;
+
+/** Fotoğrafı döndürür (EXIF), en uzun kenarı maxSide olacak şekilde küçültür, konum vb. bilgileri atar. */
+async function shrinkImage(bytes: Uint8Array, maxSide: number): Promise<{ bytes: Uint8Array; extension: string } | null> {
+  try {
+    const { default: sharp } = await import("sharp");
+    const image = sharp(bytes).rotate().resize({ width: maxSide, height: maxSide, fit: "inside", withoutEnlargement: true });
+    // Saydam görsel (logo) WEBP olarak saydamlığını korur
+    const { hasAlpha } = await sharp(bytes).metadata();
+    const output = hasAlpha ? await image.webp({ quality: 85 }).toBuffer() : await image.jpeg({ quality: 85, mozjpeg: true }).toBuffer();
+    return { bytes: new Uint8Array(output), extension: hasAlpha ? "webp" : "jpg" };
+  } catch (error) {
+    console.error("[yükleme] fotoğraf küçültülemedi", error);
+    return null;
+  }
+}
+
+const tooBig = (bytes: number) => new UploadError(`Dosya en fazla ${Math.round(bytes / 1024 / 1024)} MB olabilir.`);
+
 export async function saveUpload(
   file: File,
-  options: { visibility: "public" | "private"; folder: string; maxBytes: number; kinds: ("image" | "pdf" | "video")[] },
+  options: { visibility: "public" | "private"; folder: string; maxBytes: number; kinds: ("image" | "pdf" | "video")[]; maxSide?: number },
 ): Promise<string> {
   if (file.size === 0) throw new UploadError("Dosya boş.");
-  if (file.size > options.maxBytes) {
-    throw new UploadError(`Dosya en fazla ${Math.round(options.maxBytes / 1024 / 1024)} MB olabilir.`);
-  }
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  const extension = sniffExtension(bytes);
+  const shrinkable = options.kinds.includes("image");
+  const rawLimit = shrinkable ? Math.max(options.maxBytes, RAW_IMAGE_MAX) : options.maxBytes;
+  if (file.size > rawLimit) throw tooBig(rawLimit);
+  let bytes: Uint8Array = new Uint8Array(await file.arrayBuffer());
+  let extension = sniffExtension(bytes);
   const allowed =
     extension !== null &&
     ((extension === "pdf" && options.kinds.includes("pdf")) ||
@@ -74,6 +96,11 @@ export async function saveUpload(
           : "Yalnızca JPG, PNG veya WEBP yükleyebilirsiniz.",
     );
   }
+  if (shrinkable && extension && extension !== "pdf" && !VIDEO.has(extension) && bytes.length > SHRINK_ABOVE) {
+    const small = await shrinkImage(bytes, options.maxSide ?? MAX_SIDE);
+    if (small && small.bytes.length < bytes.length) ({ bytes, extension } = small);
+  }
+  if (bytes.length > options.maxBytes) throw tooBig(options.maxBytes);
 
   const key = `${options.visibility}/${options.folder}/${randomUUID()}.${extension}`;
   const target = storagePath(key);

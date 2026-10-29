@@ -67,7 +67,7 @@ export function ProfileForm({
         <Avatar src={values.photoUrl} name={values.name} initials={values.initials} size={88} />
         <div className="text-sm text-slate-600">
           <p className="font-medium text-slate-800">Profil fotoğrafı</p>
-          <p>Yüzünüzün net göründüğü, güler yüzlü bir fotoğraf velilerin güvenini artırır. JPG/PNG/WEBP, en fazla 5 MB.</p>
+          <p>Yüzünüzün net göründüğü, güler yüzlü bir fotoğraf velilerin güvenini artırır. JPG, PNG veya WEBP; büyük fotoğraflar otomatik küçültülür.</p>
           {values.photoUrl ? (
             <form action={removePhotoAction} className="mt-2">
               <input type="hidden" name="teacherId" value={values.teacherId} />
@@ -82,7 +82,7 @@ export function ProfileForm({
       <ActionForm action={saveProfileAction} className="space-y-5" encType="multipart/form-data">
         <input type="hidden" name="teacherId" value={values.teacherId} />
         <Field label="Yeni fotoğraf yükle" htmlFor="photo">
-          <FileInput id="photo" name="photo" accept="image/jpeg,image/png,image/webp" maxMb={5} placeholder="Fotoğraf seçin (JPG, PNG veya WEBP)" />
+          <FileInput id="photo" name="photo" accept="image/jpeg,image/png,image/webp" placeholder="Fotoğraf seçin (JPG, PNG veya WEBP)" />
         </Field>
 
         <Field label="Kısa başlık" htmlFor="headline" hint="Örn: 12 yıllık deneyimli matematik öğretmeni · LGS ve YKS uzmanı">
