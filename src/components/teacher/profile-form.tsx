@@ -82,7 +82,7 @@ export function ProfileForm({
       <ActionForm action={saveProfileAction} className="space-y-5" encType="multipart/form-data">
         <input type="hidden" name="teacherId" value={values.teacherId} />
         <Field label="Yeni fotoğraf yükle" htmlFor="photo">
-          <FileInput id="photo" name="photo" accept="image/jpeg,image/png,image/webp" placeholder="Fotoğraf seçin (JPG, PNG veya WEBP)" />
+          <FileInput id="photo" name="photo" accept="image/jpeg,image/png,image/webp" maxMb={5} placeholder="Fotoğraf seçin (JPG, PNG veya WEBP)" />
         </Field>
 
         <Field label="Kısa başlık" htmlFor="headline" hint="Örn: 12 yıllık deneyimli matematik öğretmeni · LGS ve YKS uzmanı">

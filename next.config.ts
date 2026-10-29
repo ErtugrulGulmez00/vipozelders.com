@@ -29,6 +29,9 @@ const nextConfig: NextConfig = {
       bodySizeLimit: "30mb",
       allowedOrigins: allowedOrigins(),
     },
+    // proxy.ts çalıştığı için istek gövdesi bellekte tutulur; varsayılan 10 MB'ı aşan yükleme yarıda kesilip
+    // "Unexpected end of form" hatası veriyordu. Server Action sınırıyla aynı olmalı.
+    proxyClientMaxBodySize: "30mb",
   },
   turbopack: {
     rules: {

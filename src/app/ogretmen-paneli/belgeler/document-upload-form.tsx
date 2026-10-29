@@ -26,7 +26,7 @@ export function DocumentUploadForm() {
           </Select>
         </Field>
         <Field label="Dosya (PDF, JPG veya PNG, en fazla 5 MB)" htmlFor="doc-file">
-          <FileInput id="doc-file" name="file" accept="application/pdf,image/jpeg,image/png,image/webp" required />
+          <FileInput id="doc-file" name="file" accept="application/pdf,image/jpeg,image/png,image/webp" maxMb={5} required />
         </Field>
         <SubmitButton pendingText="Yükleniyor…">Yükle</SubmitButton>
       </div>
