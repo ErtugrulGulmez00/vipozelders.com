@@ -42,7 +42,7 @@ export async function UserMenu() {
   return (
     <div className="flex items-center gap-1">
       {/* Zil: son bildirimler açılır pencerede; tümü için bildirim sayfasına gidilir. */}
-      <details className="relative">
+      <details data-dropdown className="relative">
         <summary className="relative inline-flex size-10 cursor-pointer list-none items-center justify-center rounded-full text-ink-700 hover:bg-ink-50 [&::-webkit-details-marker]:hidden" aria-label={`Bildirimler (${unread} okunmamış)`}>
           <Bell className="size-5" aria-hidden />
           {unread > 0 ? (
@@ -87,7 +87,7 @@ export async function UserMenu() {
           </Link>
         </div>
       </details>
-      <details className="group relative">
+      <details data-dropdown className="group relative">
         <summary className="flex cursor-pointer list-none items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-slate-100 [&::-webkit-details-marker]:hidden">
           <span className="inline-flex size-8 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">{initials(user)}</span>
           <span className="hidden text-sm font-semibold text-slate-800 sm:inline">{user.firstName}</span>

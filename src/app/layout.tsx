@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, DM_Sans } from "next/font/google";
+import { DropdownCloser } from "@/components/dropdown-closer";
 import { getSiteSettings } from "@/server/site";
 import "./globals.css";
 
@@ -40,7 +41,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head>
         <script dangerouslySetInnerHTML={{ __html: APP_MODE_SCRIPT }} />
       </head>
-      <body className="min-h-dvh font-sans">{children}</body>
+      <body className="min-h-dvh font-sans">
+        {children}
+        <DropdownCloser />
+      </body>
     </html>
   );
 }

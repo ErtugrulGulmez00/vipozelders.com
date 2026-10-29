@@ -37,7 +37,7 @@ export async function SiteHeader() {
             <Suspense fallback={<UserMenuFallback />}>
               <UserMenu />
             </Suspense>
-            <details className="relative lg:hidden">
+            <details data-dropdown className="relative lg:hidden">
               <summary className="inline-flex size-11 cursor-pointer list-none items-center justify-center rounded-full text-ink-900 hover:bg-ink-50 [&::-webkit-details-marker]:hidden" aria-label="Menü">
                 <Menu className="size-5" aria-hidden />
               </summary>
