@@ -14,6 +14,12 @@ export async function SiteFooter() {
           <p className="text-sm leading-relaxed text-ink-300">{settings.siteTagline}</p>
           <address className="space-y-1.5 text-sm not-italic">
             {settings.companyName ? <p className="font-medium text-slate-200">{settings.companyName}</p> : null}
+            {/* Marka ile yasal kişiyi bağlar (Meta işletme doğrulaması ve WhatsApp görünen ad onayı bunu arar) */}
+            {settings.companyName && settings.companyName !== settings.siteName ? (
+              <p className="text-xs text-slate-400">
+                {settings.siteName} markası {settings.companyName} tarafından işletilmektedir.
+              </p>
+            ) : null}
             {settings.companyAddress ? (
               <p className="flex gap-2">
                 <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden /> <span className="whitespace-pre-line">{settings.companyAddress}</span>

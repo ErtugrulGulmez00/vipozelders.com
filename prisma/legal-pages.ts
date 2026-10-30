@@ -23,6 +23,7 @@ export const LEGAL_PAGES: { slug: string; title: string; sortOrder: number; show
 
 ## Şirket bilgileri
 Unvan: {companyName}
+Marka: {siteName} markası {companyName} tarafından işletilmektedir.
 Adres: {companyAddress}
 Vergi bilgileri: {companyTaxInfo}
 Telefon: {contactPhone}
@@ -117,6 +118,7 @@ Yalnızca o öğretmenle en az bir dersi tamamlanmış öğrenciler ve veliler y
 
 ## Şirket bilgileri
 - Unvan: {companyName}
+- Marka: {siteName} markası {companyName} tarafından işletilmektedir.
 - Adres: {companyAddress}
 - Vergi dairesi ve vergi numarası: {companyTaxInfo}`,
   },
