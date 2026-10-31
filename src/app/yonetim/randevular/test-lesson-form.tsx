@@ -22,8 +22,8 @@ export function TestLessonForm({ teachers, students }: { teachers: { id: string;
             ))}
           </Select>
         </Field>
-        <Field label="Öğrenci/veli e-postası">
-          <Input name="studentEmail" type="email" list="test-students" required />
+        <Field label="Öğrenci/veli e-postası ya da kullanıcı adı">
+          <Input name="studentEmail" list="test-students" autoCapitalize="none" required />
           <datalist id="test-students">
             {students.map((s) => (
               <option key={s.email} value={s.email}>

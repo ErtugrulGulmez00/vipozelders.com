@@ -1,4 +1,4 @@
-import { ArrowLeft, MapPin, Video } from "lucide-react";
+import { ArrowLeft, Link2, MapPin, Video } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -124,6 +124,18 @@ export default async function TeacherLessonPage({ params, searchParams }: PagePr
         </div>
         <aside className="space-y-6">
           <ReschedulePanel booking={booking} viewerId={user.id} />
+
+          {!booking.isTest && !booking.isIntro && booking.price > 0 && booking.refundedAmount === 0 && booking.mode !== "QUESTION" && ["CONFIRMED", "COMPLETED"].includes(booking.status) ? (
+            <Card>
+              <CardHeader title="Telafi dersi" />
+              <CardBody className="space-y-3 text-sm text-slate-600">
+                <p>Bu dersi planlanan saatte yapamadıysanız ya da yapamayacaksanız, ücreti ödenmiş bu ders için başka bir saate ücretsiz telafi bağlantısı açabilirsiniz.</p>
+                <LinkButton href={`/ogretmen-paneli/ders-baglantilari?kaynak=${booking.id}`} variant="outline" size="sm">
+                  <Link2 className="size-4" aria-hidden /> Telafi bağlantısı aç
+                </LinkButton>
+              </CardBody>
+            </Card>
+          ) : null}
 
           {booking.status === "CONFIRMED" && booking.startAt > now ? (
             <Card>

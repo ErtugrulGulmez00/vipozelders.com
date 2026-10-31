@@ -31,6 +31,8 @@ export default async function AdminBookingPage({ params, searchParams }: PagePro
       events: { include: { actor: { select: { firstName: true, lastName: true, role: true } } }, orderBy: { createdAt: "asc" } },
       attendance: { include: { user: { select: { firstName: true } } }, orderBy: { joinedAt: "asc" } },
       review: true,
+      lessonLink: { include: { sourceBooking: { select: { id: true, code: true } } } },
+      makeupLinks: { orderBy: { createdAt: "desc" } },
     },
   });
   if (!booking) notFound();
@@ -48,11 +50,31 @@ export default async function AdminBookingPage({ params, searchParams }: PagePro
         <BookingStatusBadge status={booking.status} />
       </div>
       <FlashNotice code={durum} />
-      {booking.isTest ? (
+      {booking.lessonLink ? (
+        <Alert tone="info" title={booking.lessonLink.sourceBooking ? "Telafi dersi (ders bağlantısı)" : "Serbest ders bağlantısı"} className="mb-6">
+          Öğretmenin açtığı bağlantıyla oluşan ödemesiz ders; puan, yorum, hakediş ve ciroya sayılmaz.
+          {booking.lessonLink.sourceBooking ? (
+            <>
+              {" "}
+              Telafi edilen ders:{" "}
+              <Link href={`/yonetim/randevular/${booking.lessonLink.sourceBooking.id}`} className="font-semibold underline">
+                {booking.lessonLink.sourceBooking.code}
+              </Link>
+              .
+            </>
+          ) : null}
+          {booking.lessonLink.note ? ` Not: “${booking.lessonLink.note}”` : null}
+        </Alert>
+      ) : booking.isTest ? (
         <Alert tone="info" title="Test dersi" className="mb-6">
           Ödemesiz deneme dersi. Puan, yorum ve ciroya sayılmaz. Öğretmen ve öğrenci kendi ders sayfalarından sınıfa girebilir.
         </Alert>
       ) : null}
+      {booking.makeupLinks.map((link) => (
+        <Alert key={link.id} tone="warning" title="Bu ders için telafi bağlantısı açıldı" className="mb-6">
+          {formatLessonRange(link.startAt, link.endAt)} · {link.cancelledAt ? "iptal edildi" : link.bookingId ? "öğrenci kaydoldu" : "öğrenci henüz kaydolmadı"}. Gerekçe: “{link.note ?? "—"}”
+        </Alert>
+      ))}
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
         <div className="space-y-6">
           {booking.status === "DISPUTED" ? (

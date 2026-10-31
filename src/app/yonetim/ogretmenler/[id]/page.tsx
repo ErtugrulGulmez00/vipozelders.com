@@ -98,6 +98,7 @@ export default async function AdminTeacherPage({ params, searchParams }: PagePro
                   teacherId={id}
                   verificationStatus={teacher.verificationStatus}
                   isFeatured={teacher.isFeatured}
+                  freeLessonLinks={teacher.freeLessonLinks}
                   commissionPercent={teacher.commissionRateBps === null ? "" : String(teacher.commissionRateBps / 100)}
                   defaultPercent={String(settings.commissionRateBps / 100)}
                 />

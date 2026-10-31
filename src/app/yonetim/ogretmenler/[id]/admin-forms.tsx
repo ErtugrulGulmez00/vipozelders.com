@@ -68,7 +68,21 @@ export function StatusButtons({ teacherId, status }: { teacherId: string; status
   );
 }
 
-export function FlagsForm({ teacherId, verificationStatus, isFeatured, commissionPercent, defaultPercent }: { teacherId: string; verificationStatus: string; isFeatured: boolean; commissionPercent: string; defaultPercent: string }) {
+export function FlagsForm({
+  teacherId,
+  verificationStatus,
+  isFeatured,
+  freeLessonLinks,
+  commissionPercent,
+  defaultPercent,
+}: {
+  teacherId: string;
+  verificationStatus: string;
+  isFeatured: boolean;
+  freeLessonLinks: boolean;
+  commissionPercent: string;
+  defaultPercent: string;
+}) {
   return (
     <ActionForm action={setTeacherFlagsAction} className="space-y-3">
       <input type="hidden" name="teacherId" value={teacherId} />
@@ -84,6 +98,11 @@ export function FlagsForm({ teacherId, verificationStatus, isFeatured, commissio
         <Input name="commissionPercent" inputMode="decimal" defaultValue={commissionPercent} placeholder={defaultPercent} className="w-32" />
       </Field>
       <Checkbox name="isFeatured" defaultChecked={isFeatured} label="Vitrinde öne çıkar (listelerde üstte, “Öne çıkan” rozeti)" />
+      <Checkbox
+        name="freeLessonLinks"
+        defaultChecked={freeLessonLinks}
+        label="Serbest ders bağlantısı: gerekçe yazmadan, istediği öğrenciyle ücretsiz ders açabilir (ör. öğrenci koçu). Kapalıyken yalnızca ücreti ödenmiş dersin telafisi açılabilir."
+      />
       <SubmitButton variant="outline">Kaydet</SubmitButton>
     </ActionForm>
   );

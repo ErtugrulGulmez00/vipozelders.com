@@ -342,6 +342,8 @@ model TeacherProfile {
   answersPool             Boolean            @default(true)
   // Ücretsiz 15 dakikalık tanışma görüşmesi sunar (online)
   offersIntro             Boolean            @default(false)
+  // Serbest ders bağlantısı (yönetici verir, ör. öğrenci koçu): gerekçe yazmadan, herhangi bir öğrenci için ödemesiz ders açar
+  freeLessonLinks         Boolean            @default(false)
   publishedAt             DateTime?
   createdAt               DateTime           @default(now())
   updatedAt               DateTime           @updatedAt
@@ -361,6 +363,7 @@ model TeacherProfile {
   questionSubscriptions  QuestionSubscription[]
   groupCourses           GroupCourse[]
   lessonPackages         LessonPackage[]
+  lessonLinks            LessonLink[]
 
   @@index([status])
 }
@@ -591,7 +594,7 @@ model Booking {
   earningsReleaseAt  DateTime?
   earningsReleasedAt DateTime?
   videoRoomName      String?          @unique
-  // Yönetici tarafından ödemesiz açılan deneme dersi (görüntülü görüşme testi); yorum, puan ve ciroya sayılmaz.
+  // Ödemesiz ders: yöneticinin deneme dersi ya da öğretmenin ders bağlantısı (lessonLink); yorum, puan, hakediş ve ciroya sayılmaz.
   isTest             Boolean          @default(false)
   // Ücretsiz tanışma görüşmesi (15 dk, online, ödemesiz); hakediş, yorum ve ders sayısına girmez.
   isIntro            Boolean          @default(false)
@@ -608,10 +611,43 @@ model Booking {
   ledgerEntries LedgerEntry[]
   rescheduleRequests RescheduleRequest[]
   reports       ClassroomReport[]
+  // Bu ders bir ders bağlantısıyla açıldıysa o bağlantı; makeupLinks bu (ücretli) dersin telafi bağlantıları
+  lessonLink    LessonLink?        @relation("LessonLinkBooking")
+  makeupLinks   LessonLink[]       @relation("LessonLinkSource")
 
   @@index([teacherId, startAt])
   @@index([studentId, startAt])
   @@index([status])
+}
+
+// Ders bağlantısı: öğretmen belirli bir saat için ödemesiz ders bağlantısı açar; bağlantıyı açan öğrenci/veli giriş yapıp
+// derse kaydolur (ders o an oluşur). Serbest yetkisi olmayan öğretmen yalnızca ücreti ödenmiş bir dersin telafisi için ve
+// gerekçe yazarak açabilir; bu bağlantıyı yalnızca o dersin öğrencisi kullanır, her ücretli derse tek telafi.
+model LessonLink {
+  id              String         @id @default(cuid())
+  token           String         @unique
+  teacherId       String
+  teacher         TeacherProfile @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+  startAt         DateTime
+  endAt           DateTime
+  durationMinutes Int
+  // Açılacak dersin katalog bilgisi (telafide kaynak dersten kopyalanır)
+  serviceTypeId   Int
+  levelId         Int
+  subjectId       Int
+  serviceName     String
+  levelName       String
+  subjectName     String
+  note            String?
+  sourceBookingId String?
+  sourceBooking   Booking?       @relation("LessonLinkSource", fields: [sourceBookingId], references: [id], onDelete: SetNull)
+  bookingId       String?        @unique
+  booking         Booking?       @relation("LessonLinkBooking", fields: [bookingId], references: [id], onDelete: SetNull)
+  cancelledAt     DateTime?
+  createdAt       DateTime       @default(now())
+
+  @@index([teacherId, startAt])
+  @@index([sourceBookingId])
 }
 
 // Fotoğrafla soruda öğrenci ile öğretmen arasındaki yazışma; isSolution işaretli mesaj çözümdür.

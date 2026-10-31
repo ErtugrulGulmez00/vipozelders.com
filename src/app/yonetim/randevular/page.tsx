@@ -11,6 +11,7 @@ import { formatMoney } from "@/lib/money";
 import { adminBookingWhere } from "@/server/admin-bookings";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
+import { LessonLinksPanel } from "./lesson-links-panel";
 import { TestLessonForm } from "./test-lesson-form";
 
 export const metadata: Metadata = { title: "Randevular" };
@@ -35,7 +36,7 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/yo
       include: { teacher: { select: { user: { select: { firstName: true, lastName: true } } } }, student: { select: { firstName: true, lastName: true } } },
     }),
     db.user.findMany({ where: { role: "TEACHER", status: "ACTIVE" }, orderBy: { firstName: "asc" }, select: { id: true, firstName: true, lastName: true } }),
-    db.user.findMany({ where: { role: "STUDENT", status: "ACTIVE", email: { not: null } }, orderBy: { createdAt: "desc" }, take: 200, select: { email: true, firstName: true, lastName: true } }),
+    db.user.findMany({ where: { role: "STUDENT", status: "ACTIVE" }, orderBy: { createdAt: "desc" }, take: 200, select: { email: true, username: true, firstName: true, lastName: true } }),
   ]);
 
   return (
@@ -43,8 +44,9 @@ export default async function AdminBookingsPage({ searchParams }: PageProps<"/yo
       <PageHeader title="Randevular" description={`${total} kayıt`} />
       <TestLessonForm
         teachers={teacherOptions.map((t) => ({ id: t.id, name: `${t.firstName} ${t.lastName}` }))}
-        students={studentOptions.map((s) => ({ email: s.email!, name: `${s.firstName} ${s.lastName}` }))}
+        students={studentOptions.flatMap((s) => (s.email || s.username ? [{ email: (s.email ?? s.username)!, name: `${s.firstName} ${s.lastName}` }] : []))}
       />
+      <LessonLinksPanel />
       <Form action="/yonetim/randevular" className="mb-4 flex flex-wrap gap-2">
         <Input name="q" defaultValue={q} placeholder="Kod, öğrenci, veli e-postası, öğretmen" className="w-80" />
         <Select name="durum" defaultValue={status} className="w-56">

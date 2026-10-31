@@ -81,19 +81,25 @@ function toDayException(row: { date: Date; type: "BLOCKED" | "EXTRA"; startMinut
 }
 
 async function loadBusy(tx: DbTransaction | typeof db, teacherId: string, from: Date, to: Date, now: Date): Promise<BusyRange[]> {
-  const [rows, groups] = await Promise.all([
+  const [rows, groups, links] = await Promise.all([
     tx.booking.findMany({
       where: { teacherId, startAt: { lt: to }, blockEndAt: { gt: from }, ...blockingWhere(now) },
       select: { startAt: true, blockEndAt: true },
     }),
     // Grup dersi oturumları da öğretmenin takvimini doldurur
     groupBusy(tx, teacherId, from, to),
+    // Henüz kullanılmamış ders bağlantıları saati tutar (kullanılınca saat dersin kendisiyle dolar)
+    tx.lessonLink.findMany({
+      where: { teacherId, bookingId: null, cancelledAt: null, startAt: { lt: to }, endAt: { gt: from > now ? from : now } },
+      select: { startAt: true, endAt: true },
+    }),
   ]);
-  return [...rows.map((row) => ({ start: row.startAt, end: row.blockEndAt })), ...groups];
+  return [...rows.map((row) => ({ start: row.startAt, end: row.blockEndAt })), ...groups, ...links.map((link) => ({ start: link.startAt, end: link.endAt }))];
 }
 
-/** Tam iade cümlesi: paket dersinde para değil ders geri döner. */
+/** Tam iade cümlesi: paket dersinde para değil ders geri döner; ödemesiz derste iade yoktur. */
 function fullRefundText(booking: Pick<Booking, "packageId" | "price">, verb = "kartınıza iade ediliyor") {
+  if (!booking.packageId && booking.price === 0) return "";
   return booking.packageId ? "Ders paketinize geri eklendi." : `Ödediğiniz ${formatMoney(booking.price)} ${verb}.`;
 }
 
@@ -406,7 +412,7 @@ export async function rescheduleSlotFree(tx: DbTransaction, booking: Booking, ne
   );
 }
 
-export { lockTeacher };
+export { isOverlapViolation, loadBusy, lockTeacher, newBookingCode };
 
 /** Paketteki kullanılmamış ders sayısı: tam iade edilen (öğretmen reddi, süre aşımı, erken iptal…) dersler pakete geri döner. */
 export async function packageLessonsLeft(tx: DbTransaction | typeof db, pkg: { id: string; lessonCount: number }) {
@@ -622,7 +628,7 @@ export async function createTestLesson(input: { teacherId: string; studentId: st
   ]);
   if (!teacher || teacher.user.status !== "ACTIVE") throw new BookingError("Öğretmen bulunamadı veya hesabı kapalı.");
   if (!student || student.role !== "STUDENT" || !student.studentProfile) throw new BookingError("Öğrenci/veli hesabı bulunamadı.");
-  if (![45, 60].includes(input.durationMinutes)) throw new BookingError("Geçersiz süre.");
+  if (![30, 45, 60, 90].includes(input.durationMinutes)) throw new BookingError("Geçersiz süre.");
 
   const offering = teacher.offerings[0];
   const [level, subject, service] = offering
@@ -839,7 +845,8 @@ export async function cancelByTeacher(bookingId: string, teacherId: string, reas
     await transition(tx, booking, "CANCELLED_BY_TEACHER", { cancelledAt: now, cancelReason: reason }, teacherId, reason);
     refundId = await requestRefund(tx, booking.id, booking.price - booking.refundedAmount, "Öğretmen iptali");
     await resetPendingForBooking(tx, booking, 0, `${booking.code} öğretmen iptali`);
-    await tx.teacherProfile.update({ where: { userId: teacherId }, data: { cancellationCount: { increment: 1 } } });
+    // Ödemesiz dersin (test, ders bağlantısı) iptali sıralamada ceza sayılmaz
+    if (!booking.isTest) await tx.teacherProfile.update({ where: { userId: teacherId }, data: { cancellationCount: { increment: 1 } } });
 
     await notify(
       {

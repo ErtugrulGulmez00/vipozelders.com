@@ -1,4 +1,4 @@
-import { Bell, CalendarClock, CalendarDays, LayoutDashboard, MessageCircle, MessageCircleQuestion, MessageSquareQuote, Repeat, Settings, Users, UserRound, Wallet } from "lucide-react";
+import { Bell, CalendarClock, CalendarDays, LayoutDashboard, Link2, MessageCircle, MessageCircleQuestion, MessageSquareQuote, Repeat, Settings, Users, UserRound, Wallet } from "lucide-react";
 import { PanelShell } from "@/components/panel/panel-shell";
 import { notificationScope, notificationScopeWhere, sideSwitches } from "@/lib/sides";
 import { requireRole } from "@/server/auth/current-user";
@@ -26,6 +26,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
         { href: "/ogretmen-paneli", label: "Özet", icon: <LayoutDashboard />, exact: true },
         // Bekleyen talep varsa başlık doğrudan taleplere götürür
         { href: pending ? "/ogretmen-paneli/talepler" : "/ogretmen-paneli/dersler", label: "Derslerim", icon: <CalendarDays />, badge: pending || undefined, also: ["/ogretmen-paneli/talepler", "/ogretmen-paneli/dersler"] },
+        { href: "/ogretmen-paneli/ders-baglantilari", label: "Ders bağlantıları", icon: <Link2 /> },
         { href: "/ogretmen-paneli/mesajlar", label: "Mesajlar", icon: <MessageCircle />, badge: unreadMessages || undefined },
         { href: "/ogretmen-paneli/soru-havuzu", label: "Soru havuzu", icon: <MessageCircleQuestion />, badge: poolActive || undefined },
         { href: "/ogretmen-paneli/soru-aboneligi", label: "Soru aboneliği", icon: <Repeat /> },

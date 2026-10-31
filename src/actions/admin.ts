@@ -143,10 +143,16 @@ export async function setTeacherFlagsAction(_: ActionState, formData: FormData):
     data: {
       verificationStatus: verification as "UNVERIFIED" | "PENDING" | "VERIFIED" | "REJECTED",
       isFeatured: formData.get("isFeatured") === "on",
+      freeLessonLinks: formData.get("freeLessonLinks") === "on",
       commissionRateBps,
     },
   });
-  await log(user.id, "teacher.flags", "TeacherProfile", teacherId, { verification, featured: formData.get("isFeatured") === "on", commissionRateBps });
+  await log(user.id, "teacher.flags", "TeacherProfile", teacherId, {
+    verification,
+    featured: formData.get("isFeatured") === "on",
+    freeLessonLinks: formData.get("freeLessonLinks") === "on",
+    commissionRateBps,
+  });
   refresh();
   return success("Öğretmen ayarları kaydedildi.");
 }
@@ -231,8 +237,10 @@ export async function resolveDisputeAction(_: ActionState, formData: FormData): 
 export async function createTestLessonAction(_: ActionState, formData: FormData): Promise<ActionState> {
   const user = await admin();
   if (!user) return DENIED;
-  const student = await db.user.findUnique({ where: { email: text(formData, "studentEmail").toLowerCase() } });
-  if (!student) return failure("Bu e-postayla kayıtlı öğrenci/veli bulunamadı.", { studentEmail: "Bulunamadı." });
+  // E-postasız (kullanıcı adıyla açılmış) öğrenci hesapları da bulunur
+  const identifier = text(formData, "studentEmail").toLocaleLowerCase("tr-TR");
+  const student = identifier ? await db.user.findFirst({ where: { OR: [{ email: identifier }, { username: identifier }] } }) : null;
+  if (!student) return failure("Bu e-posta ya da kullanıcı adıyla kayıtlı öğrenci/veli bulunamadı.", { studentEmail: "Bulunamadı." });
   const startInput = text(formData, "startAt");
   let startAt = new Date(Math.ceil((Date.now() + 2 * 60_000) / 60_000) * 60_000);
   if (startInput) {

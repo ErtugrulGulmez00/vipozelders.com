@@ -15,6 +15,7 @@ const MESSAGES: Record<string, string> = {
   itiraz: "İtiraz sonuçlandırıldı; taraflara bildirim gönderildi.",
   "2fa-acildi": "İki adımlı doğrulama açıldı. Bundan sonra girişte şifrenizle birlikte uygulamadaki kod istenecek.",
   "2fa-kapatildi": "İki adımlı doğrulama kapatıldı.",
+  baglanti: "Derse kaydoldunuz. Ders sınıfı, ders saatinden 10 dakika önce bu sayfadaki “Derse katıl” ile açılır.",
   test: "Test dersi oluşturuldu. Öğretmen ve öğrenci kendi panellerindeki ders sayfasından “Derse katıl” ile sınıfa girebilir (sınıf ders saatinden 10 dakika önce açılır).",
 };
 
