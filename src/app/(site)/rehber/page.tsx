@@ -9,16 +9,16 @@ import { publishedPosts } from "@/server/blog";
 import { uploadUrl } from "@/server/storage";
 
 export const metadata: Metadata = {
-  title: "Rehber: LGS, YKS ve ders çalışma üzerine yazılar",
-  description: "Veliler ve öğrenciler için sınav hazırlığı, ders çalışma ve özel ders üzerine pratik yazılar.",
+  title: "Rehber: sınav hazırlığı, ders çalışma ve kurum yönetimi üzerine yazılar",
+  description: "Veliler, öğrenciler ve etüt merkezleri için sınav hazırlığı, ders çalışma, özel ders ve kurum yönetimi üzerine pratik yazılar.",
 };
 
 export default function BlogIndexPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-10">
       <p className="text-sm font-semibold text-brand-700">Rehber</p>
-      <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Veliler ve öğrenciler için rehber</h1>
-      <p className="mt-3 max-w-2xl text-slate-600">Sınav hazırlığı, ders çalışma düzeni ve doğru öğretmeni seçme üzerine öğretmenlerimizin önerileri.</p>
+      <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Veliler, öğrenciler ve kurumlar için rehber</h1>
+      <p className="mt-3 max-w-2xl text-slate-600">Sınav hazırlığı, ders çalışma düzeni, doğru öğretmeni seçme ve etüt merkezi yönetimi üzerine pratik öneriler.</p>
       <Suspense fallback={<Skeleton className="mt-8 h-64 rounded-2xl" />}>
         <PostList />
       </Suspense>

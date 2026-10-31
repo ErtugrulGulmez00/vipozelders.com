@@ -1,11 +1,12 @@
 import { Lock, Mail, MapPin, Phone, ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import { hasPublicCenters } from "@/server/center/public";
 import { getCatalog, getFooterPages, getSiteSettings } from "@/server/site";
 import { CardLogos } from "./card-logos";
 import { Logo } from "./logo";
 
 export async function SiteFooter() {
-  const [settings, pages, catalog] = await Promise.all([getSiteSettings(), getFooterPages(), getCatalog()]);
+  const [settings, pages, catalog, showCenters] = await Promise.all([getSiteSettings(), getFooterPages(), getCatalog(), hasPublicCenters()]);
   return (
     <footer className="pk-site-chrome mt-20 bg-ink-900 text-ink-200">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:grid-cols-2 lg:grid-cols-4">
@@ -77,6 +78,14 @@ export async function SiteFooter() {
                 Etüt merkezi / dershane paneli
               </Link>
             </li>
+            {/* Kurum rehberi boşken bağlantı gösterilmez */}
+            {showCenters ? (
+              <li>
+                <Link href="/kurumlar" className="hover:text-white">
+                  Etüt merkezleri ve dershaneler
+                </Link>
+              </li>
+            ) : null}
             <li>
               <Link href="/kurum-giris" className="hover:text-white">
                 Kurum paneli girişi

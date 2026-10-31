@@ -47,6 +47,15 @@ export async function listPublicCenters(cityId: number | null) {
   }));
 }
 
+/** Rehberde en az bir kurum var mı (site altbilgisindeki bağlantı için; kurum ayarları kaydedilince yenilenir). */
+export async function hasPublicCenters() {
+  "use cache";
+  cacheTag(CENTERS_CACHE_TAG);
+  cacheLife("hours");
+  const centers = await db.center.findMany({ where: publicWhere, select: { status: true, trialEndsAt: true, paidUntil: true }, take: 200 });
+  return centers.some(visible);
+}
+
 export async function publicCenterCities() {
   "use cache";
   cacheTag(CENTERS_CACHE_TAG);

@@ -30,7 +30,7 @@ export function PostForm({ post }: { post?: Post }) {
             <Input name="slug" defaultValue={post?.slug} />
             <FieldError name="slug" />
           </Field>
-          <Field label="Kategori" hint="Ör: LGS, YKS, Veli rehberi">
+          <Field label="Kategori" hint="Ör: Veliler için, Öğrenciler için; “Kurumlar için” yazısının sonunda kurum paneli tanıtılır">
             <Input name="category" defaultValue={post?.category ?? ""} maxLength={40} />
           </Field>
           <Field label="Yazar">

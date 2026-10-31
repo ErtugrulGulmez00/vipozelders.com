@@ -11,6 +11,9 @@ import { publishedPost, readingMinutes } from "@/server/blog";
 import { db } from "@/server/db";
 import { uploadUrl } from "@/server/storage";
 
+// Bu kategorideki yazıların sonunda öğretmen araması yerine kurum paneli tanıtılır
+const CENTER_CATEGORY = "Kurumlar için";
+
 export async function generateStaticParams() {
   const posts = await db.blogPost.findMany({ where: { isPublished: true }, select: { slug: true } });
   return posts.length ? posts.map((p) => ({ slug: p.slug })) : [{ slug: "ornek" }];
@@ -69,13 +72,23 @@ async function Post({ params }: { params: Promise<{ slug: string }> }) {
         <RichText content={post.content} />
         {post.authorName ? <p className="mt-6 text-sm text-slate-500">Yazan: {post.authorName}</p> : null}
       </Card>
-      <Card className="mt-6 flex flex-col items-start gap-3 border-brand-200 bg-brand-50/60 p-6 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="font-bold text-slate-900">Doğru öğretmeni birlikte bulalım</p>
-          <p className="text-sm text-slate-600">Onaylı öğretmenler, net fiyatlar; öğretmen onaylamazsa ücretin tamamı iade.</p>
-        </div>
-        <LinkButton href="/ogretmenler">Öğretmenleri incele</LinkButton>
-      </Card>
+      {post.category === CENTER_CATEGORY ? (
+        <Card className="mt-6 flex flex-col items-start gap-3 border-brand-200 bg-brand-50/60 p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-bold text-slate-900">Kurumunuzu tek panelden yönetin</p>
+            <p className="text-sm text-slate-600">Öğrenci, etüt, deneme, ödev ve tahsilat tek yerde; veliler portaldan takip eder.</p>
+          </div>
+          <LinkButton href="/kurumlar-icin">Kurum panelini inceleyin</LinkButton>
+        </Card>
+      ) : (
+        <Card className="mt-6 flex flex-col items-start gap-3 border-brand-200 bg-brand-50/60 p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-bold text-slate-900">Doğru öğretmeni birlikte bulalım</p>
+            <p className="text-sm text-slate-600">Onaylı öğretmenler, net fiyatlar; öğretmen onaylamazsa ücretin tamamı iade.</p>
+          </div>
+          <LinkButton href="/ogretmenler">Öğretmenleri incele</LinkButton>
+        </Card>
+      )}
     </article>
   );
 }
