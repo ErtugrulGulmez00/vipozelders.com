@@ -1,8 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { AccessToken, RoomServiceClient, WebhookReceiver } from "livekit-server-sdk";
 import type { Booking } from "@/generated/prisma/client";
+import { formatLessonRange } from "@/lib/dates";
 import { db } from "./db";
 import { handleGroupRoomEvent } from "./groups";
+import { activeMakeup } from "./lesson-links";
 import { loadSettings } from "./settings";
 import { videoConfigured } from "./video-config";
 
@@ -26,6 +28,9 @@ export async function classroomAccess(bookingId: string, userId: string, now = n
   if (booking.status !== "CONFIRMED") {
     return { ok: false, reason: "Sanal sınıf yalnızca onaylanmış dersler için açılır.", booking };
   }
+  // Telafisi açılan ders yapılmaz (aynı ders iki kez yapılmasın); ders telafi saatinde, telafi bağlantısıyla yapılır
+  const makeup = await activeMakeup(booking.id);
+  if (makeup) return { ok: false, reason: `Bu dersin yerine ${formatLessonRange(makeup.startAt, makeup.endAt)} saatinde telafi dersi açıldı; ders o saatte yapılacak.`, booking };
   const settings = await loadSettings();
   const opensAt = new Date(booking.startAt.getTime() - settings.classroomOpensMinutesBefore * 60_000);
   const closesAt = new Date(booking.endAt.getTime() + CLOSE_AFTER_MINUTES * 60_000);

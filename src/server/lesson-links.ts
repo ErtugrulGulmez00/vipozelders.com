@@ -10,7 +10,9 @@ import { notify } from "./notifications";
 // giriş yapıp derse kaydolur, ders o an oluşur (onaylı, online, ücretsiz). Kötüye kullanımı (ücreti platform dışında
 // alıp dersi bedava açma) önlemek için serbest yetkisi olmayan öğretmen yalnızca ücreti ödenmiş bir dersinin telafisi
 // için ve gerekçe yazarak bağlantı açar; bağlantıyı yalnızca o dersin öğrencisi kullanabilir, her ücretli derse tek
-// telafi. Serbest yetkiyi (ör. öğrenci koçu) yönetici verir.
+// telafi. Telafi yalnızca yapılamamış online derse açılır (öğretmen ve öğrenci ikisi de sınıfa girdiyse ders yapılmış
+// sayılır); telafisi açılan dersin sınıfı kapanır, ders telafi saatinde yapılır. Serbest yetkiyi (ör. öğrenci koçu)
+// yönetici verir.
 
 export class LessonLinkError extends Error {}
 
@@ -25,19 +27,34 @@ export const GENERAL_OFFERING = "genel";
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 
-/** Telafi bağlantısı açılabilecek ücretli dersler: onaylı ya da tamamlanmış, iadesiz, son 30 günde, telafisi açılmamış. */
+/**
+ * Telafi bağlantısı açılabilecek ücretli dersler: online, onaylı ya da tamamlanmış, iadesiz, son 30 günde, telafisi
+ * açılmamış ve öğretmenle öğrencinin ikisinin birden sınıfa girmediği. Yüz yüze derste kimin geldiği bilinmediği için
+ * telafi açılmaz. Yoklamaya yalnızca dersin öğretmeni ve öğrencisi yazılır; öğretmen dışındaki kayıt öğrencinindir.
+ */
 function makeupSourceWhere(teacherId: string, now: Date): Prisma.BookingWhereInput {
   return {
     teacherId,
     isTest: false,
     isIntro: false,
-    mode: { not: "QUESTION" },
+    mode: "ONLINE",
     price: { gt: 0 },
     refundedAmount: 0,
     status: { in: ["CONFIRMED", "COMPLETED"] },
     startAt: { gte: new Date(now.getTime() - MAKEUP_WINDOW_DAYS * DAY) },
     makeupLinks: { none: { cancelledAt: null } },
+    NOT: { AND: [{ attendance: { some: { userId: teacherId } } }, { attendance: { some: { userId: { not: teacherId } } } }] },
   };
+}
+
+/** Bu ders için telafi bağlantısı açılabilir mi? (Ders sayfasındaki düğme için.) */
+export async function canOpenMakeup(teacherId: string, bookingId: string, now = new Date()) {
+  return (await db.booking.count({ where: { id: bookingId, ...makeupSourceWhere(teacherId, now) } })) > 0;
+}
+
+/** Dersin iptal edilmemiş telafi bağlantısı: varsa ders yapılmaz, sınıfı kapalıdır. */
+export async function activeMakeup(bookingId: string) {
+  return db.lessonLink.findFirst({ where: { sourceBookingId: bookingId, cancelledAt: null }, select: { token: true, startAt: true, endAt: true, bookingId: true } });
 }
 
 export async function makeupSources(teacherId: string, now = new Date()) {
@@ -82,7 +99,9 @@ export async function createLessonLink(input: NewLessonLink, now = new Date()) {
   const link = await db.$transaction(async (tx) => {
     await lockTeacher(tx, teacher.userId);
     const source = sourceBookingId ? await tx.booking.findFirst({ where: { id: sourceBookingId, ...makeupSourceWhere(teacher.userId, now) } }) : null;
-    if (sourceBookingId && !source) throw new LessonLinkError("Seçilen ders telafiye uygun değil (iade edilmiş, çok eski ya da telafisi zaten açılmış olabilir).");
+    if (sourceBookingId && !source) {
+      throw new LessonLinkError("Seçilen ders telafiye uygun değil (yüz yüze, iade edilmiş, çok eski, ikinizin de katıldığı ya da telafisi zaten açılmış bir ders olabilir).");
+    }
 
     let catalog: { serviceTypeId: number; levelId: number; subjectId: number; serviceName: string; levelName: string; subjectName: string };
     if (source) {
@@ -143,7 +162,7 @@ export async function findLessonLink(token: string) {
     include: {
       teacher: { select: { user: { select: { firstName: true, lastName: true } } } },
       booking: { select: { id: true, studentId: true } },
-      sourceBooking: { select: { studentId: true, code: true } },
+      sourceBooking: { select: { studentId: true, code: true, refundedAmount: true } },
     },
   });
 }
@@ -173,6 +192,8 @@ export async function claimLessonLink(token: string, userId: string, now = new D
       if (link.endAt <= now) throw new LessonLinkError("Bu bağlantının süresi doldu.");
       if (link.teacher.user.status !== "ACTIVE") throw new LessonLinkError("Öğretmen hesabı kapalı.");
       if (link.sourceBooking && link.sourceBooking.studentId !== user.id) throw new LessonLinkError("Bu telafi bağlantısını yalnızca dersin öğrencisi/velisi kullanabilir. Dersi aldığınız hesapla giriş yapın.");
+      // Kaynak dersin ücreti sonradan iade edildiyse (iptal, öğretmen katılmadı) telafi de geçersizdir
+      if (link.sourceBooking && link.sourceBooking.refundedAmount > 0) throw new LessonLinkError("Telafi edilecek dersin ücreti iade edildiği için bu bağlantı geçersiz.");
 
       const booking = await tx.booking.create({
         data: {

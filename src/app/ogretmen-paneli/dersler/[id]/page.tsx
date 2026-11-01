@@ -14,6 +14,7 @@ import { formatMoney } from "@/lib/money";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { lessonCalendarEvent } from "@/server/lesson-calendar";
+import { activeMakeup, canOpenMakeup } from "@/server/lesson-links";
 import { loadSettings } from "@/server/settings";
 import { TeacherCancelForm } from "./cancel-form";
 import { ReschedulePanel } from "@/components/packages/reschedule-panel";
@@ -32,9 +33,16 @@ export default async function TeacherLessonPage({ params, searchParams }: PagePr
   if (!booking || booking.teacherId !== user.id) notFound();
 
   const now = new Date();
-  const settings = await loadSettings();
+  const [settings, makeup, makeupOk, attendance] = await Promise.all([
+    loadSettings(),
+    activeMakeup(booking.id),
+    canOpenMakeup(user.id, booking.id, now),
+    db.lessonAttendance.findMany({ where: { bookingId: booking.id }, select: { userId: true } }),
+  ]);
   const opensAt = new Date(booking.startAt.getTime() - settings.classroomOpensMinutesBefore * 60_000);
-  const classroomOpen = booking.status === "CONFIRMED" && booking.mode === "ONLINE" && now >= opensAt && now <= new Date(booking.endAt.getTime() + 15 * 60_000);
+  // Telafisi açılan dersin sınıfı kapalıdır
+  const classroomOpen = !makeup && booking.status === "CONFIRMED" && booking.mode === "ONLINE" && now >= opensAt && now <= new Date(booking.endAt.getTime() + 15 * 60_000);
+  const bothJoined = attendance.some((a) => a.userId === booking.teacherId) && attendance.some((a) => a.userId === booking.studentId);
   const confirmedOrLater = ["CONFIRMED", "COMPLETED", "NO_SHOW_STUDENT", "DISPUTED"].includes(booking.status);
   const calendarEvent = booking.status === "CONFIRMED" && booking.endAt > now ? await lessonCalendarEvent(booking, "TEACHER", booking.learnerName) : null;
 
@@ -57,7 +65,13 @@ export default async function TeacherLessonPage({ params, searchParams }: PagePr
               <CardBody className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="font-semibold text-slate-900">Sanal sınıf</p>
-                  <p className="text-sm text-slate-600">{classroomOpen ? "Sınıf açık." : `Sınıf ${formatDateTime(opensAt)} saatinde açılacak.`}</p>
+                  <p className="text-sm text-slate-600">
+                    {makeup
+                      ? `Bu dersin yerine ${formatLessonRange(makeup.startAt, makeup.endAt)} saatinde telafi dersi açtınız; bu dersin sınıfı kapalı.`
+                      : classroomOpen
+                        ? "Sınıf açık."
+                        : `Sınıf ${formatDateTime(opensAt)} saatinde açılacak.`}
+                  </p>
                 </div>
                 <PlatformRules className="w-full" />
                 {classroomOpen ? (
@@ -65,7 +79,7 @@ export default async function TeacherLessonPage({ params, searchParams }: PagePr
                     <Video className="size-4" aria-hidden /> Derse katıl
                   </LinkButton>
                 ) : (
-                  <Badge tone="slate">Henüz açılmadı</Badge>
+                  <Badge tone="slate">{makeup ? "Telafi açıldı" : "Henüz açılmadı"}</Badge>
                 )}
               </CardBody>
             </Card>
@@ -125,16 +139,21 @@ export default async function TeacherLessonPage({ params, searchParams }: PagePr
         <aside className="space-y-6">
           <ReschedulePanel booking={booking} viewerId={user.id} />
 
-          {!booking.isTest && !booking.isIntro && booking.price > 0 && booking.refundedAmount === 0 && booking.mode !== "QUESTION" && ["CONFIRMED", "COMPLETED"].includes(booking.status) ? (
+          {makeupOk ? (
             <Card>
               <CardHeader title="Telafi dersi" />
               <CardBody className="space-y-3 text-sm text-slate-600">
-                <p>Bu dersi planlanan saatte yapamadıysanız ya da yapamayacaksanız, ücreti ödenmiş bu ders için başka bir saate ücretsiz telafi bağlantısı açabilirsiniz.</p>
+                <p>
+                  Bu dersi planlanan saatte yapamadıysanız ya da yapamayacaksanız, ücreti ödenmiş bu ders için başka bir saate ücretsiz telafi bağlantısı açabilirsiniz. Telafi açılınca bu dersin sanal sınıfı kapanır; ders telafi
+                  saatinde yapılır.
+                </p>
                 <LinkButton href={`/ogretmen-paneli/ders-baglantilari?kaynak=${booking.id}`} variant="outline" size="sm">
                   <Link2 className="size-4" aria-hidden /> Telafi bağlantısı aç
                 </LinkButton>
               </CardBody>
             </Card>
+          ) : bothJoined && booking.mode === "ONLINE" && booking.price > 0 && !booking.isTest && ["CONFIRMED", "COMPLETED"].includes(booking.status) ? (
+            <p className="text-xs text-slate-500">İkiniz de sınıfa girdiğiniz için bu ders yapılmış sayılır, telafi açılamaz. Ders bağlantı sorunu yüzünden yarıda kaldıysa destek ekibine yazın.</p>
           ) : null}
 
           {booking.status === "CONFIRMED" && booking.startAt > now ? (

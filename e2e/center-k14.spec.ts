@@ -81,7 +81,7 @@ test("öğrenci arama, koçluk, sınıf defteri, salon ve veli portalı", async 
   await page.goto(`/kurum/ogrenciler/${ali.id}?sekme=kocluk`);
   await page.getByLabel("Görüşme notu", { exact: true }).fill(`Deneme netleri yükseliyor ${stamp}`);
   await page.getByLabel("Öncelikli konular").fill("Üslü ifadeler, Paragraf");
-  await page.getByLabel("Bu görüşme notu veli portalında görünsün").check();
+  await page.getByLabel("Bu görüşme notu veli ve öğrenci portalında görünsün").check();
   await page.getByRole("button", { name: "Görüşmeyi kaydet" }).click();
   await expect(page.getByText("Görüşme kaydedildi.")).toBeVisible();
   await expect(page.getByText(`Deneme netleri yükseliyor ${stamp}`)).toBeVisible();

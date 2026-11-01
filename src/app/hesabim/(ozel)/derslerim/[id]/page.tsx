@@ -16,6 +16,7 @@ import { requireRole } from "@/server/auth/current-user";
 import { previewStudentCancellation } from "@/server/bookings";
 import { db } from "@/server/db";
 import { lessonCalendarEvent } from "@/server/lesson-calendar";
+import { activeMakeup } from "@/server/lesson-links";
 import { reviewEligibility } from "@/server/reviews";
 import { loadSettings } from "@/server/settings";
 import { uploadUrl } from "@/server/storage";
@@ -47,7 +48,9 @@ export default async function StudentBookingPage({ params, searchParams }: PageP
   const cancellation = await previewStudentCancellation(booking, now);
   const eligibility = await reviewEligibility(user.id, booking.teacherId, now);
   const opensAt = new Date(booking.startAt.getTime() - settings.classroomOpensMinutesBefore * 60_000);
-  const classroomOpen = booking.status === "CONFIRMED" && booking.mode === "ONLINE" && now >= opensAt && now <= new Date(booking.endAt.getTime() + 15 * 60_000);
+  // Öğretmen bu dersin yerine telafi açtıysa ders yapılmaz, sınıfı kapalıdır
+  const makeup = booking.mode === "ONLINE" ? await activeMakeup(booking.id) : null;
+  const classroomOpen = !makeup && booking.status === "CONFIRMED" && booking.mode === "ONLINE" && now >= opensAt && now <= new Date(booking.endAt.getTime() + 15 * 60_000);
   const calendarEvent = booking.status === "CONFIRMED" && booking.endAt > now ? await lessonCalendarEvent(booking, "STUDENT", teacherName) : null;
   const canDispute = ["COMPLETED", "NO_SHOW_STUDENT"].includes(booking.status) && !booking.earningsReleasedAt && booking.earningsReleaseAt && booking.earningsReleaseAt > now;
 
@@ -87,7 +90,15 @@ export default async function StudentBookingPage({ params, searchParams }: PageP
               Öğretmeniniz {formatDateTime(booking.approvalDeadline)} saatine kadar yanıt verecek. Onaylanmazsa ödemenizin tamamı otomatik iade edilir.
             </Alert>
           ) : null}
-          {booking.status === "CONFIRMED" && booking.mode === "ONLINE" ? (
+          {makeup && (makeup.bookingId || makeup.endAt > now) ? (
+            <Alert tone="info" title="Bu dersin yerine telafi dersi açıldı">
+              Öğretmeniniz bu ders için {formatLessonRange(makeup.startAt, makeup.endAt)} saatinde telafi dersi açtı; ders o saatte yapılacak.{" "}
+              <Link href={makeup.bookingId ? `/hesabim/derslerim/${makeup.bookingId}` : `/ders-baglantisi/${makeup.token}`} className="font-semibold underline">
+                {makeup.bookingId ? "Telafi dersine git" : "Telafi dersine kaydolun"}
+              </Link>
+            </Alert>
+          ) : null}
+          {booking.status === "CONFIRMED" && booking.mode === "ONLINE" && !makeup ? (
             <Card className="border-brand-200 bg-brand-50/60">
               <CardBody className="flex flex-wrap items-center justify-between gap-3">
                 <div>

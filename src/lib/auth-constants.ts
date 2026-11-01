@@ -22,8 +22,18 @@ export function roleHome(role: AppRole): string {
   }
 }
 
+const NEXT_BASE = "https://site.invalid";
+
 /** Girişten sonra yönlendirilecek adresin site içi olduğundan emin olur. */
 export function safeNextPath(next: string | null | undefined): string | null {
-  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\")) return null;
+  // Tarayıcı adresteki sekme ve satır sonlarını siler, ters bölüyü "/" sayar ("/\t/x.com" → "//x.com", dış site);
+  // "/.//x.com" gibi nokta parçaları çözülünce de yol "//" ile başlayabilir.
+  if (!next || !next.startsWith("/") || next.startsWith("//") || /[\\\p{Cc}]/u.test(next)) return null;
+  try {
+    const url = new URL(next, NEXT_BASE);
+    if (url.origin !== NEXT_BASE || url.pathname.startsWith("//")) return null;
+  } catch {
+    return null;
+  }
   return next;
 }

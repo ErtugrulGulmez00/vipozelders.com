@@ -22,7 +22,7 @@ export async function LessonLinksPanel() {
       <summary className="flex cursor-pointer list-none items-center gap-2 font-semibold text-slate-800 [&::-webkit-details-marker]:hidden">
         <Link2 className="size-4" aria-hidden /> Ders bağlantıları ({links.length}) — öğretmenlerin açtığı ödemesiz dersler
       </summary>
-      <p className="mt-2 text-sm text-slate-600">Telafi bağlantısı yalnızca ücreti ödenmiş derse açılabilir; serbest bağlantıyı yalnızca Öğretmenler → Genel’den yetki verilen öğretmen açar.</p>
+      <p className="mt-2 text-sm text-slate-600">Telafi bağlantısı yalnızca ücreti ödenmiş ve öğretmenle öğrencinin birlikte katılmadığı online derse açılabilir, açılınca kaynak dersin sınıfı kapanır; serbest bağlantıyı yalnızca Öğretmenler → Genel’den yetki verilen öğretmen açar.</p>
       <Table className="mt-3">
         <thead>
           <tr>

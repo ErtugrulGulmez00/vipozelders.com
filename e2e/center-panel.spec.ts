@@ -233,6 +233,9 @@ test("ödev verilir, kontrol edilir; veli portalda görür; tüm veriler Excel o
     await login(page, "veli@demo.vipozelders.local", "Veli12345");
     await page.goto("/hesabim/kurum");
     await page.getByRole("link", { name: /Ali Demirtaş/ }).first().click();
+    // Veli ödemeleri ve veliye açık öğretmen notunu görür (öğrencinin kendi hesabı görmez)
+    await expect(page.getByText("Kalan ödeme")).toBeVisible();
+    await expect(page.getByText("Öğretmen notları")).toBeVisible();
     await page.getByRole("link", { name: "Ödevler", exact: true }).click();
     const item = page.locator("li", { hasText: title });
     await expect(item.getByText("Yapmadı")).toBeVisible();
@@ -283,7 +286,14 @@ test("öğrenci hesabı → fotoğrafla soru → öğretmen çözümü; yanlış
     await expect(page.getByRole("link", { name: "Derslerim" })).toHaveCount(0);
     await page.goto("/hesabim/derslerim");
     await expect(page).toHaveURL(/\/hesabim\/kurum$/);
+    // Öğrenci ailenin ödemelerini ve veliye yazılan notları görmez (Ali'nin ödeme planı ve veliye açık notu var)
+    await expect(page.getByText("Sıradaki ödeme")).toHaveCount(0);
     await page.getByRole("link", { name: /Ali Demirtaş/ }).first().click();
+    await expect(page.getByText("Kalan ödeme")).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Ödemeler" })).toHaveCount(0);
+    await expect(page.getByText("Öğretmen notları")).toHaveCount(0);
+    await page.goto(`${page.url().split("?")[0]}?sekme=odemeler`);
+    await expect(page.getByText("Yapılan ödemeler")).toHaveCount(0);
     await page.getByRole("link", { name: "Soru sor" }).click();
     await page.locator('input[name="image"]').setInputFiles({ name: "soru.png", mimeType: "image/png", buffer: PNG });
     await page.locator('select[name="subject"]').selectOption("Matematik");

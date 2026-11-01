@@ -70,14 +70,19 @@ export async function portalChildren(userId: string) {
   });
 }
 
-/** Veli portalı kartları için kısa özet: son 30 gün devamsızlık, son yayınlanan deneme neti, sıradaki ödenmemiş taksit. */
-export async function portalChildSummaries(studentIds: string[]) {
+/**
+ * Veli portalı kartları için kısa özet: son 30 gün devamsızlık, son yayınlanan deneme neti, sıradaki ödenmemiş taksit
+ * (taksit yalnızca veli bağlantılarında; öğrencinin kendi hesabı ödemeleri görmez).
+ */
+export async function portalChildSummaries(links: { studentId: string; isStudentAccount: boolean }[]) {
+  const studentIds = links.map((l) => l.studentId);
   if (!studentIds.length) return new Map<string, { absent: number; sessions: number; lastNet: number | null; nextDue: { date: Date; amount: number } | null }>();
+  const guardianStudentIds = links.filter((l) => !l.isStudentAccount).map((l) => l.studentId);
   const since = dateStringToDbDate(addDaysToDateString(toLocalDateString(new Date()), -30));
   const [attendance, results, installments] = await Promise.all([
     db.centerAttendance.groupBy({ by: ["studentId", "status"], where: { studentId: { in: studentIds }, session: { date: { gte: since } } }, _count: true }),
     db.centerExamResult.findMany({ where: { studentId: { in: studentIds }, exam: { isPublished: true } }, select: { studentId: true, net: true }, orderBy: { exam: { date: "desc" } }, distinct: ["studentId"] }),
-    db.centerInstallment.findMany({ where: { studentId: { in: studentIds }, plan: { isCancelled: false } }, select: { studentId: true, dueDate: true, amount: true, paidAmount: true }, orderBy: [{ dueDate: "asc" }, { order: "asc" }] }),
+    db.centerInstallment.findMany({ where: { studentId: { in: guardianStudentIds }, plan: { isCancelled: false } }, select: { studentId: true, dueDate: true, amount: true, paidAmount: true }, orderBy: [{ dueDate: "asc" }, { order: "asc" }] }),
   ]);
   return new Map(
     studentIds.map((id) => {
@@ -107,6 +112,9 @@ export async function portalChildDetail(userId: string, guardianId: string) {
   const centerId = student.centerId;
   const today = toLocalDateString(new Date());
   const groupIds = student.groups.map((g) => g.groupId);
+  // Öğrencinin kendi hesabı ailenin ödemelerini ve veliye yazılan notları görmez (hiç sorgulanmaz)
+  const forGuardian = !guardian.isStudentAccount;
+  const guardianOnly = <T,>(query: () => Promise<T[]>): Promise<T[]> => (forGuardian ? query() : Promise.resolve([]));
   const [attendance, etuds, results, installments, payments, announcements, notes, weakTopics, balance, homeworks, questions] = await Promise.all([
     db.centerAttendance.findMany({
       where: { studentId: student.id, session: { date: { gte: dateStringToDbDate(addDaysToDateString(today, -60)) } } },
@@ -126,12 +134,12 @@ export async function portalChildDetail(userId: string, guardianId: string) {
       orderBy: { exam: { date: "desc" } },
       take: 30,
     }),
-    db.centerInstallment.findMany({ where: { studentId: student.id, plan: { isCancelled: false } }, include: { plan: { select: { title: true } } }, orderBy: [{ dueDate: "asc" }, { order: "asc" }] }),
-    db.centerPayment.findMany({ where: { studentId: student.id, cancelledAt: null }, orderBy: { paidAt: "desc" }, take: 20 }),
+    guardianOnly(() => db.centerInstallment.findMany({ where: { studentId: student.id, plan: { isCancelled: false } }, include: { plan: { select: { title: true } } }, orderBy: [{ dueDate: "asc" }, { order: "asc" }] })),
+    guardianOnly(() => db.centerPayment.findMany({ where: { studentId: student.id, cancelledAt: null }, orderBy: { paidAt: "desc" }, take: 20 })),
     db.centerAnnouncement.findMany({ where: { centerId, OR: [{ groupId: null }, { groupId: { in: groupIds } }] }, orderBy: { createdAt: "desc" }, take: 20, include: { group: { select: { name: true } } } }),
-    db.centerNote.findMany({ where: { studentId: student.id, visibleToParent: true }, orderBy: { createdAt: "desc" }, take: 20, include: { author: { include: { user: { select: { firstName: true, lastName: true } } } } } }),
+    guardianOnly(() => db.centerNote.findMany({ where: { studentId: student.id, visibleToParent: true }, orderBy: { createdAt: "desc" }, take: 20, include: { author: { include: { user: { select: { firstName: true, lastName: true } } } } } })),
     studentWeakTopics(centerId, student.id, { publishedOnly: true }),
-    studentBalance(centerId, student.id, today),
+    forGuardian ? studentBalance(centerId, student.id, today) : null,
     db.centerHomeworkStudent.findMany({
       where: { studentId: student.id, homework: { dueDate: { gte: dateStringToDbDate(addDaysToDateString(today, -60)) } } },
       include: { homework: true },

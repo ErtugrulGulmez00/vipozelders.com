@@ -1,7 +1,8 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { approveBooking, BookingError, completeCheckout, completeFinishedLessons, createBookingHold, startCheckout } from "@/server/bookings";
+import { approveBooking, BookingError, cancelByStudent, completeCheckout, completeFinishedLessons, createBookingHold, startCheckout } from "@/server/bookings";
 import { db } from "@/server/db";
-import { claimLessonLink, createLessonLink, cancelLessonLink, LessonLinkError, makeupSources } from "@/server/lesson-links";
+import { canOpenMakeup, claimLessonLink, createLessonLink, cancelLessonLink, LessonLinkError, makeupSources } from "@/server/lesson-links";
+import { classroomAccess } from "@/server/video";
 import { at, createFixture, hoursAfter, LESSON_DAY, NOW } from "./helpers";
 
 afterAll(async () => {
@@ -65,6 +66,63 @@ describe("ders bağlantısı", () => {
     await completeFinishedLessons(hoursAfter(booking.endAt, 1));
     expect((await db.booking.findUniqueOrThrow({ where: { id: booking.id } })).status).toBe("COMPLETED");
     expect(await db.ledgerEntry.count({ where: { bookingId: booking.id } })).toBe(0);
+  });
+
+  it("telafi yalnızca yapılamamış online derse açılır: ikisinin de katıldığı ve yüz yüze ders kaynak olamaz", async () => {
+    const fixture = await createFixture();
+    const student = await fixture.createStudent();
+    const held = await paidLesson(fixture, student.id, at(LESSON_DAY, "10:00"));
+    const teacherOnly = await paidLesson(fixture, student.id, at(LESSON_DAY, "12:00"));
+    const nobody = await paidLesson(fixture, student.id, at(LESSON_DAY, "14:00"));
+    const inPerson = await paidLesson(fixture, student.id, at(LESSON_DAY, "16:00"));
+    await db.booking.update({ where: { id: inPerson.id }, data: { mode: "IN_PERSON", videoRoomName: null } });
+    await db.lessonAttendance.createMany({
+      data: [
+        { bookingId: held.id, userId: fixture.teacher.id, joinedAt: held.startAt },
+        { bookingId: held.id, userId: student.id, joinedAt: held.startAt },
+        { bookingId: teacherOnly.id, userId: fixture.teacher.id, joinedAt: teacherOnly.startAt },
+      ],
+    });
+    const after = at(LESSON_DAY, "18:00");
+    await completeFinishedLessons(after);
+
+    const sources = (await makeupSources(fixture.teacher.id, after)).map((b) => b.id);
+    expect(sources).not.toContain(held.id);
+    expect(sources).not.toContain(inPerson.id);
+    expect(sources).toContain(nobody.id);
+    // Yalnızca öğretmen girdi: ders yapılmamış sayılır, öğretmen isterse telafi açabilir
+    expect(sources).toContain(teacherOnly.id);
+    expect(await canOpenMakeup(fixture.teacher.id, held.id, after)).toBe(false);
+    expect(await canOpenMakeup(fixture.teacher.id, nobody.id, after)).toBe(true);
+    await expect(createLessonLink({ teacherId: fixture.teacher.id, startAt: at(LESSON_DAY, "20:00"), durationMinutes: 60, sourceBookingId: held.id, note: NOTE }, after)).rejects.toThrow("telafiye uygun değil");
+    await expect(createLessonLink({ teacherId: fixture.teacher.id, startAt: at(LESSON_DAY, "20:00"), durationMinutes: 60, sourceBookingId: inPerson.id, note: NOTE }, after)).rejects.toThrow("telafiye uygun değil");
+    const link = await createLessonLink({ teacherId: fixture.teacher.id, startAt: at(LESSON_DAY, "20:00"), durationMinutes: 60, sourceBookingId: nobody.id, note: NOTE }, after);
+    expect(link.sourceBookingId).toBe(nobody.id);
+  });
+
+  it("telafisi açılan dersin sınıfı kapanır; ders iade edilirse telafi bağlantısı kullanılamaz", async () => {
+    const fixture = await createFixture();
+    const student = await fixture.createStudent();
+    const lesson = await paidLesson(fixture, student.id, at(LESSON_DAY, "18:00"));
+    const during = at(LESSON_DAY, "18:05");
+    expect((await classroomAccess(lesson.id, student.id, during)).ok).toBe(true);
+
+    // Öğretmen dersi yapamayacağını önceden bilip telafi açar: asıl dersin sınıfına iki taraf da giremez
+    const link = await createLessonLink({ teacherId: fixture.teacher.id, startAt: at(LESSON_DAY, "15:00"), durationMinutes: 60, sourceBookingId: lesson.id, note: NOTE }, NOW);
+    for (const userId of [student.id, fixture.teacher.id]) {
+      const access = await classroomAccess(lesson.id, userId, during);
+      expect(access.ok).toBe(false);
+      if (!access.ok) expect(access.reason).toContain("telafi dersi açıldı");
+    }
+    // Bağlantı iptal edilirse sınıf yeniden açılır
+    await cancelLessonLink(link.id, fixture.teacher.id, NOW);
+    expect((await classroomAccess(lesson.id, student.id, during)).ok).toBe(true);
+
+    // Öğrenci asıl dersi iptal edip ücretini geri alırsa telafi bağlantısı geçersiz olur
+    const second = await createLessonLink({ teacherId: fixture.teacher.id, startAt: at(LESSON_DAY, "15:00"), durationMinutes: 60, sourceBookingId: lesson.id, note: NOTE }, NOW);
+    await cancelByStudent(lesson.id, student.id, "Planım değişti", NOW);
+    expect((await db.booking.findUniqueOrThrow({ where: { id: lesson.id } })).refundedAmount).toBeGreaterThan(0);
+    await expect(claimLessonLink(second.token, student.id, NOW)).rejects.toThrow("iade edildiği");
   });
 
   it("serbest yetkili öğretmen (koç) gerekçesiz açar; bağlantıyı ilk giriş yapan öğrenci alır", async () => {

@@ -44,10 +44,11 @@ export async function childDetailJson(userId: string, guardianId: string) {
   return {
     id: guardianId,
     isStudentAccount: guardian.isStudentAccount,
-    // Kurumun paketinde olmayan ya da kapattığı bölümler portalda gösterilmez (webdeki sekmelerle aynı)
+    // Kurumun paketinde olmayan ya da kapattığı bölümler portalda gösterilmez (webdeki sekmelerle aynı);
+    // öğrencinin kendi hesabında ödemeler kapalı, taksit/ödeme/öğretmen notu listeleri boş gelir
     modules: {
       exams: on("denemeler"),
-      payments: on("muhasebe"),
+      payments: on("muhasebe") && !guardian.isStudentAccount,
       homework: on("odevler"),
       study: on("kaynaklar"),
       questions: on("sorular"),
@@ -57,7 +58,7 @@ export async function childDetailJson(userId: string, guardianId: string) {
     },
     student: { firstName: student.firstName, lastName: student.lastName, gradeName: student.gradeName, studentNumber: student.studentNumber },
     center: { name: student.center.name, phone: student.center.phone, email: student.center.email, address: student.center.address, logoUrl: absoluteUpload(student.center.logoKey) },
-    balance,
+    balance: balance ?? { total: 0, paid: 0, remaining: 0, overdue: 0 },
     attendance: attendance.map((a) => ({
       date: dbDateToString(a.session.date),
       startMinute: a.session.startMinute,

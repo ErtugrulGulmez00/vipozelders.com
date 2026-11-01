@@ -66,7 +66,7 @@ export function LessonLinkForm({
           </Select>
         </Field>
       ) : (
-        <Field label="Telafi edilecek ücretli ders" className="sm:col-span-2" hint="Ücreti ödenmiş, iadesi yapılmamış son 30 günlük dersleriniz. Her derse bir telafi bağlantısı açılabilir.">
+        <Field label="Telafi edilecek ücretli ders" className="sm:col-span-2" hint="Ücreti ödenmiş, iadesi yapılmamış son 30 günlük online dersleriniz (öğrenciyle ikinizin de katıldığı dersler hariç). Her derse bir telafi bağlantısı açılabilir; telafisi açılan dersin sınıfı kapanır.">
           <Select name="sourceBookingId" defaultValue={defaultSource ?? ""} required>
             <option value="">Ders seçin</option>
             {sources.map((s) => (

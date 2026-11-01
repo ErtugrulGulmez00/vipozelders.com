@@ -194,7 +194,7 @@ export function NoteForm({ studentId }: { studentId: string }) {
       </div>
       <FieldError name="text" />
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <Checkbox name="visibleToParent" label="Veli portalında görünsün" />
+        <Checkbox name="visibleToParent" label="Veli portalında görünsün (öğrencinin kendi hesabında görünmez)" />
         <SubmitButton size="sm">Notu ekle</SubmitButton>
       </div>
     </ActionForm>

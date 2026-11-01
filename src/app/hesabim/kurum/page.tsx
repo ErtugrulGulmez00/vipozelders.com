@@ -16,10 +16,11 @@ export default async function GuardianPortalPage({ searchParams }: PageProps<"/h
   const user = await requireRole("STUDENT");
   const sp = await searchParams;
   const children = await portalChildren(user.id);
-  const summaries = await portalChildSummaries(children.map((c) => c.studentId));
+  const summaries = await portalChildSummaries(children);
+  const onlyStudent = children.length > 0 && children.every((c) => c.isStudentAccount);
   return (
     <>
-      <PageHeader title="Kurumum" description="Etüt merkezi / dershanedeki devam, ödev, deneme ve ödeme bilgileri" />
+      <PageHeader title="Kurumum" description={onlyStudent ? "Etüt merkezi / dershanedeki devam, ödev ve deneme bilgilerin" : "Etüt merkezi / dershanedeki devam, ödev, deneme ve ödeme bilgileri"} />
       <CenterFlash code={sp.durum} />
       {children.length === 0 ? (
         <EmptyState
@@ -53,7 +54,7 @@ export default async function GuardianPortalPage({ searchParams }: PageProps<"/h
                     {[link.student.gradeName, link.student.groups.map((g) => g.group.name).join(", ")].filter(Boolean).join(" · ") || "—"}
                   </p>
                   {summary ? (
-                    <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
+                    <dl className={`mt-4 grid gap-2 text-center ${link.isStudentAccount ? "grid-cols-2" : "grid-cols-3"}`}>
                       <div className="rounded-lg bg-slate-50 px-2 py-2">
                         <dt className="text-[11px] text-slate-500">Devamsızlık (30 gün)</dt>
                         <dd className={`font-bold ${summary.absent ? "text-rose-600" : "text-emerald-700"}`}>{summary.sessions ? summary.absent : "—"}</dd>
@@ -62,11 +63,13 @@ export default async function GuardianPortalPage({ searchParams }: PageProps<"/h
                         <dt className="text-[11px] text-slate-500">Son deneme</dt>
                         <dd className="font-bold text-slate-900">{summary.lastNet !== null ? `${summary.lastNet.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} net` : "—"}</dd>
                       </div>
-                      <div className="rounded-lg bg-slate-50 px-2 py-2">
-                        <dt className="text-[11px] text-slate-500">Sıradaki ödeme</dt>
-                        <dd className="text-sm font-bold text-slate-900">{summary.nextDue ? formatMoney(summary.nextDue.amount) : "—"}</dd>
-                        {summary.nextDue ? <dd className="text-[11px] text-slate-500">{formatDate(summary.nextDue.date)}</dd> : null}
-                      </div>
+                      {link.isStudentAccount ? null : (
+                        <div className="rounded-lg bg-slate-50 px-2 py-2">
+                          <dt className="text-[11px] text-slate-500">Sıradaki ödeme</dt>
+                          <dd className="text-sm font-bold text-slate-900">{summary.nextDue ? formatMoney(summary.nextDue.amount) : "—"}</dd>
+                          {summary.nextDue ? <dd className="text-[11px] text-slate-500">{formatDate(summary.nextDue.date)}</dd> : null}
+                        </div>
+                      )}
                     </dl>
                   ) : null}
                   <p className="mt-3 text-sm font-semibold text-brand-700">Ayrıntıları gör</p>

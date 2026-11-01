@@ -102,7 +102,7 @@ export function CoachingSessionForm({ studentId, today, suggestions }: { student
           <Input name="nextGoal" maxLength={500} placeholder="Günde 60 soru, 2 deneme" />
         </Field>
       </div>
-      <Checkbox name="visibleToParent" label="Bu görüşme notu veli portalında görünsün" />
+      <Checkbox name="visibleToParent" label="Bu görüşme notu veli ve öğrenci portalında görünsün" />
       <SubmitButton>Görüşmeyi kaydet</SubmitButton>
     </ActionForm>
   );

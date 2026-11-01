@@ -76,6 +76,7 @@ export async function bookingDetail(user: MobileUser, bookingId: string, now = n
       events: { orderBy: { createdAt: "asc" } },
       package: { select: { code: true } },
       rescheduleRequests: { where: { status: "PENDING" }, orderBy: { createdAt: "desc" }, take: 1 },
+      makeupLinks: { where: { cancelledAt: null }, select: { id: true }, take: 1 },
     },
   });
   const isStudent = user.role === "STUDENT";
@@ -85,7 +86,8 @@ export async function bookingDetail(user: MobileUser, bookingId: string, now = n
   const online = booking.mode === "ONLINE";
   const opensAt = new Date(booking.startAt.getTime() - settings.classroomOpensMinutesBefore * 60_000);
   const closesAt = new Date(booking.endAt.getTime() + CLASSROOM_CLOSE_AFTER_MINUTES * 60_000);
-  const classroomOpen = online && booking.status === "CONFIRMED" && now >= opensAt && now <= closesAt;
+  // Telafisi açılan dersin sınıfı kapalıdır (ders telafi saatinde yapılır)
+  const classroomOpen = online && booking.status === "CONFIRMED" && booking.makeupLinks.length === 0 && now >= opensAt && now <= closesAt;
   const revealContact = isStudent || CONFIRMED_OR_LATER.includes(booking.status);
   const location =
     booking.mode === "IN_PERSON" && revealContact

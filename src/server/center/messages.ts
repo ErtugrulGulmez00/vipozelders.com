@@ -48,6 +48,8 @@ export type MessageCounts = { whatsapp: number; email: number; app: number };
 
 /** Öğrencinin kendi hesabına da e-postayla giden mesajlar (devamsızlık, ödeme, davet gibi veli mesajları gitmez). */
 const STUDENT_EMAIL_KINDS = new Set(["question_answered", "homework", "homework_missing", "exam_result", "announcement"]);
+/** Öğrencinin kendi hesabına site/uygulama bildirimi olarak gidenler; ödeme ve kurumun veliye yazdığı mesajlar gitmez. */
+const STUDENT_APP_KINDS = new Set([...STUDENT_EMAIL_KINDS, "absence", "etud_absence", "hall_absence"]);
 
 const LIMIT_ERROR = "Aylık WhatsApp sınırı doldu";
 
@@ -86,7 +88,7 @@ export async function messageGuardians(input: GuardianMessageInput, tx: Tx = db)
     if (guardian.isStudentAccount) {
       // Bağlanmamış (davet bekleyen) öğrenci hesabına bir şey gitmez
       if (!guardian.userId) continue;
-      if (input.notification) {
+      if (input.notification && STUDENT_APP_KINDS.has(input.kind)) {
         await tx.notification.create({ data: { userId: guardian.userId, type: `center.${input.kind}`, title: input.notification.title, body: input.notification.body, link: `/hesabim/kurum/${guardian.id}` } });
         counts.app++;
       }

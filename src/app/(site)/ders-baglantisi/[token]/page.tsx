@@ -51,6 +51,9 @@ async function LessonLink({ params }: { params: Promise<{ token: string }> }) {
   }
   if (link.cancelledAt) return <Notice title="Bağlantı iptal edildi">Öğretmen bu ders bağlantısını iptal etti.</Notice>;
   if (link.endAt <= now) return <Notice title="Bağlantının süresi doldu">Dersin saati geçti. Öğretmeninizden yeni bir bağlantı isteyin.</Notice>;
+  if (link.sourceBooking && link.sourceBooking.refundedAmount > 0) {
+    return <Notice title="Telafi bağlantısı geçersiz">Telafi edilecek dersin ücreti iade edildiği için bu bağlantı kullanılamaz.</Notice>;
+  }
 
   const next = encodeURIComponent(`/ders-baglantisi/${token}`);
   const wrongStudent = Boolean(user && link.sourceBooking && link.sourceBooking.studentId !== user.id);

@@ -26,7 +26,7 @@ export default async function TeacherLessonLinksPage({ searchParams }: PageProps
       where: { teacherId: user.id },
       orderBy: { startAt: "desc" },
       take: 50,
-      include: { booking: { select: { id: true, student: { select: { firstName: true, lastName: true } } } }, sourceBooking: { select: { id: true, code: true, learnerName: true } } },
+      include: { booking: { select: { id: true, student: { select: { firstName: true, lastName: true } } } }, sourceBooking: { select: { id: true, code: true, learnerName: true, refundedAmount: true } } },
     }),
   ]);
   const free = teacher.freeLessonLinks;
@@ -39,7 +39,7 @@ export default async function TeacherLessonLinksPage({ searchParams }: PageProps
         description={
           free
             ? "Belirlediğiniz saat için ücretsiz ders bağlantısı oluşturun ve öğrencinize gönderin. Öğrenci bağlantıyı açıp giriş yapınca derse kaydolur; ders sanal sınıfta yapılır."
-            : `Öğrencinin ücretini ödediği bir dersi planlanan saatte yapamadıysanız, yeni randevu açtırmak yerine o ders için ücretsiz telafi bağlantısı oluşturun. Bağlantıyı yalnızca o dersin öğrencisi kullanabilir; her ücretli derse bir telafi açılır.`
+            : `Öğrencinin ücretini ödediği bir online dersi planlanan saatte yapamadıysanız ya da yapamayacaksanız, yeni randevu açtırmak yerine o ders için ücretsiz telafi bağlantısı oluşturun. Bağlantıyı yalnızca o dersin öğrencisi kullanabilir; her ücretli derse bir telafi açılır ve telafisi açılan dersin sınıfı kapanır.`
         }
       />
 
@@ -48,7 +48,7 @@ export default async function TeacherLessonLinksPage({ searchParams }: PageProps
         <CardBody>
           {!free && sources.length === 0 ? (
             <Alert tone="info">
-              Telafi bağlantısı açılabilecek ücretli dersiniz yok. Bağlantı yalnızca son {MAKEUP_WINDOW_DAYS} gün içinde ücreti ödenmiş ve iadesi yapılmamış bir dersin telafisi için açılabilir; ücret almadığınız biriyle ders için bağlantı açılamaz.
+              Telafi bağlantısı açılabilecek ücretli dersiniz yok. Bağlantı yalnızca son {MAKEUP_WINDOW_DAYS} gün içinde ücreti ödenmiş, iadesi yapılmamış ve yapılamamış bir online dersin telafisi için açılabilir (öğrenciyle ikiniz de sınıfa girdiyseniz ders yapılmış sayılır); ücret almadığınız biriyle ders için bağlantı açılamaz.
             </Alert>
           ) : (
             <LessonLinkForm
@@ -72,13 +72,17 @@ export default async function TeacherLessonLinksPage({ searchParams }: PageProps
           <ul className="divide-y divide-slate-100">
             {links.map((link) => {
               const waiting = !link.booking && !link.cancelledAt && link.endAt > now;
+              // Kaynak dersin ücreti sonradan iade edildiyse telafi kullanılamaz (iptal edip saati boşaltabilirsiniz)
+              const voided = waiting && (link.sourceBooking?.refundedAmount ?? 0) > 0;
               const status = link.booking
                 ? { label: "Kaydoldu", tone: "green" as const }
                 : link.cancelledAt
                   ? { label: "İptal", tone: "slate" as const }
                   : link.endAt <= now
                     ? { label: "Süresi doldu", tone: "slate" as const }
-                    : { label: "Bekliyor", tone: "amber" as const };
+                    : voided
+                      ? { label: "Geçersiz: ders iade edildi", tone: "rose" as const }
+                      : { label: "Bekliyor", tone: "amber" as const };
               return (
                 <li key={link.id} className="space-y-2 px-5 py-4">
                   <div className="flex flex-wrap items-start justify-between gap-2">
@@ -103,7 +107,7 @@ export default async function TeacherLessonLinksPage({ searchParams }: PageProps
                       {waiting ? <CancelLinkButton linkId={link.id} /> : null}
                     </div>
                   </div>
-                  {waiting ? <LinkShare url={appUrl(`/ders-baglantisi/${link.token}`)} /> : null}
+                  {waiting && !voided ? <LinkShare url={appUrl(`/ders-baglantisi/${link.token}`)} /> : null}
                 </li>
               );
             })}

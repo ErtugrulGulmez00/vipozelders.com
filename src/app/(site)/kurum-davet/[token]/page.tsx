@@ -59,7 +59,7 @@ async function Invite({ params }: { params: Promise<{ token: string }> }) {
         )}
       </p>
       <ul className="mt-4 space-y-1.5 text-sm text-slate-700">
-        {["Derse gelmeyince anında bildirim", "Deneme karnesi ve net gelişimi", "Taksit ve ödeme geçmişi"].map((t) => (
+        {(forStudent ? ["Ödevler ve çalışma programı", "Deneme karnesi ve net gelişimi", "Öğretmene fotoğrafla soru"] : ["Derse gelmeyince anında bildirim", "Deneme karnesi ve net gelişimi", "Taksit ve ödeme geçmişi"]).map((t) => (
           <li key={t} className="flex items-center gap-2">
             <CheckCircle2 className="size-4 text-emerald-600" aria-hidden /> {t}
           </li>

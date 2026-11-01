@@ -32,7 +32,7 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
   const requested = String(sp.sekme ?? "ozet");
   const data = await portalChildDetail(user.id, id);
   if (!data) notFound();
-  const { student, attendance, etuds, results, installments, payments, announcements, notes, weakTopics, balance, today, trend, homeworks, questions } = data;
+  const { guardian, student, attendance, etuds, results, installments, payments, announcements, notes, weakTopics, balance, today, trend, homeworks, questions } = data;
   const counted = attendance.length;
   const absent = attendance.filter((a) => a.status === "ABSENT").length;
   const rate = counted ? attendance.filter((a) => a.status === "PRESENT" || a.status === "LATE").length / counted : 1;
@@ -46,7 +46,8 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
     { key: "ozet", label: "Özet", href: base },
     { key: "devam", label: "Devam ve etüt", href: `${base}?sekme=devam` },
     ...(on("denemeler") ? [{ key: "denemeler", label: "Denemeler", href: `${base}?sekme=denemeler` }] : []),
-    ...(on("muhasebe") ? [{ key: "odemeler", label: "Ödemeler", href: `${base}?sekme=odemeler` }] : []),
+    // Öğrencinin kendi hesabında ailenin ödemeleri yok
+    ...(on("muhasebe") && !guardian.isStudentAccount ? [{ key: "odemeler", label: "Ödemeler", href: `${base}?sekme=odemeler` }] : []),
     ...(on("odevler") ? [{ key: "odevler", label: "Ödevler", href: `${base}?sekme=odevler` }] : []),
     ...(on("kaynaklar") ? [{ key: "calisma", label: "Çalışma programı", href: `${base}?sekme=calisma` }] : []),
     ...(on("sorular") ? [{ key: "sorular", label: "Soru sor", href: `${base}?sekme=sorular` }] : []),
@@ -63,7 +64,11 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Devam (60 gün)" value={percent(rate)} hint={`${absent} devamsızlık`} />
         <StatCard label="Son deneme" value={last ? `${formatNet(last.net)} net` : "—"} hint={last ? `${last.exam.name}${last.rank ? ` · ${last.rank}/${last.exam._count.results}` : ""}` : undefined} />
-        <StatCard label="Kalan ödeme" value={formatMoney(balance.remaining)} hint={balance.overdue ? <span className="text-rose-600">Geciken {formatMoney(balance.overdue)}</span> : "Geciken yok"} />
+        {balance ? (
+          <StatCard label="Kalan ödeme" value={formatMoney(balance.remaining)} hint={balance.overdue ? <span className="text-rose-600">Geciken {formatMoney(balance.overdue)}</span> : "Geciken yok"} />
+        ) : on("odevler") ? (
+          <StatCard label="Ödevler" value={homeworks.filter((h) => h.status === "PENDING").length} hint="kontrol bekliyor" />
+        ) : null}
         <StatCard label="Eksik konu" value={weakTopics.length} />
       </div>
       <Tabs
