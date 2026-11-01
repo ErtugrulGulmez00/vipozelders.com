@@ -1106,6 +1106,8 @@ model Center {
   coachingSessions     CenterCoachingSession[]
   studyHalls           CenterStudyHall[]
   opticTemplates       CenterOpticTemplate[]
+  examImports          CenterExamImport[]
+  examAliases          CenterExamAlias[]
 
   @@index([status])
 }
@@ -1198,6 +1200,7 @@ model CenterStudent {
   coaching     CenterCoachingSession[]
   halls        CenterHallStudent[]
   hallDays     CenterHallDay[]
+  examAliases  CenterExamAlias[]
 
   @@unique([centerId, studentNumber])
   @@index([centerId, status])
@@ -1418,6 +1421,8 @@ model CenterExamResult {
   // Yayınevinin bildirdiği puan (varsa)
   score     Float?
   rank      Int?
+  // Yayınevi PDF'inden gelen sıralamalar: [{ label: "İl", rank: 12, of: 62 }]
+  externalRanks Json?
   createdAt DateTime      @default(now())
 
   sections CenterExamSectionResult[]
@@ -1826,6 +1831,32 @@ model CenterHallDay {
 }
 
 // Optik okuyucu çıktı şablonu (sabit konumlu TXT/DAT): alanların satırdaki başlangıç konumu ve uzunluğu (1'den başlar)
+// Yayınevi sonuç PDF'i: okunan veri eşleştirme ekranında onaylanana kadar taslak olarak durur.
+model CenterExamImport {
+  id        String   @id @default(cuid())
+  centerId  String
+  center    Center   @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  fileName  String
+  data      Json
+  createdAt DateTime @default(now())
+
+  @@index([centerId, createdAt])
+}
+
+// PDF'teki ad + numara → kurumdaki öğrenci; sonraki denemelerde otomatik eşleşir.
+model CenterExamAlias {
+  id        String        @id @default(cuid())
+  centerId  String
+  center    Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  key       String
+  studentId String
+  student   CenterStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  updatedAt DateTime      @updatedAt
+
+  @@unique([centerId, key])
+  @@index([studentId])
+}
+
 model CenterOpticTemplate {
   id           String   @id @default(cuid())
   centerId     String

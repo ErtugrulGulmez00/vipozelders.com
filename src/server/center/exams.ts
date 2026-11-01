@@ -119,7 +119,7 @@ function scoreSections(exam: ExamWithSections, scores: SectionScore[], studentLa
   });
 }
 
-async function upsertResult(examId: string, studentId: string, sections: ReturnType<typeof scoreSections>, score: number | null | undefined) {
+export async function upsertResult(examId: string, studentId: string, sections: ReturnType<typeof scoreSections>, score: number | null | undefined) {
   const totals = {
     correct: sections.reduce((n, s) => n + s.correct, 0),
     wrong: sections.reduce((n, s) => n + s.wrong, 0),

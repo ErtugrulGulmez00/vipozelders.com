@@ -314,7 +314,7 @@ Profilde `questionPlans: [{id, levelName, subjectName, price, dailyLimit, answer
 | `POST /kurum/{id}/calisma/{itemId}` | `{done}` | `{ok, done}`; çalışma programındaki maddeyi işaretler |
 | `PUT /kurum/{id}/kaynaklar/{resourceId}` | `{rows: [{topic, solved, correct, wrong, done}]}` (`resourceId` = `resources[].id`) | `{ok: true}`; yalnızca kaynağın kendi konuları kaydedilir |
 | `DELETE /kurum/{id}/sorular/{questionId}` | — | 204; cevaplanmamış ve bu hesabın sorduğu (`mine`) soru geri çekilir |
-| `GET /kurum/{id}/deneme/{examId}` | — | `{exam, result: {net, correct, wrong, blank, score, rank, participants}, average, sections: [{name, questionCount, correct, wrong, blank, net, averageNet, topics: [{topic, questions, correct, rate}]}], weakTopics, trend}` |
+| `GET /kurum/{id}/deneme/{examId}` | — | `{exam, result: {net, correct, wrong, blank, score, rank, participants, externalRanks: [{label, rank, of}]}, average, sections: [{name, questionCount, correct, wrong, blank, net, averageNet, topics: [{topic, questions, correct, rate}]}], weakTopics, trend}` |
 | `POST /kurum/{id}/sorular` | multipart/form-data: `image` (fotoğraf, en fazla 8 MB), `subject`, `note?` | 201 `{id}`; öğrenci/veli fotoğrafla soru gönderir (soru durumu `OPEN`, `ANSWERED`, `IN_PERSON`) |
 | `POST /kurum/davet` | `{token}` (davet bağlantısının son kısmı) | `{id}`; geçersiz/süresi dolmuş davette 422 `INVITE_INVALID` |
 

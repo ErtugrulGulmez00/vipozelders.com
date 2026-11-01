@@ -20,6 +20,7 @@ import {
   updateExamMeta,
   type GridRow,
 } from "@/server/center/exams";
+import { confirmPdfImport, createPdfImport, discardPdfImport, type PdfImportChoice } from "@/server/center/exam-pdf-import";
 import { bool, date, guard, int, list, opt, requiredText, str } from "@/server/center/form";
 import { parseSectionPositions } from "@/lib/center/optic";
 import { readSpreadsheet } from "@/server/center/spreadsheet";
@@ -217,4 +218,51 @@ export async function importOpticAction(_: ActionState, formData: FormData): Pro
     const notes = summary.problems.slice(0, 30).map((p) => `${p.row}. satır: ${p.message}`);
     return success(`${summary.saved} öğrencinin optik formu okundu.`, { notes: notes.join("\n") });
   });
+}
+/** Yayınevi sonuç PDF'i: okunur, taslak olarak saklanır ve eşleştirme ekranına gidilir. */
+export async function uploadExamPdfAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const auth = await centerAction("exams.manage");
+  if (!auth.ok) return auth.state;
+  let draftId = "";
+  const result = await guard(async () => {
+    draftId = await createPdfImport(auth.ctx, formData.get("file") as File | null);
+    return success();
+  });
+  if (!result.ok) return result;
+  redirect(`/kurum/denemeler/pdf-aktar/${draftId}`);
+}
+
+export async function confirmExamPdfAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const auth = await centerAction("exams.manage");
+  if (!auth.ok) return auth.state;
+  let target = "";
+  const result = await guard(async () => {
+    const draftId = str(formData, "draftId");
+    const examCount = int(formData, "examCount", 0, 0, 20);
+    const choices: PdfImportChoice[] = [];
+    for (let e = 0; e < examCount; e++) {
+      const use = bool(formData, `use:${e}`);
+      const studentCount = int(formData, `count:${e}`, 0, 0, 5000);
+      choices.push({
+        use,
+        name: use ? requiredText(formData, `name:${e}`, "Deneme adı", 2, 120) : str(formData, `name:${e}`, 120),
+        date: use ? date(formData, `date:${e}`, "Sınav tarihi") : "",
+        publisher: opt(formData, `publisher:${e}`, 80),
+        studentIds: Array.from({ length: studentCount }, (_, i) => str(formData, `st:${e}:${i}`, 40) || null),
+      });
+    }
+    const { examIds, saved } = await confirmPdfImport(auth.ctx, draftId, choices);
+    for (const id of examIds) await centerAudit(auth.ctx, "exam.pdf_import", "CenterExam", id, { saved });
+    target = examIds.length === 1 ? `/kurum/denemeler/${examIds[0]}?durum=pdf-aktarildi` : "/kurum/denemeler?durum=pdf-aktarildi";
+    return success();
+  });
+  if (!result.ok) return result;
+  redirect(target);
+}
+
+export async function discardExamPdfAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const auth = await centerAction("exams.manage");
+  if (!auth.ok) return auth.state;
+  await discardPdfImport(auth.ctx, str(formData, "draftId"));
+  redirect("/kurum/denemeler");
 }

@@ -48,6 +48,9 @@ export default async function ExamAnalysisPage({ params, searchParams }: PagePro
               <LinkButton href={`/kurum/denemeler/${exam.id}/ice-aktar`} variant="outline">
                 Excel’den aktar
               </LinkButton>
+              <LinkButton href="/kurum/denemeler/pdf-aktar" variant="outline">
+                Yayınevi PDF’i
+              </LinkButton>
             </div>
           }
         />

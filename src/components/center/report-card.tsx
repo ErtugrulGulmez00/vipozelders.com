@@ -2,6 +2,7 @@ import { ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { NetTrendChart, percent, RateBar, rateTone, shortDate } from "@/components/center/center-ui";
 import { Card, CardBody, CardHeader, Table, Td, Th } from "@/components/ui/primitives";
+import type { ExternalRank } from "@/lib/center/exam-pdf";
 import { EXAM_PRESETS, formatNet, successRate } from "@/lib/center/exams";
 import { marketplaceLink, type studentExamReport } from "@/server/center/exams";
 
@@ -26,6 +27,7 @@ export function ReportCard({
   const { exam } = analysis;
   if (!result) return <p className="text-sm text-slate-500">Bu öğrencinin bu denemede sonucu yok.</p>;
   const totalQuestions = exam.sections.reduce((t, s) => t + s.questionCount, 0);
+  const externalRanks = Array.isArray(result.externalRanks) ? (result.externalRanks as ExternalRank[]) : [];
   const weakSections = !showSuggestions ? [] : sections.filter((s) => s.own && s.own.net < s.average.net && successRate(s.own.net, s.section.questionCount) < 0.6);
   return (
     <div className="space-y-6">
@@ -68,6 +70,12 @@ export function ReportCard({
             <p className="text-xs text-slate-500">{result.score ? `Puan ${result.score.toLocaleString("tr-TR")}` : "Puan girilmedi"}</p>
           </div>
         </div>
+        {externalRanks.length ? (
+          <p className="mt-3 text-sm text-slate-600">
+            <span className="font-semibold text-slate-900">Yayınevi sıralaması: </span>
+            {externalRanks.map((r) => `${r.label} ${r.rank.toLocaleString("tr-TR")}${r.of ? `/${r.of.toLocaleString("tr-TR")}` : ""}`).join(" · ")}
+          </p>
+        ) : null}
       </div>
 
       <Card>

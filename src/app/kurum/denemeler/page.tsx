@@ -1,7 +1,8 @@
-import { BookOpenCheck } from "lucide-react";
+import { BookOpenCheck, FileUp } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CenterFlash, shortDate } from "@/components/center/center-ui";
+import { LinkButton } from "@/components/ui/button";
 import { Badge, Card, CardBody, CardHeader, EmptyState, PageHeader, Table, Td, Th } from "@/components/ui/primitives";
 import { EXAM_PRESETS, formatNet, round2, type ExamKindName } from "@/lib/center/exams";
 import { toLocalDateString } from "@/lib/dates";
@@ -28,7 +29,15 @@ export default async function ExamsPage({ searchParams }: PageProps<"/kurum/dene
   const kinds = [...new Set((await db.centerExam.findMany({ where: { centerId: ctx.center.id }, select: { kind: true }, distinct: ["kind"] })).map((e) => e.kind))];
   return (
     <>
-      <PageHeader title="Denemeler" description="LGS, TYT, AYT ve kurum içi sınavlar: net, sıralama, ders ve konu analizi" />
+      <PageHeader
+        title="Denemeler"
+        description="LGS, TYT, AYT ve kurum içi sınavlar: net, sıralama, ders ve konu analizi"
+        actions={
+          <LinkButton href="/kurum/denemeler/pdf-aktar">
+            <FileUp className="size-4" aria-hidden /> Yayınevi PDF’i yükle
+          </LinkButton>
+        }
+      />
       <CenterFlash code={sp.durum} />
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr] lg:items-start">
         <div className="space-y-3">
@@ -45,7 +54,7 @@ export default async function ExamsPage({ searchParams }: PageProps<"/kurum/dene
             </div>
           ) : null}
           {exams.length === 0 ? (
-            <EmptyState icon={<BookOpenCheck className="size-8" />} title="Henüz deneme yok" description="Sağdaki formdan ilk denemenizi oluşturun." />
+            <EmptyState icon={<BookOpenCheck className="size-8" />} title="Henüz deneme yok" description="Yayınevinin sonuç PDF’ini yükleyin ya da sağdaki formdan denemeyi kendiniz oluşturun." action={<LinkButton href="/kurum/denemeler/pdf-aktar">Yayınevi PDF’i yükle</LinkButton>} />
           ) : (
             <Card>
               <Table>

@@ -1,5 +1,6 @@
 import { Download } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { buttonClasses } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/primitives";
@@ -11,7 +12,7 @@ import { DeleteOpticTemplateButton, OpticImportForm, OpticTemplateForm } from "@
 import { ExamImportForm } from "../../exam-forms";
 import { ExamHeader } from "../exam-header";
 
-export const metadata: Metadata = { title: "Sonuçları Excel'den aktar" };
+export const metadata: Metadata = { title: "Sonuçları Excel’den aktar" };
 
 export default async function ExamImportPage({ params }: PageProps<"/kurum/denemeler/[id]/ice-aktar">) {
   const ctx = await requireCenter("exams.manage");
@@ -29,6 +30,13 @@ export default async function ExamImportPage({ params }: PageProps<"/kurum/denem
   return (
     <>
       <ExamHeader exam={exam} active="aktar" />
+      <p className="mb-4 rounded-xl bg-brand-50 px-4 py-3 text-sm text-brand-900">
+        Yayınevinin sonuç PDF’i elinizdeyse{" "}
+        <Link href="/kurum/denemeler/pdf-aktar" className="font-semibold underline">
+          PDF’ten aktarın
+        </Link>
+        : deneme, cevap anahtarı, kazanımlar ve tüm öğrencilerin sonuçları tek seferde gelir.
+      </p>
       <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr] lg:items-start">
         <Card>
           <CardHeader title="Dosya yükle" description="Excel (.xlsx) ya da CSV; ilk satır başlık" />

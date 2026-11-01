@@ -187,7 +187,7 @@ export async function reportCardJson(userId: string, guardianId: string, examId:
   const { analysis, result, sections, weakTopics, trend } = report;
   return {
     exam: { id: analysis.exam.id, name: analysis.exam.name, kind: analysis.exam.kind, date: dbDateToString(analysis.exam.date), publisher: analysis.exam.publisher },
-    result: { net: result.net, correct: result.correct, wrong: result.wrong, blank: result.blank, score: result.score, rank: result.rank, participants: analysis.participants },
+    result: { net: result.net, correct: result.correct, wrong: result.wrong, blank: result.blank, score: result.score, rank: result.rank, participants: analysis.participants, externalRanks: Array.isArray(result.externalRanks) ? result.externalRanks : [] },
     average: analysis.average,
     sections: sections.map((s) => ({
       name: s.section.name,

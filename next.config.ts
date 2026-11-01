@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   partialPrefetching: true,
   // iyzipay modüllerini dosya sisteminden dinamik yüklediği için paketlenmeden çalıştırılmalı.
-  serverExternalPackages: ["iyzipay", "pg", "nodemailer", "exceljs"],
+  serverExternalPackages: ["iyzipay", "pg", "nodemailer", "exceljs", "unpdf"],
   // Eski "Nasıl çalışır?" yazısı (alt bilgi bağlantısı) yeni rehbere gider
   async redirects() {
     return [{ source: "/sayfa/nasil-calisir", destination: "/nasil-calisir/ozel-ders", permanent: true }];

@@ -27,6 +27,7 @@ const FLASH: Record<string, { tone: "success" | "warning"; text: string }> = {
   "salon-silindi": { tone: "success", text: "Salon silindi." },
   "deneme-olustu": { tone: "success", text: "Deneme oluşturuldu. Şimdi sonuçları girebilir ya da Excel'den aktarabilirsiniz." },
   "deneme-silindi": { tone: "success", text: "Deneme silindi." },
+  "pdf-aktarildi": { tone: "success", text: "PDF aktarıldı: sonuçlar, cevap anahtarı ve kazanımlar kaydedildi. Kontrol edip “Velilere yayınla” ile öğrencilere ve velilere açın." },
   tahsilat: { tone: "success", text: "Tahsilat kaydedildi. Makbuzu yazdırabilir ya da veliye iletebilirsiniz." },
   baglandi: { tone: "success", text: "Hesabınız öğrenciye bağlandı. Artık devamsızlık, deneme sonuçları ve ödemeleri buradan takip edebilirsiniz." },
   ayrildi: { tone: "success", text: "Öğrenci bağlantısı kaldırıldı." },
