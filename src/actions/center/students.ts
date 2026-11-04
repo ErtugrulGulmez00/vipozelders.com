@@ -162,7 +162,7 @@ export async function messageStudentGuardiansAction(_: ActionState, formData: Fo
     email: { subject: "Kurumdan mesaj", title: "Kurumdan mesajınız var", lines: text.split(/\r?\n/).filter(Boolean) },
     notification: { title: `${auth.ctx.center.name} size mesaj gönderdi`, body: text.slice(0, 180) },
   });
-  if (counts.whatsapp + counts.email + counts.app === 0) return failure("Velilerin telefon ya da e-posta bilgisi yok (ya da aylık WhatsApp sınırı doldu).");
+  if (counts.whatsapp + counts.email + counts.app === 0) return failure("Mesaj gitmedi: velilerin e-posta bilgisi ya da WhatsApp izni yok (ya da aylık WhatsApp sınırı doldu).");
   refresh();
   return success(`Mesaj sıraya alındı: ${counts.whatsapp} WhatsApp, ${counts.email} e-posta${counts.app ? `, ${counts.app} site bildirimi` : ""}.`);
 }

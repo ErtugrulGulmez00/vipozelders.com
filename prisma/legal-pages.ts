@@ -129,6 +129,8 @@ Yalnızca o öğretmenle en az bir dersi tamamlanmış öğrenciler ve veliler y
     showInFooter: true,
     content: `6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") uyarınca veri sorumlusu sıfatıyla {companyName} ("{siteName}") olarak kişisel verilerinizi aşağıda açıklanan kapsamda işlemekteyiz.
 
+Veri sorumlusu: {companyName} · {companyAddress} · {companyTaxInfo} · {contactEmail}
+
 ## İşlenen kişisel veriler
 - Kimlik ve iletişim: ad, soyad, e-posta, telefon
 - Ders bilgileri: dersin kimin için alındığı, sınıf/kademe, ders notları, randevu geçmişi
@@ -136,15 +138,32 @@ Yalnızca o öğretmenle en az bir dersi tamamlanmış öğrenciler ve veliler y
 - İşlem güvenliği: IP adresi, oturum ve giriş kayıtları
 - Ödeme bilgileri: kart bilgileriniz tarafımızca saklanmaz, lisanslı ödeme kuruluşu tarafından işlenir
 - Öğretmenler için ayrıca: eğitim ve deneyim bilgileri, diploma/sertifika, adli sicil kaydı, IBAN ve T.C. kimlik numarası
+- Kurum panelindeki öğrenci ve veliler için: kurumun girdiği ad, telefon, e-posta, sınıf, yoklama, deneme sonucu, ödeme planı ve notlar
+- Online derslerde: derse giriş ve çıkış zamanları
+- Bildirimler: cihaz bildirim anahtarı, WhatsApp tercihiniz ve gönderim kayıtları
 
 ## İşleme amaçları
 Üyelik ve randevu süreçlerinin yürütülmesi, ödeme ve iadelerin yapılması, derslerin gerçekleştirilmesi, öğretmen doğrulaması, müşteri hizmetleri, yasal yükümlülüklerin yerine getirilmesi ve hizmet güvenliğinin sağlanması.
 
 ## Hukuki sebepler
-Sözleşmenin kurulması ve ifası, hukuki yükümlülük, meşru menfaat ve gerektiğinde açık rızanız (KVKK m.5).
+Sözleşmenin kurulması ve ifası, hukuki yükümlülük, meşru menfaat ve gerektiğinde açık rızanız (KVKK m.5). WhatsApp bildirimleri ve pazarlama iletileri yalnızca açık rızanıza dayanır.
 
 ## Aktarım
-Kişisel verileriniz yalnızca hizmetin gerektirdiği ölçüde ödeme kuruluşu, barındırma ve e-posta hizmet sağlayıcıları ile yetkili kamu kurumlarıyla paylaşılır. Yurt dışında bulunan hizmet sağlayıcılara aktarım KVKK m.9 kapsamındaki şartlara uygun yapılır.
+Kişisel verileriniz yalnızca hizmetin gerektirdiği ölçüde aşağıdaki taraflarla paylaşılır:
+- Ödeme kuruluşu ve banka: ödeme ve iade işlemleri
+- Barındırma ve e-posta hizmet sağlayıcıları: sitenin çalışması ve bildirim e-postaları
+- LiveKit: online derslerde görüntü ve sesin iletilmesi
+- Google (Firebase Cloud Messaging, Google Drive): mobil uygulama bildirimleri ve şifrelenmiş yedekler
+- Meta Platforms (WhatsApp) ve WhatsApp iş ortağımız LetsBot: yalnızca WhatsApp bildirimi alıyorsanız telefon numaranız ve mesaj içeriği
+- Yetkili kamu kurumları: yasal zorunluluk hâlinde
+
+LiveKit, Google ve Meta sunucuları yurt dışında bulunabilir. Yurt dışına aktarım KVKK m.9 kapsamındaki şartlara uygun yapılır.
+
+## WhatsApp bildirimleri
+WhatsApp bildirimleri isteğe bağlıdır ve yalnızca izninizle gönderilir. İzninizi kayıt sırasında ya da Hesap ayarlarından verebilir, aynı yerden geri alabilir ya da WhatsApp’tan DUR yazarak bildirimleri durdurabilirsiniz. Bu durum e-posta ve site bildirimlerini etkilemez. Kurum öğrencilerinin velilerine giden WhatsApp bildirimleri için izni kurum alır.
+
+## Kurum kayıtları
+Etüt merkezi ya da dershane panelinde kurumun girdiği öğrenci ve veli verileri için veri sorumlusu ilgili kurumdur; {siteName} bu verileri kurum adına, veri işleyen olarak işler.
 
 ## Reşit olmayanlar
 18 yaşından küçük öğrenciler adına hesap, veli veya yasal temsilci tarafından açılmalıdır.
@@ -163,21 +182,29 @@ Sitemizde oturumunuzu açık tutmak ve güvenliği sağlamak için zorunlu çere
 - vd_session: Oturum çerezi (zorunlu, en fazla 30 gün)
 - vd_cookie_consent: Çerez tercihinizi hatırlar (zorunlu)
 - vd_center: Kurum paneli oturumu (yalnızca kurum personeli, zorunlu)
+- vd_2fa: İki adımlı doğrulama sırasında kısa süreli oturum (zorunlu)
+- vd_davet: Arkadaş davet bağlantısıyla gelenlerde davet kodu (zorunlu)
 
 İleride analiz veya pazarlama çerezleri eklenirse yalnızca açık onayınızla kullanılacaktır.
 
 ## Güvenlik
-Şifreler geri döndürülemez biçimde saklanır; kart bilgileri sistemimizde tutulmaz; hassas veriler şifrelenir.
+Şifreler geri döndürülemez biçimde saklanır; kart bilgileri sistemimizde tutulmaz; hassas veriler ve yedekler şifrelenir.
+
+## WhatsApp bildirimleri
+Telefon numaranız, yalnızca izin verdiyseniz ders ve hesap bildirimleri için WhatsApp üzerinden kullanılır; bu amaçla Meta Platforms ve iş ortağımız LetsBot ile paylaşılır. Reklam ya da kampanya mesajı göndermek için kullanılmaz. Bildirimleri Hesap ayarlarından kapatabilir ya da WhatsApp’tan DUR yazarak durdurabilirsiniz.
+
+## Kişisel verileriniz
+Hangi verileri neden işlediğimiz, kimlerle paylaştığımız ve haklarınız KVKK Aydınlatma Metni’nde yer alır. Hesabınızı ve verilerinizi silmek için “Verilerimi Nasıl Sildiririm?” sayfasına bakın.
 
 ## İletişim
-Gizlilikle ilgili sorularınız için: {contactEmail}`,
+Gizlilikle ilgili sorularınız için: {companyName} · {contactEmail}`,
   },
   {
     slug: "veri-silme",
     title: "Verilerimi Nasıl Sildiririm?",
     sortOrder: 11,
     showInFooter: true,
-    content: `{siteName} hesabınızı ve kişisel verilerinizi istediğiniz zaman sildirebilirsiniz. Bu sayfa, WhatsApp ve SMS bildirimleri dahil sitemizde ve uygulamalarımızda işlenen tüm veriler için geçerlidir.
+    content: `{siteName} hesabınızı ve kişisel verilerinizi istediğiniz zaman sildirebilirsiniz. Bu sayfa, WhatsApp bildirimleri dahil sitemizde ve uygulamalarımızda işlenen tüm veriler için geçerlidir.
 
 ## 1. Hesabınızı kendiniz silin (en hızlı yol)
 - Veli / öğrenci: Giriş yapın → Hesabım → Hesap ayarları → “Hesabı sil”.
@@ -186,7 +213,9 @@ Gizlilikle ilgili sorularınız için: {contactEmail}`,
 Silme işlemi onaylandığında hesabınız hemen kapatılır; ad, e-posta, telefon, profil fotoğrafı, mesajlar ve bildirim tercihleriniz silinir ya da anonimleştirilir.
 
 ## 2. E-postayla talep edin
-Hesabınıza giremiyorsanız ya da yalnızca belirli verilerin (ör. WhatsApp/SMS için kullanılan telefon numaranızın) silinmesini istiyorsanız {contactEmail} adresine, kayıtlı e-posta adresinizden “Veri silme talebi” konulu bir e-posta gönderin. Kimliğinizi doğruladıktan sonra talebinizi en geç 30 gün içinde sonuçlandırır ve size bilgi veririz.
+Hesabınıza giremiyorsanız ya da yalnızca belirli verilerin (ör. WhatsApp için kullanılan telefon numaranızın) silinmesini istiyorsanız {contactEmail} adresine, kayıtlı e-posta adresinizden “Veri silme talebi” konulu bir e-posta gönderin. Kimliğinizi doğruladıktan sonra talebinizi en geç 30 gün içinde sonuçlandırır ve size bilgi veririz.
+
+Yalnızca WhatsApp bildirimlerini durdurmak istiyorsanız WhatsApp’tan DUR yazmanız yeterlidir.
 
 ## 3. Kurum (etüt merkezi / dershane) kayıtları
 Bir kurumun öğrencisi ya da velisiyseniz, öğrenci kartı ve yoklama, deneme, ödeme gibi kayıtlar o kurum adına tutulur. Silme talebinizi kurumunuza iletebilir ya da {contactEmail} adresine yazabilirsiniz; talebi kurumla birlikte sonuçlandırırız.
@@ -374,7 +403,12 @@ Ders, öğretmenin hizmet verdiği ilçede, randevuda belirtilen adreste yapıl�
     title: "Kullanım Şartları",
     sortOrder: 15,
     showInFooter: true,
-    content: `## Üyelik
+    content: `Bu şartlar, {companyName} tarafından işletilen {siteName} sitesinin ve mobil uygulamasının kullanımını düzenler.
+
+## Hizmet
+{siteName}; özel ders, soru çözüm ve koçluk için öğrenci ve velileri öğretmenlerle buluşturur. Etüt merkezi ve dershanelere ise kurum yönetim yazılımı sunar. Kurum paneli için Kurum Hizmet Sözleşmesi geçerlidir.
+
+## Üyelik
 Üyelik ücretsizdir. 18 yaşından küçükler adına hesap veli veya yasal temsilci tarafından açılır. Hesap bilgilerinin gizliliğinden kullanıcı sorumludur.
 
 ## Platform dışı ödeme yasağı
@@ -387,7 +421,16 @@ Derslerde ve mesajlarda saygılı bir dil kullanılır; çocuk güvenliğini teh
 Yorumlar gerçek ders deneyimine dayanmalıdır. Hakaret, kişisel veri veya reklam içeren yorumlar yayından kaldırılır.
 
 ## Sorumluluk
-{siteName}, öğretmen ile öğrenci arasında aracı hizmet sağlayıcıdır.`,
+{siteName}, öğretmen ile öğrenci arasında aracı hizmet sağlayıcıdır. Dersin içeriğinden ve yürütülmesinden dersi veren öğretmen sorumludur. Ödeme, iptal ve iade kuralları Mesafeli Satış Sözleşmesi ile İptal ve İade Politikası’nda yer alır.
+
+## Fikri haklar
+Sitedeki yazılım, marka ve tasarım {companyName}’a aittir; izinsiz kopyalanamaz. Öğretmenlerin ve kurumların yüklediği içeriklerin sorumluluğu kendilerine aittir.
+
+## Değişiklikler
+Bu şartlar güncellenebilir; güncel metin bu sayfada yayımlanır ve sayfanın başındaki tarih değişir.
+
+## Uyuşmazlık ve iletişim
+Tüketici işlemlerinde tüketici hakem heyetleri ve tüketici mahkemeleri yetkilidir. Sorularınız için: {companyName} · {contactEmail} · {contactPhone}`,
   },
   {
     slug: "ogretmen-sozlesmesi",
@@ -408,5 +451,47 @@ Platform, her dersten site ayarlarında belirtilen oranda hizmet bedeli keser. K
 
 ## Statü beyanı
 Öğretmen; devlet okulunda kadrolu olarak çalışmadığını veya ücretli özel ders vermesine mevzuatın izin verdiğini, aksi halde doğacak sorumluluğun kendisine ait olduğunu beyan eder.`,
+  },
+  {
+    slug: "kurum-hizmet-sozlesmesi",
+    title: "Kurum Hizmet Sözleşmesi",
+    sortOrder: 17,
+    showInFooter: true,
+    content: `Bu sözleşme, {companyName} ("{siteName}") ile kurum paneli için başvuran etüt merkezi ya da dershane ("Kurum") arasında geçerlidir.
+
+## Taraf bilgileri
+Hizmet sağlayıcı: {companyName}
+Adres: {companyAddress}
+Vergi bilgileri: {companyTaxInfo}
+Telefon: {contactPhone} · E-posta: {contactEmail}
+
+## Hizmet
+{siteName}, Kurum'a seçtiği pakete göre öğrenci, yoklama, etüt, deneme, veli iletişimi ve tahsilat takibi için web ve mobil yazılım sunar. Paket özellikleri ve fiyatlar Kurumlar İçin sayfasında yer alır.
+
+## Deneme süresi ve abonelik
+- Deneme süresi için kart bilgisi istenmez; süre sonunda otomatik ücret alınmaz.
+- Abonelik seçilen paket, öğrenci sayısı ve dönem için geçerlidir. Bedel havale / EFT ile ödenir; ödeme kaydedilince süre uzar.
+- Abonelik sona erer ve yenilenmezse panel salt okunur olur. Kayıtlar silinmez; abonelik başlatıldığında kaldığınız yerden devam edilir.
+- Dönem bitmeden ayrılma ve iade koşulları abonelik sırasında yazılı olarak belirlenir.
+
+## Kurumun sorumlulukları
+- Panele girdiği öğrenci ve veli bilgilerinin doğru ve güncel olması
+- Personel hesaplarının ve şifrelerinin korunması, yetkilerin doğru verilmesi
+- Tahsilatlarını ve velilerle arasındaki ticari ilişkiyi kendisinin yürütmesi; {siteName} bu ilişkinin tarafı değildir
+- Veli ve öğrencilere yasalara uygun bilgilendirme yapması
+
+## Kişisel veriler
+Panele girilen öğrenci ve veli verileri için veri sorumlusu Kurum'dur; {siteName} bu verileri Kurum adına ve talimatları doğrultusunda, veri işleyen olarak işler. Kurum; aydınlatma yükümlülüğünü yerine getirmekten ve gerekli izinleri almaktan sorumludur. {siteName} bu verileri kendi pazarlaması için kullanmaz, gerekli güvenlik önlemlerini alır ve Kurum istediğinde verileri dışa aktarma imkânı sunar.
+
+## Mesajlar ve WhatsApp
+- Velilere WhatsApp bildirimi yalnızca izin vermiş veli için gönderilir. İzni almak ve panelde işaretlemek Kurum'un sorumluluğundadır.
+- WhatsApp yalnızca bilgilendirme içindir (devamsızlık, toplantı, program değişikliği gibi). Reklam ve kampanya mesajı gönderilemez.
+- WhatsApp bildirimleri açıldığında kurum başına aylık mesaj sınırı uygulanır; sınır dolduğunda bildirimler e-postayla gider.
+
+## Hizmetin askıya alınması
+Bu sözleşmeye ya da yasalara aykırı kullanımda, özellikle başkalarının verilerinin izinsiz işlenmesinde ve istenmeyen mesaj gönderiminde hesap askıya alınabilir.
+
+## Değişiklikler ve uyuşmazlık
+Sözleşme güncellenebilir; güncel metin bu sayfada yayımlanır. Sorularınız için {contactEmail} adresine yazabilirsiniz.`,
   },
 ];

@@ -82,6 +82,7 @@ export function RegisterForm() {
           }
         />
         <FieldError name="terms" />
+        <Checkbox name="whatsappConsent" label="İsteğe bağlı: Önemli ders bildirimleri telefonuma WhatsApp ile de gönderilsin. Reklam gönderilmez; istediğim zaman kapatabilirim." />
         <Checkbox name="marketing" label="Kampanya ve yeniliklerden e-posta ile haberdar olmak istiyorum (isteğe bağlı)." />
       </div>
       <SubmitButton className="w-full" size="lg" pendingText="Hesap oluşturuluyor…">

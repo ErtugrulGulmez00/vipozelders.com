@@ -3,7 +3,7 @@ import { addLearnerAction, removeLearnerAction, updateStudentProfileAction } fro
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
 import { Checkbox, Field, Input, Select } from "@/components/ui/form";
 import { Card, CardBody, CardHeader, PageHeader } from "@/components/ui/primitives";
-import { whatsappActive } from "@/lib/notification-channels";
+import { whatsappActive, whatsappAllowed } from "@/lib/notification-channels";
 import { db } from "@/server/db";
 import { loadSettings } from "@/server/settings";
 import { getCities } from "@/server/site";
@@ -112,7 +112,7 @@ export async function StudentSettings({ userId, side }: { userId: string; side: 
           <Card>
             <CardHeader title="WhatsApp bildirimleri" />
             <CardBody>
-              <WhatsAppPreference on={!profile.whatsappOptOut} phone={profile.phone} active={whatsappActive(settings.notificationChannel)} />
+              <WhatsAppPreference on={whatsappAllowed(profile)} phone={profile.phone} active={whatsappActive(settings.notificationChannel)} />
             </CardBody>
           </Card>
           <Card>

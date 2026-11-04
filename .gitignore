@@ -56,3 +56,5 @@ next-env.d.ts
 
 # Örnek ekran görüntüleri (üçüncü taraf sistem, kişisel veri içerir)
 /ornekfotolar/
+# Kök klasöre bırakılan belgeler (vergi yazısı, deneme sonuçları: kişisel veri içerir, depo herkese açık)
+/*.pdf

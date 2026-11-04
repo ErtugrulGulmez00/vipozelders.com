@@ -4,7 +4,7 @@ import { ActionForm, SubmitButton } from "@/components/forms/action-form";
 import { AccountDeletionForm } from "@/components/panel/account-deletion-form";
 import { PasswordForm } from "@/components/panel/password-form";
 import { WhatsAppPreference } from "@/components/panel/whatsapp-pref";
-import { whatsappActive } from "@/lib/notification-channels";
+import { whatsappActive, whatsappAllowed } from "@/lib/notification-channels";
 import { loadSettings } from "@/server/settings";
 import { Field, Input } from "@/components/ui/form";
 import { Card, CardBody, CardHeader, DescriptionList, PageHeader } from "@/components/ui/primitives";
@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: "Hesap ayarları" };
 
 export default async function TeacherSettingsPage() {
   const user = await requireRole("TEACHER");
-  const [prefs, settings] = await Promise.all([db.user.findUniqueOrThrow({ where: { id: user.id }, select: { whatsappOptOut: true, phone: true } }), loadSettings()]);
+  const [prefs, settings] = await Promise.all([db.user.findUniqueOrThrow({ where: { id: user.id }, select: { whatsappOptOut: true, whatsappConsentAt: true, phone: true } }), loadSettings()]);
   return (
     <>
       <PageHeader title="Hesap ayarları" />
@@ -41,7 +41,7 @@ export default async function TeacherSettingsPage() {
         <Card>
           <CardHeader title="WhatsApp bildirimleri" />
           <CardBody>
-            <WhatsAppPreference on={!prefs.whatsappOptOut} phone={prefs.phone} active={whatsappActive(settings.notificationChannel)} />
+            <WhatsAppPreference on={whatsappAllowed(prefs)} phone={prefs.phone} active={whatsappActive(settings.notificationChannel)} />
           </CardBody>
         </Card>
         <Card>

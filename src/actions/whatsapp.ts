@@ -2,6 +2,7 @@
 
 import { refresh } from "next/cache";
 import { failure, success, type ActionState } from "@/lib/action-state";
+import { whatsappPreferenceData } from "@/lib/notification-channels";
 import { actionUser } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 
@@ -10,7 +11,7 @@ export async function setWhatsappOptOutAction(_: ActionState, formData: FormData
   const user = await actionUser("STUDENT", "TEACHER");
   if (!user) return failure("Oturumunuz kapanmış.");
   const on = formData.get("whatsapp") === "on";
-  await db.user.update({ where: { id: user.id }, data: { whatsappOptOut: !on } });
+  await db.user.update({ where: { id: user.id }, data: whatsappPreferenceData(on) });
   refresh();
   return success(on ? "Önemli bildirimler WhatsApp ile de gelecek." : "WhatsApp bildirimleri kapatıldı; bildirimler site ve e-postayla gelmeye devam eder.");
 }

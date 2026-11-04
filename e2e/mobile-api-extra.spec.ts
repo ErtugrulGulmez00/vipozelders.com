@@ -86,8 +86,10 @@ test("mobil API: fotoğrafla soru → ödeme → öğretmen çözümü → özel
 
   const { api: student } = await register(request, "soru");
 
-  // WhatsApp bildirim tercihi: varsayılan açık, PATCH /ben ile kapanır
-  expect((await (await student.get("/ben")).json()).whatsappNotifications).toBe(true);
+  // WhatsApp izni: varsayılan kapalı (açık rıza), PATCH /ben ile açılır ve kapanır
+  expect((await (await student.get("/ben")).json()).whatsappNotifications).toBe(false);
+  const optIn = await student.patch("/ben", { whatsappNotifications: true });
+  expect((await optIn.json()).whatsappNotifications).toBe(true);
   const optOut = await student.patch("/ben", { whatsappNotifications: false });
   expect((await optOut.json()).whatsappNotifications).toBe(false);
   expect("supportWhatsapp" in catalog.site).toBe(true);

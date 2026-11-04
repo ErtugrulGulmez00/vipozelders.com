@@ -1,3 +1,4 @@
+import { whatsappAllowed } from "@/lib/notification-channels";
 import { CENTER_NOTIFICATION_PREFIX, kurumHome, notificationScope } from "@/lib/sides";
 import { creditBalance } from "../credits";
 import { db } from "../db";
@@ -44,7 +45,7 @@ export async function meJson(userId: string) {
     // Soru kredisi bakiyesi (yalnızca veli/öğrenci)
     questionCredits: credits,
     // Önemli bildirimleri WhatsApp ile de almak istiyor (PATCH /ben whatsappNotifications)
-    whatsappNotifications: !user.whatsappOptOut,
+    whatsappNotifications: whatsappAllowed(user),
     // Tek hesap, iki taraf (src/lib/sides.ts): kurum (personel paneli ya da veli/öğrenci portalı) ve özel ders.
     // Uygulama giriş kapısına göre tarafı seçer; o tarafı olmayan kendi tarafına geçer.
     sides: {

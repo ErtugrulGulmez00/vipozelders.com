@@ -101,7 +101,7 @@ export function parseGuardianForm(fd: FormData, prefix = ""): GuardianInput | nu
     phone: guardianPhone,
     email: guardianEmail,
     isPrimary: bool(fd, key("isPrimary")),
-    notifyWhatsapp: hasPrefs ? bool(fd, key("notifyWhatsapp")) : true,
+    notifyWhatsapp: hasPrefs ? bool(fd, key("notifyWhatsapp")) : false,
     notifyEmail: hasPrefs ? bool(fd, key("notifyEmail")) : true,
   };
 }

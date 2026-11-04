@@ -59,7 +59,7 @@ function GuardianFields({ guardian }: { guardian?: GuardianView }) {
         <FieldError name="email" />
       </Field>
       <div className="space-y-2 sm:col-span-2">
-        <WhatsAppCheckbox name="notifyWhatsapp" defaultChecked={guardian?.notifyWhatsapp ?? true} preserve label="WhatsApp bildirimleri" />
+        <WhatsAppCheckbox name="notifyWhatsapp" defaultChecked={guardian?.notifyWhatsapp ?? false} active label="Veli, WhatsApp bildirimi almayı kabul etti" />
         <Checkbox name="notifyEmail" defaultChecked={guardian?.notifyEmail ?? true} label="E-posta bildirimleri" />
         <Checkbox name="isPrimary" defaultChecked={guardian?.isPrimary} label="Birincil veli (listelerde görünen)" />
       </div>
@@ -89,7 +89,7 @@ export function GuardianCard({ studentId, guardian, canEdit }: { studentId: stri
           </p>
           {guardian.email ? null : <p className="mt-1 text-xs font-semibold text-rose-600">E-postası yok: bildirim gitmez. Düzenle&apos;den ekleyin.</p>}
           <p className="mt-1 text-xs text-slate-500">
-            {guardian.notifyWhatsapp ? "WhatsApp açık" : "WhatsApp kapalı"} · {guardian.notifyEmail ? "E-posta açık" : "E-posta kapalı"} ·{" "}
+            {guardian.notifyWhatsapp ? "WhatsApp izni var" : "WhatsApp izni yok"} · {guardian.notifyEmail ? "E-posta açık" : "E-posta kapalı"} ·{" "}
             {guardian.linked ? <span className="font-semibold text-brand-700">Veli portalına bağlı</span> : guardian.inviteExpiresAt ? "Davet gönderildi" : "Portala bağlı değil"}
           </p>
         </div>

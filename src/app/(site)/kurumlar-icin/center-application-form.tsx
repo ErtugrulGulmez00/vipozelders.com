@@ -71,6 +71,10 @@ export function CenterApplicationForm() {
               <Link href="/sayfa/kvkk-aydinlatma-metni" target="_blank" className="font-medium text-brand-700 underline">
                 KVKK Aydınlatma Metni
               </Link>
+              ’ni ve{" "}
+              <Link href="/sayfa/kurum-hizmet-sozlesmesi" target="_blank" className="font-medium text-brand-700 underline">
+                Kurum Hizmet Sözleşmesi
+              </Link>
               ’ni okudum.
             </>
           }

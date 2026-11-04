@@ -18,6 +18,16 @@ export function whatsappActive(mode: ChannelMode): boolean {
   return mode !== "email";
 }
 
+/** Kişi kendi hesabına WhatsApp bildirimi almayı kabul etti mi (açık rıza var ve sonradan kapatmadı). */
+export function whatsappAllowed(user: { whatsappConsentAt: Date | null; whatsappOptOut: boolean }): boolean {
+  return Boolean(user.whatsappConsentAt) && !user.whatsappOptOut;
+}
+
+/** WhatsApp tercihini değiştirirken yazılacak alanlar. */
+export function whatsappPreferenceData(on: boolean, now = new Date()) {
+  return on ? { whatsappConsentAt: now, whatsappOptOut: false } : { whatsappConsentAt: null, whatsappOptOut: true };
+}
+
 /** Alıcıya hangi kanallardan ulaşılabilir; alsoEmail: gönderen ayrıca "e-postayla da gönder" dedi. */
 export type Reachability = { email: boolean; whatsapp: boolean; alsoEmail?: boolean };
 export type ChannelPlan = { email: boolean; whatsapp: boolean };

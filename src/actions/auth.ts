@@ -127,6 +127,7 @@ export async function registerAction(_: ActionState, formData: FormData): Promis
       password: input.password,
       accountType: input.accountType,
       marketingConsent: input.marketing === "on",
+      whatsappConsent: formData.get("whatsappConsent") === "on",
       referredById,
     });
     if (referredById) (await cookies()).delete("vd_davet");

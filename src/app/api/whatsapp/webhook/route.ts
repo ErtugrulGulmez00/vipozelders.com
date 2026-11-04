@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
 import { notifyRole } from "@/server/notifications";
+import { isWhatsappStopWord, sendWhatsAppText, stopWhatsappFor } from "@/server/whatsapp";
 
 // Meta WhatsApp webhook: GET = adres doğrulama, POST = mesaj durumları (iletildi/okundu/başarısız) ve gelen mesajlar.
 
@@ -49,6 +50,11 @@ export async function POST(request: NextRequest) {
       if (status.status === "failed") console.warn(`[whatsapp] ${status.id} iletilemedi: ${status.errors?.map((e) => `${e.code} ${e.title}`).join(", ")}`);
     }
     for (const message of value?.messages ?? []) {
+      if (message.text?.body && isWhatsappStopWord(message.text.body)) {
+        await stopWhatsappFor(message.from);
+        await sendWhatsAppText(message.from, "WhatsApp bildirimleri durduruldu. Bildirimler e-posta ve site üzerinden gelmeye devam eder.");
+        continue;
+      }
       // Velinin/öğrencinin cevabı: yöneticiye site içi bildirim (yanıt ileride panelden verilecek)
       const name = value?.contacts?.find((c) => c.wa_id === message.from)?.profile?.name;
       await notifyRole("ADMIN", {

@@ -31,7 +31,7 @@ export type GuardianMessageInput = {
   email?: { subject: string; title: string; lines: string[]; action?: { label: string; url: string } } | null;
   /** Hesabını kuruma bağlamış velinin site/uygulama bildirimi */
   notification?: { title: string; body: string } | null;
-  /** Velinin kurumdaki "WhatsApp/e-posta almasın" işaretine bakılmaz (elle gönderilen mesajlar) */
+  /** Velinin kurumdaki "e-posta almasın" işaretine bakılmaz (elle gönderilen mesajlar). WhatsApp izni her zaman aranır. */
   force?: boolean;
   /** Yalnızca bu velilere */
   guardianIds?: string[];
@@ -69,7 +69,7 @@ export async function centerWhatsappUsage(centerId: string, tx: Tx = db) {
 export async function messageGuardians(input: GuardianMessageInput, tx: Tx = db): Promise<MessageCounts> {
   const guardians = await tx.centerGuardian.findMany({
     where: { studentId: input.studentId, centerId: input.centerId, ...(input.guardianIds ? { id: { in: input.guardianIds } } : {}) },
-    select: { id: true, phone: true, email: true, notifyWhatsapp: true, notifyEmail: true, userId: true, fullName: true, isStudentAccount: true, user: { select: { whatsappOptOut: true, email: true } } },
+    select: { id: true, phone: true, email: true, notifyWhatsapp: true, notifyEmail: true, userId: true, fullName: true, isStudentAccount: true, user: { select: { whatsappOptOut: true, whatsappConsentAt: true, email: true } } },
   });
   const counts: MessageCounts = { whatsapp: 0, email: 0, app: 0 };
   const sentTo = new Set<string>();
@@ -118,8 +118,9 @@ export async function messageGuardians(input: GuardianMessageInput, tx: Tx = db)
     const email = guardian.email ?? guardian.user?.email ?? null;
 
     if (message) {
-      const waWanted =
-        whatsappActive(mode) && input.channels?.whatsapp !== false && Boolean(phone) && (guardian.notifyWhatsapp || Boolean(input.force)) && !(guardian.user?.whatsappOptOut && !input.force) && !sentTo.has(`wa:${phone}`);
+      // İzin: veli kuruma verdi ya da portal hesabından açtı; sonradan kapatan (ayarlar, "DUR") hiçbir mesajı almaz
+      const waConsent = (guardian.notifyWhatsapp || Boolean(guardian.user?.whatsappConsentAt)) && !guardian.user?.whatsappOptOut;
+      const waWanted = whatsappActive(mode) && input.channels?.whatsapp !== false && Boolean(phone) && waConsent && !sentTo.has(`wa:${phone}`);
       // Kota dolduysa WhatsApp atlanır (geçmişe "gönderilmedi" yazılır); "whatsapp" modunda e-postaya düşer
       if (waWanted && whatsappLeft <= 0) {
         sentTo.add(`wa:${phone}`);

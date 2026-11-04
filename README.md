@@ -207,9 +207,10 @@ Adım adım sunucu kurulumu (VPS, HTTPS, servis, yedekleme) ve sunucusuz hızlı
 
 **Kod dışı (sizin tarafınız):**
 
-- [ ] Şirket kuruluşu ve PayTR üye işyeri başvurusu
+- [x] Şahıs işletmesi kaydı (Dijital Vergi Dairesi mükellefiyet yazısı, sitedeki bilgilerle uyumlu)
+- [ ] Sanal POS başvurusu (PayTR / Garanti)
 - [ ] Yasal metinler: `Yönetim → Sayfalar`'daki şablonları avukata kontrol ettirin, “TASLAK METİN” satırlarını silin
-- [ ] Site ayarlarına ticari unvan, adres, vergi/MERSİS bilgisi
+- [x] Site ayarlarına unvan, adres, vergi bilgisi (MERSİS kaydı yok; ticaret siciline kayıt olursa eklenir)
 - [ ] ETBİS kaydı (gerekiyorsa VERBİS); fatura ve vergi modeli için mali müşavir
 - [ ] Alan adı, SSL, LiveKit projesi, SMTP hesabı
 

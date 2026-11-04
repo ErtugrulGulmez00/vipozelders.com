@@ -64,8 +64,10 @@ model User {
   referredById       String?
   referredBy         User?      @relation("Referrals", fields: [referredById], references: [id], onDelete: SetNull)
   referralRewardedAt DateTime?
-  // WhatsApp bildirimi almak istemiyor (Hesap ayarları)
+  // WhatsApp bildirimi almak istemiyor (Hesap ayarları ya da WhatsApp'tan "DUR")
   whatsappOptOut     Boolean    @default(false)
+  // WhatsApp için açık rıza zamanı; boşsa kişinin kendi hesabına WhatsApp gitmez
+  whatsappConsentAt  DateTime?
 
   sessions          Session[]
   tokens            UserToken[]
@@ -1216,7 +1218,8 @@ model CenterGuardian {
   phone            String?
   email            String?
   isPrimary        Boolean       @default(false)
-  notifyWhatsapp   Boolean       @default(true)
+  // Veli WhatsApp iznini kuruma verdi (kurum işaretler)
+  notifyWhatsapp   Boolean       @default(false)
   // E-posta yalnızca kurumun "e-postayla da gönder" seçtiği duyuru ve mesajlarda gider
   notifyEmail      Boolean       @default(true)
   // Veli portalı: davetle sitedeki veli hesabına bağlanır

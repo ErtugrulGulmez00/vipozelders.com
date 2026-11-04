@@ -132,6 +132,8 @@ export type StudentRegistration = {
   password: string;
   accountType: AccountType;
   marketingConsent: boolean;
+  /** Kayıtta WhatsApp bildirimi için açık rıza verdi */
+  whatsappConsent?: boolean;
   /** Davet eden kullanıcı (arkadaşını getir) */
   referredById?: string | null;
 };
@@ -150,6 +152,7 @@ export async function registerStudent(input: StudentRegistration) {
       lastName: input.lastName.trim(),
       passwordHash: await hashPassword(input.password),
       referredById: input.referredById ?? null,
+      whatsappConsentAt: input.whatsappConsent ? new Date() : null,
       studentProfile: {
         create: { accountType: input.accountType, kvkkConsentAt: new Date(), marketingConsent: input.marketingConsent },
       },

@@ -103,7 +103,7 @@ Sayfalı listelerde `?sayfa=N` gönderilir; yanıttaki `nextPage` null ise son s
 | `POST /kayit` | `{firstName, lastName, email, phone?, password, accountType: "PARENT"\|"STUDENT", kvkk: true, terms: true, marketing?, deviceName?, referralCode?}` | 201 `{token, user: Me}` |
 | `POST /sifremi-unuttum` | `{email}` | `{message}` (bağlantı e-postayla gelir, web'de açılır) |
 | `GET /ben` | — | `Me` |
-| `PATCH /ben` | `{firstName?, lastName?, phone?, accountType?, cityId?, marketingConsent?, whatsappNotifications?}` (öğretmen yalnızca `phone` ve `whatsappNotifications`) | `Me` |
+| `PATCH /ben` | `{firstName?, lastName?, phone?, accountType?, cityId?, marketingConsent?, whatsappNotifications?}` (öğretmen yalnızca `phone` ve `whatsappNotifications`; `whatsappNotifications` varsayılan `false`, açık rıza olarak yalnızca kullanıcı işaretleyince `true` gönderin) | `Me` |
 | `POST /ben/sifre` | `{currentPassword, newPassword}` (en az 8 karakter, harf ve rakam) | `{message}` |
 | `POST /ben/silme-talebi` | `{reason?}` | 202 `{message}` |
 

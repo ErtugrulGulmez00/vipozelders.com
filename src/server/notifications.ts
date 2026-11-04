@@ -1,3 +1,4 @@
+import { whatsappAllowed } from "@/lib/notification-channels";
 import { db, type DbTransaction } from "./db";
 import { appUrl } from "./email";
 import { NotificationService } from "./notification-service";
@@ -51,7 +52,7 @@ const WHATSAPP_TYPES = new Set([
 export async function notify(input: NotifyInput, tx: DbTransaction | typeof db = db) {
   const user = await tx.user.findUnique({
     where: { id: input.userId },
-    select: { email: true, firstName: true, phone: true, whatsappOptOut: true },
+    select: { email: true, firstName: true, phone: true, whatsappOptOut: true, whatsappConsentAt: true },
   });
   if (!user) return;
 
@@ -68,7 +69,7 @@ export async function notify(input: NotifyInput, tx: DbTransaction | typeof db =
   const settings = await loadSettings();
   const plan = NotificationService.plan(settings.notificationChannel, {
     email: input.email !== false && Boolean(user.email),
-    whatsapp: input.whatsapp !== false && WHATSAPP_TYPES.has(input.type) && Boolean(user.phone) && !user.whatsappOptOut,
+    whatsapp: input.whatsapp !== false && WHATSAPP_TYPES.has(input.type) && Boolean(user.phone) && whatsappAllowed(user),
   });
 
   if (plan.email && user.email) {

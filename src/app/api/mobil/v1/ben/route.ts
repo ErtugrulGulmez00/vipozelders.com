@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { whatsappPreferenceData } from "@/lib/notification-channels";
 import { normalizePhone } from "@/lib/text";
 import { db } from "@/server/db";
 import { ApiError, json, readBody } from "@/server/mobile/http";
@@ -26,7 +27,7 @@ export const PATCH = withUser(async ({ request, user }) => {
     if (input.phone && !phone) throw new ApiError(422, "VALIDATION", "Telefon numarası 05XX XXX XX XX biçiminde olmalı.", { phone: "Geçersiz numara." });
   }
 
-  const whatsapp = input.whatsappNotifications !== undefined ? { whatsappOptOut: !input.whatsappNotifications } : {};
+  const whatsapp = input.whatsappNotifications !== undefined ? whatsappPreferenceData(input.whatsappNotifications) : {};
 
   if (user.role !== "STUDENT") {
     if (phone !== undefined || input.whatsappNotifications !== undefined) {

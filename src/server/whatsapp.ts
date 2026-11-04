@@ -3,6 +3,7 @@
 // ulaşır. Site ayarlarında şablon adı girildiyse bildirimler şablonla (değişkenler: başlık, metin, bağlantı) gider.
 // Bildirimler önce WhatsAppMessage kuyruğuna yazılır; zamanlayıcı dakikada sınırlı sayıda gönderir.
 
+import { normalizePhone } from "@/lib/text";
 import { db } from "./db";
 import { loadSettings } from "./settings";
 
@@ -99,6 +100,24 @@ export async function whatsappSessionStatus(): Promise<{ ok: boolean; message: s
   } catch (error) {
     return { ok: false, message: String(error).slice(0, 200) };
   }
+}
+
+/** Gelen mesaj bildirimleri durdurma isteği mi? Yalnızca mesajın tamamı bu sözcükse sayılır. */
+export function isWhatsappStopWord(text: string): boolean {
+  const word = text.trim().replace(/[.!\s]+$/, "").toLocaleUpperCase("tr");
+  return ["DUR", "DURDUR", "STOP", "İPTAL", "IPTAL"].includes(word);
+}
+
+/** "DUR" yazan numarayı bütün hesap ve veli kayıtlarında kapatır, sıradaki mesajlarını iptal eder. Etkilenen kayıt sayısı döner. */
+export async function stopWhatsappFor(from: string): Promise<number> {
+  const phone = normalizePhone(from);
+  if (!phone) return 0;
+  const [users, guardians] = await Promise.all([
+    db.user.updateMany({ where: { phone }, data: { whatsappOptOut: true, whatsappConsentAt: null } }),
+    db.centerGuardian.updateMany({ where: { phone }, data: { notifyWhatsapp: false } }),
+    db.whatsAppMessage.updateMany({ where: { to: phone, status: "PENDING" }, data: { status: "FAILED", error: "Kişi DUR yazdı, gönderilmedi" } }),
+  ]);
+  return users.count + guardians.count;
 }
 
 /** Kuyruktaki WhatsApp mesajlarını gönderir (zamanlayıcı). LetsBot ayarlı değilse kuyruk bekler. */
