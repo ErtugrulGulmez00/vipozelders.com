@@ -220,7 +220,7 @@ export async function enrollInGroup(studentId: string, courseId: string, learner
       throw new GroupError("Kontenjan doldu.");
     }
     const split = splitCommission(course.price, course.commissionRateBps);
-    const discount = await resolveDiscount(studentId, couponCode, "group", course.price, split.commissionAmount, now).catch((error: unknown) => {
+    const discount = await resolveDiscount(studentId, couponCode, "group", course.price, split.commissionAmount, now, existing ? { target: "group", id: existing.id } : undefined).catch((error: unknown) => {
       if (error instanceof DiscountError) throw new GroupError(error.message);
       throw error;
     });

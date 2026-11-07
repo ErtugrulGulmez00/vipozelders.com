@@ -43,6 +43,8 @@ export async function recordPageView(input: { path: string; referrer: string | n
     .update(`${day}|${process.env.APP_SECRET ?? ""}|${input.ip ?? ""}|${input.userAgent}`)
     .digest("hex")
     .slice(0, 24);
+  // Girişsiz uç: aynı ziyaretçi günde en fazla 300 görüntüleme yazar (sahte istekle tablo ve istatistik şişirilemez)
+  if ((await db.pageView.count({ where: { day: dateStringToDbDate(day), visitor } })) >= 300) return;
   await db.pageView.create({
     data: { day: dateStringToDbDate(day), path, referrer: referrerHost(input.referrer, input.ownHost), device: deviceOf(input.userAgent), visitor },
   });

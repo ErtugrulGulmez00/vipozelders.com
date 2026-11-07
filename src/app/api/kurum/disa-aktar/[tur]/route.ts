@@ -12,7 +12,8 @@ import { buildWorkbook, xlsxResponse } from "@/server/center/spreadsheet";
 import { db } from "@/server/db";
 
 const REQUIRED: Record<string, CenterPermission> = {
-  ogrenciler: "students.view",
+  // Veli telefon/e-posta içerir: kayıt yetkisi olanlar (öğretmen değil)
+  ogrenciler: "students.edit",
   "ogrenci-sablonu": "students.edit",
   "deneme-sablonu": "exams.manage",
   "deneme-sonuclari": "exams.manage",

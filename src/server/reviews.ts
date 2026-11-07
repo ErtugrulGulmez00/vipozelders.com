@@ -1,4 +1,5 @@
 import type { ReviewStatus } from "@/generated/prisma/client";
+import { maskContacts } from "@/lib/text";
 import { db, type DbTransaction } from "./db";
 import { notify } from "./notifications";
 import { loadSettings } from "./settings";
@@ -34,7 +35,8 @@ export async function recomputeTeacherRating(tx: DbTransaction | typeof db, teac
 
 export async function upsertReview(studentId: string, teacherId: string, rating: number, comment: string, now = new Date()) {
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) throw new ReviewError("Puan 1 ile 5 arasında olmalı.");
-  const text = comment.trim();
+  // Yorumlar herkese açık: iletişim bilgisi gizlenir (platform dışına yönlendirme olmasın)
+  const text = maskContacts(comment.trim());
   if (text.length > 1500) throw new ReviewError("Yorum en fazla 1500 karakter olabilir.");
 
   const { eligible, bookingId, existing } = await reviewEligibility(studentId, teacherId, now);
@@ -64,7 +66,7 @@ export async function upsertReview(studentId: string, teacherId: string, rating:
 }
 
 export async function replyToReview(reviewId: string, teacherId: string, reply: string) {
-  const text = reply.trim();
+  const text = maskContacts(reply.trim());
   if (text.length > 1000) throw new ReviewError("Cevap en fazla 1000 karakter olabilir.");
   const review = await db.review.findUnique({ where: { id: reviewId } });
   if (!review || review.teacherId !== teacherId) throw new ReviewError("Yorum bulunamadı.");

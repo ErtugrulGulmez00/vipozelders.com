@@ -34,13 +34,13 @@ export async function loginAction(_: ActionState, formData: FormData): Promise<A
   if (!identifier || !password) return failure("Kullanıcı adı/e-posta ve şifre gerekli.");
 
   const { ipAddress } = await requestMeta();
-  if (await isLoginBlocked(identifier, ipAddress)) {
+  if (await isLoginBlocked(`login:${identifier}`, ipAddress)) {
     return failure("Çok fazla hatalı deneme yapıldı. Lütfen 15 dakika sonra tekrar deneyin.");
   }
 
   const user = await db.user.findFirst({ where: { OR: [{ email: identifier }, { username: identifier }] } });
   const valid = user ? await verifyPassword(password, user.passwordHash) : (await burnPasswordCheck(password), false);
-  await recordLoginAttempt(identifier, ipAddress, valid);
+  await recordLoginAttempt(`login:${identifier}`, ipAddress, valid);
 
   if (!user || !valid) return failure("Kullanıcı adı/e-posta veya şifre hatalı.");
   if (user.status !== "ACTIVE") return failure("Hesabınız askıya alınmış. Destek ekibimizle iletişime geçin.");
@@ -184,7 +184,11 @@ export async function changePasswordAction(_: ActionState, formData: FormData): 
   const password = String(formData.get("password") ?? "");
   const confirm = String(formData.get("confirm") ?? "");
 
-  if (!(await verifyPassword(current, record.passwordHash))) {
+  const { ipAddress } = await requestMeta();
+  if (await isLoginBlocked(`chgpw:${user.id}`, ipAddress)) return failure("Çok fazla hatalı deneme yapıldı. Lütfen 15 dakika sonra tekrar deneyin.");
+  const currentOk = await verifyPassword(current, record.passwordHash);
+  await recordLoginAttempt(`chgpw:${user.id}`, ipAddress, currentOk);
+  if (!currentOk) {
     return failure("Mevcut şifreniz hatalı.", { current: "Mevcut şifre hatalı." });
   }
   const problem = passwordProblem(password);

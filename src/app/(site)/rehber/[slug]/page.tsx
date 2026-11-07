@@ -58,7 +58,7 @@ async function Post({ params }: { params: Promise<{ slug: string }> }) {
   };
   return (
     <article>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\u003c") }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, "\\u003c") }} />
       <Link href="/rehber" className="text-sm text-brand-700 hover:underline">
         ← Rehber
       </Link>

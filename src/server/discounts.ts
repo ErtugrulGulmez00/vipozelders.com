@@ -41,18 +41,43 @@ export async function hasPaidOrder(userId: string, tx: Tx = db) {
   return bookings + credits + subs + groups > 0;
 }
 
+export type DiscountExclude = { target: DiscountTarget; id: string };
+
+/**
+ * Ödemesi tamamlanmamış, indirimli siparişler (kod ya da davet indirimi). Kullanım ödeme bitince kaydedildiği için
+ * bunlar da kullanım sayılır: aynı kodla aynı anda birden fazla sipariş açıp hepsini indirimli ödemek engellenir.
+ * userId verilmezse herkesinki (kodun toplam kullanım hakkı için); exclude: yeniden başlatılan aynı sipariş.
+ */
+async function openDiscountedOrders(couponCode: string | null, userId: string | null, exclude?: DiscountExclude, now = new Date()) {
+  const recent = new Date(now.getTime() - 3_600_000);
+  const base = { discountAmount: { gt: 0 }, couponCode, ...(userId ? { studentId: userId } : {}) };
+  const not = (target: DiscountTarget) => (exclude?.target === target ? { id: { not: exclude.id } } : {});
+  const counts = await Promise.all([
+    db.booking.count({ where: { ...base, ...not("booking"), status: "PENDING_PAYMENT", holdExpiresAt: { gt: now } } }),
+    db.groupEnrollment.count({ where: { ...base, ...not("group"), status: "PENDING_PAYMENT", holdExpiresAt: { gt: now } } }),
+    db.creditPurchase.count({ where: { ...base, ...not("credits"), status: "PENDING_PAYMENT", createdAt: { gt: recent } } }),
+    db.questionSubscription.count({ where: { ...base, ...not("subscription"), status: "PENDING_PAYMENT", createdAt: { gt: recent } } }),
+  ]);
+  return counts.reduce((t, n) => t + n, 0);
+}
+
+const OPEN_ORDER_ERROR = "Bu indirimle açtığınız ve ödemesi tamamlanmamış bir siparişiniz var. Onu tamamlayın ya da süresinin dolmasını bekleyin.";
+
 function cap(amount: number, target: DiscountTarget, price: number, commission: number) {
   const limit = target === "credits" ? price - MIN_PAYABLE : commission;
   return Math.max(0, Math.min(amount, limit));
 }
 
-async function couponProblem(coupon: Coupon, userId: string, target: DiscountTarget, price: number, now: Date): Promise<string | null> {
+async function couponProblem(coupon: Coupon, userId: string, target: DiscountTarget, price: number, now: Date, exclude?: DiscountExclude): Promise<string | null> {
   if (!coupon.isActive || (coupon.startsAt && coupon.startsAt > now) || (coupon.endsAt && coupon.endsAt <= now)) return "Bu indirim kodunun süresi dolmuş ya da henüz başlamamış.";
   if (coupon.targets.length && !coupon.targets.includes(target)) return `Bu kod ${coupon.targets.map((t) => TARGET_LABELS[t as DiscountTarget] ?? t).join(", ")} için geçerli.`;
   if (coupon.minAmount && price < coupon.minAmount) return `Bu kod ${formatMoney(coupon.minAmount)} ve üzeri siparişlerde geçerli.`;
-  if (coupon.maxUses !== null && (await db.couponRedemption.count({ where: { couponId: coupon.id } })) >= coupon.maxUses) return "Bu indirim kodunun kullanım hakkı doldu.";
+  if (coupon.maxUses !== null && (await db.couponRedemption.count({ where: { couponId: coupon.id } })) + (await openDiscountedOrders(coupon.code, null, exclude, now)) >= coupon.maxUses) {
+    return "Bu indirim kodunun kullanım hakkı doldu.";
+  }
   if ((await db.couponRedemption.count({ where: { couponId: coupon.id, userId } })) >= coupon.perUserLimit) return "Bu indirim kodunu daha önce kullandınız.";
-  if (coupon.firstOrderOnly && (await hasPaidOrder(userId))) return "Bu kod yalnızca ilk siparişte geçerli.";
+  if ((await db.couponRedemption.count({ where: { couponId: coupon.id, userId } })) + (await openDiscountedOrders(coupon.code, userId, exclude, now)) >= coupon.perUserLimit) return OPEN_ORDER_ERROR;
+  if (coupon.firstOrderOnly && ((await hasPaidOrder(userId)) || (await openDiscountedOrders(coupon.code, userId, exclude, now)) > 0)) return "Bu kod yalnızca ilk siparişte geçerli.";
   return null;
 }
 
@@ -60,13 +85,21 @@ async function couponProblem(coupon: Coupon, userId: string, target: DiscountTar
  * Sipariş için indirim: kod verildiyse kod (geçersizse hata), verilmediyse uygunsa davet indirimi.
  * price: indirimsiz tutar; commission: platformun hizmet bedeli (indirim bundan karşılanır).
  */
-export async function resolveDiscount(userId: string, code: string | null | undefined, target: DiscountTarget, price: number, commission: number, now = new Date()): Promise<Discount> {
+export async function resolveDiscount(
+  userId: string,
+  code: string | null | undefined,
+  target: DiscountTarget,
+  price: number,
+  commission: number,
+  now = new Date(),
+  exclude?: DiscountExclude,
+): Promise<Discount> {
   if (price <= 0) return NONE;
   const normalized = code ? normalizeCode(code) : "";
   if (normalized) {
     const coupon = await db.coupon.findUnique({ where: { code: normalized } });
     if (!coupon) throw new DiscountError("İndirim kodu bulunamadı.");
-    const problem = await couponProblem(coupon, userId, target, price, now);
+    const problem = await couponProblem(coupon, userId, target, price, now, exclude);
     if (problem) throw new DiscountError(problem);
     const raw = coupon.kind === "PERCENT" ? Math.floor((price * coupon.value) / 100) : coupon.value;
     const amount = cap(coupon.maxDiscount ? Math.min(raw, coupon.maxDiscount) : raw, target, price, commission);
@@ -76,7 +109,8 @@ export async function resolveDiscount(userId: string, code: string | null | unde
   const settings = await loadSettings();
   if (!settings.referralEnabled || settings.referralDiscountPercent <= 0) return NONE;
   const user = await db.user.findUnique({ where: { id: userId }, select: { referredById: true } });
-  if (!user?.referredById || (await hasPaidOrder(userId))) return NONE;
+  // Davet indirimi yalnızca ilk sipariş için: ödemesi süren başka davet indirimli sipariş varsa ikincisine uygulanmaz
+  if (!user?.referredById || (await hasPaidOrder(userId)) || (await openDiscountedOrders(null, userId, exclude, now)) > 0) return NONE;
   const amount = cap(Math.floor((price * settings.referralDiscountPercent) / 100), target, price, commission);
   return amount > 0 ? { amount, couponCode: null, source: "referral", label: `Arkadaş davetiyle %${settings.referralDiscountPercent} indirim` } : NONE;
 }
@@ -94,6 +128,8 @@ export async function recordPaidOrder(tx: DbTransaction, input: { userId: string
       update: {},
     });
   }
+  // İndirim koduyla neredeyse bedavaya alınan siparişe davet ödülü verilmez (iki hesapla ödül toplama)
+  if (input.couponCode) return;
   const user = await tx.user.findUnique({ where: { id: input.userId }, select: { referredById: true, referralRewardedAt: true, firstName: true } });
   if (!user?.referredById || user.referralRewardedAt) return;
   const marked = await tx.user.updateMany({ where: { id: input.userId, referralRewardedAt: null }, data: { referralRewardedAt: new Date() } });

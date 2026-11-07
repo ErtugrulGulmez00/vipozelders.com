@@ -18,13 +18,13 @@ export const POST = publicRoute(async ({ request }) => {
   const input = await readBody(request, loginSchema);
   const identifier = input.identifier.toLocaleLowerCase("tr-TR").replace(/ı/g, "i");
   const ipAddress = clientIp(request);
-  if (await isLoginBlocked(identifier, ipAddress)) {
+  if (await isLoginBlocked(`login:${identifier}`, ipAddress)) {
     throw new ApiError(429, "TOO_MANY_ATTEMPTS", "Çok fazla hatalı deneme yapıldı. Lütfen 15 dakika sonra tekrar deneyin.");
   }
 
   const user = await db.user.findFirst({ where: { OR: [{ email: identifier }, { username: identifier }] } });
   const valid = user ? await verifyPassword(input.password, user.passwordHash) : (await burnPasswordCheck(input.password), false);
-  await recordLoginAttempt(identifier, ipAddress, valid);
+  await recordLoginAttempt(`login:${identifier}`, ipAddress, valid);
   if (!user || !valid) throw new ApiError(401, "INVALID_CREDENTIALS", "Kullanıcı adı/e-posta veya şifre hatalı.");
   if (user.status !== "ACTIVE") throw new ApiError(403, "ACCOUNT_SUSPENDED", "Hesabınız askıya alınmış. Destek ekibimizle iletişime geçin.");
   if (user.role === "ADMIN") throw new ApiError(403, "ADMIN_NOT_SUPPORTED", "Yönetici hesabı mobil uygulamada kullanılamaz; web panelini kullanın.");

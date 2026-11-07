@@ -167,7 +167,8 @@ export default async function CenterStudentsPage({ searchParams }: PageProps<"/k
                         <>
                           {guardian.fullName}
                           {guardian.userId ? <Badge tone="brand" className="ml-1">Portalda</Badge> : null}
-                          {guardian.phone ? (
+                          {/* Listede veli telefonu yalnızca kayıt yetkisi olanlara (öğretmen tek tek öğrenci sayfasından görür) */}
+                          {guardian.phone && ctx.can("students.edit") ? (
                             <p>
                               <a href={`tel:${guardian.phone}`} className="text-slate-500 hover:underline">
                                 {guardian.phone}
