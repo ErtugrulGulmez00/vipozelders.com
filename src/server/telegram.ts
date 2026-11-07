@@ -19,6 +19,18 @@ export function telegramConfigured(): boolean {
   return Boolean(process.env.TELEGRAM_BOT_TOKEN) && chatIds().length > 0;
 }
 
+type TelegramReply = { ok?: boolean; description?: string; parameters?: { migrate_to_chat_id?: number } };
+
+async function postMessage(token: string, chatId: string, text: string) {
+  const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, text: text.slice(0, 4000), disable_web_page_preview: true }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  return { response, data: (await response.json().catch(() => ({}))) as TelegramReply };
+}
+
 /** Ayarlı bütün sohbetlere düz metin mesaj; en az birine gittiyse başarılı sayılır. */
 export async function sendTelegram(text: string): Promise<{ ok: true } | { ok: false; error: string }> {
   const token = process.env.TELEGRAM_BOT_TOKEN;
@@ -27,13 +39,13 @@ export async function sendTelegram(text: string): Promise<{ ok: true } | { ok: f
   let sent = 0;
   for (const chatId of chatIds()) {
     try {
-      const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: chatId, text: text.slice(0, 4000), disable_web_page_preview: true }),
-        signal: AbortSignal.timeout(15_000),
-      });
-      const data = (await response.json().catch(() => ({}))) as { ok?: boolean; description?: string };
+      let { response, data } = await postMessage(token, chatId, text);
+      // Grup süper gruba yükseltilince kimlik değişir; Telegram yenisini bildirir, mesaj ona gönderilir
+      const moved = data.parameters?.migrate_to_chat_id;
+      if (!response.ok && moved) {
+        console.warn(`[telegram] sohbet süper gruba taşınmış; TELEGRAM_CHAT_ID'yi ${moved} yapın`);
+        ({ response, data } = await postMessage(token, String(moved), text));
+      }
       if (response.ok && data.ok !== false) sent++;
       else errors.push(`${response.status}: ${data.description ?? "gönderilemedi"}`);
     } catch (error) {

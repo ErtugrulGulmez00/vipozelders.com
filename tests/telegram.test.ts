@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/server/db";
-import { sendPendingTelegrams, telegramConfigured } from "@/server/telegram";
+import { sendPendingTelegrams, sendTelegram, telegramConfigured } from "@/server/telegram";
 import { createStudent } from "./helpers";
 
 type Sent = { url: string; chat_id: string; text: string };
@@ -18,6 +18,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.unstubAllEnvs();
+  vi.restoreAllMocks();
 });
 
 afterAll(async () => {
@@ -60,5 +61,21 @@ describe("Telegram yönetici bildirimleri", () => {
     // İkinci çalıştırmada aynı bildirim tekrar gitmez
     await sendPendingTelegrams(new Date(), 1000);
     expect(mine()).toHaveLength(2);
+  });
+
+  it("grup süper gruba yükseltildiyse Telegram'ın bildirdiği yeni kimliğe gönderir", async () => {
+    vi.stubEnv("TELEGRAM_BOT_TOKEN", "123:test");
+    vi.stubEnv("TELEGRAM_CHAT_ID", "-111");
+    vi.stubGlobal("fetch", async (url: string, init: { body: string }) => {
+      const body = JSON.parse(init.body) as { chat_id: string; text: string };
+      sent.push({ url, ...body });
+      if (body.chat_id === "-111") {
+        return new Response(JSON.stringify({ ok: false, description: "Bad Request: group chat was upgraded to a supergroup chat", parameters: { migrate_to_chat_id: -100222 } }), { status: 400 });
+      }
+      return new Response(JSON.stringify({ ok: true }), { status: 200 });
+    });
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    expect(await sendTelegram("deneme")).toEqual({ ok: true });
+    expect(sent.map((m) => m.chat_id)).toEqual(["-111", "-100222"]);
   });
 });

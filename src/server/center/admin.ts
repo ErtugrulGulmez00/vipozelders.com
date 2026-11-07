@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { extendSubscription } from "@/lib/center/subscription";
-import { normalizePhone, slugify } from "@/lib/text";
+import { normalizePhone, normalizeSearch, slugify } from "@/lib/text";
 import { audit } from "../audit";
 import { countRecentAttempts, recordLoginAttempt } from "../auth/rate-limit";
 import { db } from "../db";
@@ -90,6 +90,35 @@ export async function adminUpdateCenter(adminId: string, centerId: string, input
   const studentLimit = plan !== input.plan ? Math.max(input.studentLimit, planStudentLimit(plan, await loadSettings(), 0)) : input.studentLimit;
   await db.center.update({ where: { id: centerId }, data: { ...input, plan, studentLimit, ...(datesChanged ? { expiryNoticeDays: null } : {}) } });
   await audit({ actorId: adminId, action: "center.update", entityType: "Center", entityId: centerId, details: { plan: input.plan, edition: input.edition, status: input.status, studentLimit: input.studentLimit } });
+}
+
+/**
+ * Kurumu bütün kayıtlarıyla (öğrenci, veli kaydı, yoklama, deneme, ödeme, mesaj) kalıcı olarak siler. Yalnızca bu kurum için
+ * açılmış personel hesapları da silinir; başka kurumu, öğretmen paneli ya da veli bağlantısı olan hesaplara dokunulmaz.
+ */
+export async function adminDeleteCenter(adminId: string, centerId: string, confirmName: string) {
+  const center = await db.center.findUnique({ where: { id: centerId }, select: { name: true, members: { select: { userId: true } }, _count: { select: { students: true } } } });
+  if (!center) throw new CenterError("Kurum bulunamadı.");
+  if (normalizeSearch(confirmName) !== normalizeSearch(center.name)) throw new CenterError("Silmek için kurum adını aynen yazın.", { confirmName: "Kurum adı eşleşmiyor." });
+  await db.$transaction([db.centerApplication.updateMany({ where: { centerId }, data: { centerId: null } }), db.center.delete({ where: { id: centerId } })]);
+
+  const orphans = await db.user.findMany({
+    where: { id: { in: center.members.map((m) => m.userId) }, role: "CENTER", centerMemberships: { none: {} }, guardianLinks: { none: {} }, teacherProfile: { is: null } },
+    select: { id: true },
+  });
+  let removedUsers = 0;
+  for (const { id } of orphans) {
+    try {
+      await db.user.delete({ where: { id } });
+      removedUsers++;
+    } catch {
+      // Silinemeyen hesap (başka kayıtlara bağlı) kapatılır
+      await db.user.update({ where: { id }, data: { status: "SUSPENDED" } });
+      await db.session.deleteMany({ where: { userId: id } });
+    }
+  }
+  await audit({ actorId: adminId, action: "center.delete", entityType: "Center", entityId: centerId, details: { name: center.name, students: center._count.students, removedUsers } });
+  return { name: center.name, students: center._count.students, removedUsers };
 }
 
 /** Havale/EFT ile gelen abonelik ödemesini kaydeder; süre uzar, kurum aktif olur. */

@@ -88,8 +88,12 @@ export async function getPublicCenter(slug: string) {
       paidUntil: true,
       city: { select: { name: true } },
       district: { select: { name: true } },
+      edition: true,
+      disabledModules: true,
+      notifyAbsence: true,
       groups: { where: { isActive: true }, select: { name: true, gradeName: true, targetExam: true }, orderBy: { name: "asc" } },
-      _count: { select: { members: { where: { isActive: true } } } },
+      // Vitrinde yalnızca sayı gösterilir (personel adları gösterilmez); muhasebeci eğitim kadrosuna sayılmaz
+      _count: { select: { members: { where: { isActive: true, role: { not: "ACCOUNTANT" } } } } },
     },
   });
   if (!center || !center.isPublic || !visible(center)) return null;

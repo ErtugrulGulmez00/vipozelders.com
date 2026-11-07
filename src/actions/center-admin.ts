@@ -4,7 +4,8 @@ import { refresh, updateTag } from "next/cache";
 import { failure, success, type ActionState } from "@/lib/action-state";
 import { parseMoneyInput } from "@/lib/money";
 import { actionUser } from "@/server/auth/current-user";
-import { adminCreateCenter, adminRecordSubscriptionPayment, adminUpdateCenter, setCenterApplicationStatus } from "@/server/center/admin";
+import { redirect } from "next/navigation";
+import { adminCreateCenter, adminDeleteCenter, adminRecordSubscriptionPayment, adminUpdateCenter, setCenterApplicationStatus } from "@/server/center/admin";
 import { CenterError } from "@/server/center/errors";
 import { CENTERS_CACHE_TAG } from "@/server/center/public";
 import { email, guard, int, opt, phone, requiredText, str } from "@/server/center/form";
@@ -81,6 +82,18 @@ export async function updateCenterAdminAction(_: ActionState, formData: FormData
     refresh();
     return success("Kurum güncellendi.");
   });
+}
+
+export async function deleteCenterAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const admin = await actionUser("ADMIN");
+  if (!admin) return DENIED;
+  const state = await guard(async () => {
+    await adminDeleteCenter(admin.id, str(formData, "centerId"), str(formData, "confirmName"));
+    return success("Kurum silindi.");
+  });
+  if (!state.ok) return state;
+  updateTag(CENTERS_CACHE_TAG);
+  redirect("/yonetim/kurumlar");
 }
 
 export async function recordSubscriptionPaymentAction(_: ActionState, formData: FormData): Promise<ActionState> {

@@ -13,7 +13,8 @@ import { db } from "@/server/db";
 import { centerWhatsappUsage } from "@/server/center/messages";
 import { centerPlans } from "@/server/center/plans";
 import { getSiteSettings } from "@/server/site";
-import { AddOwnerForm, CenterAdminForm, SubscriptionPaymentForm } from "../center-admin-forms";
+import { ResetPasswordForm } from "../../ogretmenler/[id]/admin-forms";
+import { AddOwnerForm, CenterAdminForm, DeleteCenterForm, SubscriptionPaymentForm } from "../center-admin-forms";
 
 export const metadata: Metadata = { title: "Kurum" };
 
@@ -30,8 +31,9 @@ export default async function AdminCenterPage({ params }: PageProps<"/yonetim/ku
     },
   });
   if (!center) notFound();
-  const [students, groups, exams, payments, whatsapp, settings] = await Promise.all([
+  const [students, allStudents, groups, exams, payments, whatsapp, settings] = await Promise.all([
     db.centerStudent.count({ where: { centerId: id, status: "ACTIVE" } }),
+    db.centerStudent.count({ where: { centerId: id } }),
     db.centerGroup.count({ where: { centerId: id, isActive: true } }),
     db.centerExam.count({ where: { centerId: id } }),
     db.centerPayment.count({ where: { centerId: id, cancelledAt: null } }),
@@ -131,6 +133,9 @@ export default async function AdminCenterPage({ params }: PageProps<"/yonetim/ku
                   </p>
                   <p className="text-xs text-slate-500">{[m.user.username, m.user.email, m.user.phone].filter(Boolean).join(" · ")}</p>
                   <p className="text-xs text-slate-400">{m.user.lastLoginAt ? `Son giriş ${formatCompact(m.user.lastLoginAt)}` : "Giriş yapmadı"}</p>
+                  <div className="mt-2">
+                    <ResetPasswordForm userId={m.userId} />
+                  </div>
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   <Badge tone={m.role === "OWNER" ? "brand" : "slate"}>{CENTER_ROLE_LABEL[m.role as CenterRoleName]}</Badge>
@@ -144,6 +149,12 @@ export default async function AdminCenterPage({ params }: PageProps<"/yonetim/ku
           </CardBody>
         </Card>
       </div>
+      <Card className="mt-6 border-rose-200">
+        <CardHeader title="Kurumu sil" description="Deneme ya da yanlış açılmış kurumlar için. Abonelik bitince kurum zaten salt okunur olur; gerçek kurumu silmek yerine askıya alın." />
+        <CardBody>
+          <DeleteCenterForm centerId={center.id} name={center.name} students={allStudents} />
+        </CardBody>
+      </Card>
     </>
   );
 }

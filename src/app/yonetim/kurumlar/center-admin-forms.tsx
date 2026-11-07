@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { addCenterOwnerAction, createCenterAction, recordSubscriptionPaymentAction, setCenterApplicationStatusAction, updateCenterAdminAction } from "@/actions/center-admin";
+import {
+  addCenterOwnerAction,
+  createCenterAction,
+  deleteCenterAction,
+  recordSubscriptionPaymentAction,
+  setCenterApplicationStatusAction,
+  updateCenterAdminAction,
+} from "@/actions/center-admin";
 import { CredentialsBox } from "@/components/center/center-client";
 import { ActionForm, FieldError, SubmitButton, useActionResult } from "@/components/forms/action-form";
 import { buttonClasses } from "@/components/ui/button";
@@ -238,6 +245,25 @@ export function AddOwnerForm({ centerId }: { centerId: string }) {
       </div>
       <SubmitButton size="sm" variant="outline">
         Kurum sahibi ekle
+      </SubmitButton>
+    </ActionForm>
+  );
+}
+
+export function DeleteCenterForm({ centerId, name, students }: { centerId: string; name: string; students: number }) {
+  return (
+    <ActionForm action={deleteCenterAction} className="space-y-3">
+      <input type="hidden" name="centerId" value={centerId} />
+      <p className="text-sm text-slate-600">
+        Kurum; {students} öğrenci kaydı, veli kayıtları, yoklama, deneme, ödeme ve mesaj geçmişiyle birlikte kalıcı olarak silinir, geri alınamaz. Yalnızca bu kurum için açılmış
+        personel hesapları da silinir; veli ve öğrencilerin sitedeki kendi hesapları kalır.
+      </p>
+      <Field label={`Onaylamak için kurum adını yazın: ${name}`}>
+        <Input name="confirmName" required autoComplete="off" />
+        <FieldError name="confirmName" />
+      </Field>
+      <SubmitButton size="sm" variant="danger" confirmMessage="Kurum kalıcı olarak silinsin mi? Bu işlem geri alınamaz." pendingText="Siliniyor…">
+        Kurumu kalıcı olarak sil
       </SubmitButton>
     </ActionForm>
   );
