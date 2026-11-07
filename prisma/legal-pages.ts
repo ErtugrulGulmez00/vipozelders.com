@@ -155,9 +155,10 @@ Kişisel verileriniz yalnızca hizmetin gerektirdiği ölçüde aşağıdaki tar
 - LiveKit: online derslerde görüntü ve sesin iletilmesi
 - Google (Firebase Cloud Messaging, Google Drive): mobil uygulama bildirimleri ve şifrelenmiş yedekler
 - Meta Platforms (WhatsApp) ve WhatsApp iş ortağımız LetsBot: yalnızca WhatsApp bildirimi alıyorsanız telefon numaranız ve mesaj içeriği
+- Telegram: site yöneticilerine giden iç bildirimler (ad ve işlem özeti)
 - Yetkili kamu kurumları: yasal zorunluluk hâlinde
 
-LiveKit, Google ve Meta sunucuları yurt dışında bulunabilir. Yurt dışına aktarım KVKK m.9 kapsamındaki şartlara uygun yapılır.
+LiveKit, Google, Meta ve Telegram sunucuları yurt dışında bulunabilir. Yurt dışına aktarım KVKK m.9 kapsamındaki şartlara uygun yapılır.
 
 ## WhatsApp bildirimleri
 WhatsApp bildirimleri isteğe bağlıdır ve yalnızca izninizle gönderilir. İzninizi kayıt sırasında ya da Hesap ayarlarından verebilir, aynı yerden geri alabilir ya da WhatsApp’tan DUR yazarak bildirimleri durdurabilirsiniz. Bu durum e-posta ve site bildirimlerini etkilemez. Kurum öğrencilerinin velilerine giden WhatsApp bildirimleri için izni kurum alır.

@@ -18,6 +18,7 @@ import { processPendingRefunds } from "./payments/service";
 import { sendPayoutDayReminder } from "./payout-reminder";
 import { pruneStats } from "./stats";
 import { sendPendingPushes } from "./push";
+import { sendPendingTelegrams } from "./telegram";
 import { sendPendingWhatsApps } from "./whatsapp";
 import { expireUnansweredQuestions, releaseExpiredClaims, releasePoolEarnings } from "./question-pool";
 import { processSubscriptions } from "./subscriptions";
@@ -71,6 +72,8 @@ const TASKS = {
   emails: () => sendPendingEmails(),
   pushes: sendPendingPushes,
   whatsapps: sendPendingWhatsApps,
+  // Yönetici bildirimlerinin Telegram kopyası
+  telegrams: sendPendingTelegrams,
 } satisfies Record<string, (now: Date) => Promise<number>>;
 
 export type SchedulerSummary = Partial<Record<keyof typeof TASKS, number | string>>;

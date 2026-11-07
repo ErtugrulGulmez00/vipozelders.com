@@ -178,6 +178,7 @@ Caddy SSL sertifikasını kendisi alır ve yeniler.
 - **Mobil uygulama push bildirimleri (uygulama yayına girince):** Firebase konsolu → Proje ayarları → Hizmet hesapları → “Yeni özel anahtar oluştur” ile JSON dosyasını indirin, sunucuya kopyalayın (ör. `/home/vipozelders/firebase.json`, yalnızca uygulama kullanıcısı okuyabilsin: `chmod 600`) ve `.env` içine `FCM_SERVICE_ACCOUNT_FILE=/home/vipozelders/firebase.json` yazıp servisi yeniden başlatın.
 - **Yönetim → Site ayarları:** site adı, iletişim bilgileri, ticari unvan, komisyon ve kurallar; “Kurum paneli abonelikleri” bölümünde plan fiyatları, öğrenci sınırları, deneme süresi ve havale/EFT bilgileri
 - **Kurum paneli veli mesajları:** SMS yok; WhatsApp (LetsBot) ile gider. Kurum başına aylık sınır: Yönetim → Site ayarları → “Kurum başına aylık WhatsApp sınırı”. Gönderim sonuçları her kurumun “Mesaj geçmişi” ekranında görünür.
+- **Yönetici bildirimleri Telegram'a:** `.env`'e `TELEGRAM_BOT_TOKEN` (BotFather) ve `TELEGRAM_CHAT_ID` (bota /start yazan kişinin kimliği; birden fazlaysa virgülle) girip servisi yeniden başlatın. Yönetici hesaplarına düşen her bildirim en geç bir dakikada gider; deneme: Yönetim → Bildirimler → Telegram.
 - **Yönetim → Sayfalar:** yasal metinleri avukatınıza kontrol ettirip “TASLAK” satırlarını silin
 
 ### 7. Yedekleme

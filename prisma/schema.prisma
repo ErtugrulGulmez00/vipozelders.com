@@ -853,6 +853,8 @@ model Notification {
   readAt    DateTime?
   // Mobil cihazlara push gönderildiği an (gönderim kuyruğu).
   pushedAt  DateTime?
+  // Yönetici bildiriminin Telegram'a gönderildiği an (TELEGRAM_BOT_TOKEN).
+  telegramSentAt DateTime?
   createdAt DateTime  @default(now())
 
   @@index([userId, readAt])
