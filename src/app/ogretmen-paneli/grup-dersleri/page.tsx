@@ -37,7 +37,7 @@ export default async function TeacherGroupsPage() {
       {!settings.groupsEnabled ? <Alert tone="warning" className="mb-6">Grup dersi şu an kapalı.</Alert> : null}
 
       <Card className="mb-6">
-        <CardHeader title="Derslerim" />
+        <CardHeader title="Derslerim" description="Kayıtları görmek, öğrenci davet etmek ya da dersi iptal etmek için derse tıklayın." />
         {courses.length === 0 ? (
           <EmptyState icon={<Users className="size-8" />} title="Henüz grup dersiniz yok" description="Aşağıdaki formla ilk programınızı oluşturun." />
         ) : (

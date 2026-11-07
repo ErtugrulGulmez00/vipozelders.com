@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { IntroToggle } from "@/components/teacher/intro-toggle";
 import { OfferingsEditor } from "@/components/teacher/offerings-editor";
-import { Alert, Card, CardBody, CardHeader, PageHeader } from "@/components/ui/primitives";
+import { buttonClasses } from "@/components/ui/button";
+import { Alert, Badge, Card, CardBody, CardHeader, PageHeader } from "@/components/ui/primitives";
+import { GROUP_COURSE_STATUS } from "@/lib/labels";
 import { formatBps } from "@/lib/money";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
@@ -16,11 +19,12 @@ export const metadata: Metadata = { title: "Dersler ve fiyatlar" };
 
 export default async function OfferingsPage() {
   const user = await requireRole("TEACHER");
-  const [data, catalog, profile, settings] = await Promise.all([
+  const [data, catalog, profile, settings, groups] = await Promise.all([
     loadTeacherEditorData(user.id),
     getCatalog(),
     db.teacherProfile.findUniqueOrThrow({ where: { userId: user.id }, select: { offersIntro: true, packageDiscounts: true } }),
     loadSettings(),
+    db.groupCourse.findMany({ where: { teacherId: user.id, status: { in: ["OPEN", "CONFIRMED"] } }, orderBy: { enrollDeadline: "asc" }, select: { id: true, title: true, status: true } }),
   ]);
   return (
     <>
@@ -39,6 +43,31 @@ export default async function OfferingsPage() {
           <OfferingsEditor teacherId={user.id} catalog={catalog} offerings={data.offerings} commissionBps={data.commissionBps} />
         </CardBody>
       </Card>
+      {settings.groupsEnabled || groups.length ? (
+        <Card className="mt-6">
+          <CardHeader
+            title="Grup dersleri"
+            description="Grup dersleri ayrı bir sayfada yönetilir: program açın, öğrenci davet edin, kayıtları görün ya da dersi iptal edin."
+            action={
+              <Link href="/ogretmen-paneli/grup-dersleri" className={buttonClasses("outline", "sm")}>
+                Grup derslerim
+              </Link>
+            }
+          />
+          {groups.length ? (
+            <ul className="divide-y divide-slate-100">
+              {groups.map((g) => (
+                <li key={g.id}>
+                  <Link href={`/ogretmen-paneli/grup-dersleri/${g.id}`} className="flex items-center justify-between gap-3 px-5 py-3 text-sm hover:bg-slate-50">
+                    <span className="min-w-0 truncate font-medium text-slate-900">{g.title}</span>
+                    <Badge tone={GROUP_COURSE_STATUS[g.status]?.tone}>{GROUP_COURSE_STATUS[g.status]?.label}</Badge>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </Card>
+      ) : null}
       {settings.packagesEnabled ? (
         <Card className="mt-6">
           <CardHeader title="Paket indirimleri" description="Veliler birden fazla dersi peşin ve indirimli alabilir; dersleri sizin takviminizden seçer. İndirim sizin ücretinizden yapılır; düzenli öğrenci kazanmanın en kolay yolu." />

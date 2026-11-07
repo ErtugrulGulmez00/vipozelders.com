@@ -1,7 +1,8 @@
-import { ArrowLeft, ExternalLink, FileText } from "lucide-react";
+import { ArrowLeft, ExternalLink, FileText, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CancelCourseForm } from "@/components/groups/forms";
 import { BookingRow } from "@/components/panel/booking-ui";
 import { ExceptionsEditor, WeeklyAvailabilityEditor } from "@/components/teacher/availability-editor";
 import { OfferingsEditor } from "@/components/teacher/offerings-editor";
@@ -9,7 +10,8 @@ import { ProfileForm } from "@/components/teacher/profile-form";
 import { Alert, Badge, Card, CardBody, CardHeader, DescriptionList, EmptyState, StatCard } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
 import { formatCompact, formatDate, toLocalDateString } from "@/lib/dates";
-import { DOCUMENT_STATUS, DOCUMENT_TYPE_LABEL, TEACHER_STATUS, VERIFICATION_STATUS } from "@/lib/labels";
+import { scheduleSummary } from "@/lib/groups";
+import { DOCUMENT_STATUS, DOCUMENT_TYPE_LABEL, GROUP_COURSE_STATUS, TEACHER_STATUS, VERIFICATION_STATUS } from "@/lib/labels";
 import { formatMoney } from "@/lib/money";
 import { requireRole } from "@/server/auth/current-user";
 import { decryptText, maskIdentityNumber } from "@/server/crypto";
@@ -28,6 +30,7 @@ const SECTIONS = [
   { key: "genel", label: "Genel" },
   { key: "profil", label: "Profil" },
   { key: "dersler", label: "Dersler ve fiyatlar" },
+  { key: "grup", label: "Grup dersleri" },
   { key: "takvim", label: "Takvim" },
   { key: "finans", label: "Finans" },
   { key: "belgeler", label: "Belgeler" },
@@ -40,10 +43,11 @@ export default async function AdminTeacherPage({ params, searchParams }: PagePro
   const user = await db.user.findUnique({ where: { id }, include: { teacherProfile: true } });
   if (!user?.teacherProfile) notFound();
   const teacher = user.teacherProfile;
-  const [checklist, settings, pendingDocuments] = await Promise.all([
+  const [checklist, settings, pendingDocuments, activeGroups] = await Promise.all([
     profileChecklist(id),
     loadSettings(),
     db.teacherDocument.count({ where: { teacherId: id, status: "PENDING" } }),
+    db.groupCourse.count({ where: { teacherId: id, status: { in: ["OPEN", "CONFIRMED"] } } }),
   ]);
 
   return (
@@ -68,12 +72,14 @@ export default async function AdminTeacherPage({ params, searchParams }: PagePro
           <Link key={s.key} href={`/yonetim/ogretmenler/${id}?bolum=${s.key}`} className={cn("shrink-0 rounded-lg px-4 py-1.5", section === s.key ? "bg-white text-brand-700 shadow-xs" : "text-slate-600")}>
             {s.label}
             {s.key === "belgeler" && pendingDocuments ? <span className="ml-1.5 rounded-full bg-amber-400 px-1.5 text-xs text-amber-950">{pendingDocuments}</span> : null}
+            {s.key === "grup" && activeGroups ? <span className="ml-1.5 rounded-full bg-sky-100 px-1.5 text-xs text-sky-800">{activeGroups}</span> : null}
           </Link>
         ))}
       </nav>
 
       {section === "profil" ? <ProfileSection teacherId={id} /> : null}
       {section === "dersler" ? <OfferingsSection teacherId={id} /> : null}
+      {section === "grup" ? <GroupsSection teacherId={id} /> : null}
       {section === "takvim" ? <AvailabilitySection teacherId={id} /> : null}
       {section === "finans" ? <FinanceSection teacherId={id} /> : null}
       {section === "belgeler" ? <DocumentsSection teacherId={id} /> : null}
@@ -149,6 +155,60 @@ async function ProfileSection({ teacherId }: { teacherId: string }) {
         <ProfileForm values={data.profile} cities={cities.map((c) => ({ id: c.id, name: c.name }))} initialDistricts={data.districts} isAdmin />
       </CardBody>
     </Card>
+  );
+}
+
+/** Öğretmenin bütün grup dersleri; yönetici süren dersi buradan da iptal edebilir (iadeler otomatik). */
+async function GroupsSection({ teacherId }: { teacherId: string }) {
+  const courses = await db.groupCourse.findMany({
+    where: { teacherId },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+    include: {
+      sessions: { orderBy: { index: "asc" }, select: { startAt: true, endAt: true, status: true } },
+      enrollments: { where: { status: "PAID" }, select: { id: true, learnerName: true, student: { select: { firstName: true, lastName: true } } } },
+    },
+  });
+  if (!courses.length) {
+    return (
+      <Card>
+        <EmptyState icon={<Users className="size-8" />} title="Bu öğretmenin grup dersi yok" description="Öğretmen, panelindeki “Grup dersleri” sayfasından program açabilir." />
+      </Card>
+    );
+  }
+  return (
+    <div className="space-y-4">
+      {courses.map((c) => {
+        const status = GROUP_COURSE_STATUS[c.status];
+        const noShows = c.sessions.filter((s) => s.status === "TEACHER_NO_SHOW").length;
+        return (
+          <Card key={c.id}>
+            <CardHeader
+              title={`${c.code} · ${c.title}`}
+              description={`${c.levelName} ${c.subjectName}${c.isPublic ? "" : " · yalnızca davetle (listede görünmez)"}`}
+              action={<Badge tone={status?.tone}>{status?.label ?? c.status}</Badge>}
+            />
+            <CardBody className="space-y-3 text-sm text-slate-600">
+              <p>{scheduleSummary(c.sessions)}</p>
+              <p>
+                {formatMoney(c.price)} / kişi · {c.enrollments.length}/{c.capacity} ödemeli kayıt (en az {c.minParticipants}) · son kayıt {formatCompact(c.enrollDeadline)}
+                {noShows ? <span className="font-semibold text-rose-600"> · öğretmenin katılmadığı oturum: {noShows}</span> : null}
+              </p>
+              {c.enrollments.length ? <p className="text-xs text-slate-500">Kayıtlı: {c.enrollments.map((e) => e.learnerName ?? `${e.student.firstName} ${e.student.lastName.charAt(0)}.`).join(", ")}</p> : null}
+              {c.cancelReason ? <Alert tone="warning">İptal gerekçesi: {c.cancelReason}</Alert> : null}
+              <Link href={`/grup-dersleri/${c.code}`} target="_blank" className="inline-flex items-center gap-1 font-medium text-brand-700 hover:underline">
+                Ders sayfası <ExternalLink className="size-3.5" aria-hidden />
+              </Link>
+              {c.status === "OPEN" || c.status === "CONFIRMED" ? (
+                <div className="border-t border-slate-100 pt-3">
+                  <CancelCourseForm courseId={c.id} admin />
+                </div>
+              ) : null}
+            </CardBody>
+          </Card>
+        );
+      })}
+    </div>
   );
 }
 
