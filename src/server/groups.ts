@@ -207,7 +207,10 @@ export async function enrollInGroup(studentId: string, courseId: string, learner
   return db.$transaction(async (tx) => {
     await lockCourse(tx, courseId);
     const course = await tx.groupCourse.findUnique({ where: { id: courseId }, include: { teacher: { include: { user: { select: { status: true } } } } } });
-    if (!course || course.status !== "OPEN" || course.enrollDeadline <= now || course.teacher.user.status !== "ACTIVE") throw new GroupError("Bu dersin kayıtları kapandı.");
+    // Yayından kalkmış öğretmenin dersi satılmaz (sayfası da açılmaz; doğrudan istek de reddedilir)
+    if (!course || course.status !== "OPEN" || course.enrollDeadline <= now || course.teacher.user.status !== "ACTIVE" || course.teacher.status !== "PUBLISHED") {
+      throw new GroupError("Bu dersin kayıtları kapandı.");
+    }
     if (course.teacherId === studentId) throw new GroupError("Kendi dersinize kayıt olamazsınız.");
     if (getPaymentProvider().requiresSubMerchant && !course.teacher.subMerchantKey) throw new GroupError("Öğretmenin ödeme hesabı henüz tamamlanmadığı için şu an kayıt alınamıyor.");
     const existing = await tx.groupEnrollment.findUnique({ where: { courseId_studentId: { courseId, studentId } } });
@@ -229,7 +232,9 @@ export async function enrollInGroup(studentId: string, courseId: string, learner
       discountAmount: discount.amount,
       couponCode: discount.couponCode,
       learnerName: learnerName?.trim().slice(0, 80) || null,
-      holdExpiresAt: new Date(now.getTime() + settings.paymentHoldMinutes * 60_000),
+      // Süren yer ayırma uzatılmaz: tekrar tekrar "kayıt ol" diyerek ödemeden kontenjan tutulamaz
+      holdExpiresAt:
+        existing?.status === "PENDING_PAYMENT" && existing.holdExpiresAt && existing.holdExpiresAt > now ? existing.holdExpiresAt : new Date(now.getTime() + settings.paymentHoldMinutes * 60_000),
       cancelledAt: null,
     };
     if (existing) return tx.groupEnrollment.update({ where: { id: existing.id }, data });
@@ -274,9 +279,12 @@ export async function startGroupCheckout(enrollmentId: string, studentId: string
   }
 }
 
-async function createRefund(tx: DbTransaction, enrollmentId: string, amount: number, reason: string) {
+async function createRefund(tx: DbTransaction, enrollmentId: string, amount: number, reason: string, paymentId?: string) {
   if (amount <= 0) return null;
-  const payment = await tx.payment.findFirst({ where: { groupEnrollmentId: enrollmentId, status: { in: ["SUCCEEDED", "PARTIALLY_REFUNDED"] } }, orderBy: { createdAt: "desc" } });
+  const payment = await tx.payment.findFirst({
+    where: { groupEnrollmentId: enrollmentId, status: { in: ["SUCCEEDED", "PARTIALLY_REFUNDED"] }, ...(paymentId ? { id: paymentId } : {}) },
+    orderBy: { createdAt: "desc" },
+  });
   if (!payment) throw new GroupError("Ödeme kaydı bulunamadı.");
   return (await tx.refund.create({ data: { paymentId: payment.id, amount, reason: reason.slice(0, 300) } })).id;
 }
@@ -305,14 +313,22 @@ export async function completeGroupCheckout(
       data: { status: "SUCCEEDED", providerPaymentId: result.providerPaymentId, providerItemId: result.providerItemId, raw },
     });
     if (updated.count === 0) return "already" as const;
-    if (result.paidAmount !== enrollment.price) throw new GroupError("Ödenen tutar ders ücretiyle uyuşmuyor.");
+    // Tutar, bu ödeme açılırken kaydedilen tutarla karşılaştırılır (kayıt sonradan başka indirimle yenilenmiş olabilir)
+    const charged = (await tx.payment.findUniqueOrThrow({ where: { id: payment.id }, select: { amount: true } })).amount;
+    if (result.paidAmount !== charged) throw new GroupError("Ödenen tutar ödeme kaydıyla uyuşmuyor.");
     const course = await tx.groupCourse.findUniqueOrThrow({ where: { id: enrollment.courseId } });
+    if (enrollment.status === "PAID" || charged !== enrollment.price) {
+      // Aynı kayıt için ikinci ödeme ya da bu ödemeden sonra yenilenmiş kayıt: kesilen tutar bu ödemeden iade edilir, kayda dokunulmaz
+      refundId = await createRefund(tx, enrollment.id, charged, "Mükerrer grup dersi ödemesi", payment.id);
+      await notify({ userId: enrollment.studentId, type: "group.refunded", title: "Mükerrer ödemeniz iade ediliyor", body: `${course.title}: aynı kayıt için ikinci kez ödeme alındı. ${formatMoney(charged)} kartınıza iade ediliyor.`, link: `/grup-dersleri/${course.code}` }, tx);
+      return "refunded" as const;
+    }
     const full = (await paidCount(course.id, tx)) >= course.capacity;
     const closed = course.status !== "OPEN" || course.enrollDeadline <= now;
-    if (enrollment.status === "PAID" || full || closed) {
+    if (full || closed) {
       // Ödeme sırasında yer kalmadı ya da kayıt kapandı: para kesildiği için hemen iade edilir.
-      if (enrollment.status !== "PAID") await tx.groupEnrollment.update({ where: { id: enrollment.id }, data: { status: "CANCELLED", cancelledAt: now, holdExpiresAt: null, refundedAmount: { increment: enrollment.price }, paidAt: now } });
-      refundId = await createRefund(tx, enrollment.id, enrollment.price, full ? "Grup dersi kontenjanı doldu" : "Grup dersi kayıtları kapandı");
+      await tx.groupEnrollment.update({ where: { id: enrollment.id }, data: { status: "CANCELLED", cancelledAt: now, holdExpiresAt: null, refundedAmount: { increment: enrollment.price }, paidAt: now } });
+      refundId = await createRefund(tx, enrollment.id, enrollment.price, full ? "Grup dersi kontenjanı doldu" : "Grup dersi kayıtları kapandı", payment.id);
       await notify({ userId: enrollment.studentId, type: "group.refunded", title: "Grup dersi kaydınız tamamlanamadı", body: `${course.title}: ${full ? "kontenjan siz ödeme yaparken doldu" : "kayıtlar kapandı"}. ${formatMoney(enrollment.price)} kartınıza iade ediliyor.`, link: `/grup-dersleri/${course.code}` }, tx);
       return "refunded" as const;
     }
@@ -380,6 +396,10 @@ export async function cancelGroupCourse(courseId: string, reason: string, actor:
     if (!course || (actor?.role === "TEACHER" && course.teacherId !== actor.id)) throw new GroupError("Ders bulunamadı.");
     if (course.status === "CANCELLED" || course.status === "COMPLETED") throw new GroupError("Bu ders zaten kapanmış.");
     if (actor?.role === "TEACHER" && course.sessions[0] && course.sessions[0].startAt <= now) throw new GroupError("Ders başladıktan sonra iptal için destek ekibine yazın.");
+    // Ödeme yapmış öğrencisi olan dersi öğretmen iptal ederse birebir dersteki gibi iptal sayısına yazılır (sıralamayı etkiler)
+    if (actor?.role === "TEACHER" && course.enrollments.some((e) => e.status === "PAID")) {
+      await tx.teacherProfile.update({ where: { userId: course.teacherId }, data: { cancellationCount: { increment: 1 } } });
+    }
     for (const enrollment of course.enrollments) {
       if (enrollment.status === "PAID") {
         const id = await refundRemaining(tx, enrollment, course.sessions, `grup dersi iptal edildi: ${reason}`, now);
@@ -395,6 +415,24 @@ export async function cancelGroupCourse(courseId: string, reason: string, actor:
     if (actor?.role !== "TEACHER") await notify({ userId: course.teacherId, type: "group.cancelled", title: "Grup dersiniz iptal edildi", body: `${course.title}: ${reason}.`, link: `/ogretmen-paneli/grup-dersleri/${courseId}` }, tx);
   });
   for (const id of refundIds) await processRefund(id);
+}
+
+/** Öğretmenin birden fazla dersini aynı gerekçeyle iptal etmesi; iptal edilemeyenler gerekçesiyle döner. */
+export async function cancelGroupCourses(courseIds: string[], reason: string, actor: { id: string; role: "TEACHER" | "ADMIN" }, now = new Date()) {
+  const cancelled: string[] = [];
+  const failed: { title: string; error: string }[] = [];
+  for (const id of [...new Set(courseIds)].slice(0, 50)) {
+    try {
+      await cancelGroupCourse(id, reason, actor, now);
+      cancelled.push(id);
+    } catch (error) {
+      if (!(error instanceof GroupError)) throw error;
+      const course = await db.groupCourse.findUnique({ where: { id }, select: { title: true, teacherId: true } });
+      // Başka öğretmenin dersinin adı gösterilmez
+      failed.push({ title: course && (actor.role === "ADMIN" || course.teacherId === actor.id) ? course.title : "Ders", error: error.message });
+    }
+  }
+  return { cancelled, failed };
 }
 
 // ---------------------------------------------------------------------------
@@ -501,7 +539,15 @@ async function finishSession(session: GroupSession & { course: GroupCourse & { s
 /** Oturum payı serbest: her ödemeli kayıt için o oturumun öğretmen payı bekleyenden ödenebilir bakiyeye geçer. */
 async function releaseSession(session: GroupSession & { course: GroupCourse & { sessions: { index: number }[] } }, now: Date) {
   const count = session.course.sessions.length;
-  const enrollments = await db.groupEnrollment.findMany({ where: { courseId: session.courseId, status: "PAID" }, include: { payments: { where: { status: { in: ["SUCCEEDED", "PARTIALLY_REFUNDED"] } }, take: 1 } } });
+  // Oturum yapıldıktan sonra iptal edilen kayıt (ör. yönetici dersi yarıda kesti) bu oturumun payını hak etmiştir;
+  // tamamı iade edilen kayıt (ödeme sırasında kontenjan dolması gibi) hak etmez.
+  const doneAt = session.completedAt ?? session.endAt;
+  const enrollments = (
+    await db.groupEnrollment.findMany({
+      where: { courseId: session.courseId, paidAt: { not: null }, status: { in: ["PAID", "CANCELLED"] } },
+      include: { payments: { where: { status: { in: ["SUCCEEDED", "PARTIALLY_REFUNDED"] } }, take: 1 } },
+    })
+  ).filter((e) => e.status === "PAID" || (e.refundedAmount < e.price && e.cancelledAt !== null && e.cancelledAt > doneAt));
   const pendingRefunds = await db.refund.count({ where: { status: "PENDING", payment: { groupEnrollment: { courseId: session.courseId } } } });
   if (pendingRefunds > 0) return false;
   const provider = getPaymentProvider();

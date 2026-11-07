@@ -5,6 +5,8 @@ import { db } from "@/server/db";
 import {
   buildSchedule,
   cancelEnrollment,
+  cancelGroupCourse,
+  cancelGroupCourses,
   createGroupCourse,
   enrollInGroup,
   GroupError,
@@ -155,6 +157,76 @@ describe("kayıt bitişi", () => {
     const enrollments = await db.groupEnrollment.findMany({ where: { courseId: f.course.id } });
     expect(enrollments.every((e) => e.refundedAmount === sessionShare(100000, 4, 0))).toBe(true);
     expect((await teacherBalances(f.teacher.id)).pending).toBe((80000 - sessionShare(80000, 4, 0)) * 4);
+  });
+});
+
+describe("ödeme ve hakediş güvenliği", () => {
+  it("kayıt ödeme sırasında yenilendiyse (ör. başka indirim) eski ödeme o ödemeden iade edilir; para askıda kalmaz", async () => {
+    const f = await courseFixture();
+    const [s] = await students(f, 1);
+    const enrollment = await enrollInGroup(s.id, f.course.id, "Ali", NOW);
+    await startGroupCheckout(enrollment.id, s.id, "127.0.0.1");
+    const first = await db.payment.findFirstOrThrow({ where: { groupEnrollmentId: enrollment.id } });
+    // Öğrenci başka sekmede indirimle yeniden kayıt başlattı: kaydın tutarı değişti
+    await db.groupEnrollment.update({ where: { id: enrollment.id }, data: { price: 90000 } });
+    await db.payment.update({ where: { id: first.id }, data: { raw: { mockOutcome: "success" } } });
+    const result = await completeCheckout(first.providerToken!, NOW);
+    expect(result.outcome).toBe("refunded");
+    expect(await db.refund.findFirstOrThrow({ where: { paymentId: first.id } })).toMatchObject({ amount: 100000 });
+    expect((await db.groupEnrollment.findUniqueOrThrow({ where: { id: enrollment.id } })).status).toBe("PENDING_PAYMENT");
+  });
+
+  it("yönetici dersi yarıda keserse yapılan oturumun öğretmen payı serbest kalır, askıda kalmaz", async () => {
+    const f = await courseFixture();
+    const list = await students(f, 4);
+    for (const s of list) await payFor(s.id, f.course.id);
+    await processGroups(hoursAfter(f.input.enrollDeadline, 1));
+    const first = await db.groupSession.findFirstOrThrow({ where: { courseId: f.course.id, index: 0 } });
+    await processGroups(hoursAfter(first.endAt, 1));
+    await cancelGroupCourse(f.course.id, "Öğretmen ayrıldı", null, hoursAfter(first.endAt, 2));
+    const done = await db.groupSession.findUniqueOrThrow({ where: { id: first.id } });
+    await processGroups(new Date(done.earningsReleaseAt!.getTime() + 60_000));
+    expect(await teacherBalances(f.teacher.id)).toMatchObject({ available: sessionShare(80000, 4, 0) * 4, pending: 0 });
+  });
+
+  it("yayından kaldırılan öğretmenin dersine kayıt alınmaz", async () => {
+    const f = await courseFixture();
+    const [s] = await students(f, 1);
+    await db.teacherProfile.update({ where: { userId: f.teacher.id }, data: { status: "SUSPENDED" } });
+    await expect(enrollInGroup(s.id, f.course.id, null, NOW)).rejects.toThrow(/kapandı/);
+  });
+
+  it("ödeme bekleyen kayıt tekrar başlatılınca yer ayırma süresi uzamaz", async () => {
+    const f = await courseFixture();
+    const [s] = await students(f, 1);
+    const firstHold = (await enrollInGroup(s.id, f.course.id, null, NOW)).holdExpiresAt!;
+    const again = await enrollInGroup(s.id, f.course.id, null, new Date(NOW.getTime() + 5 * 60_000));
+    expect(again.holdExpiresAt!.getTime()).toBe(firstHold.getTime());
+  });
+});
+
+describe("öğretmenin iptali", () => {
+  it("öğretmen birden fazla programı birlikte iptal eder; ödemeli öğrencisi olan iptal sayısına yazılır", async () => {
+    const f = await courseFixture();
+    const second = await createGroupCourse(f.teacher.id, { ...f.input, title: "LGS Matematik Kampı 2", schedule: { ...f.input.schedule, startMinute: 21 * 60 } }, NOW);
+    const [s] = await students(f, 1);
+    await payFor(s.id, f.course.id);
+    const before = (await db.teacherProfile.findUniqueOrThrow({ where: { userId: f.teacher.id } })).cancellationCount;
+    const { cancelled, failed } = await cancelGroupCourses([f.course.id, second.id], "Program değişikliği", { id: f.teacher.id, role: "TEACHER" }, hoursAfter(NOW, DAY));
+    expect(cancelled).toHaveLength(2);
+    expect(failed).toHaveLength(0);
+    expect(await db.groupCourse.count({ where: { id: { in: [f.course.id, second.id] }, status: "CANCELLED" } })).toBe(2);
+    expect((await db.teacherProfile.findUniqueOrThrow({ where: { userId: f.teacher.id } })).cancellationCount).toBe(before + 1);
+    expect(await db.groupEnrollment.findFirstOrThrow({ where: { courseId: f.course.id, studentId: s.id } })).toMatchObject({ status: "CANCELLED", refundedAmount: 100000 });
+  });
+
+  it("başka öğretmenin dersi toplu iptalle kapatılamaz", async () => {
+    const f = await courseFixture();
+    const other = await courseFixture();
+    const { cancelled, failed } = await cancelGroupCourses([other.course.id], "Deneme iptal", { id: f.teacher.id, role: "TEACHER" }, hoursAfter(NOW, DAY));
+    expect(cancelled).toHaveLength(0);
+    expect(failed).toEqual([{ title: "Ders", error: "Ders bulunamadı." }]);
+    expect((await db.groupCourse.findUniqueOrThrow({ where: { id: other.course.id } })).status).toBe("OPEN");
   });
 });
 

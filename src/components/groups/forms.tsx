@@ -3,7 +3,15 @@
 import { Lock } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { adminCancelGroupCourseAction, cancelEnrollmentAction, cancelGroupCourseAction, createGroupCourseAction, enrollInGroupAction, inviteToGroupAction } from "@/actions/groups";
+import {
+  adminCancelGroupCourseAction,
+  cancelEnrollmentAction,
+  cancelGroupCourseAction,
+  cancelGroupCoursesAction,
+  createGroupCourseAction,
+  enrollInGroupAction,
+  inviteToGroupAction,
+} from "@/actions/groups";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
 import { CardLogos } from "@/components/site/card-logos";
 import { CouponField } from "@/components/forms/coupon-field";
@@ -138,9 +146,33 @@ export function CancelCourseForm({ courseId, admin = false }: { courseId: string
         <Input name="reason" required placeholder="Örn: Sağlık sorunu nedeniyle" />
         <FieldError name="reason" />
       </Field>
-      <SubmitButton variant="danger" pendingText="İptal ediliyor…" confirmMessage="Ders iptal edilsin ve ödeme yapanlara iade yapılsın mı?">
-        Dersi iptal et
+      <SubmitButton variant="danger" pendingText="İptal ediliyor…" confirmMessage="Programın kalan bütün oturumları iptal edilsin ve ödeme yapanlara iade yapılsın mı?">
+        Tüm programı iptal et
       </SubmitButton>
+    </ActionForm>
+  );
+}
+
+/** Öğretmen: henüz başlamamış birden fazla programı tek gerekçeyle iptal eder. */
+export function BulkCancelForm({ courses }: { courses: { id: string; title: string; detail: string }[] }) {
+  return (
+    <ActionForm action={cancelGroupCoursesAction} className="space-y-3">
+      <ul className="space-y-2">
+        {courses.map((c) => (
+          <li key={c.id}>
+            <Checkbox name="courseId" value={c.id} label={<span><span className="font-medium text-slate-900">{c.title}</span><span className="block text-xs text-slate-500">{c.detail}</span></span>} />
+          </li>
+        ))}
+      </ul>
+      <div className="flex flex-wrap items-end gap-2">
+        <Field label="İptal gerekçesi (öğrencilere gösterilir)" className="min-w-56 flex-1">
+          <Input name="reason" required placeholder="Örn: Program değişikliği nedeniyle" />
+          <FieldError name="reason" />
+        </Field>
+        <SubmitButton variant="danger" pendingText="İptal ediliyor…" confirmMessage="İşaretlediğiniz programların bütün oturumları iptal edilsin ve ödeme yapanlara iade yapılsın mı?">
+          Seçilenleri iptal et
+        </SubmitButton>
+      </div>
     </ActionForm>
   );
 }

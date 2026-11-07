@@ -6,7 +6,7 @@ import { failure, success, type ActionState } from "@/lib/action-state";
 import { isDateString, timeToMinutes, zonedDateTime } from "@/lib/dates";
 import { actionUser } from "@/server/auth/current-user";
 import { requestMeta } from "@/server/auth/session";
-import { cancelEnrollment, cancelGroupCourse, createGroupCourse, enrollInGroup, GroupError, inviteToGroup, startGroupCheckout } from "@/server/groups";
+import { cancelEnrollment, cancelGroupCourse, cancelGroupCourses, createGroupCourse, enrollInGroup, GroupError, inviteToGroup, startGroupCheckout } from "@/server/groups";
 
 const text = (formData: FormData, key: string) => String(formData.get(key) ?? "").trim();
 
@@ -75,6 +75,20 @@ export async function cancelGroupCourseAction(_: ActionState, formData: FormData
   const reason = text(formData, "reason");
   if (reason.length < 5) return failure("Öğrencilere gösterilecek kısa bir gerekçe yazın.", { reason: "Gerekçe yazın." });
   return run(() => cancelGroupCourse(text(formData, "courseId"), reason, { id: user.id, role: "TEACHER" }), "Ders iptal edildi; ödeme yapanlara tam iade yapılıyor.");
+}
+
+export async function cancelGroupCoursesAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await actionUser("TEACHER");
+  if (!user) return failure("Oturumunuz kapanmış.");
+  const ids = formData.getAll("courseId").map(String).filter(Boolean);
+  if (!ids.length) return failure("İptal edilecek dersleri işaretleyin.");
+  const reason = text(formData, "reason");
+  if (reason.length < 5) return failure("Öğrencilere gösterilecek kısa bir gerekçe yazın.", { reason: "Gerekçe yazın." });
+  const { cancelled, failed } = await cancelGroupCourses(ids, reason, { id: user.id, role: "TEACHER" });
+  refresh();
+  if (!cancelled.length) return failure(failed.map((f) => `${f.title}: ${f.error}`).join(" "));
+  const note = failed.length ? ` İptal edilemeyen: ${failed.map((f) => `${f.title} (${f.error})`).join(", ")}` : "";
+  return success(`${cancelled.length} ders iptal edildi; ödeme yapanlara tam iade yapılıyor.${note}`);
 }
 
 // Veli / öğrenci

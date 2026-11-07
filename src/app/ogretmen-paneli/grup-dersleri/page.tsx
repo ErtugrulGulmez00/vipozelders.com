@@ -1,7 +1,7 @@
-import { Users } from "lucide-react";
+import { ChevronRight, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CreateCourseForm } from "@/components/groups/forms";
+import { BulkCancelForm, CreateCourseForm } from "@/components/groups/forms";
 import { Alert, Badge, Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/components/ui/primitives";
 import { formatDateTime, toLocalDateString } from "@/lib/dates";
 import { GROUP_COURSE_STATUS } from "@/lib/labels";
@@ -27,6 +27,10 @@ export default async function TeacherGroupsPage() {
     }),
   ]);
   const commission = (settings.groupCommissionBps / 100).toLocaleString("tr-TR");
+  // Öğretmen yalnızca ilk oturumu başlamamış programı iptal edebilir
+  const cancellable = courses
+    .filter((c) => (c.status === "OPEN" || c.status === "CONFIRMED") && c.sessions[0] && c.sessions[0].startAt > now)
+    .map((c) => ({ id: c.id, title: c.title, detail: `${c.sessions.length} oturum · ilk oturum ${formatDateTime(c.sessions[0].startAt)} · ${c._count.enrollments} ödemeli kayıt` }));
 
   return (
     <>
@@ -55,7 +59,10 @@ export default async function TeacherGroupsPage() {
                         {next ? ` · sıradaki: ${formatDateTime(next.startAt)}` : ""}
                       </span>
                     </span>
-                    <Badge tone={status?.tone}>{status?.label ?? c.status}</Badge>
+                    <span className="flex items-center gap-2">
+                      <Badge tone={status?.tone}>{status?.label ?? c.status}</Badge>
+                      <ChevronRight className="size-4 text-slate-400" aria-hidden />
+                    </span>
                   </Link>
                 </li>
               );
@@ -63,6 +70,18 @@ export default async function TeacherGroupsPage() {
           </ul>
         )}
       </Card>
+
+      {cancellable.length >= 2 ? (
+        <Card className="mb-6">
+          <CardHeader
+            title="Birden fazla programı iptal et"
+            description="İşaretlediğiniz programların bütün oturumları iptal olur; ödeme yapan herkese tam iade yapılır. Yalnızca henüz başlamamış programlar listelenir."
+          />
+          <CardBody>
+            <BulkCancelForm courses={cancellable} />
+          </CardBody>
+        </Card>
+      ) : null}
 
       {settings.groupsEnabled ? (
         <Card>

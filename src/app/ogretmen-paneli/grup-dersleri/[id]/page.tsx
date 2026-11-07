@@ -132,7 +132,10 @@ export default async function TeacherGroupPage({ params }: PageProps<"/ogretmen-
 
       {(course.status === "OPEN" || course.status === "CONFIRMED") && !started ? (
         <Card>
-          <CardHeader title="Dersi iptal et" description="İlk oturum başlamadan iptal edebilirsiniz; ödeme yapan herkese tam iade yapılır. Sık iptal profilinizi olumsuz etkiler." />
+          <CardHeader
+            title="Programı iptal et"
+            description={`Bu işlem tek bir oturumu değil, programın ${course.sessions.length} oturumunun tamamını iptal eder. İlk oturum başlamadan iptal edebilirsiniz; ödeme yapan herkese tam iade yapılır. Ödeme yapmış öğrencisi olan programı iptal etmek iptal sayınıza yazılır ve sıralamanızı etkiler.`}
+          />
           <CardBody>
             <CancelCourseForm courseId={course.id} />
           </CardBody>
