@@ -52,6 +52,6 @@ test("bakım modu ziyaretçiyi bekletir, yöneticiyi engellemez", async ({ brows
   await expect(async () => {
     const response = await visitor.goto("/");
     expect(response?.status()).toBe(200);
-    await expect(visitor.getByRole("heading", { name: /Doğru öğretmen/ })).toBeVisible({ timeout: 2000 });
+    await expect(visitor.getByRole("heading", { name: /Etüt merkezinizi/ })).toBeVisible({ timeout: 2000 });
   }).toPass({ timeout: 20_000 });
 });

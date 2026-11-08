@@ -24,6 +24,9 @@ export const settingsSchema = z.object({
   companyAddress: z.string().default(""),
   companyTaxInfo: z.string().default(""),
   announcement: z.string().default(""),
+  // Ana sayfa: boş bırakılan alan görünmez. Yorumlar satır satır: "Yorum | Kişi | Kurum, il"
+  homeFounderOffer: z.string().default(""),
+  homeTestimonials: z.string().default(""),
 
   // Para (baz puan: 1500 = %15)
   commissionRateBps: z.number().int().min(0).max(9000).default(1500),

@@ -5,9 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { applyCenterAction } from "@/actions/center-public";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
-import { CENTER_EDITION_LABEL } from "@/lib/center/labels";
-
-const STUDENT_OPTIONS = ["20’ye kadar", "21-100", "101-200", "200’den fazla"];
+import { CENTER_EDITION_LABEL, CENTER_STUDENT_COUNT_OPTIONS as STUDENT_OPTIONS } from "@/lib/center/labels";
 
 /** Kısa başvuru formu. Paket ve öğrenci sayısı, tıklanan paket/fiyat kartından (?paket=…&ogrenci=…) seçili gelir. */
 export function CenterApplicationForm() {

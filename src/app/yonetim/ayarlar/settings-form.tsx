@@ -73,6 +73,12 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
         <Field label="Duyuru şeridi (boşsa gösterilmez)" className="sm:col-span-2">
           <Input name="announcement" defaultValue={settings.announcement} placeholder="Örn: LGS kampı kayıtları başladı!" />
         </Field>
+        <Field label="Ana sayfa teklif satırı" className="sm:col-span-2" hint="Ana sayfadaki sarı kutu; boşsa görünmez. İki noktadan önceki kısım kalın yazılır.">
+          <Input name="homeFounderOffer" defaultValue={settings.homeFounderOffer} placeholder="Örn: Kurucu kurum teklifi: ilk 10 kuruma ilk yıl %40 indirim." />
+        </Field>
+        <Field label="Ana sayfa kurum yorumları" className="sm:col-span-2" hint="Her satıra bir yorum: Yorum | Kişi | Kurum, il. Boşsa bölüm görünmez. Yalnızca izin aldığınız gerçek yorumları yazın.">
+          <Textarea name="homeTestimonials" rows={3} defaultValue={settings.homeTestimonials} placeholder="Yoklama artık 2 dakika sürüyor. | Ayşe Yılmaz | Örnek Etüt, Bitlis" />
+        </Field>
       </Section>
 
       <Section title="Komisyon ve randevu kuralları">

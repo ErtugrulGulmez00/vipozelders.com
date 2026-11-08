@@ -53,14 +53,14 @@ test.afterAll(async () => {
 test("kurum başvurusu → kurum paneli → yoklama, deneme, makbuz → veli portalı", async ({ page }) => {
   // 1) Ziyaretçi ana sayfadan "Kurumlar için" sayfasına gider ve başvurur
   await page.goto("/");
-  await page.getByRole("link", { name: "Kurum panelini inceleyin" }).click();
+  await page.getByRole("link", { name: "Kurum paneli", exact: true }).first().click();
   await expect(page).toHaveURL(/\/kurumlar-icin$/);
   await page.getByLabel("Kurum adı").fill(centerName);
   await page.getByLabel("Yetkili adı soyadı").fill("Kemal Kurucu");
   await page.getByLabel("Cep telefonu").fill("0532 777 88 99");
   await page.getByLabel("E-posta").fill(ownerEmail);
   await page.getByLabel("İlgilendiğiniz paket").selectOption("DERSHANE");
-  await page.getByLabel("Öğrenci sayısı").selectOption("21-100");
+  await page.locator("#c-count").selectOption("21-100");
   await page.getByLabel(/KVKK Aydınlatma Metni/).check();
   await page.getByRole("button", { name: "Başvuruyu gönder" }).click();
   await expect(page.getByText("Başvurunuz alındı!", { exact: false })).toBeVisible();

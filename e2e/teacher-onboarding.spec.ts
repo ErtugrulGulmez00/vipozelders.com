@@ -46,7 +46,7 @@ test.afterAll(async () => {
 
 test("öğretmen başvurusu → hesap açılır → belge yüklenir ve onaylanır", async ({ page }) => {
   // 1) Ziyaretçi başvuru formunu doldurur
-  await page.goto("/");
+  await page.goto("/ozel-ders");
   await page.getByRole("link", { name: "Bize katılın" }).click();
   await expect(page).toHaveURL(/\/ogretmen-ol$/);
   await page.getByLabel("Ad", { exact: true }).fill("E2e");
