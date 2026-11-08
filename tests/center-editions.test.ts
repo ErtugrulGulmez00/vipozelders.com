@@ -1,57 +1,36 @@
 import { describe, expect, it } from "vitest";
-import { dershaneSectionForPath, editionAllows } from "@/lib/center/editions";
-import { editionModules, moduleEnabled } from "@/lib/center/modules";
+import { COACH_DISABLED_MODULES, coachAllows, moduleEnabled, OPTIONAL_MODULES } from "@/lib/center/modules";
 import { buildCenterReport, buildStudentRows, type ReportInput } from "@/lib/center/reports";
 import { bookedMinutes, findRoomConflicts, type RoomSlot } from "@/lib/center/rooms";
-import { centerPlans, planForEdition } from "@/server/center/plans";
+import { centerPlans } from "@/server/center/plans";
 import { settingsSchema } from "@/server/settings";
 
-describe("Kurum paketleri", () => {
-  it("Etüt Merkezi paketinde sınıf programı, yoklama, sınıf defteri, derslik ve rapor kapalı; deneme açık", () => {
-    for (const s of ["program", "yoklama", "sinif-defteri", "derslikler", "raporlar"]) {
-      expect(editionAllows("ETUT", s)).toBe(false);
-      expect(editionAllows("DERSHANE", s)).toBe(true);
-    }
-    for (const s of ["etutler", "odevler", "denemeler", "calisma-salonu", "kocluk", "muhasebe", "ogrenciler"]) expect(editionAllows("ETUT", s)).toBe(true);
+describe("Modüller", () => {
+  it("bütün bölümler açık; yalnızca kurumun kapattığı modül kapanır", () => {
+    expect(moduleEnabled({ disabledModules: [] }, "sinif-defteri")).toBe(true);
+    expect(moduleEnabled({ disabledModules: [] }, "denemeler")).toBe(true);
+    expect(moduleEnabled({ disabledModules: ["odevler"] }, "odevler")).toBe(false);
+    expect(OPTIONAL_MODULES.map((m) => m.key)).toContain("sinif-defteri");
   });
+});
 
-  it("modül hem kurum ayarına hem pakete bakar; ayarlarda yalnızca paketin modülleri listelenir", () => {
-    expect(moduleEnabled({ disabledModules: [], edition: "ETUT" }, "sinif-defteri")).toBe(false);
-    expect(moduleEnabled({ disabledModules: [], edition: "DERSHANE" }, "sinif-defteri")).toBe(true);
-    expect(moduleEnabled({ disabledModules: [], edition: "ETUT" }, "denemeler")).toBe(true);
-    expect(moduleEnabled({ disabledModules: ["odevler"], edition: "DERSHANE" }, "odevler")).toBe(false);
-    expect(editionModules("ETUT").map((m) => m.key)).not.toContain("sinif-defteri");
-    expect(editionModules("ETUT").map((m) => m.key)).toContain("denemeler");
-  });
-
-  it("adresten Dershane bölümü bulunur", () => {
-    expect(dershaneSectionForPath("/kurum/yoklama/al")).toBe("yoklama");
-    expect(dershaneSectionForPath("/kurum/etutler")).toBeNull();
+describe("Pi Koç", () => {
+  it("koç hesabı sınıf ve kurum bölümlerini kullanmaz; takip bölümleri açıktır", () => {
+    for (const section of ["siniflar", "yoklama", "etutler", "derslikler", "personel"]) expect(coachAllows(section)).toBe(false);
+    for (const section of ["ogrenciler", "denemeler", "kaynaklar", "kocluk", "muhasebe", "abonelik"]) expect(coachAllows(section)).toBe(true);
+    expect([...COACH_DISABLED_MODULES].sort()).toEqual(["calisma-salonu", "etutler", "on-kayit", "sinif-defteri"]);
   });
 });
 
 describe("Paket fiyatları", () => {
   const settings = settingsSchema.parse({});
 
-  it("Etüt Merkezi: 20'lik yalnızca aylık; 100'lük yıllık, 20'liği aylık ödemekle aynı fiyata 5 kat kapasite", () => {
-    const plans = centerPlans(settings, "ETUT");
+  it("20'lik yalnızca aylık; 100'lük yıllık, 20'liği aylık ödemekle aynı fiyata 5 kat kapasite", () => {
+    const plans = centerPlans(settings);
     expect(plans.map((p) => p.plan)).toEqual(["STARTER", "PRO", "BUSINESS", "ENTERPRISE"]);
     expect(plans[0]).toMatchObject({ priceTl: 3749, yearlyPriceTl: null });
     expect(plans[1]).toMatchObject({ priceTl: 4999, yearlyPriceTl: 44999, highlight: true, upsell: { ratio: 5 } });
     expect(plans.filter((p) => p.highlight)).toHaveLength(1);
-  });
-
-  it("Dershane 100 öğrenciden başlar; 200'lük yıllık, 100'lüğü aylık ödemekle aynı fiyata 2 kat kapasite", () => {
-    const plans = centerPlans(settings, "DERSHANE");
-    expect(plans.map((p) => p.plan)).toEqual(["PRO", "BUSINESS", "ENTERPRISE"]);
-    expect(plans[0]).toMatchObject({ priceTl: 6499, yearlyPriceTl: 64990, upsell: null });
-    expect(plans[1]).toMatchObject({ priceTl: 8999, yearlyPriceTl: 77990, highlight: true, upsell: { ratio: 2 } });
-  });
-
-  it("Dershane'ye 20 kademesi atanamaz, 100'e çıkar", () => {
-    expect(planForEdition("DERSHANE", "STARTER")).toBe("PRO");
-    expect(planForEdition("ETUT", "STARTER")).toBe("STARTER");
-    expect(planForEdition("DERSHANE", "BUSINESS")).toBe("BUSINESS");
   });
 });
 

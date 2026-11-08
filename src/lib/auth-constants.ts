@@ -6,7 +6,7 @@ export const SESSION_TTL_DAYS = 30;
 
 export const PROTECTED_PREFIXES = ["/yonetim", "/ogretmen-paneli", "/hesabim", "/kurum", "/ders", "/rezervasyon"];
 
-/** CENTER: etüt merkezi / dershane personeli (kurum paneli) */
+/** CENTER: etüt merkezi personeli (kurum paneli) */
 export type AppRole = "ADMIN" | "TEACHER" | "STUDENT" | "CENTER";
 
 export function roleHome(role: AppRole): string {

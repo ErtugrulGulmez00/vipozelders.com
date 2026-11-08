@@ -47,7 +47,7 @@ export async function LessonLinksPanel() {
               <Td>
                 {link.sourceBooking ? (
                   <>
-                    Telafi:{" "}
+                    {link.isQuestionSession ? "Soru çözüm:" : "Telafi:"}{" "}
                     <Link href={`/yonetim/randevular/${link.sourceBooking.id}`} className="font-semibold text-brand-700 hover:underline">
                       {link.sourceBooking.code}
                     </Link>

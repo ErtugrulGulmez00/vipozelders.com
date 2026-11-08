@@ -1,7 +1,6 @@
 import { CalendarClock, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { LinkButton } from "@/components/ui/button";
 import { Alert, Avatar, Card, DescriptionList } from "@/components/ui/primitives";
 import { formatLessonRange } from "@/lib/dates";
@@ -25,8 +24,6 @@ export default async function BookingPage({ searchParams }: PageProps<"/rezervas
   const offeringId = String(query.ders ?? "");
   const start = new Date(String(query.saat ?? ""));
   const duration = Number(query.sure);
-  // Fotoğrafla soru artık soru kredisiyle (soru havuzu) gönderilir.
-  if (query.sekil === "QUESTION") redirect("/soru-sor");
   // Ücretsiz 15 dk tanışma görüşmesi (her zaman online, ödemesiz)
   const intro = query.tanisma === "1";
   const mode = !intro && query.sekil === "IN_PERSON" ? "IN_PERSON" : "ONLINE";

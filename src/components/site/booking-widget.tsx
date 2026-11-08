@@ -157,15 +157,6 @@ export function BookingWidget({
             </option>
           ))}
         </Select>
-        {/soru/i.test(service) ? (
-          <p className="mt-1.5 text-xs text-slate-500">
-            Tek bir soruyu fotoğrafla çözdürmek için{" "}
-            <Link href="/soru-sor" className="font-medium text-brand-700 underline">
-              Soru sor
-            </Link>{" "}
-            sayfasını kullanın.
-          </p>
-        ) : null}
       </div>
 
       <div>

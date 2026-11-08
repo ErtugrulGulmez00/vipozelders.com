@@ -10,7 +10,6 @@ import { CenterFlash, NetTrendChart, percent, RateBar, rateTone, shortDate, Tabs
 import { ActionForm, SubmitButton } from "@/components/forms/action-form";
 import { Badge, Card, CardBody, CardHeader, EmptyState, PageHeader, StatCard, Table, Td, Th } from "@/components/ui/primitives";
 import { ATTENDANCE_STATUS, INSTALLMENT_STATE, NOTE_KIND_LABEL, PAYMENT_METHOD_LABEL } from "@/lib/center/labels";
-import { editionAllows } from "@/lib/center/editions";
 import { EXAM_PRESETS, formatNet } from "@/lib/center/exams";
 import { type CenterModuleKey, moduleEnabled } from "@/lib/center/modules";
 import { installmentState } from "@/lib/center/finance";
@@ -51,7 +50,7 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
     ...(on("odevler") ? [{ key: "odevler", label: "Ödevler", href: `${base}?sekme=odevler` }] : []),
     ...(on("kaynaklar") ? [{ key: "calisma", label: "Çalışma programı", href: `${base}?sekme=calisma` }] : []),
     ...(on("sorular") ? [{ key: "sorular", label: "Soru sor", href: `${base}?sekme=sorular` }] : []),
-    ...(editionAllows(student.center.edition, "program") ? [{ key: "program", label: "Ders programı", href: `${base}?sekme=program` }] : []),
+    { key: "program", label: "Ders programı", href: `${base}?sekme=program` },
   ];
   const tab = tabs.some((t) => t.key === requested) ? requested : "ozet";
   return (

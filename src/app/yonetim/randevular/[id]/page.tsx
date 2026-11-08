@@ -51,7 +51,7 @@ export default async function AdminBookingPage({ params, searchParams }: PagePro
       </div>
       <FlashNotice code={durum} />
       {booking.lessonLink ? (
-        <Alert tone="info" title={booking.lessonLink.sourceBooking ? "Telafi dersi (ders bağlantısı)" : "Serbest ders bağlantısı"} className="mb-6">
+        <Alert tone="info" title={booking.lessonLink.isQuestionSession ? "Soru çözüm dersi (öğretmenin taahhüdü)" : booking.lessonLink.sourceBooking ? "Telafi dersi (ders bağlantısı)" : "Serbest ders bağlantısı"} className="mb-6">
           Öğretmenin açtığı bağlantıyla oluşan ödemesiz ders; puan, yorum, hakediş ve ciroya sayılmaz.
           {booking.lessonLink.sourceBooking ? (
             <>
@@ -70,7 +70,7 @@ export default async function AdminBookingPage({ params, searchParams }: PagePro
           Ödemesiz deneme dersi. Puan, yorum ve ciroya sayılmaz. Öğretmen ve öğrenci kendi ders sayfalarından sınıfa girebilir.
         </Alert>
       ) : null}
-      {booking.makeupLinks.map((link) => (
+      {booking.makeupLinks.filter((link) => !link.isQuestionSession).map((link) => (
         <Alert key={link.id} tone="warning" title="Bu ders için telafi bağlantısı açıldı" className="mb-6">
           {formatLessonRange(link.startAt, link.endAt)} · {link.cancelledAt ? "iptal edildi" : link.bookingId ? "öğrenci kaydoldu" : "öğrenci henüz kaydolmadı"}. Gerekçe: “{link.note ?? "—"}”
         </Alert>
@@ -88,7 +88,7 @@ export default async function AdminBookingPage({ params, searchParams }: PagePro
               <DescriptionList
                 items={[
                   { label: "Ders", value: `${booking.levelName} ${booking.subjectName} · ${booking.serviceName}` },
-                  { label: "Zaman", value: booking.mode === "QUESTION" ? "Fotoğrafla soru (saat yok)" : formatLessonRange(booking.startAt, booking.endAt) },
+                  { label: "Zaman", value: formatLessonRange(booking.startAt, booking.endAt) },
                   { label: "Süre", value: durationLabel(booking.durationMinutes) },
                   { label: "Şekil", value: `${MODE_LABEL[booking.mode]}${booking.inPersonPlace ? ` · ${IN_PERSON_PLACE_LABEL[booking.inPersonPlace]}` : ""}` },
                   ...(booking.mode === "IN_PERSON" ? [{ label: "Adres", value: [booking.address, booking.district ? `${booking.district.name} / ${booking.district.city.name}` : null].filter(Boolean).join(" — ") || "—" }] : []),

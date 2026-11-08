@@ -4,11 +4,8 @@ import {
   BellRing,
   BookOpenCheck,
   Building2,
-  Camera,
-  Repeat,
   CalendarCheck,
   ClipboardCheck,
-  CircleHelp,
   CreditCard,
   GraduationCap,
   MessageSquareQuote,
@@ -28,20 +25,17 @@ import { TeacherCard } from "@/components/site/teacher-card";
 import { LinkButton } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
-import { formatMoney } from "@/lib/money";
 import { LEVEL_GROUP_LABELS, type Catalog } from "@/server/catalog";
-import { parsePackages } from "@/server/credits";
 import { getCatalog, getSiteSettings } from "@/server/site";
 import { featuredTeachers } from "@/server/teachers";
 
 export const metadata: Metadata = {
   title: "Özel ders öğretmenleri",
-  description: "LGS, YKS ve okul derslerinde onaylı özel ders öğretmenleri. Soru çözüm, grup dersleri ve koçluk. Fiyatları ve boş saatleri inceleyin.",
+  description: "LGS, YKS ve okul derslerinde onaylı özel ders öğretmenleri. Grup dersleri ve koçluk. Fiyatları ve boş saatleri inceleyin.",
 };
 
 const SERVICE_STYLE: Record<string, { icon: typeof GraduationCap; tile: string; ink: string }> = {
   "ozel-ders": { icon: GraduationCap, tile: "bg-brand-100", ink: "text-brand-700" },
-  "soru-cozum": { icon: CircleHelp, tile: "bg-gold-100", ink: "text-gold-700" },
   kocluk: { icon: Target, tile: "bg-mint-100", ink: "text-mint-800" },
 };
 const FALLBACK_SERVICE = { icon: BookOpenCheck, tile: "bg-iris-100", ink: "text-iris-700" };
@@ -54,13 +48,12 @@ function heroTiles(catalog: Catalog) {
     { title: subject("matematik")?.name ?? "Matematik", label: "LGS · YKS", href: href("matematik"), className: "bg-brand-600 text-white -rotate-2", sub: "text-white/85" },
     { title: subject("fen-bilimleri")?.name ?? "Fen Bilimleri", label: "Ortaokul · Lise", href: href("fen-bilimleri"), className: "bg-gold-400 text-ink-900 sm:mt-7", sub: "text-ink-800" },
     { title: subject("ingilizce")?.name ?? "İngilizce", label: "Her kademe", href: href("ingilizce"), className: "bg-iris-500 text-white", sub: "text-white/85" },
-    { title: "Soru çöz", label: "Fotoğrafla", href: "/soru-sor", className: "bg-mint-400 text-ink-950 rotate-2 sm:mt-7", sub: "text-ink-800" },
+    { title: subject("turkce")?.name ?? "Türkçe", label: "İlkokul · Ortaokul", href: href("turkce"), className: "bg-mint-400 text-ink-950 rotate-2 sm:mt-7", sub: "text-ink-800" },
   ];
 }
 
 export default async function PrivateLessonsPage() {
   const [catalog, settings] = await Promise.all([getCatalog(), getSiteSettings()]);
-  const cheapestQuestion = Math.min(...parsePackages(settings.questionPackages).map((p) => Math.round(p.price / p.credits)));
   const groups = ["SCHOOL", "EXAM", "OTHER"].map((group) => ({ group, levels: catalog.levels.filter((l) => l.group === group) })).filter((g) => g.levels.length);
 
   return (
@@ -100,7 +93,7 @@ export default async function PrivateLessonsPage() {
             <Link href="/kurumlar-icin" className="group mt-6 flex items-start gap-2 text-sm font-semibold text-ink-700 hover:text-brand-700 sm:items-center">
               <Building2 className="mt-0.5 size-4 shrink-0 text-brand-600 sm:mt-0" aria-hidden />
               <span>
-                Etüt merkezi ya da dershane mi yönetiyorsunuz? <span className="whitespace-nowrap text-brand-700 underline-offset-2 group-hover:underline">Kurum paneline göz atın →</span>
+                Etüt merkezi mi yönetiyorsunuz? <span className="whitespace-nowrap text-brand-700 underline-offset-2 group-hover:underline">Kurum paneline göz atın →</span>
               </span>
             </Link>
           </div>
@@ -111,7 +104,7 @@ export default async function PrivateLessonsPage() {
       <section className="bg-ink-50">
         <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
           <h2 className="text-3xl font-extrabold tracking-tight text-ink-900 sm:text-4xl">Size nasıl yardımcı olalım?</h2>
-          <p className="mt-2 text-ink-600">Sanal dershanemizde ihtiyacınıza uygun çalışma şeklini seçin.</p>
+          <p className="mt-2 text-ink-600">İhtiyacınıza uygun çalışma şeklini seçin.</p>
           <div className="mt-8 grid gap-4 md:grid-cols-3">
             {catalog.services.map((service) => {
               const style = SERVICE_STYLE[service.slug] ?? FALLBACK_SERVICE;
@@ -129,25 +122,7 @@ export default async function PrivateLessonsPage() {
               );
             })}
           </div>
-          {Number.isFinite(cheapestQuestion) ? (
-            <Link href="/soru-sor" className="group mt-4 flex flex-col gap-4 rounded-[1.75rem] bg-gold-400 p-6 text-ink-900 sm:flex-row sm:items-center sm:justify-between">
-              <span className="flex items-start gap-4">
-                <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/70">
-                  <Camera className="size-6" aria-hidden />
-                </span>
-                <span>
-                  <span className="block font-display text-xl font-extrabold">Takıldığınız sorunun fotoğrafını gönderin</span>
-                  <span className="mt-1 block text-sm text-ink-800">
-                    Branş öğretmeni {settings.questionAnswerHours} saat içinde çözsün; çözülmezse krediniz iade. Soru başına {formatMoney(cheapestQuestion)}’den başlayan fiyatlarla.
-                  </span>
-                </span>
-              </span>
-              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-ink-900 px-5 py-2.5 text-sm font-bold text-white">
-                Soru sor <ArrowRight className="size-4 transition group-hover:translate-x-0.5" aria-hidden />
-              </span>
-            </Link>
-          ) : null}
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="mt-4">
             {settings.groupsEnabled ? (
               <Link href="/grup-dersleri" className="group flex flex-col justify-between gap-4 rounded-[1.75rem] bg-ink-900 p-6 text-white sm:flex-row sm:items-center">
                 <span className="flex gap-4">
@@ -155,7 +130,7 @@ export default async function PrivateLessonsPage() {
                     <Users className="size-6" aria-hidden />
                   </span>
                   <span>
-                    <span className="block font-display text-xl font-extrabold">Grup dersleri: sanal dershane</span>
+                    <span className="block font-display text-xl font-extrabold">Grup dersleri: online sınıflar</span>
                     <span className="mt-1 block text-sm text-ink-200">
                       {settings.groupMinParticipants}–{settings.groupMaxCapacity} kişilik online sınıflar, birebir dersten çok daha uygun. En az kişi dolmazsa ücretin tamamı iade.
                     </span>
@@ -163,24 +138,6 @@ export default async function PrivateLessonsPage() {
                 </span>
                 <span className="inline-flex shrink-0 items-center gap-1 self-start rounded-full bg-gold-400 px-4 py-2 text-sm font-bold text-ink-900 sm:self-center">
                   Programlar <ArrowRight className="size-4" aria-hidden />
-                </span>
-              </Link>
-            ) : null}
-            {settings.subscriptionsEnabled ? (
-              <Link href="/ogretmenler?abonelik=1" className="group flex flex-col justify-between gap-4 rounded-[1.75rem] bg-iris-500 p-6 text-white sm:flex-row sm:items-center">
-                <span className="flex gap-4">
-                  <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/15">
-                    <Repeat className="size-6" aria-hidden />
-                  </span>
-                  <span>
-                    <span className="block font-display text-xl font-extrabold">Aylık soru aboneliği</span>
-                    <span className="mt-1 block text-sm text-white/90">
-                      Kendi öğretmeninize {settings.subscriptionDays} gün boyunca her gün soru gönderin; otomatik çekim yok, kendiliğinden yenilenmez.
-                    </span>
-                  </span>
-                </span>
-                <span className="inline-flex shrink-0 items-center gap-1 self-start rounded-full bg-white px-4 py-2 text-sm font-bold text-ink-900 sm:self-center">
-                  Öğretmenler <ArrowRight className="size-4" aria-hidden />
                 </span>
               </Link>
             ) : null}
@@ -277,7 +234,7 @@ export default async function PrivateLessonsPage() {
           <p className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-gold-400">
             <Building2 className="size-3.5" aria-hidden /> Kurumlar için
           </p>
-          <h2 className="mt-4 text-3xl font-extrabold tracking-tight">Etüt merkezi ya da dershane mi yönetiyorsunuz?</h2>
+          <h2 className="mt-4 text-3xl font-extrabold tracking-tight">Etüt merkezi mi yönetiyorsunuz?</h2>
           <p className="mt-3 text-ink-200">Öğrenci ve veli takibi, yoklama ve devamsızlık bildirimi, deneme analizi ve eksik konular, ödeme planı ve makbuz: hepsi tek panelde.</p>
           <div className="mt-6 grid gap-3 sm:grid-cols-2">
             {[

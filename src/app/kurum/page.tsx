@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { CenterFlash, shortDate } from "@/components/center/center-ui";
 import { LinkButton } from "@/components/ui/button";
-import { editionAllows } from "@/lib/center/editions";
 import { moduleEnabled, type CenterModuleKey } from "@/lib/center/modules";
 import { Badge, Card, CardBody, CardHeader, EmptyState, PageHeader, StatCard } from "@/components/ui/primitives";
 import { CENTER_ACCESS_LABEL } from "@/lib/center/labels";
@@ -25,8 +24,7 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
   const today = toLocalDateString(new Date());
   const teacherOnly = ctx.member.role === "TEACHER";
   const on = (key: CenterModuleKey) => moduleEnabled(ctx.center, key);
-  // Sınıf programı ve yoklama Dershane paketinde
-  const classes = ctx.can("attendance.take") && editionAllows(ctx.center.edition, "yoklama");
+  const classes = ctx.can("attendance.take") && ctx.center.kind !== "COACH";
   const [activeStudents, lessons, absentToday, etudsToday, finance, overdue, exams, newLeads, groupCount, weeklySlots] = await Promise.all([
     db.centerStudent.count({ where: { centerId, status: "ACTIVE" } }),
     classes ? lessonsForDate(centerId, today, teacherOnly ? { teacherId: ctx.member.id } : {}) : Promise.resolve([]),

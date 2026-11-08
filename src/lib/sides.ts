@@ -1,6 +1,6 @@
 import { roleHome, type AppRole } from "./auth-constants";
 
-// Tek hesap, iki taraf: kurum (etüt merkezi / dershane) ve özel ders. Kişi hangi kapıdan girerse o tarafı görür;
+// Tek hesap, iki taraf: kurum (etüt merkezi) ve özel ders. Kişi hangi kapıdan girerse o tarafı görür;
 // o tarafta hiçbir şeyi yoksa kendi tarafına yönlenir. Veriler zaten ayrı; burada yalnızca açılış sayfası ve
 // bildirimlerin hangi tarafta görüneceği belirlenir.
 

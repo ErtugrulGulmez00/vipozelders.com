@@ -86,7 +86,6 @@ const LEVELS: { slug: string; name: string; group: LevelGroup; grades: string[];
 
 const SERVICES = [
   { slug: "ozel-ders", name: "Özel Ders", description: "Konu anlatımı ve birebir çalışma" },
-  { slug: "soru-cozum", name: "Soru Çözüm", description: "Takıldığınız soruları birlikte çözme" },
   { slug: "kocluk", name: "Koçluk", description: "Çalışma programı, deneme takibi ve motivasyon" },
 ];
 
@@ -207,7 +206,7 @@ const DEMO_TEACHERS: DemoTeacher[] = [
     education: "Boğaziçi Üniversitesi · Matematik Öğretmenliği", years: 12,
     city: "İstanbul", district: "Kadıköy", online: true, inPerson: true, atHome: true,
     serviceDistricts: ["Kadıköy", "Ataşehir", "Üsküdar"], verified: true, featured: true,
-    offerings: [["ozel-ders", "ortaokul", "matematik", 800], ["ozel-ders", "lise", "matematik", 900], ["ozel-ders", "lgs", "matematik", 900], ["ozel-ders", "yks", "matematik", 1000], ["soru-cozum", "lgs", "matematik", 600]],
+    offerings: [["ozel-ders", "ortaokul", "matematik", 800], ["ozel-ders", "lise", "matematik", 900], ["ozel-ders", "lgs", "matematik", 900], ["ozel-ders", "yks", "matematik", 1000]],
     rules: [[WEEKDAYS, "16:00", "22:00"], [WEEKEND, "10:00", "18:00"]],
   },
   {
@@ -244,7 +243,7 @@ const DEMO_TEACHERS: DemoTeacher[] = [
     bio: "Hacettepe Üniversitesi Kimya Öğretmenliği mezunuyum. Lise ve YKS öğrencileriyle konu anlatımı ve bol soru çözümüyle ilerliyorum. Her konunun sonunda kısa bir mini sınavla öğrenmeyi pekiştiriyoruz. Derslerimi online yapıyorum; dijital tahta kullanıyorum.",
     education: "Hacettepe Üniversitesi · Kimya Öğretmenliği", years: 5,
     online: true, inPerson: false,
-    offerings: [["ozel-ders", "lise", "kimya", 800], ["ozel-ders", "yks", "kimya", 900], ["soru-cozum", "yks", "kimya", 550]],
+    offerings: [["ozel-ders", "lise", "kimya", 800], ["ozel-ders", "yks", "kimya", 900]],
     rules: [[WEEKDAYS, "18:00", "23:00"], [WEEKEND, "12:00", "20:00"]],
   },
   {
@@ -272,7 +271,7 @@ const DEMO_TEACHERS: DemoTeacher[] = [
     bio: "Ege Üniversitesi Biyoloji bölümü mezunuyum ve pedagojik formasyon eğitimimi tamamladım. Biyolojiyi şemalar, animasyonlar ve günlük hayattan örneklerle anlatıyorum. YKS öğrencilerimle çıkmış soruları birlikte analiz ediyoruz.",
     education: "Ege Üniversitesi · Biyoloji", years: 4,
     online: true, inPerson: false,
-    offerings: [["ozel-ders", "lise", "biyoloji", 650], ["ozel-ders", "yks", "biyoloji", 750], ["soru-cozum", "yks", "biyoloji", 500]],
+    offerings: [["ozel-ders", "lise", "biyoloji", 650], ["ozel-ders", "yks", "biyoloji", 750]],
     rules: [[WEEKDAYS, "19:00", "23:00"], [WEEKEND, "10:00", "22:00"]],
   },
   {

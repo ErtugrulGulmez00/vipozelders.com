@@ -6,7 +6,7 @@ import { publicRoute } from "@/server/mobile/route";
 import { teacherProfileJson } from "@/server/mobile/serialize";
 import { getTeacherProfileBySlug, isTeacherPublic } from "@/server/teachers";
 
-/** Öğretmen profili; paket indirimleri, soru abonelikleri, grup dersleri. Oturum açmış veli için favori durumu ve paketleri de döner. */
+/** Öğretmen profili; paket indirimleri, grup dersleri. Oturum açmış veli için favori durumu ve paketleri de döner. */
 export const GET = publicRoute<{ slug: string }>(async ({ request, params }) => {
   const teacher = await getTeacherProfileBySlug(params.slug);
   if (!teacher || !isTeacherPublic(teacher)) throw notFound("Öğretmen bulunamadı.");

@@ -88,7 +88,6 @@ export async function getPublicCenter(slug: string) {
       paidUntil: true,
       city: { select: { name: true } },
       district: { select: { name: true } },
-      edition: true,
       disabledModules: true,
       notifyAbsence: true,
       groups: { where: { isActive: true }, select: { name: true, gradeName: true, targetExam: true }, orderBy: { name: "asc" } },

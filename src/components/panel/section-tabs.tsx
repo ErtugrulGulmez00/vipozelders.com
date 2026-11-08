@@ -26,8 +26,6 @@ export function SectionTabs({ tabs, active }: { tabs: SectionTab[]; active: stri
 }
 
 export const STUDENT_QUESTION_TABS: SectionTab[] = [
-  { href: "/hesabim/sorularim", label: "Sorularım" },
-  { href: "/hesabim/krediler", label: "Soru kredilerim" },
   { href: "/hesabim/abonelikler", label: "Aboneliklerim" },
 ];
 

@@ -17,12 +17,10 @@ import { db } from "@/server/db";
 
 const DENIED = failure("Bu işlem için yönetici yetkisi gerekli.");
 const PLANS: CenterPlanName[] = CENTER_PLANS;
-const EDITIONS = ["ETUT", "DERSHANE"] as const;
-const KINDS = ["ETUT", "DERSHANE", "KURS", "OTHER"] as const;
+const KINDS = ["ETUT", "KURS", "OTHER", "COACH"] as const;
 
 const plan = (formData: FormData) => PLANS.find((p) => p === str(formData, "plan")) ?? "STARTER";
 const kind = (formData: FormData) => KINDS.find((k) => k === str(formData, "kind")) ?? "ETUT";
-const edition = (formData: FormData) => EDITIONS.find((e) => e === str(formData, "edition")) ?? "DERSHANE";
 
 export async function createCenterAction(_: ActionState, formData: FormData): Promise<ActionState> {
   const admin = await actionUser("ADMIN");
@@ -31,7 +29,6 @@ export async function createCenterAction(_: ActionState, formData: FormData): Pr
     const { center, owner } = await adminCreateCenter(admin.id, {
       name: requiredText(formData, "name", "Kurum adı", 3, 120),
       kind: kind(formData),
-      edition: edition(formData),
       cityId: int(formData, "cityId", 0, 0, 81) || null,
       plan: plan(formData),
       trialDays: int(formData, "trialDays", 14, 1, 90),
@@ -71,7 +68,6 @@ export async function updateCenterAdminAction(_: ActionState, formData: FormData
     await adminUpdateCenter(admin.id, str(formData, "centerId"), {
       name: requiredText(formData, "name", "Kurum adı", 3, 120),
       kind: kind(formData),
-      edition: edition(formData),
       plan: plan(formData),
       status,
       studentLimit: int(formData, "studentLimit", 100, 1, 100_000),

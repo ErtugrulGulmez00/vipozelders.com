@@ -5,7 +5,7 @@ import Link from "next/link";
 import { buttonClasses } from "@/components/ui/button";
 import { Input } from "@/components/ui/form";
 import { Alert, Badge, Card, CardBody, CardHeader, EmptyState, PageHeader, StatCard, Table, Td, Th } from "@/components/ui/primitives";
-import { CENTER_ACCESS_LABEL, CENTER_EDITION_LABEL, CENTER_KIND_LABEL, CENTER_PLAN_LABEL } from "@/lib/center/labels";
+import { CENTER_ACCESS_LABEL, CENTER_KIND_LABEL, CENTER_PLAN_LABEL } from "@/lib/center/labels";
 import { centerAccess } from "@/lib/center/subscription";
 import { formatDate } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
@@ -42,7 +42,6 @@ export default async function AdminCentersPage({ searchParams }: PageProps<"/yon
         applicationId: application.id,
         name: application.centerName,
         kind: application.kind,
-        edition: application.edition ?? undefined,
         cityId: application.cityId,
         phone: application.phone,
         email: application.email,
@@ -55,7 +54,7 @@ export default async function AdminCentersPage({ searchParams }: PageProps<"/yon
     <>
       <PageHeader
         title="Kurumlar"
-        description="Kurum paneli aboneleri: etüt merkezleri, dershaneler, kurslar"
+        description="Kurum paneli aboneleri: etüt merkezleri"
         actions={
           <Link href="/yonetim/kurum-basvurulari" className={buttonClasses("outline", "sm")}>
             Başvurular {newApplications ? <Badge tone="amber">{newApplications}</Badge> : null}
@@ -107,7 +106,6 @@ export default async function AdminCentersPage({ searchParams }: PageProps<"/yon
                           </p>
                         </Td>
                         <Td className="text-xs">
-                          {CENTER_EDITION_LABEL[c.edition]}
                           <p className="text-slate-500">{CENTER_PLAN_LABEL[c.plan]}</p>
                         </Td>
                         <Td className="text-right text-sm">

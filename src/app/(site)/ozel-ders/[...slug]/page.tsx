@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: PageProps<"/ozel-ders/[...slu
   const name = [level?.name, subject?.name].filter(Boolean).join(" ");
   return {
     title: `${name} özel ders öğretmenleri`,
-    description: `${name} için online ve yüz yüze özel ders, soru çözüm ve koçluk veren öğretmenleri karşılaştırın; puan ve yorumlara bakarak hemen randevu alın.`,
+    description: `${name} için online ve yüz yüze özel ders ve koçluk veren öğretmenleri karşılaştırın; puan ve yorumlara bakarak hemen randevu alın.`,
   };
 }
 

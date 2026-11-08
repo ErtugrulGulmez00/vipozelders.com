@@ -13,7 +13,7 @@ import { loadSettings } from "@/server/settings";
 import { uploadUrl } from "@/server/storage";
 
 export const metadata: Metadata = {
-  title: "Grup dersleri: sanal dershane",
+  title: "Grup dersleri: online sınıflar",
   description: "Onaylı öğretmenlerle 4–10 kişilik online grup dersleri ve kamplar. Kişi başı uygun fiyat; en az kişi dolmazsa ücretin tamamı iade.",
 };
 
@@ -24,7 +24,7 @@ export default async function GroupCoursesPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
       <div className="max-w-2xl">
-        <p className="text-sm font-semibold text-brand-700">Sanal dershane</p>
+        <p className="text-sm font-semibold text-brand-700">Online sınıflar</p>
         <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">Grup dersleri</h1>
         <p className="mt-3 text-slate-600">
           {settings.groupMinParticipants}–{settings.groupMaxCapacity} kişilik online sınıflarda, birebir dersten çok daha uygun fiyata. Ders, kayıt bitişinde en az kişi sayısına ulaşırsa açılır; ulaşmazsa ödediğiniz ücretin tamamı iade edilir.

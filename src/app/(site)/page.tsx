@@ -14,13 +14,6 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: { absolute: title }, description, openGraph: { type: "website", locale: "tr_TR", siteName: settings.siteName, title, description } };
 }
 
-/** Başvuru formundaki "İlgilendiğiniz paket" alanına aktarılır; kurs için paket seçili gelmez. */
-const CENTER_TYPES = [
-  { value: "ETUT", label: "Etüt merkezi" },
-  { value: "DERSHANE", label: "Dershane / temel lise" },
-  { value: "", label: "Kurs" },
-];
-
 const FEATURES = [
   { Icon: Check, tile: "bg-brand-600 text-white", title: "Yoklama ve veli bildirimi", text: "Yoklamayı telefondan alın; gelmeyen öğrencinin velisine hemen bildirim gitsin." },
   { Icon: ChartColumn, tile: "bg-gold-400 text-ink-900", title: "Deneme analizi", text: "Yayınevinin sonuç PDF'ini yükleyin; ders ve konu bazında karneler hazırlansın." },
@@ -49,23 +42,12 @@ export default async function HomePage() {
       <section className="bg-white">
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 pb-16 pt-10 sm:pt-14 lg:grid-cols-[1fr_1.05fr]">
           <div className="flex min-w-0 flex-col gap-4">
-            <p className="self-start rounded-full bg-brand-50 px-3.5 py-1.5 text-sm font-bold text-brand-700">Etüt merkezi · dershane · kurs</p>
+            <p className="self-start rounded-full bg-brand-50 px-3.5 py-1.5 text-sm font-bold text-brand-700">Etüt merkezleri için</p>
             <h1 className="text-4xl font-extrabold leading-[1.06] tracking-tight text-ink-900 sm:text-5xl lg:text-[3.4rem]">Etüt merkezinizi tek ekrandan yönetin.</h1>
             <p className="max-w-xl text-lg leading-relaxed text-ink-600">Yoklama, veli bildirimi, deneme analizi ve tahsilat tek panelde. Kurulumu sizinle birlikte yapıyoruz.</p>
 
             {/* Seçimler başvuru formuna dolu gider (?paket=…&ogrenci=…#basvuru) */}
             <form action="/kurumlar-icin#basvuru" method="get" className="mt-2 flex flex-col rounded-3xl border border-ink-100 bg-white p-2 shadow-lg shadow-ink-900/10 sm:flex-row sm:items-stretch">
-              <label className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 px-4 py-2 text-xs font-bold text-ink-900">
-                Kurum türü
-                <select name="paket" defaultValue="ETUT" className="min-h-7 w-full bg-transparent text-[15px] font-medium text-ink-600 focus:outline-none">
-                  {CENTER_TYPES.map((type) => (
-                    <option key={type.label} value={type.value}>
-                      {type.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <span aria-hidden className="my-2.5 hidden w-px bg-ink-100 sm:block" />
               <label className="flex min-w-0 flex-1 flex-col justify-center gap-0.5 px-4 py-2 text-xs font-bold text-ink-900">
                 Öğrenci sayısı
                 <select name="ogrenci" defaultValue={CENTER_STUDENT_COUNT_OPTIONS[0]} className="min-h-7 w-full bg-transparent text-[15px] font-medium text-ink-600 focus:outline-none">

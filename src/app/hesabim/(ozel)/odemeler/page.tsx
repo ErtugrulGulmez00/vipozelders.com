@@ -13,8 +13,8 @@ export const metadata: Metadata = { title: "Ödemelerim" };
 export default async function PaymentsPage() {
   const user = await requireRole("STUDENT");
   const payments = await db.payment.findMany({
-    where: { OR: [{ booking: { studentId: user.id } }, { creditPurchase: { studentId: user.id } }, { subscription: { studentId: user.id } }, { groupEnrollment: { studentId: user.id } }, { package: { studentId: user.id } }], status: { not: "INITIATED" } },
-    include: { booking: true, creditPurchase: true, subscription: true, groupEnrollment: { include: { course: true } }, package: true, refunds: true },
+    where: { OR: [{ booking: { studentId: user.id } }, { groupEnrollment: { studentId: user.id } }, { package: { studentId: user.id } }], status: { not: "INITIATED" } },
+    include: { booking: true, groupEnrollment: { include: { course: true } }, package: true, refunds: true },
     orderBy: { createdAt: "desc" },
     take: 100,
   });
@@ -47,20 +47,6 @@ export default async function PaymentsPage() {
                           {p.booking.levelName} {p.booking.subjectName}
                         </Link>
                         <p className="text-xs text-slate-400">{p.booking.code}</p>
-                      </>
-                    ) : p.creditPurchase ? (
-                      <>
-                        <Link href="/hesabim/krediler" className="font-medium text-brand-700 hover:underline">
-                          {p.creditPurchase.credits} soru kredisi
-                        </Link>
-                        <p className="text-xs text-slate-400">{p.creditPurchase.code}</p>
-                      </>
-                    ) : p.subscription ? (
-                      <>
-                        <Link href={`/hesabim/abonelikler/${p.subscription.id}`} className="font-medium text-brand-700 hover:underline">
-                          {p.subscription.levelName} {p.subscription.subjectName} aboneliği
-                        </Link>
-                        <p className="text-xs text-slate-400">{p.subscription.code}</p>
                       </>
                     ) : p.groupEnrollment ? (
                       <>

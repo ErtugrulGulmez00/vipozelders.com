@@ -9,7 +9,7 @@ import { formatMoney } from "@/lib/money";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { loadSettings } from "@/server/settings";
-import { teacherPlanPairs } from "@/server/subscriptions";
+import { teacherPlanPairs } from "@/server/groups";
 
 export const metadata: Metadata = { title: "Grup dersleri" };
 

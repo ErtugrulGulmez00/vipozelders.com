@@ -26,7 +26,7 @@ async function upload(file: File, kinds: ("image" | "video")[], maxBytes: number
 export async function askQuestion(userId: string, guardianId: string, input: { subject: string; note: string | null; image: File | null }) {
   const link = await db.centerGuardian.findFirst({
     where: { id: guardianId, userId, student: { status: "ACTIVE", center: { status: { not: "SUSPENDED" } } } },
-    include: { student: { select: { id: true, centerId: true, firstName: true, lastName: true, center: { select: { name: true, disabledModules: true, edition: true } } } } },
+    include: { student: { select: { id: true, centerId: true, firstName: true, lastName: true, center: { select: { name: true, disabledModules: true } } } } },
   });
   if (!link) throw new CenterError("Öğrenci bulunamadı.");
   // Portal sekmesi gizli olsa da uç nokta açıktı: kurumun kapattığı (ya da paketinde olmayan) modülde soru alınmaz

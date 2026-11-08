@@ -51,6 +51,7 @@ export default async function FavoritesPage() {
                 offersOnline: teacher.offersOnline,
                 offersInPerson: teacher.offersInPerson,
                 offersIntro: teacher.offersIntro && teacher.offersOnline,
+              offersQuestionSession: teacher.offersQuestionSession,
                 isNew: isNewTeacher(teacher),
                 verified: teacher.verificationStatus === "VERIFIED",
                 featured: teacher.isFeatured,

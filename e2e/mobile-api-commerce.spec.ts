@@ -2,21 +2,17 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 import pg from "pg";
 
 /**
- * Mobil API: indirim kodu ve arkadaşını getir, paket ders (paketten ders, toplu onay, erteleme), aylık soru aboneliği
- * (aboneye soru, öğretmen çözümü), grup dersi kaydı ve öğretmen talep formu. Demo öğretmen ayse.yilmaz'a geçici paket
- * indirimi, abonelik planı ve grup dersi eklenir; sonunda tüm kayıtlar geri alınır.
+ * Mobil API: indirim kodu ve arkadaşını getir, paket ders (paketten ders, toplu onay, erteleme), grup dersi kaydı ve
+ * öğretmen talep formu. Demo öğretmen ayse.yilmaz'a geçici paket indirimi ve grup dersi eklenir; sonunda tüm kayıtlar geri alınır.
  */
 
 const DB_URL = process.env.E2E_DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5433/vipozelders";
 const API = "/api/mobil/v1";
-const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==", "base64");
 const stamp = Date.now().toString(36);
 const emails = [`e2e-mobil-ticaret-${stamp}@example.com`, `e2e-mobil-davetli-${stamp}@example.com`];
 const coupon = `E2E${stamp.toUpperCase()}`.slice(0, 12);
 const TEACHER = `(SELECT id FROM "User" WHERE username = 'ayse.yilmaz')`;
 let previousDiscounts: string;
-let planId: string;
-let previousPlan: { price: number; dailyLimit: number; isActive: boolean } | null = null;
 let courseId: string;
 const courseCode = `GD-E2E${stamp}`.toUpperCase();
 
@@ -60,16 +56,6 @@ test.beforeAll(async () => {
     `SELECT o."levelId", o."subjectId", l.name AS "levelName", s.name AS "subjectName" FROM "TeacherOffering" o JOIN "Level" l ON l.id = o."levelId" JOIN "Subject" s ON s.id = o."subjectId"
      WHERE o."teacherId" = ${TEACHER} AND o."isActive" ORDER BY o."createdAt" LIMIT 1`,
   );
-  [previousPlan = null] = await sql<{ price: number; dailyLimit: number; isActive: boolean }>(
-    `SELECT price, "dailyLimit", "isActive" FROM "QuestionPlan" WHERE "teacherId" = ${TEACHER} AND "levelId" = $1 AND "subjectId" = $2`,
-    [offering.levelId, offering.subjectId],
-  );
-  [{ id: planId }] = await sql<{ id: string }>(
-    `INSERT INTO "QuestionPlan" (id, "teacherId", "levelId", "subjectId", price, "dailyLimit", "answerHours", "isActive", "updatedAt")
-     VALUES ($1, ${TEACHER}, $2, $3, 25000, 2, 12, true, now())
-     ON CONFLICT ("teacherId", "levelId", "subjectId") DO UPDATE SET price = 25000, "dailyLimit" = 2, "isActive" = true RETURNING id`,
-    [`e2e-plan-${stamp}`, offering.levelId, offering.subjectId],
-  );
   courseId = `e2e-grup-${stamp}`;
   await sql(
     `INSERT INTO "GroupCourse" (id, code, "teacherId", "levelId", "subjectId", "levelName", "subjectName", title, price, "commissionRateBps", capacity, "minParticipants", "enrollDeadline", "updatedAt")
@@ -80,7 +66,7 @@ test.beforeAll(async () => {
     `INSERT INTO "GroupSession" (id, "courseId", index, "startAt", "endAt", "videoRoomName") VALUES ($1, $2, 0, now() + interval '25 days', now() + interval '25 days 1 hour', $3)`,
     [`e2e-oturum-${stamp}`, courseId, `e2e-oda-${stamp}`],
   );
-  await sql(`INSERT INTO "Coupon" (id, code, kind, value, targets) VALUES ($1, $2, 'PERCENT', 10, ARRAY['credits', 'booking'])`, [`e2e-kupon-${stamp}`, coupon]);
+  await sql(`INSERT INTO "Coupon" (id, code, kind, value, targets) VALUES ($1, $2, 'PERCENT', 10, ARRAY['booking'])`, [`e2e-kupon-${stamp}`, coupon]);
 });
 
 test.afterAll(async () => {
@@ -88,8 +74,6 @@ test.afterAll(async () => {
   const ids = users.map((u) => u.id);
   if (ids.length) {
     await sql(`DELETE FROM "LedgerEntry" WHERE "bookingId" IN (SELECT id FROM "Booking" WHERE "studentId" = ANY($1))`, [ids]);
-    await sql(`DELETE FROM "LedgerEntry" WHERE "poolQuestionId" IN (SELECT id FROM "PoolQuestion" WHERE "studentId" = ANY($1))`, [ids]);
-    await sql(`DELETE FROM "LedgerEntry" WHERE "subscriptionId" IN (SELECT id FROM "QuestionSubscription" WHERE "studentId" = ANY($1))`, [ids]);
     await sql(`DELETE FROM "LedgerEntry" WHERE "groupEnrollmentId" IN (SELECT id FROM "GroupEnrollment" WHERE "studentId" = ANY($1))`, [ids]);
     await sql(`DELETE FROM "Notification" WHERE "userId" = ${TEACHER} AND "createdAt" > now() - interval '1 hour' AND (type LIKE 'booking.%' OR type LIKE 'package.%' OR type LIKE 'subscription.%' OR type LIKE 'group.%' OR type LIKE 'lesson_request%')`);
     await sql(`DELETE FROM "Booking" WHERE "studentId" = ANY($1)`, [ids]);
@@ -99,17 +83,12 @@ test.afterAll(async () => {
   await sql(`DELETE FROM "LessonRequest" WHERE name = $1`, [`E2E Talep ${stamp}`]);
   await sql(`DELETE FROM "Notification" WHERE type IN ('admin.lesson_request', 'lesson_request') AND "createdAt" > now() - interval '1 hour'`);
   await sql(`DELETE FROM "GroupCourse" WHERE id = $1`, [courseId]);
-  if (previousPlan) {
-    await sql(`UPDATE "QuestionPlan" SET price = $2, "dailyLimit" = $3, "isActive" = $4 WHERE id = $1`, [planId, previousPlan.price, previousPlan.dailyLimit, previousPlan.isActive]);
-  } else {
-    await sql(`DELETE FROM "QuestionPlan" WHERE id = $1`, [planId]);
-  }
   await sql(`DELETE FROM "Coupon" WHERE code = $1`, [coupon]);
   await sql(`DELETE FROM "Session" WHERE "userAgent" = 'mobil: e2e-test'`);
   await sql(`UPDATE "TeacherProfile" SET "packageDiscounts" = $1 WHERE "userId" = ${TEACHER}`, [previousDiscounts]);
 });
 
-test("mobil API: indirim kodu, davet, paket ve erteleme, abonelik, grup dersi, öğretmen talebi", async ({ request, page }) => {
+test("mobil API: indirim kodu, davet, paket ve erteleme, grup dersi, öğretmen talebi", async ({ request, page }) => {
   const anon = client(request);
   const registered = await anon.post("/kayit", { firstName: "Ticaret", lastName: "Veli", email: emails[0], password: "MobilVeli2026", accountType: "PARENT", kvkk: true, terms: true, deviceName: "e2e-test" });
   expect(registered.status()).toBe(201);
@@ -125,21 +104,17 @@ test("mobil API: indirim kodu, davet, paket ve erteleme, abonelik, grup dersi, �
   const [inviter] = await sql<{ referredById: string }>(`SELECT "referredById" FROM "User" WHERE email = $1`, [emails[1]]);
   expect(inviter.referredById).toBe((await (await student.get("/ben")).json()).id);
 
-  // İndirim kodu: kredi paketinde %10
-  const credits = await (await student.get("/krediler")).json();
-  const pack = credits.packages.find((p: { credits: number }) => p.credits > 1);
-  const quote = await (await student.post("/indirim-kodu", { target: "credits", code: coupon.toLowerCase(), credits: pack.credits })).json();
-  expect(quote).toMatchObject({ ok: true, discount: Math.floor(pack.price / 10), finalPrice: pack.price - Math.floor(pack.price / 10) });
-  expect((await (await student.post("/indirim-kodu", { target: "credits", code: "YOKBOYLEKOD", credits: pack.credits })).json()).ok).toBe(false);
-  const bought = await (await student.post("/krediler", { credits: pack.credits, consent: true, couponCode: coupon })).json();
-  expect(bought.purchase.price).toBe(pack.price - Math.floor(pack.price / 10));
-
-  // Profilde teklifler: paket indirimi, abonelik planı, grup dersi
+  // Profilde teklifler: paket indirimi, grup dersi
   const profile = await (await student.get("/ogretmenler/ayse-yilmaz")).json();
   expect(profile.packageOffers).toEqual([{ lessons: 3, percent: 10 }]);
-  expect(profile.questionPlans.find((p: { id: string }) => p.id === planId)).toMatchObject({ price: 25000, dailyLimit: 2 });
+  expect(profile.questionPlans).toEqual([]);
   expect(profile.groupCourses.find((c: { code: string }) => c.code === courseCode)).toMatchObject({ price: 40000, sessionCount: 1 });
   const offering = profile.offerings[0];
+
+  // İndirim kodu: derste %10 (hizmet bedelinden)
+  const quote = await (await student.post("/indirim-kodu", { target: "booking", code: coupon.toLowerCase(), ref: offering.id, duration: 60 })).json();
+  expect(quote).toMatchObject({ ok: true, discount: Math.floor(offering.hourlyPrice / 10), finalPrice: offering.hourlyPrice - Math.floor(offering.hourlyPrice / 10) });
+  expect((await (await student.post("/indirim-kodu", { target: "booking", code: "YOKBOYLEKOD", ref: offering.id, duration: 60 })).json()).ok).toBe(false);
   const duration = offering.durations.find((d: { minutes: number }) => d.minutes === 60)?.minutes ?? offering.durations[0].minutes;
 
   // Paket: 3 ders %10 indirimli, ödeme WebView'da
@@ -178,27 +153,6 @@ test("mobil API: indirim kodu, davet, paket ve erteleme, abonelik, grup dersi, �
   const moved = await (await teacher.post(`/rezervasyonlar/${booking.id}/erteleme`, { action: "accept", requestId: asTeacher.reschedule.pending.id })).json();
   expect(new Date(moved.startAt).toISOString()).toBe(new Date(slots[2].startAt).toISOString());
   expect(moved.reschedule).toMatchObject({ count: 1, pending: null });
-
-  // Aylık soru aboneliği: satın al, aboneye soru (kredi harcamaz), öğretmen çözer
-  const sub = await student.post("/abonelikler", { planId, consent: true });
-  expect(sub.status()).toBe(201);
-  const { subscription, payment: subPayment } = await sub.json();
-  await pay(page, subPayment, subscription.id);
-  const active = await (await student.get(`/abonelikler/${subscription.id}`)).json();
-  expect(active).toMatchObject({ status: "ACTIVE", running: true, dailyLimit: 2, usedToday: 0 });
-  const asked = await student.multipart(`/abonelikler/${subscription.id}`, { note: `abonelik ${stamp}`, image: { name: "soru.png", mimeType: "image/png", buffer: PNG } });
-  expect(asked.status()).toBe(201);
-  const question = await asked.json();
-  expect(question).toMatchObject({ status: "CLAIMED", subscription: true });
-  const pool = await (await teacher.get("/ogretmen/soru-havuzu")).json();
-  const mine = pool.mine.find((q: { id: string }) => q.id === question.id);
-  expect(mine).toMatchObject({ subscription: true, mine: true });
-  const teacherQ = await (await teacher.get(`/ogretmen/soru-havuzu/${question.id}`)).json();
-  expect(teacherQ.actions).toMatchObject({ canAnswer: true, canRelease: false, canReject: true });
-  const solved = await teacher.multipart(`/ogretmen/soru-havuzu/${question.id}`, { body: "Abonelik sorusunun çözümü: önce sadeleştiririz, sonra x = 3 bulunur." });
-  expect((await solved.json()).status).toBe("ANSWERED");
-  expect((await (await student.get(`/abonelikler/${subscription.id}`)).json()).usedToday).toBe(1);
-  expect((await (await student.get("/abonelikler")).json()).items[0].id).toBe(subscription.id);
 
   // Grup dersi: liste, ayrıntı, kayıt ve ödeme, iptal (ilk oturumdan önce tam iade)
   const groups = await (await anon.get("/grup-dersleri")).json();

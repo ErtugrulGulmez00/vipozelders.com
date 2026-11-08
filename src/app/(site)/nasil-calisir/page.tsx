@@ -1,4 +1,4 @@
-import { ArrowRight, Building2, ClipboardCheck, GraduationCap } from "lucide-react";
+import { ArrowRight, ClipboardCheck, GraduationCap } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -6,17 +6,17 @@ import { cn } from "@/lib/cn";
 
 export const metadata: Metadata = {
   title: "Nasıl çalışır?",
-  description: "Özel ders, etüt merkezi ve dershane için Pi Kampüs'ün nasıl çalıştığını ekran görüntüleri ve videolarla anlatan rehberler.",
+  description: "Özel ders ve etüt merkezi için Pi Kampüs'ün nasıl çalıştığını ekran görüntüleri ve videolarla anlatan rehberler.",
 };
 
-// Üç rehbere giriş: özel ders (veli, öğrenci, öğretmen), etüt merkezi ve dershane (kurum paneli)
+// İki rehbere giriş: özel ders (veli, öğrenci, öğretmen) ve etüt merkezi (kurum paneli)
 const CARDS = [
   {
     href: "/nasil-calisir/ozel-ders",
     Icon: GraduationCap,
     title: "Özel ders",
     audience: "Veliler, öğrenciler ve öğretmenler için",
-    text: "Öğretmen bulma, tanışma görüşmesi, randevu ve güvenli ödeme, sanal sınıf, soru çözüm ve grup dersleri.",
+    text: "Öğretmen bulma, tanışma görüşmesi, randevu ve güvenli ödeme, sanal sınıf ve grup dersleri.",
     image: { src: "/tanitim/ozel-ders/01-ana-sayfa.jpg", width: 1440, height: 900 },
     tone: "bg-brand-50 text-brand-700",
   },
@@ -28,15 +28,6 @@ const CARDS = [
     text: "Öğrenci kaydından etüt yoklamasına, ödevden deneme karnesine, tahsilattan veli portalına panelin tamamı.",
     image: { src: "/tanitim/etut-merkezi/02-ozet.jpg", width: 1440, height: 900 },
     tone: "bg-gold-50 text-gold-700",
-  },
-  {
-    href: "/nasil-calisir/dershane",
-    Icon: Building2,
-    title: "Dershane",
-    audience: "Dershaneler ve kurslar için",
-    text: "Haftalık ders programı, sınıf yoklaması, sınıf defteri, derslikler ve kurum raporları; Etüt Merkezi'ndeki her şey dahil.",
-    image: { src: "/tanitim/dershane/04-program.jpg", width: 1440, height: 940 },
-    tone: "bg-iris-100 text-iris-700",
   },
 ];
 

@@ -17,7 +17,7 @@ async function centerWithGuardians() {
   const id = randomUUID().slice(0, 8);
   const owner = await createStudent(`kurum${id}`);
   await db.user.update({ where: { id: owner.id }, data: { role: "CENTER" } });
-  const center = await db.center.create({ data: { name: `Test Dershanesi ${id}`, slug: `test-dershane-${id}`, status: "ACTIVE" } });
+  const center = await db.center.create({ data: { name: `Test Kurumu ${id}`, slug: `test-kurum-${id}`, status: "ACTIVE" } });
   await db.centerMember.create({ data: { centerId: center.id, userId: owner.id, role: "OWNER" } });
   const student = await db.centerStudent.create({ data: { centerId: center.id, firstName: "Ali", lastName: "Koç" } });
   const withPhone = await db.centerGuardian.create({ data: { centerId: center.id, studentId: student.id, fullName: "Telefonlu Veli", relation: "Anne", phone: "05321112233", notifyWhatsapp: true, email: `anne.${id}@test.local` } });

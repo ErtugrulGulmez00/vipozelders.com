@@ -10,7 +10,6 @@ import {
 import { sendCenterExpiryNotices } from "./center/expiry";
 import { sendCenterPaymentReminders } from "./center/finance";
 import { processCenterMessages } from "./center/messages";
-import { expireCredits, expireStalePurchases } from "./credits";
 import { db } from "./db";
 import { sendPendingEmails } from "./email";
 import { recordError } from "./errors";
@@ -20,8 +19,6 @@ import { pruneStats } from "./stats";
 import { sendPendingPushes } from "./push";
 import { sendPendingTelegrams } from "./telegram";
 import { sendPendingWhatsApps } from "./whatsapp";
-import { expireUnansweredQuestions, releaseExpiredClaims, releasePoolEarnings } from "./question-pool";
-import { processSubscriptions } from "./subscriptions";
 import { processGroups } from "./groups";
 import { expirePackages } from "./packages";
 import { expireRescheduleRequests } from "./reschedule";
@@ -49,14 +46,6 @@ const TASKS = {
   completedLessons: completeFinishedLessons,
   releasedEarnings: releaseDueEarnings,
   reminders: sendLessonReminders,
-  // Soru havuzu ve soru kredileri
-  poolClaims: releaseExpiredClaims,
-  poolExpired: expireUnansweredQuestions,
-  poolEarnings: releasePoolEarnings,
-  creditPurchases: expireStalePurchases,
-  creditExpiry: expireCredits,
-  // Soru aboneliği: dönem sonu, hakediş, yenileme hatırlatması
-  subscriptions: processSubscriptions,
   // Grup dersi: kayıt bitişi, oturum sonu, oturum payları, hatırlatmalar
   groups: processGroups,
   // Paket ders: süresi dolan paketin kalan dersleri iade

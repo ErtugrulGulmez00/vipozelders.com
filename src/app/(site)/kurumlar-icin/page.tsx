@@ -18,7 +18,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
-import { EditionCards, PricingTable } from "@/components/center/pricing";
+import { PackageCard, TierCards } from "@/components/center/pricing";
 import { buttonClasses } from "@/components/ui/button";
 import { Card } from "@/components/ui/primitives";
 import { centerPlans } from "@/server/center/plans";
@@ -26,8 +26,8 @@ import { getSiteSettings } from "@/server/site";
 import { CenterApplicationForm } from "./center-application-form";
 
 export const metadata: Metadata = {
-  title: "Etüt merkezi ve dershane yönetim paneli",
-  description: "Öğrenci ve veli takibi, yoklama ve devamsızlık bildirimi, deneme analizi ve eksik konular, ödeme planı, tahsilat ve makbuz: etüt merkeziniz ya da dershaneniz için tek panel.",
+  title: "Etüt merkezi yönetim paneli",
+  description: "Öğrenci ve veli takibi, yoklama ve devamsızlık bildirimi, deneme analizi ve eksik konular, ödeme planı, tahsilat ve makbuz: etüt merkeziniz için tek panel.",
 };
 
 const FEATURES = [
@@ -58,8 +58,8 @@ const faq = (trialDays: number) => [
 
 export default async function ForCentersPage() {
   const settings = await getSiteSettings();
-  const plans = { ETUT: centerPlans(settings, "ETUT"), DERSHANE: centerPlans(settings, "DERSHANE") };
-  const fromPrice = { ETUT: Math.min(...plans.ETUT.map((p) => p.priceTl)), DERSHANE: Math.min(...plans.DERSHANE.map((p) => p.priceTl)) };
+  const plans = centerPlans(settings);
+  const fromPrice = Math.min(...plans.map((p) => p.priceTl));
   const trialDays = settings.centerTrialDays;
   return (
     <>
@@ -67,7 +67,7 @@ export default async function ForCentersPage() {
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 sm:py-20 lg:grid-cols-[1.1fr_1fr]">
           <div>
             <p className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-gold-300">
-              <GraduationCap className="size-3.5" aria-hidden /> Etüt merkezleri, dershaneler ve kurslar için
+              <GraduationCap className="size-3.5" aria-hidden /> Etüt merkezleri için
             </p>
             <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-5xl">Kurumunuzun tamamı tek panelde</h1>
             <p className="mt-4 max-w-xl text-lg text-brand-100">
@@ -194,14 +194,14 @@ export default async function ForCentersPage() {
       </section>
 
       <section id="planlar" className="mx-auto max-w-6xl scroll-mt-20 px-4 py-16">
-        <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">Paketler</h2>
-        <p className="mt-2 text-slate-600">Kurumunuzun çalışma şekline göre paketi seçin. Etüt Merkezi paketi birebir takip, etüt ve deneme analizi odaklı, daha uygun fiyatlı; Dershane paketi sınıf bazlı programı, yoklamayı, derslikleri ve raporları da kapsar. Tüm paketlerde sınırsız personel ve veli portalı.</p>
+        <h2 className="text-2xl font-bold text-slate-900 sm:text-3xl">Tek paket, bütün özellikler</h2>
+        <p className="mt-2 text-slate-600">Bütün modüller her kuruma açık; fiyatı yalnızca aktif öğrenci sayınız belirler.</p>
         <div className="mt-8">
-          <EditionCards cta={trialDays > 0 ? "Ücretsiz deneyin" : "Başvurun"} fromPrice={fromPrice} />
+          <PackageCard cta={trialDays > 0 ? "Ücretsiz deneyin" : "Başvurun"} fromPrice={fromPrice} />
         </div>
         <h3 className="mt-12 text-xl font-bold text-slate-900">Öğrenci sayısına göre fiyat</h3>
         <p className="mt-1 mb-5 text-sm text-slate-600">Yıllık peşin ödemede büyük paket, küçük paketi aylık ödemekle aynı fiyata gelir.</p>
-        <PricingTable plans={plans} cta="Bu kademeyle başvur" />
+        <TierCards plans={plans} cta="Bu kademeyle başvur" />
       </section>
 
       <section className="bg-white py-16">

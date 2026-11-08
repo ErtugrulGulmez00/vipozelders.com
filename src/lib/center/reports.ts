@@ -1,4 +1,4 @@
-// Kurum raporları (Dershane paketi): kurum → sınıf → öğrenci. Aynı ölçüler her seviyede:
+// Kurum raporları: kurum → sınıf → öğrenci. Aynı ölçüler her seviyede:
 // devam oranı (geldi + geç / işaretlenen), ödev yapma oranı (kısmen yarım sayılır), son denemenin ortalama neti,
 // geciken ödeme. Hesap saf fonksiyondur; veriyi sunucu toplar (server/center/reports.ts).
 

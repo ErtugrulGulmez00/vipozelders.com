@@ -5,13 +5,11 @@ import { useSearchParams } from "next/navigation";
 import { applyCenterAction } from "@/actions/center-public";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
-import { CENTER_EDITION_LABEL, CENTER_STUDENT_COUNT_OPTIONS as STUDENT_OPTIONS } from "@/lib/center/labels";
+import { CENTER_STUDENT_COUNT_OPTIONS as STUDENT_OPTIONS } from "@/lib/center/labels";
 
-/** Kısa başvuru formu. Paket ve öğrenci sayısı, tıklanan paket/fiyat kartından (?paket=…&ogrenci=…) seçili gelir. */
+/** Kısa başvuru formu. Öğrenci sayısı, tıklanan fiyat kartından ya da ana sayfadan (?ogrenci=…) seçili gelir. */
 export function CenterApplicationForm() {
   const params = useSearchParams();
-  const paket = params.get("paket");
-  const edition = paket === "ETUT" || paket === "DERSHANE" ? paket : "";
   const ogrenci = params.get("ogrenci");
   const students = ogrenci && STUDENT_OPTIONS.includes(ogrenci) ? ogrenci : "";
   return (
@@ -36,16 +34,6 @@ export function CenterApplicationForm() {
         <FieldError name="email" />
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="İlgilendiğiniz paket" htmlFor="c-edition">
-          <Select key={`e-${edition}`} id="c-edition" name="edition" defaultValue={edition}>
-            <option value="">Henüz bilmiyorum</option>
-            {Object.entries(CENTER_EDITION_LABEL).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </Select>
-        </Field>
         <Field label="Öğrenci sayısı" htmlFor="c-count">
           <Select key={`s-${students}`} id="c-count" name="studentCount" defaultValue={students}>
             <option value="">Seçin</option>

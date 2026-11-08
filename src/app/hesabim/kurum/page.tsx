@@ -20,7 +20,7 @@ export default async function GuardianPortalPage({ searchParams }: PageProps<"/h
   const onlyStudent = children.length > 0 && children.every((c) => c.isStudentAccount);
   return (
     <>
-      <PageHeader title="Kurumum" description={onlyStudent ? "Etüt merkezi / dershanedeki devam, ödev ve deneme bilgilerin" : "Etüt merkezi / dershanedeki devam, ödev, deneme ve ödeme bilgileri"} />
+      <PageHeader title="Kurumum" description={onlyStudent ? "Etüt merkezindeki devam, ödev ve deneme bilgilerin" : "Etüt merkezindeki devam, ödev, deneme ve ödeme bilgileri"} />
       <CenterFlash code={sp.durum} />
       {children.length === 0 ? (
         <EmptyState

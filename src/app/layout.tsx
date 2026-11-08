@@ -19,11 +19,11 @@ const display = Bricolage_Grotesque({
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
   return {
-    title: { default: `${settings.siteName} · Özel ders, soru çözüm ve koçluk`, template: `%s · ${settings.siteName}` },
+    title: { default: `${settings.siteName} · Özel ders ve koçluk`, template: `%s · ${settings.siteName}` },
     description: settings.siteTagline,
     metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
     // WhatsApp, Instagram vb. bağlantı önizlemesi (görsel: app/opengraph-image.tsx)
-    openGraph: { type: "website", locale: "tr_TR", siteName: settings.siteName, title: `${settings.siteName} · Özel ders, soru çözüm ve koçluk`, description: settings.siteTagline },
+    openGraph: { type: "website", locale: "tr_TR", siteName: settings.siteName, title: `${settings.siteName} · Özel ders ve koçluk`, description: settings.siteTagline },
     twitter: { card: "summary_large_image" },
     // iPhone: "Ana Ekrana Ekle" ile tam ekran açılır (simge: app/apple-icon.png)
     appleWebApp: { capable: true, title: settings.siteName, statusBarStyle: "default" },

@@ -346,6 +346,8 @@ model TeacherProfile {
   offersIntro             Boolean            @default(false)
   // Serbest ders bağlantısı (yönetici verir, ör. öğrenci koçu): gerekçe yazmadan, herhangi bir öğrenci için ödemesiz ders açar
   freeLessonLinks         Boolean            @default(false)
+  // Öğretmenin taahhüdü: tamamlanan her ücretli ders için öğrenciye 30 dk ücretsiz soru çözüm dersi açar
+  offersQuestionSession   Boolean            @default(false)
   publishedAt             DateTime?
   createdAt               DateTime           @default(now())
   updatedAt               DateTime           @updatedAt
@@ -600,6 +602,8 @@ model Booking {
   isTest             Boolean          @default(false)
   // Ücretsiz tanışma görüşmesi (15 dk, online, ödemesiz); hakediş, yorum ve ders sayısına girmez.
   isIntro            Boolean          @default(false)
+  // Ders alındığı anda öğretmen 30 dk ücretsiz soru çözümü taahhüt ediyordu (sonradan kapatsa da bu dersin hakkı durur)
+  questionSessionPromised Boolean     @default(false)
   // Fotoğrafla soruda çözümün gönderildiği an
   answeredAt         DateTime?
   createdAt          DateTime         @default(now())
@@ -641,6 +645,8 @@ model LessonLink {
   levelName       String
   subjectName     String
   note            String?
+  // true: tamamlanan dersin ardından açılan 30 dk ücretsiz soru çözüm dersi (telafi değil; kaynak dersin sınıfını kapatmaz)
+  isQuestionSession Boolean      @default(false)
   sourceBookingId String?
   sourceBooking   Booking?       @relation("LessonLinkSource", fields: [sourceBookingId], references: [id], onDelete: SetNull)
   bookingId       String?        @unique
@@ -936,6 +942,8 @@ enum CenterKind {
   DERSHANE
   KURS
   OTHER
+  // Pi Koç: tek kişilik bireysel koç hesabı
+  COACH
 }
 
 enum CenterStatus {
@@ -1059,7 +1067,7 @@ model Center {
   kind                   CenterKind   @default(ETUT)
   status                 CenterStatus @default(TRIAL)
   plan                   CenterPlan   @default(STARTER)
-  edition                CenterEdition @default(DERSHANE)
+  edition                CenterEdition @default(ETUT)
   studentLimit           Int          @default(100)
   trialEndsAt            DateTime?
   paidUntil              DateTime?

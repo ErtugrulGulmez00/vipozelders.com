@@ -74,6 +74,7 @@ export async function createCenterUser(centerId: string, centerName: string, inp
 }
 
 export async function addStaff(ctx: CenterContext, input: StaffInput) {
+  if (ctx.center.kind === "COACH") throw new CenterError("Pi Koç hesabı tek kişiliktir; personel eklenemez.");
   if (input.role === "OWNER" && ctx.member.role !== "OWNER") throw new CenterError("Kurum sahibi rolünü yalnızca kurum sahibi verebilir.");
   return createCenterUser(ctx.center.id, ctx.center.name, input);
 }

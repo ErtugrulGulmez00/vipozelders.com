@@ -65,7 +65,7 @@ export async function SiteFooter() {
             ))}
             <li>
               <Link href="/grup-dersleri" className="hover:text-white">
-                Grup dersleri (sanal dershane)
+                Grup dersleri
               </Link>
             </li>
             <li>
@@ -75,14 +75,14 @@ export async function SiteFooter() {
             </li>
             <li>
               <Link href="/kurumlar-icin" className="hover:text-white">
-                Etüt merkezi / dershane paneli
+                Etüt merkezi paneli
               </Link>
             </li>
             {/* Kurum rehberi boşken bağlantı gösterilmez */}
             {showCenters ? (
               <li>
                 <Link href="/kurumlar" className="hover:text-white">
-                  Etüt merkezleri ve dershaneler
+                  Etüt merkezleri
                 </Link>
               </li>
             ) : null}

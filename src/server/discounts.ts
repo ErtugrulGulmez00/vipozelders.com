@@ -2,25 +2,23 @@ import { randomInt } from "node:crypto";
 import type { Coupon } from "@/generated/prisma/client";
 import { formatMoney } from "@/lib/money";
 import { db, type DbTransaction } from "./db";
-import { notify } from "./notifications";
 import { loadSettings } from "./settings";
 
 // İndirim kodları ve "arkadaşını getir". İndirim platformun hizmet bedelinden karşılanır: öğretmen payı değişmez,
-// indirim en fazla hizmet bedeli kadar olur (soru kredisinde satış platformundur; en az 1 ₺ ödenir).
+// indirim en fazla hizmet bedeli kadar olur.
 // Kod girilmezse ve kullanıcı davetle geldiyse ilk siparişinde davet indirimi uygulanır. Kullanım, ödeme
-// başarıyla tamamlandığında kaydedilir; davet edene ödül (soru kredisi) aynı anda verilir.
+// başarıyla tamamlandığında kaydedilir.
 
 export class DiscountError extends Error {}
 
-export type DiscountTarget = "booking" | "credits" | "subscription" | "group";
+export type DiscountTarget = "booking" | "group";
 export type Discount = { amount: number; couponCode: string | null; source: "coupon" | "referral" | null; label: string | null };
 
 type Tx = DbTransaction | typeof db;
 
 const NONE: Discount = { amount: 0, couponCode: null, source: null, label: null };
-const MIN_PAYABLE = 100;
 
-export const TARGET_LABELS: Record<DiscountTarget, string> = { booking: "Birebir ders", credits: "Soru kredisi", subscription: "Soru aboneliği", group: "Grup dersi" };
+export const TARGET_LABELS: Record<DiscountTarget, string> = { booking: "Birebir ders", group: "Grup dersi" };
 
 /**
  * Kodlar büyük harfle saklanır ve karşılaştırılır. "hosgeldin" Türkçe kurala göre "HOSGELDİN" olur, İngilizce klavyeyle
@@ -32,13 +30,11 @@ export function normalizeCode(code: string) {
 
 /** Kullanıcının daha önce ödenmiş bir siparişi var mı (ilk sipariş indirimleri için)? */
 export async function hasPaidOrder(userId: string, tx: Tx = db) {
-  const [bookings, credits, subs, groups] = await Promise.all([
+  const [bookings, groups] = await Promise.all([
     tx.booking.count({ where: { studentId: userId, paidAt: { not: null } } }),
-    tx.creditPurchase.count({ where: { studentId: userId, paidAt: { not: null }, price: { gt: 0 } } }),
-    tx.questionSubscription.count({ where: { studentId: userId, paidAt: { not: null } } }),
     tx.groupEnrollment.count({ where: { studentId: userId, paidAt: { not: null } } }),
   ]);
-  return bookings + credits + subs + groups > 0;
+  return bookings + groups > 0;
 }
 
 export type DiscountExclude = { target: DiscountTarget; id: string };
@@ -49,23 +45,19 @@ export type DiscountExclude = { target: DiscountTarget; id: string };
  * userId verilmezse herkesinki (kodun toplam kullanım hakkı için); exclude: yeniden başlatılan aynı sipariş.
  */
 async function openDiscountedOrders(couponCode: string | null, userId: string | null, exclude?: DiscountExclude, now = new Date()) {
-  const recent = new Date(now.getTime() - 3_600_000);
   const base = { discountAmount: { gt: 0 }, couponCode, ...(userId ? { studentId: userId } : {}) };
   const not = (target: DiscountTarget) => (exclude?.target === target ? { id: { not: exclude.id } } : {});
   const counts = await Promise.all([
     db.booking.count({ where: { ...base, ...not("booking"), status: "PENDING_PAYMENT", holdExpiresAt: { gt: now } } }),
     db.groupEnrollment.count({ where: { ...base, ...not("group"), status: "PENDING_PAYMENT", holdExpiresAt: { gt: now } } }),
-    db.creditPurchase.count({ where: { ...base, ...not("credits"), status: "PENDING_PAYMENT", createdAt: { gt: recent } } }),
-    db.questionSubscription.count({ where: { ...base, ...not("subscription"), status: "PENDING_PAYMENT", createdAt: { gt: recent } } }),
   ]);
   return counts.reduce((t, n) => t + n, 0);
 }
 
 const OPEN_ORDER_ERROR = "Bu indirimle açtığınız ve ödemesi tamamlanmamış bir siparişiniz var. Onu tamamlayın ya da süresinin dolmasını bekleyin.";
 
-function cap(amount: number, target: DiscountTarget, price: number, commission: number) {
-  const limit = target === "credits" ? price - MIN_PAYABLE : commission;
-  return Math.max(0, Math.min(amount, limit));
+function cap(amount: number, commission: number) {
+  return Math.max(0, Math.min(amount, commission));
 }
 
 async function couponProblem(coupon: Coupon, userId: string, target: DiscountTarget, price: number, now: Date, exclude?: DiscountExclude): Promise<string | null> {
@@ -102,7 +94,7 @@ export async function resolveDiscount(
     const problem = await couponProblem(coupon, userId, target, price, now, exclude);
     if (problem) throw new DiscountError(problem);
     const raw = coupon.kind === "PERCENT" ? Math.floor((price * coupon.value) / 100) : coupon.value;
-    const amount = cap(coupon.maxDiscount ? Math.min(raw, coupon.maxDiscount) : raw, target, price, commission);
+    const amount = cap(coupon.maxDiscount ? Math.min(raw, coupon.maxDiscount) : raw, commission);
     if (amount <= 0) throw new DiscountError("Bu siparişte bu kodla indirim uygulanamıyor.");
     return { amount, couponCode: coupon.code, source: "coupon", label: `${coupon.code} indirimi` };
   }
@@ -111,13 +103,12 @@ export async function resolveDiscount(
   const user = await db.user.findUnique({ where: { id: userId }, select: { referredById: true } });
   // Davet indirimi yalnızca ilk sipariş için: ödemesi süren başka davet indirimli sipariş varsa ikincisine uygulanmaz
   if (!user?.referredById || (await hasPaidOrder(userId)) || (await openDiscountedOrders(null, userId, exclude, now)) > 0) return NONE;
-  const amount = cap(Math.floor((price * settings.referralDiscountPercent) / 100), target, price, commission);
+  const amount = cap(Math.floor((price * settings.referralDiscountPercent) / 100), commission);
   return amount > 0 ? { amount, couponCode: null, source: "referral", label: `Arkadaş davetiyle %${settings.referralDiscountPercent} indirim` } : NONE;
 }
 
 /**
- * Ödeme başarıyla tamamlandığında (transaction içinde): indirim kullanımı kaydedilir; kullanıcı davetle geldiyse ve
- * ilk ödemesiyse davet edene soru kredisi verilir.
+ * Ödeme başarıyla tamamlandığında (transaction içinde): indirim kullanımı kaydedilir.
  */
 export async function recordPaidOrder(tx: DbTransaction, input: { userId: string; targetType: DiscountTarget; targetId: string; discountAmount: number; couponCode: string | null }) {
   if (input.discountAmount > 0) {
@@ -128,25 +119,6 @@ export async function recordPaidOrder(tx: DbTransaction, input: { userId: string
       update: {},
     });
   }
-  // İndirim koduyla neredeyse bedavaya alınan siparişe davet ödülü verilmez (iki hesapla ödül toplama)
-  if (input.couponCode) return;
-  const user = await tx.user.findUnique({ where: { id: input.userId }, select: { referredById: true, referralRewardedAt: true, firstName: true } });
-  if (!user?.referredById || user.referralRewardedAt) return;
-  const marked = await tx.user.updateMany({ where: { id: input.userId, referralRewardedAt: null }, data: { referralRewardedAt: new Date() } });
-  if (marked.count !== 1) return;
-  const settings = await loadSettings();
-  if (!settings.referralEnabled || settings.referralRewardCredits <= 0) return;
-  const referrer = await tx.user.findUnique({ where: { id: user.referredById }, select: { id: true, role: true, status: true } });
-  if (!referrer || referrer.role !== "STUDENT" || referrer.status !== "ACTIVE") return;
-  const now = new Date();
-  const expiresAt = new Date(now);
-  expiresAt.setMonth(expiresAt.getMonth() + settings.creditValidityMonths);
-  // Ödül: ücretsiz kredi paketi (iade edilecek tutarı yoktur)
-  const purchase = await tx.creditPurchase.create({
-    data: { code: `DV-${randomCode()}`, studentId: referrer.id, credits: settings.referralRewardCredits, price: 0, singlePrice: 0, status: "PAID", paidAt: now, expiresAt },
-  });
-  await tx.creditLedger.create({ data: { studentId: referrer.id, purchaseId: purchase.id, kind: "PURCHASE", amount: settings.referralRewardCredits, note: "Arkadaş daveti ödülü" } });
-  await notify({ userId: referrer.id, type: "referral.reward", title: `${settings.referralRewardCredits} soru kredisi kazandınız`, body: `Davet ettiğiniz ${user.firstName} ilk siparişini verdi. Kredileriniz hesabınızda; sorularınızı “Soru sor” sayfasından gönderebilirsiniz.`, link: "/hesabim/krediler" }, tx);
 }
 
 const ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";

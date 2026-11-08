@@ -3,7 +3,7 @@ import { db } from "../db";
 import type { CenterContext } from "./context";
 import { CenterError } from "./errors";
 
-// Derslik yönetimi (Dershane paketi): derslik listesi, haftalık doluluk, çakışma ve kapasite uyarıları.
+// Derslik yönetimi: derslik listesi, haftalık doluluk, çakışma ve kapasite uyarıları.
 // Program ve sınıflardaki "derslik" alanı serbest metindir; derslik kaydıyla adından eşleşir.
 
 export type RoomInput = { name: string; capacity: number | null; note: string | null };

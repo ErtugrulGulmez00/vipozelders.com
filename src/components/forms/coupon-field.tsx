@@ -9,7 +9,7 @@ import type { DiscountTarget } from "@/server/discounts";
  * Ödeme formlarında indirim kodu alanı. Kod "couponCode" adıyla forma eklenir; "Uygula" yalnızca önizlemedir,
  * indirim ödemede yeniden doğrulanır. Davetle gelen yeni üyenin indirimi kod gerekmeden kendiliğinden uygulanır.
  */
-export function CouponField({ target, refId, duration, credits }: { target: DiscountTarget; refId?: string; duration?: number; credits?: number }) {
+export function CouponField({ target, refId, duration }: { target: DiscountTarget; refId?: string; duration?: number }) {
   const [open, setOpen] = useState(false);
   const [code, setCode] = useState("");
   const [result, setResult] = useState<CouponCheck | null>(null);
@@ -38,7 +38,7 @@ export function CouponField({ target, refId, duration, credits }: { target: Disc
         <button
           type="button"
           disabled={pending || !code.trim()}
-          onClick={() => start(async () => setResult(await checkCouponAction({ target, code, ref: refId ?? "", duration, credits })))}
+          onClick={() => start(async () => setResult(await checkCouponAction({ target, code, ref: refId ?? "", duration })))}
           className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
         >
           {pending ? "…" : "Uygula"}

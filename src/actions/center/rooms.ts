@@ -6,7 +6,7 @@ import { centerAction, centerAudit } from "@/server/center/context";
 import { guard, int, opt, requiredText, str } from "@/server/center/form";
 import { deleteRoom, saveRoom } from "@/server/center/rooms";
 
-// Derslikler (Dershane paketi).
+// Derslikler.
 
 export async function saveRoomAction(_: ActionState, formData: FormData): Promise<ActionState> {
   const auth = await centerAction("groups.manage");

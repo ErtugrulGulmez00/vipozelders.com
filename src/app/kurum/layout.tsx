@@ -29,8 +29,7 @@ import { SubscriptionBanner } from "@/components/center/center-ui";
 import { NotificationChannelProvider } from "@/components/notification-channel";
 import { PanelShell } from "@/components/panel/panel-shell";
 import type { PanelNavItem } from "@/components/panel/nav-links";
-import { dershaneSectionForPath, editionAllows } from "@/lib/center/editions";
-import { moduleForPath } from "@/lib/center/modules";
+import { coachAllows, moduleForPath } from "@/lib/center/modules";
 import { CENTER_ROLE_LABEL, type CenterPermission } from "@/lib/center/permissions";
 import { notificationScope, notificationScopeWhere, sideSwitches } from "@/lib/sides";
 import { requireCenter } from "@/server/center/context";
@@ -80,8 +79,8 @@ export default async function CenterLayout({ children }: { children: React.React
     .filter((item) => !item.permission || ctx.can(item.permission))
     .filter((item) => {
       const key = moduleForPath(item.href);
-      const section = dershaneSectionForPath(item.href);
-      return (!key || !ctx.center.disabledModules.includes(key)) && (!section || editionAllows(ctx.center.edition, section));
+      if (ctx.center.kind === "COACH" && !coachAllows(item.href.split("/")[2] ?? "")) return false;
+      return !key || !ctx.center.disabledModules.includes(key);
     })
     .map((item) => ({ href: item.href, label: item.label, icon: item.icon, badge: item.badge, exact: item.exact }));
   return (

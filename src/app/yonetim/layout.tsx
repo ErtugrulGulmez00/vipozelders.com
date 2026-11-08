@@ -1,4 +1,4 @@
-import { BarChart3, MessageCircle, Inbox, Newspaper, Tag, Bell, Bug, Building2, CreditCard, CalendarDays, FileText, FolderTree, GraduationCap, History, LayoutDashboard, Mail, MessageCircleQuestion, MessageCircleWarning, MessageSquareQuote, Settings, ShieldAlert, ShieldCheck, UserPlus, Users, Wallet } from "lucide-react";
+import { BarChart3, MessageCircle, Inbox, Newspaper, Tag, Bell, Bug, Building2, CreditCard, CalendarDays, FileText, FolderTree, GraduationCap, History, LayoutDashboard, Mail, MessageCircleWarning, MessageSquareQuote, Settings, ShieldAlert, ShieldCheck, UserPlus, Users, Wallet } from "lucide-react";
 import { PanelShell } from "@/components/panel/panel-shell";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
@@ -8,14 +8,13 @@ export const instant = false;
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await requireRole("ADMIN");
-  const [disputes, drafts, unread, applications, documents, centerApplications, poolDisputes, openErrors, openReports, messagesToReview, lessonRequests] = await Promise.all([
+  const [disputes, drafts, unread, applications, documents, centerApplications, openErrors, openReports, messagesToReview, lessonRequests] = await Promise.all([
     db.booking.count({ where: { status: "DISPUTED" } }),
     db.teacherProfile.count({ where: { status: "DRAFT" } }),
     db.notification.count({ where: { userId: user.id, readAt: null } }),
     db.teacherApplication.count({ where: { status: "NEW" } }),
     db.teacherDocument.count({ where: { status: "PENDING" } }),
     db.centerApplication.count({ where: { status: "NEW" } }),
-    db.poolQuestion.count({ where: { status: "DISPUTED" } }),
     db.errorEvent.count({ where: { resolvedAt: null } }),
     db.classroomReport.count({ where: { resolvedAt: null } }),
     threadsToReviewCount(),
@@ -36,7 +35,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         { href: "/yonetim/randevular", label: "Randevular", icon: <CalendarDays />, badge: disputes || undefined },
         { href: "/yonetim/mesajlar", label: "Mesaj denetimi", icon: <MessageCircleWarning />, badge: messagesToReview || undefined },
         { href: "/yonetim/ders-bildirimleri", label: "Ders bildirimleri", icon: <ShieldAlert />, badge: openReports || undefined },
-        { href: "/yonetim/soru-havuzu", label: "Soru havuzu", icon: <MessageCircleQuestion />, badge: poolDisputes || undefined },
         { href: "/yonetim/grup-dersleri", label: "Grup dersleri", icon: <Users /> },
         { href: "/yonetim/finans", label: "Finans", icon: <Wallet /> },
         { href: "/yonetim/kuponlar", label: "İndirim kodları", icon: <Tag /> },

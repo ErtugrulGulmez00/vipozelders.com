@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Pi Kampüs",
     short_name: "Pi Kampüs",
-    description: "Özel ders, soru çözüm ve koçluk; etüt merkezi ve dershaneler için kurum paneli.",
+    description: "Özel ders ve koçluk; etüt merkezleri için yönetim paneli.",
     lang: "tr",
     start_url: "/",
     scope: "/",

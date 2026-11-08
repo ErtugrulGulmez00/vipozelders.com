@@ -2,7 +2,7 @@ import type { LessonPackage, Prisma } from "@/generated/prisma/client";
 import { formatDate, formatLessonRange } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { BookingError, createBookingHold, packageLessonsLeft } from "./bookings";
-import { newCode } from "./credits";
+import { newCode } from "./codes";
 import { db } from "./db";
 import { recordPaidOrder } from "./discounts";
 import { appUrl } from "./email";

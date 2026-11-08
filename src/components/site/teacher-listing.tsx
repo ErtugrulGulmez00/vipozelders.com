@@ -10,7 +10,7 @@ import { FilterPanel, SortSelect } from "./filter-panel";
 import { LessonRequestForm } from "./lesson-request-form";
 import { TeacherCard } from "./teacher-card";
 
-const KEYS: (keyof TeacherSearchParams)[] = ["level", "subject", "service", "mode", "city", "district", "minPrice", "maxPrice", "rating", "gender", "time", "verified", "intro", "abonelik", "q", "sort", "page"];
+const KEYS: (keyof TeacherSearchParams)[] = ["level", "subject", "service", "mode", "city", "district", "minPrice", "maxPrice", "rating", "gender", "time", "verified", "intro", "soruCozum", "q", "sort", "page"];
 
 function pick(raw: Record<string, string | string[] | undefined>): TeacherSearchParams {
   const params: TeacherSearchParams = {};
@@ -89,7 +89,6 @@ export async function TeacherListing({
               action={
                 <div className="flex flex-wrap justify-center gap-2">
                   <LinkButton href="/ogretmenler" variant="outline">Filtreleri temizle</LinkButton>
-                  <LinkButton href="/soru-sor" variant="ghost">Soru sor</LinkButton>
                 </div>
               }
             />

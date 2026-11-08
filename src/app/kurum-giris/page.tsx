@@ -16,7 +16,7 @@ import { uploadUrl } from "@/server/storage";
 
 export const metadata: Metadata = {
   title: "Kurum paneli girişi",
-  description: "Etüt merkezi ve dershane personeli, öğrencileri ve velileri için Pi Kampüs kurum girişi.",
+  description: "Etüt merkezi personeli, öğrencileri ve velileri için Pi Kampüs kurum girişi.",
   robots: { index: false },
 };
 
@@ -81,7 +81,7 @@ async function LoginCard({ searchParams }: { searchParams: Promise<Record<string
         )}
         <div>
           <h1 className="text-2xl font-bold text-slate-900">{branding ? branding.name : "Kurum paneli girişi"}</h1>
-          <p className="text-sm text-slate-500">{branding ? "Personel, öğrenci ve veli girişi" : "Etüt merkezi ve dershane: personel, öğrenci ve veli"}</p>
+          <p className="text-sm text-slate-500">{branding ? "Personel, öğrenci ve veli girişi" : "Etüt merkezi: personel, öğrenci ve veli"}</p>
         </div>
       </div>
       <LoginForm gate="kurum" />

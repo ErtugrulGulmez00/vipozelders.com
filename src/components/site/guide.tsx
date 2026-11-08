@@ -13,7 +13,6 @@ export type LegendItem = [string, string];
 export const GUIDES = [
   { key: "ozel-ders", href: "/nasil-calisir/ozel-ders", label: "Özel ders" },
   { key: "etut-merkezi", href: "/nasil-calisir/etut-merkezi", label: "Etüt merkezi" },
-  { key: "dershane", href: "/nasil-calisir/dershane", label: "Dershane" },
 ] as const;
 
 /** Rehberler arası geçiş çubuğu */

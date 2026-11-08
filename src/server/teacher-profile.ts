@@ -128,8 +128,6 @@ export async function saveOffering(teacherId: string, formData: FormData) {
   if (!pair) throw new ProfileError("Seçtiğiniz ders bu kademede yok.");
 
   const data = {
-    // Öğretmene özel fotoğrafla soru kaldırıldı; tek soru çözümü soru havuzundan (kredi) yapılır.
-    questionPrice: null,
     serviceTypeId: input.serviceTypeId,
     levelId: input.levelId,
     subjectId: input.subjectId,

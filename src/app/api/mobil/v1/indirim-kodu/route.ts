@@ -5,12 +5,11 @@ import { json, readBody } from "@/server/mobile/http";
 import { withUser } from "@/server/mobile/route";
 
 const schema = z.object({
-  target: z.enum(["booking", "credits", "subscription", "group"]),
+  target: z.enum(["booking", "group"]),
   code: z.string().max(30),
-  // booking: offeringId · subscription: planId · group: courseId
+  // booking: offeringId · group: courseId
   ref: z.string().max(60).optional(),
   duration: z.number().int().optional(),
-  credits: z.number().int().optional(),
 });
 
 /**

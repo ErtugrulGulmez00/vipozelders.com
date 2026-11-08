@@ -1,9 +1,9 @@
-import type { Booking, CreditPurchase, GroupCourse, GroupEnrollment, LessonPackage, QuestionSubscription } from "@/generated/prisma/client";
+import type { Booking, GroupCourse, GroupEnrollment, LessonPackage } from "@/generated/prisma/client";
 import { formatLessonRange } from "@/lib/dates";
 
-/** Ödemenin neye ait olduğu: ders randevusu, soru kredisi paketi ya da soru aboneliği. Ödeme ve sonuç sayfaları bunu gösterir. */
+/** Ödemenin neye ait olduğu: ders randevusu, grup dersi ya da ders paketi. Ödeme ve sonuç sayfaları bunu gösterir. */
 export type PaymentSubject = {
-  kind: "booking" | "credits" | "subscription" | "group" | "package";
+  kind: "booking" | "group" | "package";
   ownerId: string;
   /** /odeme/sonuc/[id] sayfasının kimliği */
   resultId: string;
@@ -15,12 +15,10 @@ export type PaymentSubject = {
 
 export function paymentSubject(payment: {
   booking: Booking | null;
-  creditPurchase: CreditPurchase | null;
-  subscription?: QuestionSubscription | null;
   groupEnrollment?: (GroupEnrollment & { course: GroupCourse }) | null;
   package?: LessonPackage | null;
 }): PaymentSubject | null {
-  const { booking, creditPurchase, subscription, groupEnrollment, package: lessonPackage } = payment;
+  const { booking, groupEnrollment, package: lessonPackage } = payment;
   if (booking) {
     return {
       kind: "booking",
@@ -28,30 +26,8 @@ export function paymentSubject(payment: {
       resultId: booking.id,
       code: booking.code,
       title: `${booking.levelName} ${booking.subjectName} · ${booking.serviceName}`,
-      detail: booking.mode === "QUESTION" ? "Fotoğrafla soru (saat yok)" : formatLessonRange(booking.startAt, booking.endAt),
+      detail: formatLessonRange(booking.startAt, booking.endAt),
       holdExpiresAt: booking.holdExpiresAt,
-    };
-  }
-  if (creditPurchase) {
-    return {
-      kind: "credits",
-      ownerId: creditPurchase.studentId,
-      resultId: creditPurchase.id,
-      code: creditPurchase.code,
-      title: `${creditPurchase.credits} soru kredisi`,
-      detail: "Soru çözüm paketi",
-      holdExpiresAt: null,
-    };
-  }
-  if (subscription) {
-    return {
-      kind: "subscription",
-      ownerId: subscription.studentId,
-      resultId: subscription.id,
-      code: subscription.code,
-      title: `${subscription.levelName} ${subscription.subjectName} soru aboneliği`,
-      detail: `${subscription.days} gün · günde ${subscription.dailyLimit} soruya kadar`,
-      holdExpiresAt: null,
     };
   }
   if (groupEnrollment) {

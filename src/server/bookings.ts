@@ -16,8 +16,6 @@ import { db, type DbTransaction } from "./db";
 import { addLedgerEntry, pendingForBooking, resetPendingForBooking } from "./ledger";
 import { notify, notifyRole } from "./notifications";
 import { getPaymentProvider, getProviderById, PAYMENT_PROVIDERS, processRefund, requestRefund, salesOpen } from "./payments/service";
-import { completeCreditCheckout } from "./credits";
-import { completeSubscriptionCheckout } from "./subscriptions";
 import { completeGroupCheckout, groupBusy } from "./groups";
 import { DiscountError, recordPaidOrder, resolveDiscount } from "./discounts";
 import { approvalDeadline, INTRO_MINUTES, lessonPrice, settledReleaseAt, splitCommission, splitRetained, studentCancellationRefund } from "./pricing";
@@ -32,8 +30,6 @@ const HOUR = 3_600_000;
 /** Saati meşgul eden durumlar (ödeme bekleyen kayıt yalnızca süresi dolmadıysa). */
 function blockingWhere(now: Date): Prisma.BookingWhereInput {
   return {
-    // Fotoğrafla soru saat tutmaz.
-    mode: { not: "QUESTION" },
     OR: [
       { status: { in: ["PENDING_APPROVAL", "CONFIRMED"] } },
       { status: "PENDING_PAYMENT", holdExpiresAt: { gt: now } },
@@ -104,7 +100,6 @@ function fullRefundText(booking: Pick<Booking, "packageId" | "price">, verb = "k
 }
 
 export function lessonSummary(booking: Pick<Booking, "subjectName" | "levelName" | "serviceName" | "startAt" | "endAt" | "mode" | "code">) {
-  if (booking.mode === "QUESTION") return `${booking.levelName} ${booking.subjectName} · Fotoğrafla soru (${booking.code})`;
   return `${booking.levelName} ${booking.subjectName} · ${booking.serviceName} — ${formatLessonRange(booking.startAt, booking.endAt)}`;
 }
 
@@ -188,7 +183,7 @@ export async function createBookingHold(input: CreateBookingInput, now = new Dat
     if (pkg.expiresAt && pkg.expiresAt <= now) throw new BookingError("Paketinizin kullanım süresi doldu.");
     if (pkg.offeringId !== input.offeringId || pkg.durationMinutes !== input.durationMinutes) throw new BookingError("Bu paket yalnızca aynı ders ve sürede kullanılabilir.");
   }
-  if (!intro && !pkg && !salesOpen()) throw new BookingError("Online ödeme altyapımız çok yakında açılıyor; şu an ders ve soru satışı yapılamıyor.");
+  if (!intro && !pkg && !salesOpen()) throw new BookingError("Online ödeme altyapımız çok yakında açılıyor; şu an ders satışı yapılamıyor.");
   const settings = await loadSettings();
   const offering = await db.teacherOffering.findUnique({
     where: { id: input.offeringId },
@@ -341,6 +336,7 @@ export async function createBookingHold(input: CreateBookingInput, now = new Dat
           paidAt: pkg?.paidAt ?? null,
           status: intro || pkg ? "PENDING_APPROVAL" : "PENDING_PAYMENT",
           isIntro: intro,
+          questionSessionPromised: !intro && teacher.offersQuestionSession,
           holdExpiresAt: intro || pkg ? null : new Date(now.getTime() + settings.paymentHoldMinutes * 60_000),
           approvalDeadline: intro || pkg ? approvalDeadline(now, input.startAt, settings) : null,
         },
@@ -480,17 +476,11 @@ export type CheckoutOutcome = "paid" | "failed" | "refunded" | "already" | "pend
 
 /**
  * Ödeme kuruluşundan dönüşte (veya test ödeme sayfasından) ödemeyi sonuçlandırır. Tekrar çağrılabilir.
- * Dönen bookingId sonuç sayfasının kimliğidir: kredi paketi ve abonelik ödemesinde onların kimliği.
+ * Dönen bookingId sonuç sayfasının kimliğidir: grup dersi ve paket ödemesinde onların kimliği.
  */
 export async function completeCheckout(token: string, now = new Date()): Promise<{ bookingId: string; outcome: CheckoutOutcome }> {
   const found = await db.payment.findUnique({ where: { providerToken: token } });
   if (!found) throw new BookingError("Ödeme kaydı bulunamadı.");
-  if (found.creditPurchaseId) {
-    return { bookingId: found.creditPurchaseId, outcome: await completeCreditCheckout(found, now) };
-  }
-  if (found.subscriptionId) {
-    return { bookingId: found.subscriptionId, outcome: await completeSubscriptionCheckout(found, now) };
-  }
   if (found.groupEnrollmentId) {
     return { bookingId: found.groupEnrollmentId, outcome: await completeGroupCheckout(found, now) };
   }
@@ -542,7 +532,7 @@ export async function completeCheckout(token: string, now = new Date()): Promise
         },
         select: { id: true },
       });
-      canProceed = booking.mode === "QUESTION" || (!clash && booking.startAt.getTime() > now.getTime());
+      canProceed = !clash && booking.startAt.getTime() > now.getTime();
     }
 
     if (!canProceed) {
@@ -570,8 +560,7 @@ export async function completeCheckout(token: string, now = new Date()): Promise
       return "refunded";
     }
 
-    const isQuestion = booking.mode === "QUESTION";
-    const deadline = isQuestion ? new Date(now.getTime() + settings.questionAnswerHours * HOUR) : approvalDeadline(now, booking.startAt, settings);
+    const deadline = approvalDeadline(now, booking.startAt, settings);
     await transition(
       tx,
       booking,
@@ -586,11 +575,9 @@ export async function completeCheckout(token: string, now = new Date()): Promise
         userId: booking.teacherId,
         type: "booking.request",
         lesson: lessonSummary(booking),
-        title: isQuestion ? "Yeni soru geldi" : "Yeni ders talebi",
-        body: isQuestion
-          ? `${booking.learnerName} · ${lessonSummary(booking)}. Çözümü ${formatDateTime(deadline)} saatine kadar gönderin; gönderilmezse ücret öğrenciye iade edilir.`
-          : `${booking.learnerName} için ${lessonSummary(booking)}. Lütfen ${formatDateTime(deadline)} saatine kadar onaylayın; yanıt verilmezse talep iptal edilir.`,
-        link: isQuestion ? `/ogretmen-paneli/dersler/${booking.id}` : "/ogretmen-paneli/talepler",
+        title: "Yeni ders talebi",
+        body: `${booking.learnerName} için ${lessonSummary(booking)}. Lütfen ${formatDateTime(deadline)} saatine kadar onaylayın; yanıt verilmezse talep iptal edilir.`,
+        link: "/ogretmen-paneli/talepler",
       },
       tx,
     );
@@ -598,10 +585,8 @@ export async function completeCheckout(token: string, now = new Date()): Promise
       {
         userId: booking.studentId,
         type: "booking.paid",
-        title: isQuestion ? "Sorunuz öğretmene iletildi" : "Ödemeniz alındı, öğretmen onayı bekleniyor",
-        body: isQuestion
-          ? `${lessonSummary(booking)}. Çözüm en geç ${formatDateTime(deadline)} saatine kadar gelecek; gelmezse ödediğiniz ${formatMoney(booking.price)} tamamen iade edilir.`
-          : `${lessonSummary(booking)}. Öğretmen onaylayınca size haber vereceğiz. Onaylanmazsa ödediğiniz ${formatMoney(booking.price)} tamamen iade edilir.`,
+        title: "Ödemeniz alındı, öğretmen onayı bekleniyor",
+        body: `${lessonSummary(booking)}. Öğretmen onaylayınca size haber vereceğiz. Onaylanmazsa ödediğiniz ${formatMoney(booking.price)} tamamen iade edilir.`,
         link: `/hesabim/derslerim/${booking.id}`,
       },
       tx,
@@ -704,7 +689,6 @@ export async function approveBooking(bookingId: string, teacherId: string, now =
     const booking = await tx.booking.findUnique({ where: { id: bookingId } });
     if (!booking || booking.teacherId !== teacherId) throw new BookingError("Talep bulunamadı.");
     if (booking.status !== "PENDING_APPROVAL") throw new BookingError("Bu talep artık onay beklemiyor.");
-    if (booking.mode === "QUESTION") throw new BookingError("Fotoğrafla soruda onay yerine çözümü gönderin.");
     if (booking.approvalDeadline && booking.approvalDeadline <= now) {
       throw new BookingError("Onay süresi doldu; talep otomatik olarak iptal edilecek.");
     }
@@ -998,7 +982,7 @@ export async function expireOverdueApprovals(now = new Date()): Promise<number> 
             userId: booking.studentId,
             type: "booking.expired",
             lesson: lessonSummary(booking),
-            title: booking.mode === "QUESTION" ? "Sorunuz zamanında çözülmedi" : "Talebiniz zamanında onaylanmadı",
+            title: "Talebiniz zamanında onaylanmadı",
             body: `${lessonSummary(booking)}. Öğretmen süresi içinde yanıt vermediği için talep iptal edildi. ${fullRefundText(booking)}`,
             link: "/ogretmenler",
           },

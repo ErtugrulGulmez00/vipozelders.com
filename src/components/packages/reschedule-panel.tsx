@@ -7,7 +7,7 @@ import { RescheduleForm, RescheduleResponse } from "./forms";
 
 /** Ders sayfasında erteleme: bekleyen öneri (yanıt/geri çekme) ya da yeni saat önerme formu. */
 export async function ReschedulePanel({ booking, viewerId }: { booking: Booking; viewerId: string }) {
-  if (booking.status !== "CONFIRMED" || booking.mode === "QUESTION") return null;
+  if (booking.status !== "CONFIRMED") return null;
   const now = new Date();
   const [pending, allowed] = await Promise.all([db.rescheduleRequest.findFirst({ where: { bookingId: booking.id, status: "PENDING" } }), rescheduleAllowed(booking, now)]);
   if (!pending && !allowed.ok) return null;

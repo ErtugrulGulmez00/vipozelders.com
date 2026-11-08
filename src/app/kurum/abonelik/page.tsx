@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { RateBar } from "@/components/center/center-ui";
-import { EditionCards, TierCards } from "@/components/center/pricing";
+import { PackageCard, TierCards } from "@/components/center/pricing";
 import { Badge, Card, CardBody, CardHeader, DescriptionList, PageHeader, Table, Td, Th } from "@/components/ui/primitives";
 import { CENTER_ACCESS_LABEL } from "@/lib/center/labels";
 import { formatDate } from "@/lib/dates";
@@ -21,7 +21,8 @@ export default async function SubscriptionPage() {
     db.centerSubscriptionPayment.findMany({ where: { centerId: ctx.center.id }, orderBy: { createdAt: "desc" } }),
   ]);
   const access = CENTER_ACCESS_LABEL[ctx.access.state];
-  const plans = centerPlans(settings, ctx.center.edition);
+  const plans = centerPlans(settings);
+  const coach = ctx.center.kind === "COACH";
   const usage = activeStudents / Math.max(ctx.center.studentLimit, 1);
   return (
     <>
@@ -32,7 +33,7 @@ export default async function SubscriptionPage() {
           <CardBody className="space-y-4">
             <DescriptionList
               items={[
-                { label: "Paket", value: subscriptionLabel(settings, ctx.center.edition, ctx.center.plan) },
+                { label: "Paket", value: coach ? `Pi Koç · ${ctx.center.studentLimit} öğrenciye kadar` : subscriptionLabel(settings, ctx.center.plan) },
                 {
                   label: ctx.center.status === "TRIAL" ? "Deneme bitişi" : "Geçerlilik",
                   value: ctx.access.endsAt ? `${formatDate(ctx.access.endsAt)}${ctx.access.daysLeft !== null && ctx.access.daysLeft > 0 ? ` (${ctx.access.daysLeft} gün)` : ""}` : "Süresiz",
@@ -63,11 +64,15 @@ export default async function SubscriptionPage() {
           </CardBody>
         </Card>
       </div>
-      <h2 className="mb-3 mt-8 text-lg font-bold text-slate-900">Paketler</h2>
-      <EditionCards current={ctx.center.edition} />
-      <h2 className="mb-1 mt-8 text-lg font-bold text-slate-900">Öğrenci sayısına göre fiyat</h2>
-      <p className="mb-4 text-sm text-slate-500">Paket ya da kademe değiştirmek için bizimle iletişime geçin; ödemeniz kaydedilince yeni paketiniz hemen açılır.</p>
-      <TierCards plans={plans} current={ctx.center.plan} />
+      {coach ? null : (
+        <>
+          <h2 className="mb-3 mt-8 text-lg font-bold text-slate-900">Paketiniz</h2>
+          <PackageCard current />
+          <h2 className="mb-1 mt-8 text-lg font-bold text-slate-900">Öğrenci sayısına göre fiyat</h2>
+          <p className="mb-4 text-sm text-slate-500">Kademe değiştirmek için bizimle iletişime geçin; ödemeniz kaydedilince yeni paketiniz hemen açılır.</p>
+          <TierCards plans={plans} current={ctx.center.plan} />
+        </>
+      )}
       {payments.length ? (
         <Card className="mt-8">
           <CardHeader title="Abonelik ödemeleriniz" />

@@ -3,7 +3,7 @@ import type { GroupCourse, GroupEnrollment, GroupSession, Prisma } from "@/gener
 import { addDaysToDateString, formatDateTime, formatLessonRange, isoWeekday, zonedDateTime } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
 import { maskContacts } from "@/lib/text";
-import { newCode } from "./credits";
+import { newCode } from "./codes";
 import { db, type DbTransaction } from "./db";
 import { appUrl } from "./email";
 import { addLedgerEntry } from "./ledger";
@@ -12,10 +12,9 @@ import { getPaymentProvider, getProviderById, PAYMENT_PROVIDERS, processRefund, 
 import { settledReleaseAt, splitCommission } from "./pricing";
 import { DiscountError, recordPaidOrder, resolveDiscount } from "./discounts";
 import { loadSettings } from "./settings";
-import { teacherPlanPairs } from "./subscriptions";
 import { videoConfigured } from "./video-config";
 
-// Grup dersi (sanal dershane). Öğretmen oturumlardan oluşan bir program ilan eder; öğrenci kişi başı ücreti öder.
+// Grup dersi. Öğretmen oturumlardan oluşan bir program ilan eder; öğrenci kişi başı ücreti öder.
 // Kayıt bitişinde en az katılımcı dolmazsa ders iptal olur, herkese tam iade yapılır. Öğretmen payı her oturum
 // yapıldıkça o oturumun payı kadar serbest kalır; öğretmenin katılmadığı oturumun payı öğrencilere iade edilir.
 // İlk oturum başlamadan öğrenci kaydını iptal ederse tam iade alır; sonrasında iade yoktur.
@@ -122,7 +121,6 @@ export async function createGroupCourse(teacherId: string, input: CourseInput, n
       tx.booking.findMany({
         where: {
           teacherId,
-          mode: { not: "QUESTION" },
           startAt: { lt: to },
           blockEndAt: { gt: from },
           OR: [{ status: { in: ["PENDING_APPROVAL", "CONFIRMED"] } }, { status: "PENDING_PAYMENT", holdExpiresAt: { gt: now } }],
@@ -615,4 +613,16 @@ export async function processGroups(now = new Date()): Promise<number> {
     changed++;
   }
   return changed;
+}
+
+/** Öğretmenin grup dersi açabileceği kademe ve dersler (verdiği derslerden). */
+export async function teacherPlanPairs(teacherId: string) {
+  const offerings = await db.teacherOffering.findMany({
+    where: { teacherId, isActive: true },
+    distinct: ["levelId", "subjectId"],
+    select: { levelId: true, subjectId: true, level: { select: { name: true, sortOrder: true } }, subject: { select: { name: true, sortOrder: true } } },
+  });
+  return offerings
+    .sort((a, b) => a.level.sortOrder - b.level.sortOrder || a.subject.sortOrder - b.subject.sortOrder)
+    .map((o) => ({ levelId: o.levelId, subjectId: o.subjectId, label: `${o.level.name} · ${o.subject.name}` }));
 }

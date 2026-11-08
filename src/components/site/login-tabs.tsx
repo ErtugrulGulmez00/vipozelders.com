@@ -10,7 +10,7 @@ import { cn } from "@/lib/cn";
 export function LoginTabs({ active }: { active: "personal" | "center" }) {
   const tabs = [
     { key: "personal", href: "/giris", label: "Özel ders girişi", hint: "Veli · öğrenci · öğretmen" },
-    { key: "center", href: "/kurum-giris", label: "Kurum girişi", hint: "Etüt merkezi / dershane" },
+    { key: "center", href: "/kurum-giris", label: "Kurum girişi", hint: "Etüt merkezi" },
   ] as const;
   return (
     <nav className="mb-6 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1" aria-label="Giriş türü">

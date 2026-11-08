@@ -9,11 +9,8 @@ async function hasPrivateActivity(userId: string): Promise<boolean> {
   const where = { studentId: userId };
   const found = await Promise.all([
     db.booking.findFirst({ where, select: { id: true } }),
-    db.creditPurchase.findFirst({ where, select: { id: true } }),
     db.lessonPackage.findFirst({ where, select: { id: true } }),
-    db.questionSubscription.findFirst({ where, select: { id: true } }),
     db.groupEnrollment.findFirst({ where, select: { id: true } }),
-    db.poolQuestion.findFirst({ where, select: { id: true } }),
     db.messageThread.findFirst({ where, select: { id: true } }),
     db.favorite.findFirst({ where, select: { teacherId: true } }),
   ]);

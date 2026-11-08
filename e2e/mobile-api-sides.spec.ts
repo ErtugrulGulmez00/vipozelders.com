@@ -16,7 +16,7 @@ const centerNote = `E2e mobil kurum bildirimi ${stamp}`;
 const privateNote = `E2e mobil özel ders bildirimi ${stamp}`;
 const CENTER = `(SELECT id FROM "Center" WHERE slug = 'basari-etut-merkezi')`;
 const AYSE = `(SELECT id FROM "User" WHERE username = 'ayse.yilmaz')`;
-let original: { edition: string; disabledModules: string[] };
+let original: { disabledModules: string[] };
 
 async function sql<T = Record<string, unknown>>(text: string, values: unknown[] = []): Promise<T[]> {
   const client = new pg.Client({ connectionString: DB_URL });
@@ -45,11 +45,11 @@ async function login(request: APIRequestContext, identifier: string, password: s
 }
 
 test.beforeAll(async () => {
-  [original] = await sql<{ edition: string; disabledModules: string[] }>(`SELECT edition::text, "disabledModules" FROM "Center" WHERE id = ${CENTER}`);
+  [original] = await sql<{ disabledModules: string[] }>(`SELECT "disabledModules" FROM "Center" WHERE id = ${CENTER}`);
 });
 
 test.afterAll(async () => {
-  await sql(`UPDATE "Center" SET edition = $1::"CenterEdition", "disabledModules" = $2 WHERE id = ${CENTER}`, [original.edition, original.disabledModules]);
+  await sql(`UPDATE "Center" SET "disabledModules" = $1 WHERE id = ${CENTER}`, [original.disabledModules]);
   await sql(`DELETE FROM "Notification" WHERE title = ANY($1)`, [[centerNote, privateNote]]);
   await sql(`DELETE FROM "Session" WHERE "userAgent" = 'mobil: e2e-test'`);
 });
@@ -130,21 +130,17 @@ test("veli portalı paket bölümlerini bildirir; kurumun kapattığı soru mod�
   const ali = links.find((l) => l.student.firstName === "Ali")!;
   expect(ali.isStudentAccount).toBe(false);
 
-  // Dershane paketi: tüm bölümler açık
-  await sql(`UPDATE "Center" SET edition = 'DERSHANE', "disabledModules" = '{}' WHERE id = ${CENTER}`);
+  // Tek paket: tüm bölümler açık
+  await sql(`UPDATE "Center" SET "disabledModules" = '{}' WHERE id = ${CENTER}`);
   const full = await (await api.get(`/kurum/${ali.id}`)).json();
   expect(full.modules).toEqual({ exams: true, payments: true, homework: true, study: true, questions: true, etuds: true, hall: true, schedule: true });
 
-  // Etüt Merkezi paketi + kurum soru modülünü kapattı
-  await sql(`UPDATE "Center" SET edition = 'ETUT', "disabledModules" = '{sorular}' WHERE id = ${CENTER}`);
+  // Kurum soru modülünü kapattı
+  await sql(`UPDATE "Center" SET "disabledModules" = '{sorular}' WHERE id = ${CENTER}`);
   const etut = await (await api.get(`/kurum/${ali.id}`)).json();
-  expect(etut.modules).toMatchObject({ schedule: false, questions: false, exams: true });
+  expect(etut.modules).toMatchObject({ schedule: true, questions: false, exams: true });
   const asked = await api.multipart(`/kurum/${ali.id}/sorular`, { subject: "Matematik", image: { name: "soru.png", mimeType: "image/png", buffer: PNG } });
   expect(asked.status()).toBe(422);
   expect((await asked.json()).error.message).toContain("kapattı");
 
-  // Soru aboneliği veren öğretmen süzgeci
-  const all = await (await request.get(`${API}/ogretmenler`)).json();
-  const subscribers = await (await request.get(`${API}/ogretmenler?abonelik=1`)).json();
-  expect(subscribers.total).toBeLessThanOrEqual(all.total);
 });

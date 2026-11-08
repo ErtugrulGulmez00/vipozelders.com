@@ -47,6 +47,7 @@ export function TeacherCard({ teacher }: { teacher: TeacherCardData }) {
 
       <div className="mt-4 flex flex-wrap gap-1.5">
         {teacher.offersIntro ? <Badge tone="green">Ücretsiz tanışma</Badge> : null}
+        {teacher.offersQuestionSession ? <Badge tone="sky">Derse ek 30 dk soru çözümü</Badge> : null}
         {teacher.subjects.map((subject) => (
           <Badge key={subject} tone="brand">
             {subject}

@@ -23,7 +23,7 @@ export default async function TeacherLessonLinksPage({ searchParams }: PageProps
     }),
     makeupSources(user.id, now),
     db.lessonLink.findMany({
-      where: { teacherId: user.id },
+      where: { teacherId: user.id, isQuestionSession: false },
       orderBy: { startAt: "desc" },
       take: 50,
       include: { booking: { select: { id: true, student: { select: { firstName: true, lastName: true } } } }, sourceBooking: { select: { id: true, code: true, learnerName: true, refundedAmount: true } } },

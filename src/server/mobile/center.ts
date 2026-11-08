@@ -1,5 +1,4 @@
 import { addDaysToDateString, dateStringToDbDate, dbDateToString, isDateString, toLocalDateString } from "@/lib/dates";
-import { editionAllows } from "@/lib/center/editions";
 import { installmentState } from "@/lib/center/finance";
 import { type CenterModuleKey, moduleEnabled } from "@/lib/center/modules";
 import { studentCoachingHistory } from "../center/coaching";
@@ -54,7 +53,7 @@ export async function childDetailJson(userId: string, guardianId: string) {
       questions: on("sorular"),
       etuds: on("etutler"),
       hall: on("calisma-salonu"),
-      schedule: editionAllows(student.center.edition, "program"),
+      schedule: true,
     },
     student: { firstName: student.firstName, lastName: student.lastName, gradeName: student.gradeName, studentNumber: student.studentNumber },
     center: { name: student.center.name, phone: student.center.phone, email: student.center.email, address: student.center.address, logoUrl: absoluteUpload(student.center.logoKey) },

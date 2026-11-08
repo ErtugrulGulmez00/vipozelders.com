@@ -1,53 +1,21 @@
-// Kurum paketleri. Etüt Merkezi: birebir takip, etüt, ödev, deneme analizi ve odaklı çalışma. Dershane: Etüt Merkezi'ndeki
-// her şey + sınıf bazlı toplu program ve yoklama, sınıf defteri, derslik yönetimi, kurum raporları.
-// Pakette olmayan bölüm menüde görünmez, sayfası açılmaz (kayıtlar silinmez; paket yükseltilince geri gelir).
+// Tek paket: Etüt Merkezi. Bütün bölümler her kuruma açıktır; kurum kullanmadığı modülleri Ayarlar'dan kapatabilir.
 
-export type CenterEditionName = "ETUT" | "DERSHANE";
-export const CENTER_EDITIONS: CenterEditionName[] = ["ETUT", "DERSHANE"];
-
-/** Yalnızca Dershane paketinde açık bölümler (/kurum/<bölüm>) */
-export const DERSHANE_SECTIONS = ["program", "yoklama", "sinif-defteri", "derslikler", "raporlar"] as const;
-export type DershaneSection = (typeof DERSHANE_SECTIONS)[number];
-
-const DERSHANE_ONLY = new Set<string>(DERSHANE_SECTIONS);
-
-export const EDITIONS: Record<CenterEditionName, { name: string; tagline: string; features: string[] }> = {
-  ETUT: {
-    name: "Etüt Merkezi",
-    tagline: "Birebir takip ve odaklı çalışma",
-    features: [
-      "Öğrenci ve veli kayıtları, Excel'den aktarım",
-      "Birebir öğrenci takibi, koçluk görüşmeleri",
-      "Etüt planlama, etüt yoklaması ve devamsızlık bildirimi",
-      "Ödev verme ve teslim kontrolü",
-      "Deneme sınavları, optik okuma, karne ve konu bazında eksik analizi",
-      "Çalışma salonu (odaklı çalışma) yoklaması",
-      "Kaynak, kitap ve haftalık çalışma programı",
-      "Fotoğrafla soru, veli ve öğrenci portalı",
-      "Ödeme planı, tahsilat, makbuz, gider takibi",
-      "Sınırsız personel hesabı",
-    ],
-  },
-  DERSHANE: {
-    name: "Dershane",
-    tagline: "Sınıf bazlı, kapsayıcı yönetim",
-    features: [
-      "Etüt Merkezi paketindeki her şey",
-      "Sınıflar ve haftalık toplu ders programı",
-      "Sınıf bazlı yoklama ve sınıf defteri",
-      "Derslik yönetimi: doluluk ve çakışma kontrolü",
-      "Kurum → sınıf → öğrenci hiyerarşik raporlar",
-    ],
-  },
+export const CENTER_PACKAGE = {
+  name: "Etüt Merkezi",
+  tagline: "Etüt, sınıf, deneme ve tahsilat tek panelde",
+  features: [
+    "Öğrenci ve veli kayıtları, Excel'den aktarım",
+    "Birebir öğrenci takibi, koçluk görüşmeleri",
+    "Etüt planlama, etüt yoklaması ve devamsızlık bildirimi",
+    "Sınıflar, haftalık ders programı ve sınıf yoklaması",
+    "Sınıf defteri ve derslik yönetimi (doluluk, çakışma kontrolü)",
+    "Ödev verme ve teslim kontrolü",
+    "Deneme sınavları, optik okuma, karne ve konu bazında eksik analizi",
+    "Çalışma salonu (odaklı çalışma) yoklaması",
+    "Kaynak, kitap ve haftalık çalışma programı",
+    "Fotoğrafla soru, veli ve öğrenci portalı",
+    "Ödeme planı, tahsilat, makbuz, gider takibi",
+    "Kurum, sınıf ve öğrenci bazında raporlar",
+    "Sınırsız personel hesabı",
+  ],
 };
-
-/** /kurum/<bölüm> adresinin bölümü bu pakette açık mı. */
-export function editionAllows(edition: CenterEditionName, section: string): boolean {
-  return edition === "DERSHANE" || !DERSHANE_ONLY.has(section);
-}
-
-/** Adresteki bölüm Dershane'ye özelse adı (paket kontrolü için), değilse null. */
-export function dershaneSectionForPath(pathname: string): DershaneSection | null {
-  const segment = pathname.split("/")[2] ?? "";
-  return DERSHANE_ONLY.has(segment) ? (segment as DershaneSection) : null;
-}

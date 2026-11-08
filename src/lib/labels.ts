@@ -74,42 +74,6 @@ export function durationLabel(minutes: number): string {
   return minutes % 60 === 0 ? `${minutes / 60} saat` : minutes > 60 ? `${Math.floor(minutes / 60)} saat ${minutes % 60} dk` : `${minutes} dk`;
 }
 
-// Soru havuzu (öğrenciye ve öğretmene aynı etiket gösterilir)
-export const POOL_STATUS: Record<string, { label: string; tone: Tone }> = {
-  OPEN: { label: "Öğretmen bekleniyor", tone: "amber" },
-  CLAIMED: { label: "Öğretmen çözüyor", tone: "sky" },
-  ANSWERED: { label: "Çözüldü", tone: "green" },
-  CLOSED: { label: "Çözüldü", tone: "brand" },
-  EXPIRED: { label: "Süresinde çözülmedi · kredi iade", tone: "slate" },
-  REJECTED: { label: "Geri çevrildi · kredi iade", tone: "rose" },
-  DISPUTED: { label: "İtiraz inceleniyor", tone: "violet" },
-  REFUNDED: { label: "İtiraz haklı · kredi iade", tone: "slate" },
-  CANCELLED: { label: "Geri çekildi · kredi iade", tone: "slate" },
-};
-
-// Abonelik sorularında kredi yoktur; iade yerine bu etiketler gösterilir.
-const SUBSCRIPTION_POOL_STATUS: Record<string, { label: string; tone: Tone }> = {
-  EXPIRED: { label: "Süresinde cevaplanmadı", tone: "slate" },
-  REJECTED: { label: "Geri çevrildi", tone: "rose" },
-  REFUNDED: { label: "İtiraz haklı bulundu", tone: "slate" },
-  CANCELLED: { label: "Abonelik bitti", tone: "slate" },
-};
-
-/** Soru durumu etiketi (abonelik sorusu için kredi iadesi yazmaz). */
-export function poolStatus(question: { status: string; subscriptionId?: string | null }) {
-  return (question.subscriptionId ? SUBSCRIPTION_POOL_STATUS[question.status] : undefined) ?? POOL_STATUS[question.status] ?? { label: question.status, tone: "slate" as Tone };
-}
-
-export const SUBSCRIPTION_STATUS: Record<string, { label: string; tone: Tone }> = {
-  PENDING_PAYMENT: { label: "Ödeme bekleniyor", tone: "amber" },
-  ACTIVE: { label: "Aktif", tone: "green" },
-  ENDED: { label: "Süresi doldu", tone: "slate" },
-  CANCELLED: { label: "Erken bitti · kalan günler iade", tone: "rose" },
-  REFUNDED: { label: "İade edildi", tone: "slate" },
-  FAILED: { label: "Ödeme başarısız", tone: "rose" },
-  EXPIRED: { label: "Ödenmedi", tone: "slate" },
-};
-
 export const GROUP_COURSE_STATUS: Record<string, { label: string; tone: Tone }> = {
   OPEN: { label: "Kayıtlar açık", tone: "sky" },
   CONFIRMED: { label: "Kesinleşti", tone: "green" },
@@ -140,12 +104,4 @@ export const CREDIT_PURCHASE_STATUS: Record<string, { label: string; tone: Tone 
   EXPIRED: { label: "Ödeme yapılmadı", tone: "slate" },
   REFUNDED: { label: "İade edildi", tone: "sky" },
   PARTIALLY_REFUNDED: { label: "Kısmi iade", tone: "sky" },
-};
-
-export const CREDIT_ENTRY_KIND: Record<string, string> = {
-  PURCHASE: "Satın alma",
-  SPEND: "Soru gönderildi",
-  RETURN: "Kredi iadesi",
-  EXPIRE: "Süresi doldu",
-  REFUND: "Paket iadesi",
 };

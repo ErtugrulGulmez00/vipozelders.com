@@ -20,9 +20,9 @@ export default async function BecomeTeacherPage() {
   const examplePrice = 100_000;
   const exampleNet = Math.round(examplePrice * (1 - settings.commissionRateBps / 10_000));
   const faq = [
-    { q: "Öğrenci bulabilecek miyim?", a: "Veliler sizi kademe, ders ve fiyata göre aramada bulur; profiliniz ne kadar dolu (fotoğraf, tanıtım, uygun saatler) olursa o kadar üstte çıkarsınız. Ayrıca soru havuzundan soru çözerek ve ücretsiz tanışma görüşmesi sunarak ilk öğrencilerinize daha hızlı ulaşırsınız." },
+    { q: "Öğrenci bulabilecek miyim?", a: "Veliler sizi kademe, ders ve fiyata göre aramada bulur; profiliniz ne kadar dolu (fotoğraf, tanıtım, uygun saatler) olursa o kadar üstte çıkarsınız. Ayrıca ücretsiz tanışma görüşmesi sunarak ilk öğrencilerinize daha hızlı ulaşırsınız." },
     { q: "Ders vermezsem ücret öder miyim?", a: `Hayır. Üyelik, aylık ücret ya da ilan bedeli yoktur. Hizmet bedeli (%${commission}) yalnızca tamamlanan derslerden kesilir.` },
-    { q: "Soru çözerek de kazanabilir miyim?", a: `Evet. Onaylı öğretmenler soru havuzundaki soruları üstlenip çözebilir; çözülen soru başına ${formatMoney(settings.poolTeacherFeeTl * 100)} kazanırsınız.` },
+    { q: "Dersin yanında soru çözümü vermek zorunda mıyım?", a: "Hayır, tamamen size bağlı. Panelinizden açarsanız profilinizde görünür; öğrenciniz dersini tamamladığında ona 30 dakikalık ücretsiz bir soru çözüm dersi açabilirsiniz. Bu ders için ücret ya da kesinti yoktur." },
     { q: "Vergi durumum ne olacak?", a: "Özel ders gelirinizin vergilendirilmesi kendi statünüze bağlıdır (serbest meslek, şahıs şirketi ya da esnaf muafiyeti gibi). Hakedişleriniz adınıza dekontla ödenir; kendi durumunuz için mali müşavirinize danışmanızı öneririz." },
     { q: "Devlet okulunda kadrolu öğretmenim, başvurabilir miyim?", a: "Kadrolu öğretmenlerin ücretli özel ders vermesi mevzuatla sınırlandırılmıştır. Başvuru sırasında statünüzü beyan edersiniz; mevzuatın size izin verdiğinden emin olmanız gerekir." },
   ];

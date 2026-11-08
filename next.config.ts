@@ -21,11 +21,23 @@ const nextConfig: NextConfig = {
   serverExternalPackages: ["iyzipay", "pg", "nodemailer", "exceljs", "unpdf"],
   // Eski "Nasıl çalışır?" yazısı (alt bilgi bağlantısı) yeni rehbere gider
   async redirects() {
-    return [{ source: "/sayfa/nasil-calisir", destination: "/nasil-calisir/ozel-ders", permanent: true }];
+    return [
+      { source: "/sayfa/nasil-calisir", destination: "/nasil-calisir/ozel-ders", permanent: true },
+      // Kaldırılan ücretli soru çözüm ve Dershane rehberi adresleri
+      { source: "/nasil-calisir/dershane", destination: "/nasil-calisir/etut-merkezi", permanent: true },
+      { source: "/soru-sor", destination: "/ozel-ders", permanent: true },
+      { source: "/abonelik/:path*", destination: "/ogretmenler", permanent: true },
+      { source: "/hesabim/sorularim/:path*", destination: "/hesabim", permanent: true },
+      { source: "/hesabim/krediler", destination: "/hesabim", permanent: true },
+      { source: "/hesabim/abonelikler/:path*", destination: "/hesabim", permanent: true },
+      { source: "/ogretmen-paneli/soru-havuzu/:path*", destination: "/ogretmen-paneli/soru-cozum", permanent: true },
+      { source: "/ogretmen-paneli/soru-aboneligi", destination: "/ogretmen-paneli/soru-cozum", permanent: true },
+      { source: "/yonetim/soru-havuzu", destination: "/yonetim", permanent: true },
+    ];
   },
   experimental: {
     serverActions: {
-      // Fotoğraf, belge ve soru çözüm videosu yüklemeleri (dosya sınırları uygulamada: 5-8 MB, video 25 MB).
+      // Fotoğraf, belge ve kurumun soru çözüm videosu yüklemeleri (dosya sınırları uygulamada: 5-8 MB, video 25 MB).
       bodySizeLimit: "30mb",
       allowedOrigins: allowedOrigins(),
     },

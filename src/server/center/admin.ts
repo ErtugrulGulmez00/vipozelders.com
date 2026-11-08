@@ -9,7 +9,8 @@ import { notifyRole } from "../notifications";
 import { loadSettings } from "../settings";
 import { CenterError } from "./errors";
 import { notifyCenterManagers } from "./messages";
-import { planForEdition, planStudentLimit, type CenterPlanName } from "./plans";
+import { COACH_DEFAULT_STUDENT_LIMIT, COACH_DISABLED_MODULES } from "@/lib/center/modules";
+import { planStudentLimit, type CenterPlanName } from "./plans";
 import { createCenterUser } from "./staff";
 
 // Pi Kampüs yönetimi: kurum açma, plan/süre, abonelik ödemeleri; "Kurumlar için" başvuruları ve vitrin ön kayıtları.
@@ -26,8 +27,7 @@ export async function uniqueCenterSlug(name: string, ignoreId?: string): Promise
 
 export type NewCenterInput = {
   name: string;
-  kind: "ETUT" | "DERSHANE" | "KURS" | "OTHER";
-  edition: "ETUT" | "DERSHANE";
+  kind: "ETUT" | "DERSHANE" | "KURS" | "OTHER" | "COACH";
   cityId: number | null;
   plan: CenterPlanName;
   trialDays: number;
@@ -45,10 +45,10 @@ export async function adminCreateCenter(adminId: string, input: NewCenterInput) 
       name: input.name,
       slug,
       kind: input.kind,
-      edition: input.edition,
       cityId: input.cityId,
-      plan: planForEdition(input.edition, input.plan),
-      studentLimit: planStudentLimit(planForEdition(input.edition, input.plan), settings, 0),
+      plan: input.plan,
+      studentLimit: input.kind === "COACH" ? COACH_DEFAULT_STUDENT_LIMIT : planStudentLimit(input.plan, settings, 0),
+      disabledModules: input.kind === "COACH" ? COACH_DISABLED_MODULES : [],
       status: "TRIAL",
       trialEndsAt: new Date(Date.now() + Math.max(input.trialDays, 1) * 86_400_000),
       phone: input.phone,
@@ -71,8 +71,7 @@ export async function adminCreateCenter(adminId: string, input: NewCenterInput) 
 
 export type CenterAdminUpdate = {
   name: string;
-  kind: "ETUT" | "DERSHANE" | "KURS" | "OTHER";
-  edition: "ETUT" | "DERSHANE";
+  kind: "ETUT" | "DERSHANE" | "KURS" | "OTHER" | "COACH";
   plan: CenterPlanName;
   status: "TRIAL" | "ACTIVE" | "SUSPENDED";
   studentLimit: number;
@@ -85,11 +84,8 @@ export async function adminUpdateCenter(adminId: string, centerId: string, input
   if (!center) throw new CenterError("Kurum bulunamadı.");
   // Süre değiştiyse bitiş hatırlatmaları yeniden başlar.
   const datesChanged = input.trialEndsAt?.getTime() !== center.trialEndsAt?.getTime() || input.paidUntil?.getTime() !== center.paidUntil?.getTime() || input.status !== center.status;
-  const plan = planForEdition(input.edition, input.plan);
-  // Dershane'ye geçişte 20 kademesi 100'e çıkar; öğrenci sınırı en az o kademenin sınırı olur
-  const studentLimit = plan !== input.plan ? Math.max(input.studentLimit, planStudentLimit(plan, await loadSettings(), 0)) : input.studentLimit;
-  await db.center.update({ where: { id: centerId }, data: { ...input, plan, studentLimit, ...(datesChanged ? { expiryNoticeDays: null } : {}) } });
-  await audit({ actorId: adminId, action: "center.update", entityType: "Center", entityId: centerId, details: { plan: input.plan, edition: input.edition, status: input.status, studentLimit: input.studentLimit } });
+  await db.center.update({ where: { id: centerId }, data: { ...input, ...(datesChanged ? { expiryNoticeDays: null } : {}) } });
+  await audit({ actorId: adminId, action: "center.update", entityType: "Center", entityId: centerId, details: { plan: input.plan, status: input.status, studentLimit: input.studentLimit } });
 }
 
 /**
@@ -129,12 +125,12 @@ export async function adminRecordSubscriptionPayment(adminId: string, centerId: 
   const settings = await loadSettings();
   const base = center.status === "TRIAL" ? null : center.paidUntil;
   const { periodStart, periodEnd } = extendSubscription(base, input.months);
-  const plan = planForEdition(center.edition, input.plan ?? center.plan);
+  const plan = input.plan ?? center.plan;
   await db.$transaction([
     db.centerSubscriptionPayment.create({ data: { centerId, amount: input.amount, months: input.months, periodStart, periodEnd, method: input.method, reference: input.reference, createdById: adminId } }),
     db.center.update({
       where: { id: centerId },
-      data: { status: "ACTIVE", paidUntil: periodEnd, expiryNoticeDays: null, plan, studentLimit: plan === center.plan ? center.studentLimit : planStudentLimit(plan, settings, center.studentLimit) },
+      data: { status: "ACTIVE", paidUntil: periodEnd, expiryNoticeDays: null, plan, studentLimit: plan === center.plan || center.kind === "COACH" ? center.studentLimit : planStudentLimit(plan, settings, center.studentLimit) },
     }),
   ]);
   await notifyCenterManagers(centerId, { type: "center.subscription", title: "Aboneliğiniz uzatıldı", body: `${input.months} aylık ödemeniz kaydedildi. Yeni bitiş: ${periodEnd.toLocaleDateString("tr-TR")}`, link: "/kurum/abonelik" });
@@ -148,8 +144,7 @@ export async function adminRecordSubscriptionPayment(adminId: string, centerId: 
 
 export const centerApplicationSchema = z.object({
   centerName: z.string().trim().min(3, "Kurum adını yazın.").max(120),
-  kind: z.enum(["ETUT", "DERSHANE", "KURS", "OTHER"]).default("ETUT"),
-  edition: z.enum(["ETUT", "DERSHANE"]).optional(),
+  kind: z.enum(["ETUT", "KURS", "OTHER"]).default("ETUT"),
   contactName: z.string().trim().min(3, "Adınızı ve soyadınızı yazın.").max(80),
   phone: z.string().trim().min(10, "Telefon numaranızı yazın.").max(20),
   email: z.email("Geçerli bir e-posta yazın.").max(120),
@@ -169,7 +164,7 @@ export async function submitCenterApplication(input: CenterApplicationInput, ipA
   if (ipAddress) await recordLoginAttempt(`center-apply:${ipAddress}`, null, false);
   const email = input.email.toLowerCase();
   const application = await db.centerApplication.create({
-    data: { centerName: input.centerName, kind: input.edition ?? input.kind, edition: input.edition ?? null, contactName: input.contactName, phone, email, cityId: input.cityId ?? null, studentCount: input.studentCount || null, message: input.message || null },
+    data: { centerName: input.centerName, kind: input.kind, edition: "ETUT", contactName: input.contactName, phone, email, cityId: input.cityId ?? null, studentCount: input.studentCount || null, message: input.message || null },
   });
   await notifyRole("ADMIN", { type: "center.application", title: "Yeni kurum başvurusu", body: `${input.centerName} · ${input.contactName} · ${phone}`, link: "/yonetim/kurum-basvurulari", email: false });
   const settings = await loadSettings();

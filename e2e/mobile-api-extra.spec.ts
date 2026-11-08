@@ -2,8 +2,7 @@ import { expect, test, type APIRequestContext } from "@playwright/test";
 import pg from "pg";
 
 /**
- * Mobil API'ye Flutter uygulaması için eklenen uçlar: fotoğrafla soru (multipart), soru yazışması ve çözüm,
- * özel dosyalara Bearer anahtarıyla erişim, kurum (veli portalı) çalışma programı / kaynak ilerlemesi / soru
+ * Mobil API'ye Flutter uygulaması için eklenen uçlar: özel dosyalara Bearer anahtarıyla erişim, kurum (veli portalı) çalışma programı / kaynak ilerlemesi / soru
  * geri çekme / bağlantı kaldırma ve kurum personelinin mobil girişi.
  */
 
@@ -13,8 +12,6 @@ const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR
 const stamp = Date.now().toString(36);
 const startedAt = new Date();
 const emails: string[] = [];
-const bookingIds: string[] = [];
-let offeringId: string;
 
 async function sql<T = Record<string, unknown>>(text: string, values: unknown[] = []): Promise<T[]> {
   const client = new pg.Client({ connectionString: DB_URL });
@@ -49,129 +46,10 @@ async function register(request: APIRequestContext, label: string) {
   return { token: token as string, userId: user.id as string, api: client(request, token) };
 }
 
-test.beforeAll(async () => {
-  const [row] = await sql<{ id: string }>(
-    `SELECT o.id FROM "TeacherOffering" o JOIN "User" u ON u.id = o."teacherId" JOIN "ServiceType" s ON s.id = o."serviceTypeId"
-     WHERE u.username = 'ayse.yilmaz' AND s.slug = 'soru-cozum' AND o."isActive" ORDER BY o."createdAt" LIMIT 1`,
-  );
-  offeringId = row.id;
-  await sql(`UPDATE "TeacherOffering" SET "questionPrice" = 15000 WHERE id = $1`, [offeringId]);
-});
-
 test.afterAll(async () => {
-  await sql(`UPDATE "TeacherOffering" SET "questionPrice" = NULL WHERE id = $1`, [offeringId]);
-  for (const id of bookingIds) {
-    await sql(`DELETE FROM "LedgerEntry" WHERE "bookingId" = $1`, [id]);
-    await sql(`DELETE FROM "Notification" WHERE link LIKE $1`, [`%/${id}%`]);
-    await sql(`DELETE FROM "Booking" WHERE id = $1`, [id]);
-  }
-  await sql(`UPDATE "TeacherProfile" SET "completedLessons" = GREATEST("completedLessons" - $1, 0) WHERE "userId" = (SELECT id FROM "User" WHERE username = 'ayse.yilmaz')`, [bookingIds.length]);
   await sql(`DELETE FROM "Notification" WHERE "createdAt" >= $1 AND (type LIKE 'center.%' OR type LIKE 'question.%' OR type LIKE 'booking.%') AND "userId" IN (SELECT id FROM "User" WHERE username = 'ayse.yilmaz' OR role = 'CENTER' OR email LIKE '%@demo.vipozelders.local')`, [startedAt]);
   await sql(`DELETE FROM "Session" WHERE "userAgent" = 'mobil: e2e-test'`);
   for (const email of emails) await sql(`DELETE FROM "User" WHERE email = $1`, [email]);
-});
-
-test("mobil API: fotoğrafla soru → ödeme → öğretmen çözümü → özel dosyaya Bearer ile erişim", async ({ request, page }) => {
-  const anon = client(request);
-
-  // Kurum personeli de girer; uygulama kurum panelini web görünümüyle açar (ayrıntı: mobile-api-sides.spec.ts)
-  const center = await anon.post("/oturum", { identifier: "kurum@demo.vipozelders.local", password: "Kurum12345", deviceName: "e2e-test" });
-  expect(center.status()).toBe(200);
-  expect((await center.json()).user).toMatchObject({ role: "CENTER", sides: { kurum: true, ozel: false, staff: true } });
-
-  const catalog = await (await anon.get("/katalog")).json();
-  expect(typeof catalog.rules.questionAnswerHours).toBe("number");
-  const profile = await (await anon.get("/ogretmenler/ayse-yilmaz")).json();
-  expect(profile.offerings.find((o: { id: string }) => o.id === offeringId).questionPrice).toBe(15000);
-
-  const { api: student } = await register(request, "soru");
-
-  // WhatsApp izni: varsayılan kapalı (açık rıza), PATCH /ben ile açılır ve kapanır
-  expect((await (await student.get("/ben")).json()).whatsappNotifications).toBe(false);
-  const optIn = await student.patch("/ben", { whatsappNotifications: true });
-  expect((await optIn.json()).whatsappNotifications).toBe(true);
-  const optOut = await student.patch("/ben", { whatsappNotifications: false });
-  expect((await optOut.json()).whatsappNotifications).toBe(false);
-  expect("supportWhatsapp" in catalog.site).toBe(true);
-
-  // Alan hataları: fotoğraf ve onay zorunlu
-  const noImage = await student.multipart("/rezervasyonlar/soru", { offeringId, learnerName: "Ali", consent: "true" });
-  expect(noImage.status()).toBe(422);
-  expect((await noImage.json()).error.fields.image).toBeTruthy();
-  const noConsent = await student.multipart("/rezervasyonlar/soru", { offeringId, learnerName: "Ali", image: { name: "soru.png", mimeType: "image/png", buffer: PNG } });
-  expect(noConsent.status()).toBe(422);
-  expect((await noConsent.json()).error.fields.consent).toBeTruthy();
-
-  const created = await student.multipart("/rezervasyonlar/soru", {
-    offeringId,
-    learnerName: "Ali",
-    learnerGrade: "8. Sınıf",
-    note: `Türev sorusu ${stamp}`,
-    consent: "true",
-    image: { name: "soru.png", mimeType: "image/png", buffer: PNG },
-  });
-  expect(created.status()).toBe(201);
-  const { booking, payment } = await created.json();
-  bookingIds.push(booking.id);
-  expect(booking).toMatchObject({ mode: "QUESTION", status: "PENDING_PAYMENT", price: 15000 });
-  expect(booking.question).toMatchObject({ threadOpen: false, messages: [] });
-
-  await page.goto(payment.url);
-  await page.getByRole("button", { name: /öde \(başarılı test\)/ }).click();
-  await expect(page).toHaveURL(new RegExp(`^${payment.returnUrlPrefix}${booking.id}`));
-
-  let detail = await (await student.get(`/rezervasyonlar/${booking.id}`)).json();
-  expect(detail.status).toBe("PENDING_APPROVAL");
-  expect(detail.question.answerDeadline).toBeTruthy();
-  expect(detail.actions.canMessage).toBe(true);
-  const [question] = detail.question.messages;
-  expect(question).toMatchObject({ mine: true, fromTeacher: false, body: `Türev sorusu ${stamp}`, isSolution: false });
-
-  // Özel dosya: uygulamanın Bearer anahtarıyla açılır, anahtarsız açılmaz
-  const image = await student.get(question.imageUrl);
-  expect(image.status()).toBe(200);
-  expect(image.headers()["content-type"]).toBe("image/png");
-  expect((await anon.get(question.imageUrl)).status()).toBe(403);
-  const { api: stranger } = await register(request, "yabanci");
-  expect((await stranger.get(question.imageUrl)).status()).toBe(403);
-
-  // Öğretmen: onay yerine çözüm gönderir
-  const teacherLogin = await anon.post("/oturum", { identifier: "ayse.yilmaz", password: "Ogretmen123", deviceName: "e2e-test" });
-  const teacher = client(request, (await teacherLogin.json()).token);
-  const asTeacher = await (await teacher.get(`/rezervasyonlar/${booking.id}`)).json();
-  expect(asTeacher.actions).toMatchObject({ canApprove: false, canReject: true, canSolve: true, canMessage: true });
-  expect(asTeacher.question.messages[0].mine).toBe(false);
-  expect((await teacher.get(question.imageUrl)).status()).toBe(200);
-  const approve = await teacher.post(`/rezervasyonlar/${booking.id}/onay`);
-  expect(approve.status()).toBe(422);
-  expect((await approve.json()).error.code).toBe("RULE_VIOLATION");
-
-  const empty = await teacher.multipart(`/rezervasyonlar/${booking.id}/mesajlar`, { body: "" });
-  expect(empty.status()).toBe(422);
-  const solved = await teacher.multipart(`/rezervasyonlar/${booking.id}/mesajlar`, {
-    body: "Önce zincir kuralını uygularız.",
-    isSolution: "true",
-    image: { name: "cozum.png", mimeType: "image/png", buffer: PNG },
-  });
-  expect(solved.status()).toBe(200);
-  const afterSolve = await solved.json();
-  expect(afterSolve.status).toBe("COMPLETED");
-  expect(afterSolve.actions.canSolve).toBe(false);
-  expect(afterSolve.question.messages.at(-1)).toMatchObject({ mine: true, fromTeacher: true, isSolution: true });
-
-  // Veli çözümü görür ve soru sorar; video yalnızca öğretmen çözümünde
-  detail = await (await student.get(`/rezervasyonlar/${booking.id}`)).json();
-  const solution = detail.question.messages.at(-1);
-  expect(solution).toMatchObject({ fromTeacher: true, isSolution: true, body: "Önce zincir kuralını uygularız." });
-  expect((await student.get(solution.imageUrl)).status()).toBe(200);
-  const video = await student.multipart(`/rezervasyonlar/${booking.id}/mesajlar`, { body: "video", video: { name: "v.mp4", mimeType: "video/mp4", buffer: PNG } });
-  expect(video.status()).toBe(422);
-  const followUp = await (await student.multipart(`/rezervasyonlar/${booking.id}/mesajlar`, { body: "3. adımı anlamadım" })).json();
-  expect(followUp.question.messages).toHaveLength(3);
-  expect(followUp.question.messages.at(-1)).toMatchObject({ mine: true, isSolution: false });
-
-  // Başkasının sorusuna yazılamaz
-  expect((await stranger.multipart(`/rezervasyonlar/${booking.id}/mesajlar`, { body: "merhaba" })).status()).toBe(404);
 });
 
 test("mobil API: kurum çalışma programı, kaynak ilerlemesi, soru geri çekme ve bağlantı kaldırma", async ({ request }) => {

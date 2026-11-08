@@ -1,4 +1,8 @@
-# Pi Kampüs Kurum Paneli (etüt merkezi / dershane)
+# Pi Kampüs Kurum Paneli (etüt merkezi)
+
+> 2026-11-09: Tek paket vardır (Etüt Merkezi). Bütün bölümler her kuruma açıktır; fiyatı öğrenci kademesi belirler. Aşağıda Dershane paketinden söz edilen yerler eskidir.
+>
+> Pi Koç denemesi: yönetici kurum açarken türü "Bireysel koç (Pi Koç)" seçer. Tek kişiliktir; sınıf, yoklama, etüt, derslik, rapor, ön kayıt ve personel bölümleri kapalıdır. Öğrenci sınırı kurum sayfasından verilir, ödeme elle kaydedilir.
 
 Etüt merkezlerine, dershanelere ve kurslara aylık abonelikle satılan yönetim paneli. Pazaryeriyle aynı uygulamada çalışır: kurumun velileri sitedeki hesaplarından çocuklarını takip eder, eksik konular için pazaryerindeki öğretmenlere yönlendirilir.
 

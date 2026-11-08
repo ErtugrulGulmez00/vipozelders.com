@@ -12,8 +12,8 @@ import { listPublicCenters, publicCenterCities } from "@/server/center/public";
 import { uploadUrl } from "@/server/storage";
 
 export const metadata: Metadata = {
-  title: "Etüt merkezleri ve dershaneler",
-  description: "Pi Kampüs kurum rehberi: bölgenizdeki etüt merkezleri, dershaneler ve kurslar. Programları inceleyin, ön kayıt bırakın.",
+  title: "Etüt merkezleri",
+  description: "Pi Kampüs kurum rehberi: bölgenizdeki etüt merkezleri. Programları inceleyin, ön kayıt bırakın.",
 };
 
 export default function CentersDirectoryPage({ searchParams }: PageProps<"/kurumlar">) {
@@ -21,7 +21,7 @@ export default function CentersDirectoryPage({ searchParams }: PageProps<"/kurum
     <div className="mx-auto max-w-6xl px-4 py-10">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Etüt merkezleri ve dershaneler</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Etüt merkezleri</h1>
           <p className="mt-1 text-slate-600">Pi Kampüs kurum panelini kullanan kurumlar. Veliler devamsızlık, deneme ve ödemeleri telefondan takip eder.</p>
         </div>
         <Link href="/kurumlar-icin" className={buttonClasses("outline", "sm")}>

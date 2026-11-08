@@ -13,7 +13,7 @@ export default function RegisterPage() {
       {/* Bu form veli/öğrenci hesabı açar; kurumlar başvuru formundan gelir. */}
       <Link href="/kurumlar-icin#basvuru" className="mb-6 flex items-center gap-3 rounded-2xl bg-ink-50 px-4 py-3 text-sm text-ink-700 hover:bg-ink-100">
         <span className="min-w-0 flex-1">
-          <span className="font-bold text-ink-900">Kurum musunuz?</span> Etüt merkezi, dershane ve kurslar için başvuru formu
+          <span className="font-bold text-ink-900">Kurum musunuz?</span> Etüt merkezleri için başvuru formu
         </span>
         <ArrowRight className="size-4 shrink-0" aria-hidden />
       </Link>

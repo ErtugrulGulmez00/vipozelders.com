@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge, Card, CardBody, CardHeader, DescriptionList, PageHeader, StatCard, Table, Td, Th } from "@/components/ui/primitives";
-import { CENTER_ACCESS_LABEL, CENTER_EDITION_LABEL, CENTER_KIND_LABEL, CENTER_PLAN_LABEL } from "@/lib/center/labels";
+import { CENTER_ACCESS_LABEL, CENTER_KIND_LABEL, CENTER_PLAN_LABEL } from "@/lib/center/labels";
 import { CENTER_ROLE_LABEL, type CenterRoleName } from "@/lib/center/permissions";
 import { centerAccess } from "@/lib/center/subscription";
 import { formatCompact, formatDate } from "@/lib/dates";
@@ -42,14 +42,14 @@ export default async function AdminCenterPage({ params }: PageProps<"/yonetim/ku
   ]);
   const access = centerAccess(center);
   const accessLabel = CENTER_ACCESS_LABEL[access.state];
-  const plan = centerPlans(settings, center.edition).find((p) => p.plan === center.plan);
+  const plan = centerPlans(settings).find((p) => p.plan === center.plan);
   return (
     <>
       <PageHeader
         title={center.name}
         description={
           <span className="inline-flex flex-wrap items-center gap-2">
-            {CENTER_KIND_LABEL[center.kind]} · {CENTER_EDITION_LABEL[center.edition]} paketi · {CENTER_PLAN_LABEL[center.plan]}
+            {CENTER_KIND_LABEL[center.kind]} · {CENTER_PLAN_LABEL[center.plan]}
             <Badge tone={accessLabel.tone}>{accessLabel.label}</Badge>
             {center.isPublic ? (
               <Link href={`/kurumlar/${center.slug}`} target="_blank" className="inline-flex items-center gap-1 text-xs font-semibold text-brand-700 hover:underline">
@@ -83,7 +83,6 @@ export default async function AdminCenterPage({ params }: PageProps<"/yonetim/ku
                 id: center.id,
                 name: center.name,
                 kind: center.kind,
-                edition: center.edition,
                 plan: center.plan,
                 status: center.status,
                 studentLimit: center.studentLimit,

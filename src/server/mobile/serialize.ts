@@ -77,8 +77,8 @@ export function teacherProfileJson(teacher: PublicTeacher) {
       service: { id: o.serviceType.id, name: o.serviceType.name, slug: o.serviceType.slug },
       hourlyPrice: o.hourlyPrice,
       durations: o.durations.map((minutes) => ({ minutes, price: lessonPrice(o.hourlyPrice, minutes) })),
-      // Fotoğrafla soru kabul ediliyorsa soru başı ücret (kuruş), yoksa null
-      questionPrice: o.questionPrice ?? null,
+      // Fotoğrafla soru kaldırıldı; alan mobil uygulama güncellenene kadar null döner
+      questionPrice: null,
     })),
     reviews: teacher.reviews.map((r) => ({
       id: r.id,
@@ -111,14 +111,7 @@ export function notificationTarget(link: string | null): { screen: string; id?: 
   if (CENTER_PANEL_TARGET.test(link)) return { screen: "centerPanel", id: link };
   const centerInvite = /^\/kurum-davet\/([A-Za-z0-9_-]+)/.exec(link);
   if (centerInvite) return { screen: "centerInvite", id: centerInvite[1] };
-  // Soru havuzu, kredi ve mesajlar
-  const question = /^\/hesabim\/sorularim\/([a-z0-9]+)/i.exec(link);
-  if (question) return { screen: "question", id: question[1] };
-  if (link.startsWith("/hesabim/sorularim")) return { screen: "questions" };
-  if (link.startsWith("/soru-sor") || link.startsWith("/hesabim/krediler")) return { screen: "credits" };
-  const pool = /^\/ogretmen-paneli\/soru-havuzu\/([a-z0-9]+)/i.exec(link);
-  if (pool) return { screen: "poolQuestion", id: pool[1] };
-  if (link.startsWith("/ogretmen-paneli/soru-havuzu")) return { screen: "pool" };
+  // Mesajlar
   const thread = /^\/(?:hesabim|ogretmen-paneli)\/mesajlar\/([a-z0-9]+)/i.exec(link);
   if (thread) return { screen: "thread", id: thread[1] };
   if (/^\/(?:hesabim|ogretmen-paneli)\/mesajlar/.test(link)) return { screen: "messages" };

@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, describe, expect, it } from "vitest";
 import { completeCheckout, createBookingHold, startCheckout } from "@/server/bookings";
-import { creditBalance, createCreditPurchase, startCreditCheckout } from "@/server/credits";
 import { db } from "@/server/db";
 import { DiscountError, ensureReferralCode, referrerForCode, resolveDiscount } from "@/server/discounts";
 import { at, createFixture, LESSON_DAY, NOW } from "./helpers";
@@ -49,18 +48,10 @@ describe("indirim kodu", () => {
     await payBooking(student.id, f.offering.id, at(LESSON_DAY, "14:00"), once.code);
     await expect(resolveDiscount(student.id, once.code, "booking", 100000, 15000)).rejects.toThrow(/daha önce/);
   });
-
-  it("soru kredisinde indirim tutarın tamamından düşebilir (en az 1 ₺ ödenir)", async () => {
-    const f = await createFixture();
-    const student = await f.createStudent();
-    const coupon = await db.coupon.create({ data: { code: code("KREDI"), kind: "PERCENT", value: 50, targets: ["credits"] } });
-    const purchase = await createCreditPurchase(student.id, 10, coupon.code);
-    expect(purchase).toMatchObject({ price: 10000, discountAmount: 10000 });
-  });
 });
 
 describe("arkadaşını getir", () => {
-  it("davetle gelen üyeye ilk siparişte indirim, ilk ödemede davet edene soru kredisi", async () => {
+  it("davetle gelen üyeye yalnızca ilk siparişte indirim", async () => {
     const f = await createFixture({ hourlyPrice: 100000 });
     const referrer = await f.createStudent();
     const inviteCode = await ensureReferralCode(referrer.id);
@@ -72,16 +63,9 @@ describe("arkadaşını getir", () => {
     const booking = await payBooking(friend.id, f.offering.id, at(LESSON_DAY, "16:00"));
     // Varsayılan %10, hizmet bedelinden
     expect(booking).toMatchObject({ price: 90000, discountAmount: 10000, couponCode: null });
-    expect(await creditBalance(referrer.id, db)).toBe(3);
-    expect((await db.user.findUniqueOrThrow({ where: { id: friend.id } })).referralRewardedAt).not.toBeNull();
 
-    // İkinci siparişte ne indirim ne ikinci ödül
-    const second = await createCreditPurchase(friend.id, 10);
+    // İkinci siparişte indirim yok
+    const second = await payBooking(friend.id, f.offering.id, at(LESSON_DAY, "18:00"));
     expect(second.discountAmount).toBe(0);
-    await startCreditCheckout(second.id, friend.id, "127.0.0.1");
-    const payment = await db.payment.findFirstOrThrow({ where: { creditPurchaseId: second.id } });
-    await db.payment.update({ where: { id: payment.id }, data: { raw: { mockOutcome: "success" } } });
-    await completeCheckout(payment.providerToken!, NOW);
-    expect(await creditBalance(referrer.id, db)).toBe(3);
   });
 });

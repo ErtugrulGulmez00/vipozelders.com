@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 // Bağlantı paylaşıldığında (WhatsApp, Instagram, X…) görünen önizleme görseli.
-export const alt = "Pi Kampüs · Özel ders, soru çözüm ve koçluk";
+export const alt = "Pi Kampüs · Özel ders ve koçluk";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -13,7 +13,7 @@ export default function OpenGraphImage() {
           <div style={{ width: 120, height: 120, borderRadius: 32, background: "#d63f1c", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 84, fontWeight: 800, color: "#ffffff", transform: "rotate(-6deg)" }}>π</div>
           <div style={{ fontSize: 88, fontWeight: 800, letterSpacing: -2 }}>Pi Kampüs</div>
         </div>
-        <div style={{ marginTop: 48, fontSize: 44, lineHeight: 1.3, color: "#c9cce6", maxWidth: 980 }}>Özel ders, soru çözüm ve koçluk · Etüt merkezleri ve dershaneler için kurum paneli</div>
+        <div style={{ marginTop: 48, fontSize: 44, lineHeight: 1.3, color: "#c9cce6", maxWidth: 980 }}>Özel ders ve koçluk · Etüt merkezleri için yönetim paneli</div>
         <div style={{ marginTop: 40, fontSize: 32, color: "#ffc845", fontWeight: 700 }}>pikampus.com</div>
       </div>
     ),

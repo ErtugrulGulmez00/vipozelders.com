@@ -1,17 +1,15 @@
-import type { GroupCourse, GroupEnrollment, GroupSession, LessonPackage, QuestionSubscription } from "@/generated/prisma/client";
-import { BOOKING_STATUS, GROUP_COURSE_STATUS, GROUP_ENROLLMENT_STATUS, GROUP_SESSION_STATUS, SUBSCRIPTION_STATUS } from "@/lib/labels";
+import type { GroupCourse, GroupEnrollment, GroupSession, LessonPackage } from "@/generated/prisma/client";
+import { BOOKING_STATUS, GROUP_COURSE_STATUS, GROUP_ENROLLMENT_STATUS, GROUP_SESSION_STATUS } from "@/lib/labels";
 import { fullName } from "@/lib/text";
 import { packageLessonsLeft } from "../bookings";
 import { db } from "../db";
 import { seatsTaken } from "../groups";
 import { packageRefundPreview, parsePackageDiscounts } from "../packages";
-import { isRunning, publicPlans, questionsToday } from "../subscriptions";
 import { loadSettings } from "../settings";
 import { notFound } from "./http";
 import { absoluteUpload } from "./serialize";
 
-// Paket ders, aylık soru aboneliği ve grup dersinin mobil biçimleri. İş kuralları packages.ts, subscriptions.ts,
-// groups.ts'te.
+// Paket ders ve grup dersinin mobil biçimleri. İş kuralları packages.ts ve groups.ts'te.
 
 type TeacherRef = { slug: string; photoKey: string | null; user: { firstName: string; lastName: string } };
 const teacherJson = (t: TeacherRef) => ({ name: fullName(t.user), slug: t.slug, photoUrl: absoluteUpload(t.photoKey) });
@@ -29,11 +27,10 @@ const PACKAGE_STATUS: Record<string, string> = {
 // Öğretmen profilindeki teklifler
 // ---------------------------------------------------------------------------
 
-/** Profilde: paket indirimleri, aylık soru abonelikleri, kayıt açık grup dersleri ve izleyicinin bu öğretmendeki paketleri. */
+/** Profilde: paket indirimleri, kayıt açık grup dersleri ve izleyicinin bu öğretmendeki paketleri. */
 export async function teacherOffersJson(teacher: { userId: string; packageDiscounts: string }, viewerId: string | null, now = new Date()) {
   const settings = await loadSettings();
-  const [plans, courses, packages] = await Promise.all([
-    publicPlans(teacher.userId),
+  const [courses, packages] = await Promise.all([
     settings.groupsEnabled
       ? db.groupCourse.findMany({
           where: { teacherId: teacher.userId, status: "OPEN", isPublic: true, enrollDeadline: { gt: now } },
@@ -47,16 +44,8 @@ export async function teacherOffersJson(teacher: { userId: string; packageDiscou
   const myPackages = (await Promise.all(packages.map(async (p) => ({ p, left: await packageLessonsLeft(db, p) })))).filter((x) => x.left > 0);
   return {
     packageOffers: settings.packagesEnabled ? parsePackageDiscounts(teacher.packageDiscounts, settings.packageMaxLessons, settings.packageMaxDiscountPercent) : [],
-    questionPlans: plans.map((p) => ({
-      id: p.id,
-      levelName: p.level.name,
-      subjectName: p.subject.name,
-      price: p.price,
-      dailyLimit: p.dailyLimit,
-      answerHours: p.answerHours,
-      days: settings.subscriptionDays,
-      description: p.description,
-    })),
+    // Soru aboneliği kaldırıldı; alan mobil uygulama güncellenene kadar boş döner
+    questionPlans: [],
     groupCourses: await Promise.all(courses.map((c) => groupCourseSummary(c, now))),
     // "Paketimden kullan": kalan dersi olan paketler (aynı ders ve sürede kullanılır)
     myPackages: myPackages.map(({ p, left }) => ({ id: p.id, code: p.code, offeringId: p.offeringId, durationMinutes: p.durationMinutes, levelName: p.levelName, subjectName: p.subjectName, left, expiresAt: p.expiresAt })),
@@ -126,54 +115,6 @@ export async function packageStatusJson(studentId: string, id: string) {
   if (!p || p.studentId !== studentId) throw notFound("Paket bulunamadı.");
   const last = p.payments[0];
   return { ...packageSummary(p), left: p.status === "PAID" ? await packageLessonsLeft(db, p) : 0, payment: last ? { status: last.status, failureReason: last.failureReason } : null };
-}
-
-// ---------------------------------------------------------------------------
-// Aylık soru aboneliği
-// ---------------------------------------------------------------------------
-
-export async function subscriptionJson(s: QuestionSubscription & { teacher: TeacherRef }, now = new Date()) {
-  const running = isRunning(s, now);
-  return {
-    id: s.id,
-    code: s.code,
-    planId: s.planId,
-    teacher: teacherJson(s.teacher),
-    levelName: s.levelName,
-    subjectName: s.subjectName,
-    price: s.price,
-    discountAmount: s.discountAmount,
-    dailyLimit: s.dailyLimit,
-    answerHours: s.answerHours,
-    days: s.days,
-    status: s.status,
-    statusLabel: running ? "Aktif" : s.status === "ACTIVE" && s.startsAt && s.startsAt > now ? "Sıradaki dönem" : (SUBSCRIPTION_STATUS[s.status]?.label ?? s.status),
-    running,
-    startsAt: s.startsAt,
-    endsAt: s.endsAt,
-    paidAt: s.paidAt,
-    refundedAmount: s.refundedAmount,
-    usedToday: running ? await questionsToday(s.id, now) : 0,
-  };
-}
-
-export async function subscriptionsJson(studentId: string, now = new Date()) {
-  const rows = await db.questionSubscription.findMany({
-    where: { studentId, status: { in: ["ACTIVE", "ENDED", "CANCELLED", "REFUNDED"] } },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-    include: { teacher: TEACHER_SELECT },
-  });
-  const items = await Promise.all(rows.map((s) => subscriptionJson(s, now)));
-  // Şu an süren dönem en üstte
-  return { items: items.sort((a, b) => Number(b.running) - Number(a.running)) };
-}
-
-export async function subscriptionStatusJson(studentId: string, id: string, now = new Date()) {
-  const s = await db.questionSubscription.findUnique({ where: { id }, include: { teacher: TEACHER_SELECT, payments: { orderBy: { createdAt: "desc" }, take: 1 } } });
-  if (!s || s.studentId !== studentId) throw notFound("Abonelik bulunamadı.");
-  const last = s.payments[0];
-  return { ...(await subscriptionJson(s, now)), payment: last ? { status: last.status, failureReason: last.failureReason } : null };
 }
 
 // ---------------------------------------------------------------------------

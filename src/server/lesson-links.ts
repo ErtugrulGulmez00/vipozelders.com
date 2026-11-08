@@ -1,4 +1,4 @@
-import type { Prisma } from "@/generated/prisma/client";
+import type { Booking, LessonLink, Prisma } from "@/generated/prisma/client";
 import { formatLessonRange } from "@/lib/dates";
 import { audit } from "./audit";
 import { randomToken } from "./auth/password";
@@ -42,8 +42,46 @@ function makeupSourceWhere(teacherId: string, now: Date): Prisma.BookingWhereInp
     refundedAmount: 0,
     status: { in: ["CONFIRMED", "COMPLETED"] },
     startAt: { gte: new Date(now.getTime() - MAKEUP_WINDOW_DAYS * DAY) },
-    makeupLinks: { none: { cancelledAt: null } },
+    makeupLinks: { none: { cancelledAt: null, isQuestionSession: false } },
     NOT: { AND: [{ attendance: { some: { userId: teacherId } } }, { attendance: { some: { userId: { not: teacherId } } } }] },
+  };
+}
+
+/** Ödemesiz, onaylı online ders kaydı (ders bağlantısı, telafi ve soru çözüm dersi aynı biçimde oluşur). */
+function freeBookingData(
+  link: Pick<LessonLink, "teacherId" | "serviceTypeId" | "levelId" | "subjectId" | "serviceName" | "levelName" | "subjectName" | "startAt" | "endAt" | "durationMinutes">,
+  student: { id: string; firstName: string },
+  source: Pick<Booking, "learnerId" | "learnerName" | "learnerGrade"> | null,
+  codePrefix: string,
+  now: Date,
+): Prisma.BookingUncheckedCreateInput {
+  return {
+    code: `${codePrefix}-${newBookingCode().slice(3)}`,
+    studentId: student.id,
+    teacherId: link.teacherId,
+    learnerId: source?.learnerId ?? null,
+    serviceTypeId: link.serviceTypeId,
+    levelId: link.levelId,
+    subjectId: link.subjectId,
+    serviceName: link.serviceName,
+    levelName: link.levelName,
+    subjectName: link.subjectName,
+    learnerName: source?.learnerName ?? student.firstName,
+    learnerGrade: source?.learnerGrade ?? null,
+    mode: "ONLINE",
+    startAt: link.startAt,
+    endAt: link.endAt,
+    blockEndAt: link.endAt,
+    durationMinutes: link.durationMinutes,
+    price: 0,
+    commissionRateBps: 0,
+    commissionAmount: 0,
+    teacherAmount: 0,
+    status: "CONFIRMED",
+    confirmedAt: now,
+    respondedAt: now,
+    videoRoomName: `vd-bag-${randomToken(9).toLowerCase()}`,
+    isTest: true,
   };
 }
 
@@ -54,7 +92,7 @@ export async function canOpenMakeup(teacherId: string, bookingId: string, now = 
 
 /** Dersin iptal edilmemiş telafi bağlantısı: varsa ders yapılmaz, sınıfı kapalıdır. */
 export async function activeMakeup(bookingId: string) {
-  return db.lessonLink.findFirst({ where: { sourceBookingId: bookingId, cancelledAt: null }, select: { token: true, startAt: true, endAt: true, bookingId: true } });
+  return db.lessonLink.findFirst({ where: { sourceBookingId: bookingId, cancelledAt: null, isQuestionSession: false }, select: { token: true, startAt: true, endAt: true, bookingId: true } });
 }
 
 export async function makeupSources(teacherId: string, now = new Date()) {
@@ -195,36 +233,7 @@ export async function claimLessonLink(token: string, userId: string, now = new D
       // Kaynak dersin ücreti sonradan iade edildiyse (iptal, öğretmen katılmadı) telafi de geçersizdir
       if (link.sourceBooking && link.sourceBooking.refundedAmount > 0) throw new LessonLinkError("Telafi edilecek dersin ücreti iade edildiği için bu bağlantı geçersiz.");
 
-      const booking = await tx.booking.create({
-        data: {
-          code: `BAG-${newBookingCode().slice(3)}`,
-          studentId: user.id,
-          teacherId: link.teacherId,
-          learnerId: link.sourceBooking?.learnerId ?? null,
-          serviceTypeId: link.serviceTypeId,
-          levelId: link.levelId,
-          subjectId: link.subjectId,
-          serviceName: link.serviceName,
-          levelName: link.levelName,
-          subjectName: link.subjectName,
-          learnerName: link.sourceBooking?.learnerName ?? user.firstName,
-          learnerGrade: link.sourceBooking?.learnerGrade ?? null,
-          mode: "ONLINE",
-          startAt: link.startAt,
-          endAt: link.endAt,
-          blockEndAt: link.endAt,
-          durationMinutes: link.durationMinutes,
-          price: 0,
-          commissionRateBps: 0,
-          commissionAmount: 0,
-          teacherAmount: 0,
-          status: "CONFIRMED",
-          confirmedAt: now,
-          respondedAt: now,
-          videoRoomName: `vd-bag-${randomToken(9).toLowerCase()}`,
-          isTest: true,
-        },
-      });
+      const booking = await tx.booking.create({ data: freeBookingData(link, { id: user.id, firstName: user.firstName }, link.sourceBooking, "BAG", now) });
       await tx.lessonLink.update({ where: { id: link.id }, data: { bookingId: booking.id } });
       await tx.bookingEvent.create({
         data: { bookingId: booking.id, toStatus: "CONFIRMED", actorId: user.id, note: link.sourceBooking ? `Telafi bağlantısıyla oluşturuldu (${link.sourceBooking.code}, ödemesiz)` : "Ders bağlantısıyla oluşturuldu (ödemesiz)" },
@@ -239,6 +248,102 @@ export async function claimLessonLink(token: string, userId: string, now = new D
     });
   } catch (error) {
     if (isOverlapViolation(error)) throw new LessonLinkError("Öğretmenin bu saatte başka bir dersi var.");
+    throw error;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Soru çözüm dersi: öğretmen isterse "benden ders alan öğrenciye 30 dakika soru çözümü sağlıyorum" der (panelden açar).
+// O sırada alınan her ders tamamlanınca öğretmen o öğrenciye bir kez, ödemesiz 30 dakikalık ders açabilir.
+// ---------------------------------------------------------------------------
+
+export const QUESTION_SESSION_MINUTES = 30;
+const QUESTION_SESSION_NAME = "Soru çözüm dersi";
+
+/** Hak doğurmuş dersler: söz verilmiş, tamamlanmış, iade edilmemiş, hakkı kullanılmamış. Açılan ders iptal olursa hak geri gelir. */
+function questionSessionSourceWhere(teacherId: string): Prisma.BookingWhereInput {
+  return {
+    teacherId,
+    questionSessionPromised: true,
+    isTest: false,
+    isIntro: false,
+    status: "COMPLETED",
+    refundedAmount: 0,
+    makeupLinks: { none: { isQuestionSession: true, cancelledAt: null, booking: { status: { notIn: ["CANCELLED_BY_STUDENT", "CANCELLED_BY_TEACHER", "CANCELLED_BY_ADMIN"] } } } },
+  };
+}
+
+export function questionSessionRightCount(teacherId: string) {
+  return db.booking.count({ where: questionSessionSourceWhere(teacherId) });
+}
+
+export function questionSessionSources(teacherId: string) {
+  return db.booking.findMany({
+    where: questionSessionSourceWhere(teacherId),
+    orderBy: { completedAt: "asc" },
+    take: 100,
+    select: { id: true, code: true, startAt: true, learnerName: true, learnerGrade: true, levelName: true, subjectName: true },
+  });
+}
+
+/** Öğretmen hakkını kullanır: ders doğrudan oluşur, öğrenciye bildirim gider. */
+export async function openQuestionSession(input: { teacherId: string; sourceBookingId: string; startAt: Date }, now = new Date()) {
+  const { teacherId, sourceBookingId, startAt } = input;
+  if (Number.isNaN(startAt.getTime()) || startAt.getTime() < now.getTime() - 5 * 60_000) throw new LessonLinkError("Ders saati geçmişte olamaz.");
+  if (startAt.getTime() > now.getTime() + MAX_DAYS_AHEAD * DAY) throw new LessonLinkError(`En fazla ${MAX_DAYS_AHEAD} gün sonrası için ders açılabilir.`);
+  const endAt = new Date(startAt.getTime() + QUESTION_SESSION_MINUTES * 60_000);
+
+  try {
+    return await db.$transaction(async (tx) => {
+      await lockTeacher(tx, teacherId);
+      const source = await tx.booking.findFirst({ where: { id: sourceBookingId, ...questionSessionSourceWhere(teacherId) }, include: { student: { select: { firstName: true } } } });
+      if (!source) throw new LessonLinkError("Bu ders için soru çözüm hakkı yok ya da hak kullanılmış.");
+
+      const busy = await loadBusy(tx, teacherId, new Date(startAt.getTime() - DAY), new Date(endAt.getTime() + DAY), now);
+      if (busy.some((b) => startAt < b.end && b.start < endAt)) throw new LessonLinkError("Bu saatte başka bir dersiniz ya da bağlantınız var.");
+      const studentClash = await tx.booking.findFirst({
+        where: { studentId: source.studentId, status: { in: ["PENDING_APPROVAL", "CONFIRMED"] }, startAt: { lt: endAt }, endAt: { gt: startAt } },
+        select: { id: true },
+      });
+      if (studentClash) throw new LessonLinkError("Öğrencinin bu saatte başka bir dersi var.");
+
+      const teacher = await tx.user.findUniqueOrThrow({ where: { id: teacherId }, select: { firstName: true, lastName: true } });
+      const link = await tx.lessonLink.create({
+        data: {
+          token: randomToken(12),
+          teacherId,
+          startAt,
+          endAt,
+          durationMinutes: QUESTION_SESSION_MINUTES,
+          serviceTypeId: source.serviceTypeId,
+          levelId: source.levelId,
+          subjectId: source.subjectId,
+          serviceName: QUESTION_SESSION_NAME,
+          levelName: source.levelName,
+          subjectName: source.subjectName,
+          isQuestionSession: true,
+          sourceBookingId: source.id,
+        },
+      });
+      const booking = await tx.booking.create({ data: freeBookingData(link, { id: source.studentId, firstName: source.student.firstName }, source, "SCD", now) });
+      await tx.lessonLink.update({ where: { id: link.id }, data: { bookingId: booking.id } });
+      await tx.bookingEvent.create({ data: { bookingId: booking.id, toStatus: "CONFIRMED", actorId: teacherId, note: `Soru çözüm dersi açıldı (${source.code}, ödemesiz)` } });
+      await notify(
+        {
+          userId: source.studentId,
+          type: "booking.question_session",
+          lesson: lessonSummary(booking),
+          title: "Soru çözüm dersiniz açıldı",
+          body: `${teacher.firstName} ${teacher.lastName}, ${source.learnerName} için ${formatLessonRange(startAt, endAt)} saatinde 30 dakikalık ücretsiz soru çözüm dersi açtı. Sınıf, ders saatinden 10 dakika önce açılır.`,
+          link: `/hesabim/derslerim/${booking.id}`,
+        },
+        tx,
+      );
+      await audit({ actorId: teacherId, action: "lesson_link.question_session", entityType: "LessonLink", entityId: link.id, details: { sourceBookingId: source.id } }, tx);
+      return booking;
+    });
+  } catch (error) {
+    if (isOverlapViolation(error)) throw new LessonLinkError("Bu saatte başka bir dersiniz var.");
     throw error;
   }
 }

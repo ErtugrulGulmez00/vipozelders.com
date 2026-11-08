@@ -24,7 +24,7 @@ import { getSiteSettings } from "@/server/site";
 
 export const metadata: Metadata = {
   title: "Özel ders nasıl çalışır? Adım adım rehber",
-  description: "Öğretmen bulma, ücretsiz tanışma, randevu ve güvenli ödeme, öğretmen onayı, sanal sınıf, paket ders ve fotoğrafla soru çözüm: Pi Kampüs'te özel dersi gerçek ekranlar ve videolarla tanıyın.",
+  description: "Öğretmen bulma, ücretsiz tanışma, randevu ve güvenli ödeme, öğretmen onayı, sanal sınıf ve paket ders: Pi Kampüs'te özel dersi gerçek ekranlar ve videolarla tanıyın.",
 };
 
 const BASE = "/tanitim/ozel-ders";
@@ -40,7 +40,7 @@ const NAV: [string, string][] = [
   ["onay", "Onay"],
   ["ders", "Ders"],
   ["paket", "Paket"],
-  ["soru", "Soru çözüm"],
+  ["soru", "Soru çözüm dersi"],
   ["guvence", "Güvence"],
   ["ogretmen", "Öğretmenler için"],
   ["sss", "SSS"],
@@ -77,7 +77,7 @@ export default async function PrivateLessonGuidePage() {
   ];
 
   const faq = [
-    ["Üyelik ücretli mi?", "Hayır. Öğretmenlere ve fiyatlara üye olmadan bakabilirsiniz; randevu, ödeme ve soru göndermek için ücretsiz üyelik yeterli."],
+    ["Üyelik ücretli mi?", "Hayır. Öğretmenlere ve fiyatlara üye olmadan bakabilirsiniz; randevu ve ödeme için ücretsiz üyelik yeterli."],
     ["Dersi iptal edersem ne olur?", `Dersin başlamasına ${s.fullRefundHours} saat veya daha fazla varsa tam iade; ${s.fullRefundHours} saatten az, ${s.partialRefundHours} saatten fazla varsa %${s.partialRefundPercent} iade; ${s.partialRefundHours} saatten az kaldıysa iade yapılmaz.`],
     ["Ders saatini değiştirebilir miyim?", `Evet. Dersten en az ${s.rescheduleMinHours} saat önce ders sayfasından yeni saat önerin; öğretmeniniz kabul ederse ders taşınır. Erteleme ücreti yoktur.`],
     ["Online ders için ne gerekir?", "Kamerası ve mikrofonu olan bir bilgisayar, tablet ya da telefon ve internet bağlantısı. Program kurmanız gerekmez."],
@@ -143,7 +143,7 @@ export default async function PrivateLessonGuidePage() {
           shot={shot("02-liste", "pikampus.com/ogretmenler", "Öğretmen listesi ve süzgeçler", 1440, 900)}
           title="Öğretmen listesi"
           legend={[
-            ["Süzgeçler:", "kademe, ders, hizmet (özel ders, soru çözüm, koçluk), online / yüz yüze, ücret, puan, müsaitlik; yalnızca onaylı ya da ücretsiz tanışma sunan öğretmenler."],
+            ["Süzgeçler:", "kademe, ders, hizmet (özel ders, koçluk), online / yüz yüze, ücret, puan, müsaitlik; yalnızca onaylı ya da ücretsiz tanışma sunan öğretmenler."],
             ["Sıralama:", "önerilen, fiyat, puan, yorum sayısı, en çok ders veren, en yeni."],
             ["Öğretmen kartı:", "puan ve yorum sayısı, deneyim, ders şekli, saatlik ücret."],
           ]}
@@ -163,7 +163,7 @@ export default async function PrivateLessonGuidePage() {
         />
         <Pair>
           <Figure shot={shot("04-profil-alt", "pikampus.com/ogretmen/…", "Dersler, ücretler ve değerlendirmeler", 1440, 1400, true)}>
-            <b>Dersler ve değerlendirmeler:</b> kademe ve ders bazında ücretler, aylık soru aboneliği ve yalnızca dersi tamamlanmış kişilerin yazabildiği yorumlar.
+            <b>Dersler ve değerlendirmeler:</b> kademe ve ders bazında ücretler ve yalnızca dersi tamamlanmış kişilerin yazabildiği yorumlar.
           </Figure>
           <Phones className="mt-0">
             <Phone caption="Profil ve randevu telefonda da aynı kolaylıkta.">
@@ -247,28 +247,8 @@ export default async function PrivateLessonGuidePage() {
         </Feature>
       </GuideSection>
 
-      <GuideSection id="soru" eyebrow="Soru çözüm" title="Takıldığı sorunun fotoğrafını çeksin, öğretmen çözsün" lead={`Soru kredisiyle sorunun fotoğrafını gönderin; branş öğretmenlerimizden biri ${s.questionAnswerHours} saat içinde adım adım çözer. Çözülmezse krediniz iade edilir.`}>
-        <Pair className="items-center">
-          <Phones className="mt-0">
-            <GuideVideo phone src={video("v4-soru")} poster={img("09-soru-sor")} title="Telefondan soru gönderme" seconds={16} />
-            <Phone caption="Çözüm yazı ve fotoğrafla gelir; öğrenci puanlar, anlamadığı yeri bir kez daha sorabilir.">
-              <PhoneImage src={img("t2-cozum-telefon")} alt="Telefonda soru ve çözüm" width={780} height={3650} />
-            </Phone>
-          </Phones>
-          <Figure shot={shot("09-soru-sor", "pikampus.com/soru-sor", "Soru gönderme sayfası", 1440, 1100, true)}>
-            <b>Soru gönder:</b> kalan krediniz, kademe ve ders seçimi, sorunun fotoğrafı ve isteğe bağlı not.
-          </Figure>
-        </Pair>
-        <Feature
-          shot={shot("10-soru-cozum", "pikampus.com/hesabim/sorularim/…", "Soru ve öğretmenin çözümü", 1440, 1300, true)}
-          title="Soru ve çözüm"
-          legend={[
-            ["Sorunun fotoğrafı", "ve öğrencinin notu."],
-            ["Öğretmenin çözümü:", "adım adım yazı, isterse fotoğraf ya da anlatım videosu."],
-          ]}
-        >
-          <Note>Kendi öğretmeninize her gün soru göndermek isterseniz öğretmen profilindeki aylık soru aboneliğini seçebilirsiniz.</Note>
-        </Feature>
+      <GuideSection id="soru" eyebrow="Soru çözüm dersi" title="Dersin yanında 30 dakika soru çözümü" lead="Bazı öğretmenlerimiz, tamamlanan her dersin ardından 30 dakikalık ücretsiz soru çözüm dersi açıyor.">
+        <Note>Bu öğretmenlerin profilinde ve öğretmen kartında “Derse ek 30 dk soru çözümü” yazar. Dersiniz bittikten sonra öğretmeniniz uygun bir saat için dersi açar; size bildirim gelir ve ders Derslerim sayfasında görünür. Ayrı bir ücret ödemezsiniz.</Note>
         {s.groupsEnabled ? (
           <div className="mt-12 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-ink-100 bg-white p-6">
             <div className="max-w-2xl">
@@ -319,7 +299,7 @@ export default async function PrivateLessonGuidePage() {
           shot={shot("11-panel", "pikampus.com/ogretmen-paneli", "Öğretmen paneli", 1440, 900)}
           title="Öğretmen paneli"
           legend={[
-            ["Menü:", "dersler ve talepler, mesajlar, soru havuzu, grup dersleri, profil, takvim, kazançlar."],
+            ["Menü:", "dersler ve talepler, mesajlar, soru çözüm dersleri, grup dersleri, profil, takvim, kazançlar."],
             ["Yaklaşan dersler", "ve onay bekleyen talepler tek bakışta."],
           ]}
         >
@@ -329,7 +309,6 @@ export default async function PrivateLessonGuidePage() {
           items={[
             { shot: shot("14-takvim", "Müsaitlik takvimi", "Müsaitlik takvimi", 1440, 1100), caption: "Müsaitlik: haftalık şablon, izin günleri ve ek saatler; dersler arası tampon süre." },
             { shot: shot("15-fiyatlar", "Dersler ve fiyatlar", "Dersler ve fiyatlar", 1440, 1100), caption: "Dersler ve fiyatlar: kademe ve derse göre ücret, ücretsiz tanışma görüşmesi, paket indirimleri." },
-            { shot: shot("16-havuz", "Soru havuzu", "Soru havuzu", 1440, 900), caption: "Soru havuzu: branşınıza uygun soruyu üstlenip çözün, soru başına kazanın." },
             { shot: shot("17-kazanclar", "Kazançlarım", "Kazançlar", 1440, 1000), caption: "Kazançlarım: bekleyen, kullanılabilir ve ödenen tutarlar, hareketler ve ödeme bilgileri." },
           ]}
         />
@@ -359,9 +338,6 @@ export default async function PrivateLessonGuidePage() {
           <div className="mt-2 flex flex-wrap gap-3">
             <Link href="/ogretmenler" className={buttonClasses("primary", "lg")}>
               Öğretmen bul
-            </Link>
-            <Link href="/soru-sor" className={buttonClasses("outline", "lg", "border-white/30 bg-transparent text-white hover:bg-white/10")}>
-              Soru sor
             </Link>
           </div>
         </div>

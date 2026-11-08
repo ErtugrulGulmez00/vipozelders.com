@@ -34,8 +34,6 @@ export const settingsSchema = z.object({
   // Randevu kuralları
   paymentHoldMinutes: z.number().int().min(5).max(120).default(15),
   approvalWindowHours: z.number().int().min(1).max(72).default(12),
-  // Fotoğrafla soruda öğretmenin çözümü göndermesi için süre; dolarsa ücret iade edilir.
-  questionAnswerHours: z.number().int().min(1).max(72).default(24),
   approvalMinHoursBeforeStart: z.number().int().min(0).max(48).default(1),
   minNoticeHours: z.number().int().min(1).max(168).default(2),
   // Aynı güne randevu: kapalıysa en erken yarına randevu alınır (öğretmen onayı için zaman kalır)
@@ -54,27 +52,8 @@ export const settingsSchema = z.object({
   // Öğretmenlere ödenebilir bakiyenin havale edildiği ayın günleri (ör. "1,15")
   payoutDays: z.string().default("1,15"),
 
-  // Soru kredisi ve soru havuzu. Paketler "kredi:fiyat(TL)" virgülle; 1 kredi = 1 soru.
-  questionPackages: z.string().default("1:25,10:200,20:360,50:750"),
-  poolTeacherFeeTl: z.number().int().min(0).max(1000).default(8),
-  poolClaimMinutes: z.number().int().min(5).max(240).default(30),
-  creditValidityMonths: z.number().int().min(1).max(60).default(12),
-  creditRefundDays: z.number().int().min(0).max(90).default(14),
-  // Havuzdaki soruları yalnızca belgeleri onaylı öğretmenler görsün
-  poolVerifiedOnly: z.boolean().default(true),
 
-  // Öğretmenin sattığı aylık soru aboneliği
-  subscriptionsEnabled: z.boolean().default(true),
-  subscriptionCommissionBps: z.number().int().min(0).max(9000).default(1500),
-  subscriptionDays: z.number().int().min(7).max(90).default(30),
-  subscriptionMinPriceTl: z.number().int().min(1).max(100_000).default(100),
-  subscriptionMaxPriceTl: z.number().int().min(1).max(100_000).default(10_000),
-  // Süresinde cevaplanmayan soru bu sayıya ulaşınca yönetici uyarılır (iade yapılmaz)
-  subscriptionMissLimit: z.number().int().min(1).max(50).default(3),
-  // Dönem bitmeden kaç gün önce yenileme hatırlatması gider
-  subscriptionReminderDays: z.number().int().min(0).max(14).default(3),
-
-  // Grup dersi (sanal dershane): komisyon, katılımcı sınırları, kişi başı ücret aralığı
+  // Grup dersi: komisyon, katılımcı sınırları, kişi başı ücret aralığı
   groupsEnabled: z.boolean().default(true),
   groupCommissionBps: z.number().int().min(0).max(9000).default(2000),
   groupMinParticipants: z.number().int().min(2).max(50).default(4),
@@ -82,10 +61,9 @@ export const settingsSchema = z.object({
   groupMinPriceTl: z.number().int().min(1).max(100_000).default(100),
   groupMaxPriceTl: z.number().int().min(1).max(100_000).default(20_000),
 
-  // Arkadaşını getir: davetle gelen yeni üyenin ilk siparişine indirim (%), davet edene soru kredisi
+  // Arkadaşını getir: davetle gelen yeni üyenin ilk siparişine indirim (%)
   referralEnabled: z.boolean().default(true),
   referralDiscountPercent: z.number().int().min(0).max(50).default(10),
-  referralRewardCredits: z.number().int().min(0).max(50).default(3),
 
   // Paket ders ve tekrarlayan ders
   packagesEnabled: z.boolean().default(true),
@@ -101,23 +79,14 @@ export const settingsSchema = z.object({
 
   // Kurum paneli abonelik planları (aylık, KDV dahil, tam TL)
   centerTrialDays: z.number().int().min(0).max(90).default(14),
-  // Kurum kapasite kademeleri: öğrenci sınırı iki pakette ortak. Aşağıdaki fiyatlar Dershane paketinin (20 kademesi
-  // Dershane'de satılmaz, fiyatı kullanılmaz); Etüt Merkezi fiyatları ayrıca (centerEtut…). Yıllık 0 = yalnızca aylık.
+  // Kurum kapasite kademeleri: öğrenci sınırları. Yıllık 0 = yalnızca aylık.
   // Merdiven: bir kademenin yıllık fiyatı bir alttakini aylık ödemeye denk → "aynı paraya daha çok kapasite".
   // Kurumsal (200+) kademede öğrenci sınırı yeni kurum için başlangıç değeridir; yönetici kuruma göre değiştirir.
-  centerTier20PriceTl: z.number().int().min(0).max(1_000_000).default(3999),
-  centerTier20YearlyTl: z.number().int().min(0).max(10_000_000).default(44999),
   centerTier20Students: z.number().int().min(1).max(100_000).default(20),
-  centerTier100PriceTl: z.number().int().min(0).max(1_000_000).default(6499),
-  centerTier100YearlyTl: z.number().int().min(0).max(10_000_000).default(64990),
   centerTier100Students: z.number().int().min(1).max(100_000).default(100),
-  centerTier200PriceTl: z.number().int().min(0).max(1_000_000).default(8999),
-  centerTier200YearlyTl: z.number().int().min(0).max(10_000_000).default(77990),
   centerTier200Students: z.number().int().min(1).max(100_000).default(200),
-  centerTierPlusPriceTl: z.number().int().min(0).max(1_000_000).default(12999),
-  centerTierPlusYearlyTl: z.number().int().min(0).max(10_000_000).default(129990),
   centerTierPlusStudents: z.number().int().min(1).max(100_000).default(1000),
-  // Etüt Merkezi paketi fiyatları (Dershane'nin sınıf programı, yoklama, deneme, derslik ve rapor modülleri yok)
+  // Kurum paneli fiyatları, öğrenci kademesine göre
   centerEtut20PriceTl: z.number().int().min(0).max(1_000_000).default(3749),
   centerEtut20YearlyTl: z.number().int().min(0).max(10_000_000).default(0),
   centerEtut100PriceTl: z.number().int().min(0).max(1_000_000).default(4999),

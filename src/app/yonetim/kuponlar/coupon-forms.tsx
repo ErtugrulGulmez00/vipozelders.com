@@ -7,8 +7,6 @@ import { Checkbox, Field, Input, Select } from "@/components/ui/form";
 
 const TARGETS = [
   ["booking", "Birebir ders"],
-  ["credits", "Soru kredisi"],
-  ["subscription", "Soru aboneliği"],
   ["group", "Grup dersi"],
 ];
 

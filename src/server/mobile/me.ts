@@ -1,6 +1,5 @@
 import { whatsappAllowed } from "@/lib/notification-channels";
 import { CENTER_NOTIFICATION_PREFIX, kurumHome, notificationScope } from "@/lib/sides";
-import { creditBalance } from "../credits";
 import { db } from "../db";
 import { unreadThreadCount } from "../messages";
 import { sideFacts } from "../sides";
@@ -19,10 +18,9 @@ export async function meJson(userId: string) {
   const role = user.role as MobileAccount["role"];
   const asTeacher = role === "TEACHER";
   const unreadWhere = { userId: user.id, readAt: null };
-  const [facts, unreadMessages, credits, unreadAll, unreadCenter] = await Promise.all([
+  const [facts, unreadMessages, unreadAll, unreadCenter] = await Promise.all([
     sideFacts(user.id, role),
     role === "STUDENT" || asTeacher ? unreadThreadCount(user.id, asTeacher ? "teacher" : "student") : Promise.resolve(0),
-    role === "STUDENT" ? creditBalance(user.id) : Promise.resolve(null),
     db.notification.count({ where: unreadWhere }),
     db.notification.count({ where: { ...unreadWhere, type: { startsWith: CENTER_NOTIFICATION_PREFIX } } }),
   ]);
@@ -42,8 +40,8 @@ export async function meJson(userId: string) {
     // Taraf başına okunmamış bildirim (yalnızca iki taraflı hesapta; değilse null ve unreadNotifications geçerli)
     unreadBySide: split ? { kurum: unreadCenter, ozel: unreadAll - unreadCenter } : null,
     unreadMessages,
-    // Soru kredisi bakiyesi (yalnızca veli/öğrenci)
-    questionCredits: credits,
+    // Soru kredisi kaldırıldı; alan mobil uygulama güncellenene kadar 0 döner
+    questionCredits: 0,
     // Önemli bildirimleri WhatsApp ile de almak istiyor (PATCH /ben whatsappNotifications)
     whatsappNotifications: whatsappAllowed(user),
     // Tek hesap, iki taraf (src/lib/sides.ts): kurum (personel paneli ya da veli/öğrenci portalı) ve özel ders.

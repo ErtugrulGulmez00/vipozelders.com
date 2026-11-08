@@ -4,6 +4,7 @@ import { Alert } from "@/components/ui/primitives";
 // sonuç mesajı yönlendirilen sayfada ?durum=... ile gösterilir.
 const MESSAGES: Record<string, string> = {
   onaylandi: "Ders onaylandı; öğrenciye bildirildi.",
+  "soru-cozum": "Ders açıldı; öğrenciye bildirim gönderildi.",
   tanisma: "Tanışma talebiniz öğretmene iletildi. Öğretmen onaylayınca size haber vereceğiz; görüşme sanal sınıfta yapılır.",
   paket: "Ders talebiniz paketinizden öğretmene iletildi. Öğretmen onaylayınca size haber vereceğiz; onaylamazsa ders paketinize geri eklenir.",
   bildirim: "Bildiriminiz alındı ve ders odası kapatıldı. Ekibimiz konuyu hemen inceleyip size dönecek.",

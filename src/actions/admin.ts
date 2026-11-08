@@ -19,7 +19,6 @@ import { notify } from "@/server/notifications";
 import { retryFailedRefund } from "@/server/payments/service";
 import { setReviewStatus } from "@/server/reviews";
 import { runScheduledTasks } from "@/server/scheduler";
-import { parsePackages } from "@/server/credits";
 import { parsePayoutDays } from "@/server/pricing";
 import { saveSettings, settingsSchema, type SiteSettings } from "@/server/settings";
 import { DocumentError, reviewTeacherDocument } from "@/server/teacher-documents";
@@ -419,7 +418,7 @@ export async function saveSettingsAction(_: ActionState, formData: FormData): Pr
     // İşaretsiz onay kutusu forma hiç gelmez; formdaki tüm onay kutuları bu yüzden her zaman okunur.
     if (!formData.has(key) && typeof defaultValue !== "boolean") continue;
     if (typeof defaultValue === "boolean") values[key] = formData.get(key) === "on";
-    else if (typeof defaultValue === "number") values[key] = key === "commissionRateBps" || key === "subscriptionCommissionBps" || key === "groupCommissionBps" ? Math.round(Number(String(formData.get(key)).replace(",", ".")) * 100) : Number(formData.get(key));
+    else if (typeof defaultValue === "number") values[key] = key === "commissionRateBps" || key === "groupCommissionBps" ? Math.round(Number(String(formData.get(key)).replace(",", ".")) * 100) : Number(formData.get(key));
     else values[key] = String(formData.get(key) ?? "").trim();
   }
   const parsed = settingsSchema.partial().safeParse(values);
@@ -430,11 +429,6 @@ export async function saveSettingsAction(_: ActionState, formData: FormData): Pr
     const days = parsePayoutDays(parsed.data.payoutDays);
     if (!days.length) return failure("Bazı değerler geçersiz.", { payoutDays: "1 ile 28 arasında en az bir gün yazın; örnek: 1,15" });
     parsed.data.payoutDays = days.join(",");
-  }
-  if (parsed.data.questionPackages !== undefined) {
-    const packages = parsePackages(parsed.data.questionPackages);
-    if (!packages.length) return failure("Bazı değerler geçersiz.", { questionPackages: "En az bir paket yazın; örnek: 1:25,10:200" });
-    parsed.data.questionPackages = packages.map((p) => `${p.credits}:${p.price / 100}`).join(",");
   }
   await saveSettings(parsed.data);
   resetMaintenanceCache();

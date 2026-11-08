@@ -1,4 +1,4 @@
-# Pi Kampüs · Sanal Dershane Platformu
+# Pi Kampüs · Eğitim Platformu
 
 Üç panelli özel ders pazaryeri:
 
@@ -6,7 +6,7 @@
 - **Öğrenci/Veli hesabı** (`/hesabim`): randevu, ödeme, sanal sınıfa katılma, takvime ekleme (.ics / Google Takvim), iptal, sorun bildirme, değerlendirme, favoriler, hesap silme talebi
 - **Öğretmen paneli** (`/ogretmen-paneli`): talepleri onaylama/reddetme, profil, dersler ve fiyatlar, müsaitlik takvimi, belge yükleme (kimlik, diploma, adli sicil; yalnızca yöneticiler görür), kazançlar, yorumlara cevap
 - **Yönetim paneli** (`/yonetim`): hızlı öğretmen ekleme (otomatik kullanıcı adı ve geçici şifre), öğretmen başvurularından tek tıkla hesap açma, belge inceleme, yayın ve doğrulama, randevu ve itiraz yönetimi, ödemesiz **test dersi** (görüntülü görüşme denemesi), finans ve hakediş ödemeleri, Excel/CSV çıktıları, yorum moderasyonu, kategoriler, sayfalar, site ayarları ve bakım modu, bildirimler, e-posta kutusu, işlem kayıtları, iki adımlı doğrulama (Google Authenticator)
-- **Kurum paneli** (`/kurum`, personel girişi `/kurum-giris` ya da `kurum.<alan adı>`): etüt merkezi, dershane ve kurslara aylık abonelikle satılan yönetim paneli: öğrenci ve veli kayıtları (Excel’den aktarım), sınıflar ve ders programı, yoklama ve velilere otomatik devamsızlık bildirimi (WhatsApp / site / uygulama), etüt planı, ödev takibi, fotoğrafla soru-çözüm, öğrenci giriş hesapları, deneme sınavları (LGS, TYT, AYT, YDT şablonları; cevap anahtarı, net, sıralama, ders/konu/soru analizi, karne, eksik konular), muhasebe (ödeme planı, tahsilat, makbuz, gecikenler, otomatik taksit hatırlatma, giderler, gelir-gider raporu), duyurular, ön kayıtlar, personel rolleri, abonelik. Ayrıntılar: [docs/kurum-paneli.md](docs/kurum-paneli.md)
+- **Kurum paneli** (`/kurum`, personel girişi `/kurum-giris` ya da `kurum.<alan adı>`): etüt merkezlerine aylık abonelikle satılan yönetim paneli: öğrenci ve veli kayıtları (Excel’den aktarım), sınıflar ve ders programı, yoklama ve velilere otomatik devamsızlık bildirimi (WhatsApp / site / uygulama), etüt planı, ödev takibi, fotoğrafla soru-çözüm, öğrenci giriş hesapları, deneme sınavları (LGS, TYT, AYT, YDT şablonları; cevap anahtarı, net, sıralama, ders/konu/soru analizi, karne, eksik konular), muhasebe (ödeme planı, tahsilat, makbuz, gecikenler, otomatik taksit hatırlatma, giderler, gelir-gider raporu), duyurular, ön kayıtlar, personel rolleri, abonelik. Ayrıntılar: [docs/kurum-paneli.md](docs/kurum-paneli.md)
 - **Kurumlar için** (`/kurumlar-icin`, `/kurumlar`, `/kurumlar/<kurum>`): tanıtım ve başvuru sayfası, kurum rehberi, kurum vitrin sayfası ve ön kayıt formu
 - **Veli portalı** (`/hesabim/kurum`): kurumun davet bağlantısıyla bağlanan veli; devamsızlık, etüt, deneme karnesi, eksik konular (pazaryeri öğretmenlerine yönlendirme), taksitler ve duyuruları görür
 - **Sanal sınıf** (`/ders/...`): kamera, mikrofon, ekran paylaşımı, sohbet ve ortak **beyaz tahta**; yoklama otomatik tutulur
@@ -101,7 +101,7 @@ Tek hesap (bir e-posta = bir hesap), iki taraf, iki giriş kapısı: **Özel der
 
 Bildirimler e-postayla gittiği için kurumun açtığı her hesapta (personel, kurum sahibi, öğrenci) e-posta zorunludur. Kurum personel eklerken sitede kayıtlı bir e-posta (özel ders öğretmeni, veli) yazarsa aynı hesap kuruma eklenir; kurum personeli aynı e-postayla öğretmen başvurusu yaparsa onayda kurum hesabına öğretmen paneli eklenir. Öğrencinin e-postası sitede kayıtlıysa ona davet gider, kabul edince bağlanır.
 
-## Kurum paneli (etüt merkezi / dershane)
+## Kurum paneli (etüt merkezi)
 
 Kurumu Pi Kampüs yöneticisi açar (**Yönetim → Kurumlar**; “Kurumlar için” sayfasından gelen başvurudan tek tıkla). Kurum sahibine kullanıcı adı ve geçici şifre verilir, deneme süresi başlar. Kurum sahibi personelini (müdür, öğretmen, muhasebe) kendisi ekler; her rol yalnızca yetkili olduğu bölümleri görür.
 
@@ -235,7 +235,7 @@ src/app/(auth)/      giriş, kayıt, şifre işlemleri
 src/app/hesabim/     öğrenci/veli paneli
 src/app/ogretmen-paneli/
 src/app/yonetim/     admin paneli
-src/app/kurum/       kurum paneli (etüt merkezi / dershane)
+src/app/kurum/       kurum paneli (etüt merkezi)
 src/app/ders/        sanal sınıf
 src/app/api/         saatler, ilçeler, dosyalar, ödeme dönüşü, LiveKit webhook
 src/actions/         Server Action'lar (her biri yetkiyi sunucuda yeniden kontrol eder)

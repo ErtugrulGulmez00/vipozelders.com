@@ -4,8 +4,8 @@ import type { Tone } from "@/components/ui/primitives";
 
 export const CENTER_KIND_LABEL: Record<string, string> = {
   ETUT: "Etüt merkezi",
-  DERSHANE: "Dershane / temel lise destek",
   KURS: "Kurs merkezi",
+  COACH: "Bireysel koç (Pi Koç)",
   OTHER: "Diğer eğitim kurumu",
 };
 
@@ -34,10 +34,6 @@ export const CENTER_PLAN_LABEL: Record<string, string> = {
   ENTERPRISE: "Kurumsal (200+)",
 };
 
-export const CENTER_EDITION_LABEL: Record<string, string> = {
-  ETUT: "Etüt Merkezi",
-  DERSHANE: "Dershane",
-};
 
 export const STUDENT_STATUS: Record<string, { label: string; tone: Tone }> = {
   ACTIVE: { label: "Aktif", tone: "green" },

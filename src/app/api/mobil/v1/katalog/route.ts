@@ -25,15 +25,14 @@ export const GET = publicRoute(async () => {
       partialRefundPercent: settings.partialRefundPercent,
       disputeWindowHours: settings.disputeWindowHours,
       reviewWindowDays: settings.reviewWindowDays,
-      questionAnswerHours: settings.questionAnswerHours,
-      // Paket ders, erteleme, soru aboneliği, grup dersi, arkadaşını getir
+      // Paket ders, erteleme, grup dersi, arkadaşını getir
       packagesEnabled: settings.packagesEnabled,
       packageMaxLessons: settings.packageMaxLessons,
       packageValidityMonths: settings.packageValidityMonths,
       rescheduleMinHours: settings.rescheduleMinHours,
       rescheduleMaxPerBooking: settings.rescheduleMaxPerBooking,
-      subscriptionsEnabled: settings.subscriptionsEnabled,
-      subscriptionDays: settings.subscriptionDays,
+      // Soru aboneliği kaldırıldı; mobil uygulama güncellenene kadar kapalı döner
+      subscriptionsEnabled: false,
       groupsEnabled: settings.groupsEnabled,
       referralEnabled: settings.referralEnabled,
       referralDiscountPercent: settings.referralDiscountPercent,

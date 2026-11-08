@@ -9,11 +9,10 @@ import { loadSettings } from "@/server/settings";
 /** Arkadaşını getir: kişisel davet kodu ve bağlantısı, kampanya koşulları, ödül kazandıran davetler. */
 export const GET = withUser(async ({ user }) => {
   requireRole(user, "STUDENT");
-  const [settings, code, invited, rewarded] = await Promise.all([
+  const [settings, code, invited] = await Promise.all([
     loadSettings(),
     ensureReferralCode(user.id),
     db.user.count({ where: { referredById: user.id } }),
-    db.user.count({ where: { referredById: user.id, referralRewardedAt: { not: null } } }),
   ]);
   const url = appUrl(`/kayit?davet=${code}`);
   return json({
@@ -21,9 +20,9 @@ export const GET = withUser(async ({ user }) => {
     code,
     url,
     discountPercent: settings.referralDiscountPercent,
-    rewardCredits: settings.referralRewardCredits,
+    rewardCredits: 0,
     invited,
-    rewarded,
-    shareText: `${settings.siteName}'te onaylı öğretmenlerle ders ve soru çözüm. Bu bağlantıyla kayıt olursan ilk siparişinde %${settings.referralDiscountPercent} indirim kazanırsın: ${url}`,
+    rewarded: 0,
+    shareText: `${settings.siteName}'te onaylı öğretmenlerle ders. Bu bağlantıyla kayıt olursan ilk siparişinde %${settings.referralDiscountPercent} indirim kazanırsın: ${url}`,
   });
 });

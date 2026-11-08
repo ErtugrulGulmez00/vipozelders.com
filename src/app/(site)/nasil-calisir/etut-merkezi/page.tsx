@@ -33,6 +33,11 @@ const shot = (file: string, url: string, alt: string, width: number, height: num
 const video = (file: string) => `${BASE}/video/${file}.mp4`;
 const img = (file: string) => `${BASE}/${file}.jpg`;
 
+// Sınıf bölümlerinin ekran görüntüleri
+const CLASS_BASE = "/tanitim/etut-merkezi/sinif";
+const classShot = (file: string, url: string, alt: string, width: number, height: number, tall?: boolean): Shot => ({ src: `${CLASS_BASE}/${file}.jpg`, url, alt, width, height, tall });
+const classImg = (file: string) => `${CLASS_BASE}/${file}.jpg`;
+
 const NAV: [string, string][] = [
   ["neden", "Neden"],
   ["giris", "Giriş"],
@@ -45,6 +50,12 @@ const NAV: [string, string][] = [
   ["soru", "Soru"],
   ["muhasebe", "Muhasebe"],
   ["iletisim", "İletişim"],
+  ["siniflar", "Sınıflar"],
+  ["program", "Program"],
+  ["yoklama", "Yoklama"],
+  ["defter", "Sınıf defteri"],
+  ["derslik", "Derslikler"],
+  ["rapor", "Raporlar"],
   ["veli", "Veli"],
   ["yonetim", "Yönetim"],
   ["fiyat", "Fiyat"],
@@ -88,7 +99,7 @@ const SECURITY = [
 
 export default async function EtudGuidePage() {
   const settings = await getSiteSettings();
-  const plans = centerPlans(settings, "ETUT");
+  const plans = centerPlans(settings);
   const trial = settings.centerTrialDays;
   const applyHref = "/kurumlar-icin?paket=ETUT#basvuru";
 
@@ -101,7 +112,7 @@ export default async function EtudGuidePage() {
       "Kayıtlarınız silinmez. Aboneliği başlatınca kaldığınız yerden devam edersiniz; başlatmazsanız panel salt okunur olur. Ödeme havale / EFT ile alınır.",
     ],
     ["Öğretmenlerimiz özel ders de veriyorsa?", "Pi Kampüs'te özel ders tarafı ayrıdır. Aynı öğretmen \"Kurum girişi\"nden girince yalnızca kurumunuzu görür; kurum tarafında özel ders tanıtımı yapılmaz."],
-    ["Paketi sonra değiştirebilir miyim?", "Evet. Öğrenci sayınız artınca kademeyi, sınıf bazlı yönetim gerekince Dershane paketini seçersiniz; kayıtlarınız olduğu gibi kalır."],
+    ["Paketi sonra değiştirebilir miyim?", "Evet. Öğrenci sayınız artınca kademeyi yükseltirsiniz; kayıtlarınız olduğu gibi kalır."],
   ];
 
   return (
@@ -383,7 +394,7 @@ export default async function EtudGuidePage() {
         </div>
       </GuideSection>
 
-      <GuideSection id="takip" eyebrow="Birebir takip" title="Koçluk, çalışma salonu, kaynak ve program" lead="Etüt merkezini dershaneden ayıran şey birebir takiptir. Her öğrencinin koçu, haftalık görüşme günü, salon devamı, kitap ilerlemesi ve çalışma programı kayıt altındadır.">
+      <GuideSection id="takip" eyebrow="Birebir takip" title="Koçluk, çalışma salonu, kaynak ve program" lead="Etüt merkezinin gücü birebir takiptir. Her öğrencinin koçu, haftalık görüşme günü, salon devamı, kitap ilerlemesi ve çalışma programı kayıt altındadır.">
         <Feature
           shot={shot("12-kocluk", "pikampus.com/kurum/kocluk", "Koçluk ekranı", 1440, 1000)}
           title="Koçluk ve rehberlik"
@@ -499,6 +510,149 @@ export default async function EtudGuidePage() {
         </Feature>
       </GuideSection>
 
+      <GuideSection id="siniflar" eyebrow="Sınıflar" title="Her sınıfın öğrencileri, rehberi ve ders saatleri bir arada" lead="Sınıfı açın, öğrencileri işaretleyin, haftalık ders saatlerini girin. Sınıfın devam oranı aynı sayfada görünür.">
+        <Feature
+          shot={classShot("02-siniflar", "pikampus.com/kurum/siniflar", "Sınıf listesi", 1440, 620)}
+          title="Sınıf listesi"
+          legend={[
+            ["Sınıf kartı:", "seviye, hedef sınav, derslik ve rehber öğretmen."],
+            ["Mevcut / kontenjan.", "Kontenjan dolunca sınıfa öğrenci eklenemez."],
+            ["Haftalık ders sayısı", "ve dersin olduğu günler."],
+            ["Yeni sınıf:", "ad, rehber öğretmen, seviye, hedef, derslik ve kontenjan."],
+          ]}
+        />
+        <Feature
+          flip
+          shot={classShot("03-sinif", "pikampus.com/kurum/siniflar/…", "Sınıf sayfası: öğrenciler ve haftalık program", 1440, 1090, true)}
+          title="Sınıf sayfası"
+          legend={[
+            ["Öğrenciler", "ve son 30 günün devam oranı."],
+            ["Haftalık program:", "ders, öğretmen ve derslik."],
+            ["Ders saati ekle:", "gün, saat, ders, öğretmen, derslik. O saatte öğretmen, sınıf ya da derslik doluysa kaydedilmez."],
+            ["Yoklama:", "bu sınıfın günlük yoklama ekranı."],
+          ]}
+        >
+          <Note>Sınıf listesi aynı sayfada işaretlenerek düzenlenir; bir öğrenci birden fazla sınıfta olabilir. Yoklama geçmişi olan sınıf silinmez, arşive alınır.</Note>
+        </Feature>
+      </GuideSection>
+
+      <GuideSection id="program" eyebrow="Haftalık ders programı" title="Bütün sınıfların haftası tek tabloda" lead="Sınıf sayfalarında girilen ders saatleri haftalık programda toplanır. Sınıfa ya da öğretmene göre süzün, yazdırıp panoya asın.">
+        <Feature
+          shot={classShot("04-program", "pikampus.com/kurum/program", "Haftalık ders programı", 1440, 940)}
+          legend={[
+            ["Sınıf süzgeci.", ""],
+            ["Öğretmen süzgeci.", "Öğretmen kendi hesabıyla girince program kendi dersleriyle açılır."],
+            ["Yazdır / PDF.", ""],
+            ["Ders kartı:", "saat, ders, sınıf, öğretmen ve derslik. Her sınıf kendi renginde."],
+          ]}
+        />
+        <div className="mt-8">
+          <Figure shot={classShot("04b-program-ogretmen", "Öğretmenin haftası", "Bir öğretmenin haftalık ders programı", 1180, 900)}>
+            <b>Öğretmenin haftası:</b> süzgeçten öğretmeni seçin; hangi gün hangi sınıfta, hangi derslikte olduğu tek bakışta görünür.
+          </Figure>
+        </div>
+        <div className="mt-6">
+          <Tip title="Videoda dikkat edin:">öğretmen o saatte başka sınıfta derste olduğu için ders saati kaydedilmez; saat değiştirilince programa eklenir.</Tip>
+        </div>
+      </GuideSection>
+
+      <GuideSection id="yoklama" eyebrow="Sınıf yoklaması" title="Ders biter, yoklama birkaç saniye sürer" lead="Programdaki dersler yoklama ekranına kendiliğinden düşer. Öğretmen hepsini &quot;geldi&quot; yapar, gelmeyeni işaretler; velisine bildirim gider.">
+        <Feature
+          shot={classShot("05-yoklama", "pikampus.com/kurum/yoklama", "Günün dersleri ve yoklama durumu", 1440, 820)}
+          title="Günün dersleri"
+          legend={[
+            ["Gün seçimi:", "önceki ve sonraki günler."],
+            ["Yoklaması alınmış ders:", "geldi, gelmedi, geç ve izinli sayıları."],
+            ["Yoklama al:", "henüz yoklaması alınmamış ders."],
+            ["Ek yoklama:", "programda olmayan bir ders, deneme ya da etkinlik için."],
+            ["Devamsızlık raporu.", ""],
+          ]}
+        />
+        <Feature
+          flip
+          shot={classShot("06-yoklama-al", "pikampus.com/kurum/yoklama/al", "Sınıf yoklaması ve sınıf defteri alanı", 1440, 1304, true)}
+          title="Yoklama listesi"
+          legend={[
+            ["Anlık sayım.", ""],
+            ["Hepsini \"Geldi\" yap,", "sonra istisnaları değiştirin."],
+            ["Sınıf defteri:", "bu derste işlenen konu. Veli portalında da görünür."],
+            ["Gelmedi işaretlenen öğrenci.", "\"Veliye bildirildi\" mesajın gittiğini gösterir; \"Not ekle\" ile açıklama yazılır (ör. doktor raporu)."],
+            ["Gelmeyenin velisine e-posta ve site bildirimi,", "her öğrenci için bir kez."],
+            ["Yoklamayı kaydet.", "Sonradan düzeltilebilir; aynı devamsızlık için ikinci mesaj gitmez."],
+          ]}
+        />
+        <Phones className="mt-0 lg:justify-start">
+            <Phone caption="Öğretmen yoklamayı telefonundan alır; uygulama indirmek gerekmez.">
+              <PhoneImage src={classImg("t4-yoklama-telefon")} alt="Telefonda sınıf yoklaması" width={780} height={3000} />
+            </Phone>
+          </Phones>
+        <Feature
+          className="mt-14"
+          shot={classShot("07-devamsizlik", "pikampus.com/kurum/yoklama/rapor", "Devamsızlık raporu", 1440, 800)}
+          title="Devamsızlık raporu"
+          legend={[
+            ["Tarih aralığı ve sınıf.", ""],
+            ["CSV çıktısı:", "özet ya da bütün yoklama kayıtları."],
+            ["Toplam devamsızlık", "ve oranı."],
+            ["En çok devamsızlık yapan en üstte:", "ders, gelmedi, geç, izinli ve devam oranı."],
+          ]}
+        />
+      </GuideSection>
+
+      <GuideSection id="defter" eyebrow="Sınıf defteri" title="Hangi sınıf hangi konuda, tek listede" lead="Yoklamada yazılan konular sınıf defterini oluşturur. Ayrı bir defter tutmaya gerek kalmaz; konusu girilmemiş dersler de listelenir.">
+        <Feature
+          shot={classShot("08-sinif-defteri", "pikampus.com/kurum/sinif-defteri", "Sınıf defteri", 1440, 820)}
+          legend={[
+            ["Süzgeç:", "sınıf, ders ve başlangıç tarihi."],
+            ["Konusu girilmemiş", "ders sayısı."],
+            ["İşlenen konu:", "yoklamada yazılan."],
+            ["Devam:", "tam katılım ya da kaç öğrencinin gelmediği."],
+          ]}
+        />
+        <Pair>
+          <Figure shot={classShot("08b-sinif-defteri-sinif", "Sınıf defteri · 8-B LGS", "Bir sınıfın sınıf defteri", 1180, 998, true)}>
+            <b>Sınıfa göre süzünce</b> sınıfın konu konu ilerleyişi çıkar. Konusu girilmemiş derste ① &quot;Konu gir&quot; bağlantısı o dersin yoklamasını açar.
+          </Figure>
+          <div className="grid content-start gap-4">
+            <Tip title="Paralel sınıflar:">8-A ve 8-B&apos;nin aynı konuda olup olmadığını iki süzgeçle karşılaştırın; geride kalan sınıfa ek ders planlayın.</Tip>
+            <Note>Öğretmen sınıf defterinde yalnız kendi derslerini görür; müdür bütün sınıfları izler. İşlenen konular veli portalındaki ders yoklamalarında da yazar.</Note>
+          </div>
+        </Pair>
+      </GuideSection>
+
+      <GuideSection id="derslik" eyebrow="Derslikler" title="Derslik doluluğu ve kapasite tek bakışta" lead="Derslikler, sınıfın ya da ders saatinin &quot;derslik&quot; alanına yazılan adla eşleşir. Her dersliğin haftalık programı, doluluğu ve kapasite uyarıları burada.">
+        <Feature
+          shot={classShot("09-derslikler", "pikampus.com/kurum/derslikler", "Derslikler", 1440, 1100, true)}
+          legend={[
+            ["Yeni derslik:", "ad, kapasite ve not."],
+            ["Haftalık doluluk:", "dersliğin haftada kaç saat dolu olduğu."],
+            ["Kapasite aşımı:", "sınıf mevcudu derslik kapasitesini geçiyor."],
+            ["Kapasiteyi aşan dersler", "kırmızı görünür."],
+          ]}
+        >
+          <Note>Programda geçip kayıtlı olmayan derslikler &quot;Kayıtlı değil&quot; etiketiyle listelenir. Aynı saatte aynı dersliğe düşen dersler sayfanın üstünde uyarı olarak çıkar.</Note>
+        </Feature>
+      </GuideSection>
+
+      <GuideSection id="rapor" eyebrow="Kurum raporları" title="Kurumdan sınıfa, sınıftan öğrenciye" lead="Seçtiğiniz dönemin devam ve ödev oranı, son deneme ortalaması ve geciken ödemeler önce kurum geneli, sonra sınıf, sonra öğrenci bazında. Raporları kurum sahibi ve müdür görür.">
+        <Feature
+          shot={classShot("10-raporlar", "pikampus.com/kurum/raporlar", "Kurum raporu", 1440, 720)}
+          legend={[
+            ["Dönem:", "başlangıç ve bitiş tarihi."],
+            ["Devam oranı", "ve devamsızlık sayısı."],
+            ["Son deneme", "ortalama neti."],
+            ["Sınıf satırı:", "tıklayınca öğrenci bazında rapor açılır."],
+          ]}
+        />
+        <Gallery
+          items={[
+            { shot: classShot("11-rapor-sinif", "Rapor · 8-A LGS", "Sınıf raporu", 1180, 1000), caption: "Sınıf raporu: öğrenci öğrenci devam, devamsızlık, ödev, son net ve geciken ödeme. ① Kurum geneline dönüş, ② öğrenci kartına geçiş." },
+            { shot: classShot("12-ogrenci-devam", "Öğrenci kartı · Devam ve ödev", "Öğrenci kartında ders yoklamaları", 1180, 1100), caption: "Öğrenci kartı: ders ders yoklama ve işlenen konular; veliyle görüşmeden önce açın." },
+          ]}
+        />
+        <Note className="mt-5">Geciken ödeme bugünkü duruma göredir; diğer ölçüler seçilen dönemi kapsar.</Note>
+      </GuideSection>
+
       <GuideSection id="veli" eyebrow="Veli ve öğrenci deneyimi" title="Veli telefonundan takip eder, sizi aramasına gerek kalmaz" lead="Veli portalı telefon tarayıcısında uygulama gibi çalışır, bir şey indirmek gerekmez. Veli yalnızca kendi çocuğunu, siz yayınladığınız bilgileri görür.">
         <Phones>
           <GuideVideo phone src={video("v7-veli-portali")} poster={img("t1-veli-ozet")} title="Veli portalı turu" seconds={32} />
@@ -555,15 +709,8 @@ export default async function EtudGuidePage() {
 
       <GuideSection id="fiyat" eyebrow="Fiyat" title="Etüt Merkezi paketi" lead="Fiyat aktif öğrenci sayınıza göre belirlenir; pasif ve ayrılan öğrenciler sayılmaz. Tüm kademelerde bütün modüller, sınırsız personel ve veli portalı dahildir. Fiyatlara KDV dahildir.">
         <div className="mt-8">
-          <TierCards plans={plans} edition="ETUT" />
+          <TierCards plans={plans} />
         </div>
-        <Note className="mt-6">
-          Sınıf bazlı toplu ders programı, sınıf yoklaması, sınıf defteri, derslik yönetimi ve kurum raporları isteyen kurumlar için{" "}
-          <Link href="/nasil-calisir/dershane" className="font-semibold text-brand-700 underline">
-            Dershane paketi
-          </Link>{" "}
-          de var; paket yükseltilince kayıtlar olduğu gibi kalır.
-        </Note>
       </GuideSection>
 
       <GuideSection id="baslangic" eyebrow="Başlangıç" title="İlk hafta nasıl geçer" lead="Kurulumu sizinle birlikte yapıyoruz. Excel listeniz hazırsa öğrencilerinizi ilk gün aktarır, ertesi gün etüt yoklamasına başlayabilirsiniz.">

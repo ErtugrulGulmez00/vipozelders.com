@@ -11,9 +11,8 @@ export const LEGAL_PAGES: { slug: string; title: string; sortOrder: number; show
 
 ## Ne sunuyoruz?
 - Özel ders: İlkokul, ortaokul, lise, LGS ve YKS hazırlıkta birebir dersler. Fiyatlar öğretmen profillerinde KDV dahil gösterilir.
-- Soru çözüm: Takıldığınız sorunun fotoğrafını yüklersiniz, branş öğretmeni {questionAnswerHours} saat içinde çözümü gönderir.
 - Koçluk: Sınav hazırlığında çalışma programı ve düzenli takip.
-- Kurum paneli: Etüt merkezi ve dershanelere öğrenci, yoklama, deneme ve tahsilat takibi için yazılım.
+- Kurum paneli: Etüt merkezlerine öğrenci, yoklama, deneme ve tahsilat takibi için yazılım.
 
 ## Nasıl güven sağlıyoruz?
 - Öğretmenlerimizin kimlik ve diploma bilgilerini kontrol ediyor, onaylı öğretmenleri rozetle gösteriyoruz.
@@ -34,7 +33,7 @@ E-posta: {contactEmail}`,
     title: "Nasıl Çalışır?",
     sortOrder: 2,
     showInFooter: true,
-    content: `{siteName}'te birebir ders, grup dersi ve soru çözüm tek yerde. İhtiyacınıza uygun yolu seçin.
+    content: `{siteName}'te birebir ders ve grup dersi tek yerde. İhtiyacınıza uygun yolu seçin.
 
 ## Birebir özel ders
 1. Öğretmeni bulun: kademe, ders, ders şekli, il/ilçe ve fiyata göre filtreleyin; onaylı öğretmen rozetine ve gerçek yorumlara bakın. Birçok öğretmenle ücretsiz 15 dakikalık tanışma görüşmesi yapabilirsiniz.
@@ -51,12 +50,11 @@ E-posta: {contactEmail}`,
 ## Ders saatini değiştirmek (erteleme)
 Onaylı bir dersin saatini dersten en az {rescheduleMinHours} saat önce değiştirmek isteyebilirsiniz. Ders sayfasından yeni bir saat önerin; öğretmeniniz kabul ederse ders yeni saate taşınır. Öğretmeniniz de size yeni saat önerebilir.
 
-## Grup dersleri (sanal dershane)
+## Grup dersleri
 {groupMinParticipants}–{groupMaxCapacity} kişilik online sınıflarda, birebir dersten çok daha uygun fiyata ders alırsınız. Ders, kayıt bitişinde en az katılımcı sayısına ulaşırsa açılır; ulaşmazsa ödediğiniz ücretin tamamı iade edilir.
 
-## Soru çözüm
-- Soru kredisi: takıldığınız sorunun fotoğrafını gönderin; branş öğretmenlerimizden biri {questionAnswerHours} saat içinde adım adım çözer. Çözülmezse krediniz iade edilir.
-- Aylık soru aboneliği: kendi öğretmeninize {subscriptionDays} gün boyunca her gün soru gönderin. Otomatik çekim yoktur; dönem bitmeden yenileyebilirsiniz.
+## Dersle birlikte soru çözümü
+Bazı öğretmenler, tamamlanan her dersin ardından 30 dakikalık ücretsiz bir soru çözüm dersi açar. Bu öğretmenlerin profilinde belirtilir; ayrı bir ücret alınmaz.
 
 ## Aradığınızı bulamazsanız
 Öğretmen listesinin altındaki formdan ders ve uygun saatlerinizi bırakın; size uygun öğretmeni bulup dönelim. Sorularınız için sağ alttaki WhatsApp düğmesini de kullanabilirsiniz.`,
@@ -84,14 +82,11 @@ Evet. Dersten en az {rescheduleMinHours} saat önce ders sayfasından yeni saat 
 ## Grup dersi nasıl işliyor?
 Öğretmen bir program ilan eder (ör. 4 hafta, haftada 2 ders). Kayıt bitişinde en az katılımcı sayısına ulaşılırsa ders kesinleşir; ulaşılmazsa ücretin tamamı iade edilir. İlk dersten önce kaydınızı iptal ederseniz tam iade alırsınız.
 
-## Soru kredisi ile soru aboneliği arasındaki fark ne?
-Kredide her soru 1 kredidir ve sorunuz o derste ders veren öğretmenlerden birine gider. Abonelikte {subscriptionDays} gün boyunca kendi seçtiğiniz öğretmene, günlük sınır içinde istediğiniz kadar soru gönderirsiniz.
-
 ## İndirim kodumu nereye yazarım?
 Ödeme adımındaki "İndirim kodum var" bağlantısına tıklayıp kodu yazın ve "Uygula"ya basın. Arkadaşınızın davet bağlantısıyla kayıt olduysanız ilk siparişinizde indirim kendiliğinden uygulanır.
 
 ## Arkadaşımı nasıl davet ederim?
-Hesabım → Arkadaşını davet et sayfasındaki bağlantınızı paylaşın. Arkadaşınız ilk siparişinde indirim kazanır; ilk ödemesini yaptığında size soru kredisi hediye edilir.
+Hesabım → Arkadaşını davet et sayfasındaki bağlantınızı paylaşın. Arkadaşınız ilk siparişinde indirim kazanır.
 
 ## Online ders için ne gerekiyor?
 Kamera ve mikrofonu olan bir bilgisayar, tablet ya da telefon ve güncel bir tarayıcı yeterlidir. Ders sitemizin içinde açılır.
@@ -164,7 +159,7 @@ LiveKit, Google, Meta ve Telegram sunucuları yurt dışında bulunabilir. Yurt 
 WhatsApp bildirimleri isteğe bağlıdır ve yalnızca izninizle gönderilir. İzninizi kayıt sırasında ya da Hesap ayarlarından verebilir, aynı yerden geri alabilir ya da WhatsApp’tan DUR yazarak bildirimleri durdurabilirsiniz. Bu durum e-posta ve site bildirimlerini etkilemez. Kurum öğrencilerinin velilerine giden WhatsApp bildirimleri için izni kurum alır.
 
 ## Kurum kayıtları
-Etüt merkezi ya da dershane panelinde kurumun girdiği öğrenci ve veli verileri için veri sorumlusu ilgili kurumdur; {siteName} bu verileri kurum adına, veri işleyen olarak işler.
+Etüt merkezi panelinde kurumun girdiği öğrenci ve veli verileri için veri sorumlusu ilgili kurumdur; {siteName} bu verileri kurum adına, veri işleyen olarak işler.
 
 ## Reşit olmayanlar
 18 yaşından küçük öğrenciler adına hesap, veli veya yasal temsilci tarafından açılmalıdır.
@@ -218,7 +213,7 @@ Hesabınıza giremiyorsanız ya da yalnızca belirli verilerin (ör. WhatsApp i�
 
 Yalnızca WhatsApp bildirimlerini durdurmak istiyorsanız WhatsApp’tan DUR yazmanız yeterlidir.
 
-## 3. Kurum (etüt merkezi / dershane) kayıtları
+## 3. Kurum (etüt merkezi) kayıtları
 Bir kurumun öğrencisi ya da velisiyseniz, öğrenci kartı ve yoklama, deneme, ödeme gibi kayıtlar o kurum adına tutulur. Silme talebinizi kurumunuza iletebilir ya da {contactEmail} adresine yazabilirsiniz; talebi kurumla birlikte sonuçlandırırız.
 
 ## Saklanması zorunlu kayıtlar
@@ -244,9 +239,7 @@ Alıcı: Siteye üye olan ve ödeme adımında bilgileri yer alan kişi (veli, y
 
 ## 2. Konu
 İşbu sözleşme, alıcının {siteName} üzerinden satın aldığı eğitim hizmetlerinin satışı ve ifasına ilişkin tarafların hak ve yükümlülüklerini 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği uyarınca düzenler. Sözleşme konusu hizmetler:
-- Özel ders, soru çözüm dersi ve koçluk görüşmesi: seçilen öğretmen, hizmet türü, kademe, ders, süre, tarih, saat ve ders şekli (online / yüz yüze) ödeme adımındaki sipariş özetinde yer alır.
-- Soru kredisi paketi: paketteki soru sayısı ve bedeli ödeme adımında gösterilir. Her kredi bir sorunun branş öğretmeni tarafından çözülmesi hakkıdır.
-- Soru aboneliği: seçilen öğretmene {subscriptionDays} gün boyunca, günlük soru sınırı ve cevap süresi ödeme adımında belirtilen şekilde soru gönderme hakkıdır. Bedel dönem başında tek seferde alınır; otomatik yenileme ve otomatik çekim yoktur.
+- Özel ders ve koçluk görüşmesi: seçilen öğretmen, hizmet türü, kademe, ders, süre, tarih, saat ve ders şekli (online / yüz yüze) ödeme adımındaki sipariş özetinde yer alır.
 - Grup dersi: öğretmenin ilan ettiği programdaki (tarih, saat ve oturum sayısı sipariş özetinde yer alır) online grup oturumlarına katılım hakkıdır. Bedel kişi başı ve tüm program için tek seferde alınır.
 - Paket ders ve düzenli ders: aynı öğretmenden, sipariş özetinde belirtilen ders ve sürede, belirtilen sayıda ders hakkıdır. Bedel peşin alınır; dersler öğretmenin takviminden seçilir ve öğretmen onayıyla kesinleşir. Paket {packageValidityMonths} ay geçerlidir.
 
@@ -254,16 +247,14 @@ Alıcı: Siteye üye olan ve ödeme adımında bilgileri yer alan kişi (veli, y
 Hizmet bedeli tüm vergiler dahil olarak sipariş özetinde gösterilir; ek ücret alınmaz. Ödeme kredi veya banka kartıyla, 3D Secure doğrulamalı olarak tek çekim alınır. Kart bilgileri {siteName} tarafından görülmez ve saklanmaz; yalnızca bankanın güvenli ödeme sayfasında girilir. Tahsil edilen ders bedeli, ders gerçekleşip itiraz süresi dolana kadar öğretmene aktarılmaz.
 
 ## 4. Hizmetin ifası (teslimat)
-Hizmet fiziksel olarak kargo ile teslim edilmez. Online dersler onaylanan tarih ve saatte sitedeki sanal sınıfta, yüz yüze dersler taraflarca belirlenen adreste yapılır. Soru kredileri ödeme onaylanır onaylanmaz hesaba tanımlanır ve {creditValidityMonths} ay içinde kullanılabilir. Soru aboneliği ödeme onaylanınca başlar; aynı öğretmenden süren bir dönem varsa onun bitişinden itibaren başlar. Grup dersi, kayıt bitiş tarihinde en az katılımcı sayısına ulaşılırsa kesinleşir ve programdaki saatlerde sitedeki sanal sınıfta yapılır; ulaşılamazsa iptal edilir ve bedelin tamamı iade edilir. Ayrıntılar Teslimat ve Hizmet Bilgileri sayfasındadır.
+Hizmet fiziksel olarak kargo ile teslim edilmez. Online dersler onaylanan tarih ve saatte sitedeki sanal sınıfta, yüz yüze dersler taraflarca belirlenen adreste yapılır. Grup dersi, kayıt bitiş tarihinde en az katılımcı sayısına ulaşılırsa kesinleşir ve programdaki saatlerde sitedeki sanal sınıfta yapılır; ulaşılamazsa iptal edilir ve bedelin tamamı iade edilir. Ayrıntılar Teslimat ve Hizmet Bilgileri sayfasındadır.
 
 ## 5. Öğretmen onayı
 Ders talebi öğretmenin onayıyla kesinleşir. Öğretmen talebi reddederse ya da {approvalWindowHours} saat içinde yanıt vermezse ödenen tutarın tamamı kartınıza iade edilir.
 
 ## 6. Cayma hakkı ve iptal
 - Alıcı, hizmetin ifasına başlanmadan önce siparişini iptal edebilir. Dersten {fullRefundHours} saat öncesine kadar yapılan iptallerde bedelin tamamı, {partialRefundHours} saat öncesine kadar %{partialRefundPercent}'si iade edilir.
-- Mesafeli Sözleşmeler Yönetmeliği'nin 15. maddesi uyarınca, alıcının onayıyla ifasına başlanan hizmetlerde (başlamış ya da tamamlanmış ders, çözümü gönderilmiş soru) cayma hakkı kullanılamaz.
-- Kullanılmamış soru kredileri, satın alma tarihinden itibaren {creditRefundDays} gün içinde iade edilebilir; kullanılan krediler iade tutarından düşülür.
-- Soru aboneliği, alıcının açık onayıyla ödeme anında ifasına başlanan bir hizmettir; Mesafeli Sözleşmeler Yönetmeliği'nin 15. maddesi uyarınca cayma hakkı bulunmaz ve bedeli iade edilmez. Öğretmen hizmeti veremez hâle gelirse (ör. hesabının kapanması) kalan günlerin bedeli iade edilir.
+- Mesafeli Sözleşmeler Yönetmeliği'nin 15. maddesi uyarınca, alıcının onayıyla ifasına başlanan hizmetlerde (başlamış ya da tamamlanmış ders) cayma hakkı kullanılamaz.
 - Paket dersinde tam iade gerektiren durumlarda (öğretmen onaylamaz ya da ders zamanında iptal edilir) ders pakete geri eklenir; kısmi iadeler karta yapılır. Kullanılmamış dersler istenildiğinde iade edilir; bu durumda kullanılan dersler paket indirimi uygulanmadan tek ders ücretinden düşülür. Paket süresi dolduğunda kullanılmayan derslerin bedeli iade edilir.
 - Grup dersi kaydı, ilk oturum başlamadan önce iptal edilirse bedelin tamamı iade edilir. İlk oturum başladıktan sonra iptal ve iade yapılmaz; öğretmenin katılmadığı ya da iptal edilen oturumların bedeli iade edilir.
 - İptal ve iade koşullarının tamamı İptal ve İade Politikası'nda yer alır ve bu sözleşmenin ayrılmaz parçasıdır.
@@ -289,9 +280,7 @@ Vergi bilgileri: {companyTaxInfo}
 Telefon: {contactPhone} · E-posta: {contactEmail}
 
 ## Hizmetin temel nitelikleri
-- Ders: hizmet türü (özel ders, soru çözüm, koçluk), kademe, ders, süre, tarih-saat, ders şekli (online / yüz yüze) ve öğretmen bilgisi sipariş özetinde yer alır.
-- Soru kredisi: paketteki soru sayısı sipariş özetinde yer alır; her soru {questionAnswerHours} saat içinde çözülür, çözülmezse kredi iade edilir.
-- Soru aboneliği: öğretmen, kademe ve ders, {subscriptionDays} günlük dönem, günlük soru sınırı ve cevap süresi sipariş özetinde yer alır. Otomatik yenileme ve otomatik çekim yoktur.
+- Ders: hizmet türü (özel ders, koçluk), kademe, ders, süre, tarih-saat, ders şekli (online / yüz yüze) ve öğretmen bilgisi sipariş özetinde yer alır.
 - Grup dersi: öğretmen, program (oturum tarihleri ve saatleri), kontenjan, en az katılımcı sayısı ve kayıt bitiş tarihi sipariş özetinde yer alır.
 
 ## Toplam bedel
@@ -301,7 +290,7 @@ Tüm vergiler dahil toplam bedel sipariş özetinde gösterilir. Ek bir ücret y
 Kredi veya banka kartıyla, 3D Secure doğrulamalı olarak tek çekim.
 
 ## Teslimat
-Hizmet elektronik ortamda ya da yüz yüze ifa edilir; kargo gönderimi yoktur. Online dersler sitedeki sanal sınıfta yapılır, soru kredileri ödeme onayı ile hesaba tanımlanır.
+Hizmet elektronik ortamda ya da yüz yüze ifa edilir; kargo gönderimi yoktur. Online dersler sitedeki sanal sınıfta yapılır.
 
 ## İptal, cayma ve iade
 - Öğretmen talebi onaylamazsa veya {approvalWindowHours} saat içinde yanıt vermezse: tam iade
@@ -309,8 +298,6 @@ Hizmet elektronik ortamda ya da yüz yüze ifa edilir; kargo gönderimi yoktur. 
 - Dersten {partialRefundHours} saat öncesine kadar iptal: %{partialRefundPercent} iade
 - Daha geç iptal veya derse katılmama: iade yapılmaz
 - Öğretmen iptal ederse veya derse gelmezse: tam iade
-- Kullanılmamış soru kredileri: satın almadan itibaren {creditRefundDays} gün içinde iade
-- Soru aboneliği: ödemeyle hemen başlar, cayma hakkı ve iade yoktur; öğretmen hizmeti veremez hâle gelirse kalan günlerin bedeli iade edilir
 - Grup dersi: en az katılımcıya ulaşılamazsa tam iade; ilk oturumdan önce iptalde tam iade; sonrasında iade yok, öğretmenin katılmadığı ya da iptal edilen oturumların bedeli iade
 - İfasına başlanan hizmetlerde cayma hakkı kullanılamaz (Mesafeli Sözleşmeler Yönetmeliği m.15).
 
@@ -334,16 +321,6 @@ Randevunuzu Hesabım sayfasından iptal edebilirsiniz.
 ## Öğretmenin iptali veya katılmaması
 Öğretmen dersi iptal ederse veya derse katılmazsa ödediğiniz tutarın tamamı iade edilir.
 
-## Soru kredileri
-- Gönderdiğiniz soru {questionAnswerHours} saat içinde çözülmezse krediniz hesabınıza geri yüklenir.
-- Kullanılmamış kredileriniz satın alma tarihinden itibaren {creditRefundDays} gün içinde Hesabım sayfasından iade edilebilir; kullanılan krediler düşülür.
-- Krediler satın almadan itibaren {creditValidityMonths} ay geçerlidir.
-
-## Soru aboneliği
-- Abonelik ödemeyle birlikte hemen başlar; ödeme adımında onayladığınız üzere cayma hakkı ve iadesi yoktur.
-- Öğretmeniniz hizmeti veremez hâle gelirse (ör. hesabının kapanması) abonelik sonlandırılır ve kalan günlerin bedeli kartınıza iade edilir.
-- Abonelik kendiliğinden yenilenmez; dönem bitmeden size hatırlatma gönderilir.
-
 ## Paket ders ve düzenli ders
 - Öğretmen paketten alınan bir dersi onaylamazsa, iptal ederse ya da dersten {fullRefundHours} saat öncesine kadar siz iptal ederseniz ders paketinize geri eklenir. Daha geç iptallerde yukarıdaki kısmi iade kuralları paketin ödemesinden uygulanır.
 - Kullanılmamış derslerinizi Hesabım → Derslerim → Paketlerim sayfasından iade edebilirsiniz; kullanılan dersler paket indirimi olmadan tek ders ücretinden düşülür.
@@ -358,7 +335,7 @@ Onaylı bir dersin saati, dersten en az {rescheduleMinHours} saat önce taraflar
 - Öğretmen bir oturuma katılmazsa ya da ders iptal edilirse, yapılmayan oturumların bedeli kartınıza iade edilir.
 
 ## Cayma hakkı
-İfasına sizin onayınızla başlanan hizmetlerde (başlamış ya da tamamlanmış ders, çözümü gönderilmiş soru) Mesafeli Sözleşmeler Yönetmeliği'nin 15. maddesi uyarınca cayma hakkı kullanılamaz. Bunun dışındaki iptallerde yukarıdaki kurallar uygulanır.
+İfasına sizin onayınızla başlanan hizmetlerde (başlamış ya da tamamlanmış ders) Mesafeli Sözleşmeler Yönetmeliği'nin 15. maddesi uyarınca cayma hakkı kullanılamaz. Bunun dışındaki iptallerde yukarıdaki kurallar uygulanır.
 
 ## Sorun bildirme
 Ders bitiminden itibaren {disputeWindowHours} saat içinde "Sorun bildir" ile başvurabilirsiniz. İnceleme sonuçlanana kadar öğretmene ödeme yapılmaz.
@@ -373,21 +350,13 @@ Ders bitiminden itibaren {disputeWindowHours} saat içinde "Sorun bildir" ile ba
     showInFooter: true,
     content: `{siteName} üzerinden satılan tüm hizmetler eğitim hizmetidir; fiziksel ürün satışı ve kargo gönderimi yapılmaz. Hizmetler aşağıdaki şekilde teslim edilir.
 
-## Online özel ders, soru çözüm dersi ve koçluk
+## Online özel ders ve koçluk
 - Ödemeniz alındıktan sonra öğretmen talebinizi en geç {approvalWindowHours} saat içinde onaylar; onay e-posta ve site bildirimiyle size iletilir.
 - Ders, onaylanan tarih ve saatte sitedeki sanal sınıfta yapılır. "Derse Katıl" düğmesi ders saatinden {classroomOpensMinutesBefore} dakika önce Hesabım sayfasında açılır; program kurmanız gerekmez.
 - Ders süresi sipariş özetinde yazan süre kadardır.
 
 ## Yüz yüze ders
 Ders, öğretmenin hizmet verdiği ilçede, randevuda belirtilen adreste yapılır. Adresiniz yalnızca öğretmen onay verdikten sonra öğretmenle paylaşılır.
-
-## Soru kredisi
-- Krediler ödeme onaylanır onaylanmaz hesabınıza tanımlanır ve {creditValidityMonths} ay geçerlidir.
-- Gönderdiğiniz soru {questionAnswerHours} saat içinde branş öğretmeni tarafından çözülür; çözüm Hesabım sayfasında görünür ve size bildirilir. Süresinde çözülmezse krediniz iade edilir.
-
-## Soru aboneliği
-- Abonelik ödeme onaylanınca başlar ve {subscriptionDays} gün sürer; aynı öğretmenden süren bir aboneliğiniz varsa yeni dönem onun bitişinden başlar.
-- Sorularınızı Hesabım → Soru aboneliklerim sayfasından doğrudan öğretmeninize gönderirsiniz; öğretmen belirtilen cevap süresi içinde çözümü gönderir.
 
 ## Grup dersi
 - Kaydınız ödemeyle tamamlanır. Ders, kayıt bitiş tarihinde en az katılımcı sayısına ulaşırsa kesinleşir ve size bildirilir.
@@ -407,7 +376,7 @@ Ders, öğretmenin hizmet verdiği ilçede, randevuda belirtilen adreste yapıl�
     content: `Bu şartlar, {companyName} tarafından işletilen {siteName} sitesinin ve mobil uygulamasının kullanımını düzenler.
 
 ## Hizmet
-{siteName}; özel ders, soru çözüm ve koçluk için öğrenci ve velileri öğretmenlerle buluşturur. Etüt merkezi ve dershanelere ise kurum yönetim yazılımı sunar. Kurum paneli için Kurum Hizmet Sözleşmesi geçerlidir.
+{siteName}; özel ders ve koçluk için öğrenci ve velileri öğretmenlerle buluşturur. Etüt merkezlerine ise kurum yönetim yazılımı sunar. Kurum paneli için Kurum Hizmet Sözleşmesi geçerlidir.
 
 ## Üyelik
 Üyelik ücretsizdir. 18 yaşından küçükler adına hesap veli veya yasal temsilci tarafından açılır. Hesap bilgilerinin gizliliğinden kullanıcı sorumludur.
@@ -458,7 +427,7 @@ Platform, her dersten site ayarlarında belirtilen oranda hizmet bedeli keser. K
     title: "Kurum Hizmet Sözleşmesi",
     sortOrder: 17,
     showInFooter: true,
-    content: `Bu sözleşme, {companyName} ("{siteName}") ile kurum paneli için başvuran etüt merkezi ya da dershane ("Kurum") arasında geçerlidir.
+    content: `Bu sözleşme, {companyName} ("{siteName}") ile kurum paneli için başvuran etüt merkezi ("Kurum") arasında geçerlidir.
 
 ## Taraf bilgileri
 Hizmet sağlayıcı: {companyName}

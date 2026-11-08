@@ -1,7 +1,4 @@
-import { editionAllows, type CenterEditionName } from "./editions";
-
 // Kurumun açıp kapatabildiği modüller. Kapalı modül menüde görünmez, sayfaları açılmaz; kayıtlar silinmez.
-// Paket (Etüt Merkezi / Dershane) ayrıca bazı bölümleri kapatır (editions.ts).
 // Öğrenciler, sınıflar, program, yoklama, duyurular, personel, ayarlar ve abonelik her zaman açıktır.
 
 export const OPTIONAL_MODULES = [
@@ -25,13 +22,19 @@ export function isModuleKey(value: string): value is CenterModuleKey {
   return KEYS.has(value);
 }
 
-export function moduleEnabled(center: { disabledModules: string[]; edition?: CenterEditionName }, key: CenterModuleKey): boolean {
-  return !center.disabledModules.includes(key) && editionAllows(center.edition ?? "DERSHANE", key);
+export function moduleEnabled(center: { disabledModules: string[] }, key: CenterModuleKey): boolean {
+  return !center.disabledModules.includes(key);
 }
 
-/** Kurumun açıp kapatabildiği modüller arasında bu paketin içerdikleri (kurum ayarlarında listelenir). */
-export function editionModules(edition: CenterEditionName) {
-  return OPTIONAL_MODULES.filter((m) => editionAllows(edition, m.key));
+// Pi Koç: tek kişilik koç hesabında sınıf ve kurum işleyişine ait bölümler kullanılmaz.
+const COACH_HIDDEN_SECTIONS = new Set(["siniflar", "program", "yoklama", "etutler", "calisma-salonu", "sinif-defteri", "derslikler", "raporlar", "on-kayit", "personel"]);
+/** Koç hesabı açılırken kapatılan isteğe bağlı modüller */
+export const COACH_DISABLED_MODULES: CenterModuleKey[] = OPTIONAL_MODULES.filter((m) => COACH_HIDDEN_SECTIONS.has(m.key)).map((m) => m.key);
+/** Yönetici öğrenci sınırını kurum sayfasından değiştirir. */
+export const COACH_DEFAULT_STUDENT_LIMIT = 10;
+
+export function coachAllows(section: string): boolean {
+  return !COACH_HIDDEN_SECTIONS.has(section);
 }
 
 /** /kurum/<modül>/... adresinin modülü (isteğe bağlı modül değilse null). */

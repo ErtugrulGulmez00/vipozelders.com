@@ -1,4 +1,4 @@
-import { Bell, Gift, CalendarDays, CreditCard, Heart, LayoutDashboard, MessageCircle, MessageCircleQuestion, UserRound, Users } from "lucide-react";
+import { Bell, Gift, CalendarDays, CreditCard, Heart, LayoutDashboard, MessageCircle, UserRound, Users } from "lucide-react";
 import { redirect } from "next/navigation";
 import { PanelShell } from "@/components/panel/panel-shell";
 import { notificationScope, notificationScopeWhere, sideSwitches } from "@/lib/sides";
@@ -28,7 +28,6 @@ export default async function StudentLayout({ children }: { children: React.Reac
         { href: "/hesabim", label: "Özet", icon: <LayoutDashboard />, exact: true },
         { href: "/hesabim/derslerim", label: "Derslerim", icon: <CalendarDays />, also: ["/hesabim/paketlerim"] },
         { href: "/hesabim/mesajlar", label: "Mesajlar", icon: <MessageCircle />, badge: unreadMessages || undefined },
-        { href: "/hesabim/sorularim", label: "Soru çözüm", icon: <MessageCircleQuestion />, also: ["/hesabim/krediler", "/hesabim/abonelikler"] },
         { href: "/hesabim/grup-derslerim", label: "Grup derslerim", icon: <Users /> },
         { href: "/hesabim/favoriler", label: "Favori öğretmenler", icon: <Heart /> },
         { href: "/hesabim/odemeler", label: "Ödemelerim", icon: <CreditCard /> },

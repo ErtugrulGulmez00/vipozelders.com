@@ -19,7 +19,7 @@ function roleIn(booking: { studentId: string; teacherId: string }, userId: strin
 /** Erteleme önerilebilir mi? (Sayfada formu göstermek için de kullanılır.) */
 export async function rescheduleAllowed(booking: { status: string; startAt: Date; rescheduleCount: number; mode: string; isIntro: boolean }, now = new Date()) {
   const settings = await loadSettings();
-  if (booking.status !== "CONFIRMED" || booking.mode === "QUESTION") return { ok: false as const, reason: "Yalnızca onaylanmış dersler ertelenebilir." };
+  if (booking.status !== "CONFIRMED") return { ok: false as const, reason: "Yalnızca onaylanmış dersler ertelenebilir." };
   if (booking.rescheduleCount >= settings.rescheduleMaxPerBooking) return { ok: false as const, reason: `Bu ders en fazla ${settings.rescheduleMaxPerBooking} kez ertelenebilir.` };
   if (booking.startAt.getTime() - now.getTime() < settings.rescheduleMinHours * HOUR) return { ok: false as const, reason: `Erteleme dersten en az ${settings.rescheduleMinHours} saat önce önerilebilir.` };
   return { ok: true as const, minHours: settings.rescheduleMinHours };

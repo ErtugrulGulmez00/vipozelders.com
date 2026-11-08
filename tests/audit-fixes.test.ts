@@ -1,11 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, describe, expect, it } from "vitest";
 import { createBookingHold } from "@/server/bookings";
-import { CreditError, createCreditPurchase } from "@/server/credits";
 import { db } from "@/server/db";
 import { replyToReview } from "@/server/reviews";
 import { recordPageView } from "@/server/stats";
-import { at, createFixture, createStudent, LESSON_DAY, NOW } from "./helpers";
+import { at, createFixture, LESSON_DAY, NOW } from "./helpers";
 
 // 2026-11 güvenlik taramasında bulunan açıkların regresyon testleri.
 
@@ -16,19 +15,6 @@ afterAll(async () => {
 const code = (prefix: string) => `${prefix}${randomUUID().slice(0, 6).toUpperCase()}`;
 
 describe("indirim kodu aynı anda birden fazla siparişte kullanılamaz", () => {
-  it("tek kullanımlık kodla ödemesi süren sipariş varken ikinci sipariş açılamaz", async () => {
-    const student = await createStudent();
-    const coupon = await db.coupon.create({ data: { code: code("TEK"), kind: "PERCENT", value: 50, targets: ["credits"] } });
-    const packs = await db.siteSetting.findUnique({ where: { key: "questionPackages" } });
-    const credits = packs ? (JSON.parse(JSON.stringify(packs.value)) as { credits: number }[])[0]?.credits ?? 10 : 10;
-    await createCreditPurchase(student.id, credits, coupon.code).catch((e: unknown) => {
-      // Varsayılan paket ayarı farklıysa test anlamsızlaşır; o durumda ilk paket bulunamadı hatası görünür
-      throw e;
-    });
-    await expect(createCreditPurchase(student.id, credits, coupon.code)).rejects.toThrow(CreditError);
-    await expect(createCreditPurchase(student.id, credits, coupon.code)).rejects.toThrow(/ödemesi tamamlanmamış/);
-  });
-
   it("ders rezervasyonunda da aynı kural: ikinci saat aynı kodla tutulamaz", async () => {
     const f = await createFixture({ hourlyPrice: 100000 });
     const student = await f.createStudent();
