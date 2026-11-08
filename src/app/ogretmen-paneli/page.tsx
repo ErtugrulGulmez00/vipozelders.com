@@ -22,7 +22,7 @@ export default async function TeacherDashboard() {
   const user = await requireRole("TEACHER");
   await connection();
   const now = new Date();
-  const [profile, checklist, balances, pending, upcoming] = await Promise.all([
+  const [profile, checklist, balances, pending, upcoming, coachMembership] = await Promise.all([
     db.teacherProfile.findUniqueOrThrow({ where: { userId: user.id } }),
     profileChecklist(user.id),
     teacherBalances(user.id),
@@ -32,6 +32,7 @@ export default async function TeacherDashboard() {
       orderBy: { startAt: "asc" },
       take: 5,
     }),
+    db.centerMember.findFirst({ where: { userId: user.id, isActive: true, center: { kind: "COACH" } }, select: { id: true } }),
   ]);
   const status = TEACHER_STATUS[profile.status];
 
@@ -93,6 +94,20 @@ export default async function TeacherDashboard() {
           </Link>
         </Alert>
       ) : null}
+
+      {coachMembership ? null : (
+        <Card className="mb-6">
+          <CardBody className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="font-semibold text-slate-900">Kendi öğrencilerinizi Pi Koç ile takip edin</p>
+              <p className="text-sm text-slate-600">Program, kaynak, deneme analizi ve veli takibi tek panelde.</p>
+            </div>
+            <LinkButton href="/pi-koc" variant="outline" size="sm">
+              İnceleyin
+            </LinkButton>
+          </CardBody>
+        </Card>
+      )}
 
       <Card>
         <CardHeader title="Yaklaşan dersler" action={<Link href="/ogretmen-paneli/dersler" className="text-sm font-semibold text-brand-700 hover:underline">Tümü</Link>} />

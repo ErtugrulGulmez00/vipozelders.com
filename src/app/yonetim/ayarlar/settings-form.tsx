@@ -166,6 +166,13 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
         </Field>
       </Section>
 
+      <Section title="Pi Koç" description="Bireysel koçlara satılan panelin fiyatları. /pi-koc sayfasında görünür.">
+        <Field label="Kademeler" hint="Öğrenci sayısı:aylık TL, virgülle. Örnek: 3:299,5:449,10:749. KDV dahil." className="sm:col-span-2">
+          <Input name="piKocTiers" defaultValue={settings.piKocTiers} required />
+          <FieldError name="piKocTiers" />
+        </Field>
+      </Section>
+
       <Section title="Bakım modu">
         <div className="sm:col-span-2">
           <Checkbox name="maintenanceMode" defaultChecked={settings.maintenanceMode} label="Vitrini bakım moduna al (paneller ve giriş çalışmaya devam eder)" />

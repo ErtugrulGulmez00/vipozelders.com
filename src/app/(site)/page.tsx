@@ -79,6 +79,11 @@ export default async function HomePage() {
               <span>Çocuğunuz için özel ders öğretmeni bulun</span>
               <ArrowRight className="size-4 shrink-0" aria-hidden />
             </Link>
+            <Link href="/pi-koc" className="-mt-2 inline-flex min-h-12 items-center gap-2.5 self-start rounded-2xl border-2 border-b-4 border-ink-100 px-4 py-2 text-[15px] text-ink-900 hover:bg-ink-50">
+              <span className="shrink-0 whitespace-nowrap rounded-full bg-ink-50 px-2 py-0.5 text-[13px] font-bold">Koç musunuz?</span>
+              <span>Öğrencilerinizi Pi Koç ile takip edin</span>
+              <ArrowRight className="size-4 shrink-0" aria-hidden />
+            </Link>
           </div>
 
           <div className="relative min-w-0 pb-14 pl-14 sm:pl-16">
@@ -158,16 +163,26 @@ export default async function HomePage() {
         ))}
       </section>
 
-      {/* Özel ders kapısı */}
-      <section className="mx-auto max-w-6xl px-4 pt-14 sm:pt-16">
-        <div className="flex flex-col gap-6 rounded-[1.75rem] bg-ink-900 p-8 text-white sm:p-11 lg:flex-row lg:items-center lg:justify-between">
-          <div className="min-w-0 max-w-2xl">
+      {/* Özel ders ve Pi Koç kapıları */}
+      <section className="mx-auto grid max-w-6xl gap-5 px-4 pt-14 sm:pt-16 lg:grid-cols-2">
+        <div className="flex flex-col gap-6 rounded-[1.75rem] bg-ink-900 p-8 text-white sm:p-10">
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-bold tracking-wide text-gold-400">VELİLER İÇİN</p>
             <h2 className="mt-2 text-3xl font-extrabold leading-tight">Çocuğunuz için özel ders öğretmeni mi arıyorsunuz?</h2>
             <p className="mt-2.5 text-[17px] leading-relaxed text-ink-200">LGS ve YKS’ye hazırlık için kimliği ve diploması kontrol edilmiş öğretmenler. Birçok öğretmenle ilk 15 dakikalık tanışma ücretsizdir.</p>
           </div>
-          <Link href="/ozel-ders" className={cn(CHUNKY, "min-h-14 shrink-0 self-start border-gold-600 bg-gold-400 px-6 text-base text-ink-900 hover:bg-gold-300 lg:self-center")}>
+          <Link href="/ozel-ders" className={cn(CHUNKY, "min-h-14 self-start border-gold-600 bg-gold-400 px-6 text-base text-ink-900 hover:bg-gold-300")}>
             Öğretmenleri inceleyin
+          </Link>
+        </div>
+        <div className="flex flex-col gap-6 rounded-[1.75rem] bg-brand-600 p-8 text-white sm:p-10">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold tracking-wide text-white/85">PI KOÇ</p>
+            <h2 className="mt-2 text-3xl font-extrabold leading-tight">Bireysel koçluk mu yapıyorsunuz?</h2>
+            <p className="mt-2.5 text-[17px] leading-relaxed text-white/90">Program, kaynak, deneme analizi ve veli takibi tek panelde. Öğrenci sayınıza göre aylık ödersiniz.</p>
+          </div>
+          <Link href="/pi-koc" className={cn(CHUNKY, "min-h-14 self-start border-ink-300 bg-white px-6 text-base text-ink-900 hover:bg-ink-50")}>
+            Pi Koç&apos;u inceleyin
           </Link>
         </div>
       </section>

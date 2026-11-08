@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge, Card, CardBody, CardHeader, DescriptionList, PageHeader, StatCard, Table, Td, Th } from "@/components/ui/primitives";
 import { CENTER_ACCESS_LABEL, CENTER_KIND_LABEL, CENTER_PLAN_LABEL } from "@/lib/center/labels";
+import { coachPriceFor, parseCoachTiers } from "@/lib/pi-koc";
 import { CENTER_ROLE_LABEL, type CenterRoleName } from "@/lib/center/permissions";
 import { centerAccess } from "@/lib/center/subscription";
 import { formatCompact, formatDate } from "@/lib/dates";
@@ -95,7 +96,7 @@ export default async function AdminCenterPage({ params }: PageProps<"/yonetim/ku
         <Card>
           <CardHeader title="Abonelik ödemesi kaydet" description="Havale/EFT geldikçe kaydedin; süre bitişin üzerine eklenir ve kurum aktif olur." />
           <CardBody>
-            <SubscriptionPaymentForm centerId={center.id} plan={center.plan} monthlyPrice={plan?.priceTl ?? null} />
+            <SubscriptionPaymentForm centerId={center.id} plan={center.plan} monthlyPrice={center.kind === "COACH" ? coachPriceFor(parseCoachTiers(settings.piKocTiers), center.studentLimit) : (plan?.priceTl ?? null)} />
           </CardBody>
           {center.subscriptionPayments.length ? (
             <Table>

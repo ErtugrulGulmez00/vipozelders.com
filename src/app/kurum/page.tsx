@@ -24,7 +24,8 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
   const today = toLocalDateString(new Date());
   const teacherOnly = ctx.member.role === "TEACHER";
   const on = (key: CenterModuleKey) => moduleEnabled(ctx.center, key);
-  const classes = ctx.can("attendance.take") && ctx.center.kind !== "COACH";
+  const coach = ctx.center.kind === "COACH";
+  const classes = ctx.can("attendance.take") && !coach;
   const [activeStudents, lessons, absentToday, etudsToday, finance, overdue, exams, newLeads, groupCount, weeklySlots] = await Promise.all([
     db.centerStudent.count({ where: { centerId, status: "ACTIVE" } }),
     classes ? lessonsForDate(centerId, today, teacherOnly ? { teacherId: ctx.member.id } : {}) : Promise.resolve([]),
@@ -117,10 +118,12 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
             hint={lessons.length ? (pendingAttendance ? `${pendingAttendance} dersin yoklaması bekliyor` : "Tüm yoklamalar alındı") : "Programda ders yok"}
             icon={<ClipboardCheck className="size-5" />}
           />
-        ) : (
+        ) : coach ? null : (
           <StatCard label="Bugünkü etütler" value={etudsToday.length} icon={<ClipboardCheck className="size-5" />} />
         )}
-        <StatCard label="Bugün gelmeyen" value={absentToday + etudAbsent.length} hint={`${etudsToday.length} etüt planlı`} icon={<CalendarClock className="size-5" />} />
+        {coach ? null : (
+          <StatCard label="Bugün gelmeyen" value={absentToday + etudAbsent.length} hint={`${etudsToday.length} etüt planlı`} icon={<CalendarClock className="size-5" />} />
+        )}
         {finance ? (
           <StatCard label="Bu ay tahsilat" value={formatMoney(finance.collectedThisMonth)} hint={finance.overdue ? `Geciken: ${formatMoney(finance.overdue)}` : "Geciken ödeme yok"} icon={<Wallet className="size-5" />} />
         ) : (ctx.can("leads.manage") && on("on-kayit")) ? (
@@ -131,6 +134,7 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
+        {coach ? null : (
         <Card>
           <CardHeader title="Bugün gelmeyenler" action={classes ? <Link href="/kurum/yoklama/rapor" className="text-sm font-semibold text-brand-700 hover:underline">Rapor</Link> : undefined} />
           {absentList.length === 0 ? (
@@ -155,6 +159,7 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
           )}
           {hallToday.length && on("calisma-salonu") ? <p className="border-t border-slate-100 px-5 py-2 text-xs text-slate-500">Çalışma salonunda bugün {hallToday.filter((d) => d.marks.includes("G")).length} öğrenci var.</p> : null}
         </Card>
+        )}
         {coaching ? (
           <Card>
             <CardHeader title="Bugünkü koç görüşmeleri" action={<Link href="/kurum/kocluk" className="text-sm font-semibold text-brand-700 hover:underline">Koçluk</Link>} />

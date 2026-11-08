@@ -78,6 +78,8 @@ export const settingsSchema = z.object({
   reviewWindowDays: z.number().int().min(1).max(365).default(30),
 
   // Kurum paneli abonelik planları (aylık, KDV dahil, tam TL)
+  // Pi Koç fiyatları: "öğrenci:aylık TL", virgülle (KDV dahil)
+  piKocTiers: z.string().default("3:299,5:449,10:749,15:999,25:1499,50:2499"),
   centerTrialDays: z.number().int().min(0).max(90).default(14),
   // Kurum kapasite kademeleri: öğrenci sınırları. Yıllık 0 = yalnızca aylık.
   // Merdiven: bir kademenin yıllık fiyatı bir alttakini aylık ödemeye denk → "aynı paraya daha çok kapasite".

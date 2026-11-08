@@ -78,6 +78,11 @@ export async function SiteFooter() {
                 Etüt merkezi paneli
               </Link>
             </li>
+            <li>
+              <Link href="/pi-koc" className="hover:text-white">
+                Pi Koç: koçlar için panel
+              </Link>
+            </li>
             {/* Kurum rehberi boşken bağlantı gösterilmez */}
             {showCenters ? (
               <li>

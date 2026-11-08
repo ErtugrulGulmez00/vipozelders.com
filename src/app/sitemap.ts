@@ -36,6 +36,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/nasil-calisir`, changeFrequency: "monthly", priority: 0.6 },
     ...["ozel-ders", "etut-merkezi"].map((g) => ({ url: `${base}/nasil-calisir/${g}`, changeFrequency: "monthly" as const, priority: 0.6 })),
     { url: `${base}/kurumlar-icin`, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${base}/pi-koc`, changeFrequency: "weekly", priority: 0.8 },
     { url: `${base}/kurumlar`, changeFrequency: "weekly", priority: 0.5 },
     ...centers.map((c) => ({ url: `${base}/kurumlar/${c.slug}`, changeFrequency: "weekly" as const, priority: 0.5 })),
     ...catalog.levels.flatMap((level) => [

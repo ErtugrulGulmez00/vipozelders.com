@@ -427,7 +427,7 @@ Platform, her dersten site ayarlarında belirtilen oranda hizmet bedeli keser. K
     title: "Kurum Hizmet Sözleşmesi",
     sortOrder: 17,
     showInFooter: true,
-    content: `Bu sözleşme, {companyName} ("{siteName}") ile kurum paneli için başvuran etüt merkezi ("Kurum") arasında geçerlidir.
+    content: `Bu sözleşme, {companyName} ("{siteName}") ile kurum paneli için başvuran etüt merkezi ya da bireysel koç ("Kurum") arasında geçerlidir.
 
 ## Taraf bilgileri
 Hizmet sağlayıcı: {companyName}

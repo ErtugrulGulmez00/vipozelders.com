@@ -2,6 +2,7 @@
 
 import { refresh, updateTag } from "next/cache";
 import { failure, success, type ActionState } from "@/lib/action-state";
+import { COACH_DEFAULT_STUDENT_LIMIT } from "@/lib/center/modules";
 import { parseMoneyInput } from "@/lib/money";
 import { actionUser } from "@/server/auth/current-user";
 import { redirect } from "next/navigation";
@@ -31,6 +32,7 @@ export async function createCenterAction(_: ActionState, formData: FormData): Pr
       kind: kind(formData),
       cityId: int(formData, "cityId", 0, 0, 81) || null,
       plan: plan(formData),
+      coachStudentLimit: int(formData, "coachStudentLimit", COACH_DEFAULT_STUDENT_LIMIT, 1, 1000),
       trialDays: int(formData, "trialDays", 14, 1, 90),
       phone: opt(formData, "phone", 30),
       email: email(formData, "centerEmail"),

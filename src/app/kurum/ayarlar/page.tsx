@@ -16,7 +16,7 @@ export default async function CenterSettingsPage() {
   const [cities, districts] = await Promise.all([getCities(), center.cityId ? loadDistricts(center.cityId) : Promise.resolve([])]);
   return (
     <>
-      <PageHeader title="Kurum ayarları" />
+      <PageHeader title={center.kind === "COACH" ? "Ayarlar" : "Kurum ayarları"} />
       <CenterSettingsForm
         cities={cities.map((c) => ({ id: c.id, name: c.name }))}
         initialDistricts={districts.map((d) => ({ id: d.id, name: d.name }))}

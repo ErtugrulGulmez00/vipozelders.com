@@ -2,7 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
-import { moduleEnabled, type CenterModuleKey } from "@/lib/center/modules";
+import { coachAllows, moduleEnabled, type CenterModuleKey } from "@/lib/center/modules";
 import { failure, type ActionState } from "@/lib/action-state";
 import { centerAccess, type CenterAccess } from "@/lib/center/subscription";
 import { centerCan, type CenterPermission, type CenterRoleName } from "@/lib/center/permissions";
@@ -145,6 +145,13 @@ export async function centerAudit(ctx: CenterContext, action: string, entityType
 
 export async function selectCenterCookie(centerId: string) {
   (await cookies()).set(CENTER_COOKIE, centerId, { httpOnly: true, secure: secureCookies(), sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 365 });
+}
+
+/** Pi Koç'ta olmayan bölümün sayfaları açılmaz (bölüm klasörünün layout'unda çağrılır). */
+export async function requireCenterSection(section: string): Promise<CenterContext> {
+  const ctx = await requireCenter();
+  if (ctx.center.kind === "COACH" && !coachAllows(section)) redirect("/kurum?durum=koc");
+  return ctx;
 }
 
 /** Kurumun kapattığı modülün sayfaları açılmaz (modül klasörünün layout'unda çağrılır). */

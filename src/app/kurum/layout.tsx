@@ -75,19 +75,20 @@ export default async function CenterLayout({ children }: { children: React.React
     { href: "/kurum/hesap", label: "Hesabım", icon: <Building2 /> },
   ];
   if (ctx.memberships.length > 1) items.push({ href: "/kurum/kurum-sec", label: "Kurum değiştir", icon: <Repeat /> });
+  const coach = ctx.center.kind === "COACH";
   const nav: PanelNavItem[] = items
     .filter((item) => !item.permission || ctx.can(item.permission))
     .filter((item) => {
       const key = moduleForPath(item.href);
-      if (ctx.center.kind === "COACH" && !coachAllows(item.href.split("/")[2] ?? "")) return false;
+      if (coach && !coachAllows(item.href.split("/")[2] ?? "")) return false;
       return !key || !ctx.center.disabledModules.includes(key);
     })
-    .map((item) => ({ href: item.href, label: item.label, icon: item.icon, badge: item.badge, exact: item.exact }));
+    .map((item) => ({ href: item.href, label: coach && item.href === "/kurum/ayarlar" ? "Ayarlar" : item.label, icon: item.icon, badge: item.badge, exact: item.exact }));
   return (
     <PanelShell
       user={ctx.user}
       title={ctx.center.name}
-      roleLabel={ctx.member.title || CENTER_ROLE_LABEL[ctx.member.role]}
+      roleLabel={coach ? "Pi Koç" : ctx.member.title || CENTER_ROLE_LABEL[ctx.member.role]}
       nav={nav}
       switchLinks={sideSwitches(facts, "center")}
       hideSiteLink

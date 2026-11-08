@@ -10,6 +10,8 @@ export type SideFacts = {
   role: AppRole;
   /** Etkin kurum personeli üyeliği var (/kurum) */
   staff: boolean;
+  /** Kurum üyeliklerinin hepsi Pi Koç hesabı */
+  coach?: boolean;
   /** Veli/öğrenci portalı bağlantısı var (/hesabim/kurum) */
   portal: boolean;
   /** Özel ders tarafı bu hesapta açık (kurumun açtığı ve özel derste işlemi olmayan öğrenci hesabında kapalı) */
@@ -68,7 +70,7 @@ export type SideSwitch = { href: string; label: string; short: string };
 
 export function sideSwitches(f: SideFacts, current: "teacher" | "student" | "center" | "portal"): SideSwitch[] {
   const links: SideSwitch[] = [];
-  if (current === "teacher" && f.staff) links.push({ href: "/kurum", label: "Kurum paneline geç", short: "Kurum" });
+  if (current === "teacher" && f.staff) links.push({ href: "/kurum", label: f.coach ? "Pi Koç'a geç" : "Kurum paneline geç", short: f.coach ? "Pi Koç" : "Kurum" });
   if (current === "student") {
     if (f.portal) links.push({ href: "/hesabim/kurum", label: "Kurum tarafına geç", short: "Kurum" });
     if (f.staff) links.push({ href: "/kurum", label: "Kurum paneline geç", short: "Kurum paneli" });

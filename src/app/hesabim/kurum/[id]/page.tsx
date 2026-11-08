@@ -41,16 +41,17 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
   const trendKind = last?.exam.kind;
   // Kurumun paketinde olmayan ya da kapattığı bölümler portalda da görünmez
   const on = (key: CenterModuleKey) => moduleEnabled(student.center, key);
+  const coach = student.center.kind === "COACH";
   const tabs = [
     { key: "ozet", label: "Özet", href: base },
-    { key: "devam", label: "Devam ve etüt", href: `${base}?sekme=devam` },
+    ...(coach ? [] : [{ key: "devam", label: "Devam ve etüt", href: `${base}?sekme=devam` }]),
     ...(on("denemeler") ? [{ key: "denemeler", label: "Denemeler", href: `${base}?sekme=denemeler` }] : []),
     // Öğrencinin kendi hesabında ailenin ödemeleri yok
     ...(on("muhasebe") && !guardian.isStudentAccount ? [{ key: "odemeler", label: "Ödemeler", href: `${base}?sekme=odemeler` }] : []),
     ...(on("odevler") ? [{ key: "odevler", label: "Ödevler", href: `${base}?sekme=odevler` }] : []),
     ...(on("kaynaklar") ? [{ key: "calisma", label: "Çalışma programı", href: `${base}?sekme=calisma` }] : []),
     ...(on("sorular") ? [{ key: "sorular", label: "Soru sor", href: `${base}?sekme=sorular` }] : []),
-    { key: "program", label: "Ders programı", href: `${base}?sekme=program` },
+    ...(coach ? [] : [{ key: "program", label: "Ders programı", href: `${base}?sekme=program` }]),
   ];
   const tab = tabs.some((t) => t.key === requested) ? requested : "ozet";
   return (
@@ -61,7 +62,7 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
       />
       <CenterFlash code={sp.durum} />
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatCard label="Devam (60 gün)" value={percent(rate)} hint={`${absent} devamsızlık`} />
+        {coach ? null : <StatCard label="Devam (60 gün)" value={percent(rate)} hint={`${absent} devamsızlık`} />}
         <StatCard label="Son deneme" value={last ? `${formatNet(last.net)} net` : "—"} hint={last ? `${last.exam.name}${last.rank ? ` · ${last.rank}/${last.exam._count.results}` : ""}` : undefined} />
         {balance ? (
           <StatCard label="Kalan ödeme" value={formatMoney(balance.remaining)} hint={balance.overdue ? <span className="text-rose-600">Geciken {formatMoney(balance.overdue)}</span> : "Geciken yok"} />

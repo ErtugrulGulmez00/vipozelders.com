@@ -60,20 +60,22 @@ export function CenterSettingsForm({ values, cities, initialDistricts }: { value
   }, [cityId, values.cityId]);
   return (
     <ActionForm action={updateCenterSettingsAction} className="space-y-6">
-      <Section title="Kurum bilgileri" description="Makbuzlarda, velilere giden mesajlarda ve vitrin sayfasında kullanılır.">
-        <Field label="Kurum adı">
+      <Section title={values.kind === "COACH" ? "Hesap bilgileri" : "Kurum bilgileri"} description="Makbuzlarda, velilere giden mesajlarda ve vitrin sayfasında kullanılır.">
+        <Field label={values.kind === "COACH" ? "Panelde görünecek ad" : "Kurum adı"}>
           <Input name="name" defaultValue={values.name} required />
           <FieldError name="name" />
         </Field>
-        <Field label="Kurum türü">
-          <Select name="kind" defaultValue={values.kind}>
-            {Object.entries(CENTER_KIND_LABEL).filter(([value]) => value !== "COACH" || values.kind === "COACH").map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </Select>
-        </Field>
+        {values.kind === "COACH" ? null : (
+          <Field label="Kurum türü">
+            <Select name="kind" defaultValue={values.kind}>
+              {Object.entries(CENTER_KIND_LABEL).filter(([value]) => value !== "COACH").map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
         <Field label="Telefon">
           <Input name="phone" defaultValue={values.phone ?? ""} placeholder="0212 000 00 00" />
         </Field>

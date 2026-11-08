@@ -53,7 +53,7 @@ export async function childDetailJson(userId: string, guardianId: string) {
       questions: on("sorular"),
       etuds: on("etutler"),
       hall: on("calisma-salonu"),
-      schedule: true,
+      schedule: student.center.kind !== "COACH",
     },
     student: { firstName: student.firstName, lastName: student.lastName, gradeName: student.gradeName, studentNumber: student.studentNumber },
     center: { name: student.center.name, phone: student.center.phone, email: student.center.email, address: student.center.address, logoUrl: absoluteUpload(student.center.logoKey) },

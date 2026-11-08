@@ -4,7 +4,9 @@ import { PackageCard, TierCards } from "@/components/center/pricing";
 import { Badge, Card, CardBody, CardHeader, DescriptionList, PageHeader, Table, Td, Th } from "@/components/ui/primitives";
 import { CENTER_ACCESS_LABEL } from "@/lib/center/labels";
 import { formatDate } from "@/lib/dates";
+import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/money";
+import { parseCoachTiers } from "@/lib/pi-koc";
 import { requireCenter } from "@/server/center/context";
 import { centerPlans, subscriptionLabel } from "@/server/center/plans";
 import { db } from "@/server/db";
@@ -26,7 +28,7 @@ export default async function SubscriptionPage() {
   const usage = activeStudents / Math.max(ctx.center.studentLimit, 1);
   return (
     <>
-      <PageHeader title="Abonelik" description={`${settings.siteName} kurum paneli planınız ve ödemeleriniz`} />
+      <PageHeader title="Abonelik" description={coach ? "Pi Koç planınız ve ödemeleriniz" : `${settings.siteName} kurum paneli planınız ve ödemeleriniz`} />
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         <Card>
           <CardHeader title="Planınız" action={<Badge tone={access.tone}>{access.label}</Badge>} />
@@ -64,7 +66,20 @@ export default async function SubscriptionPage() {
           </CardBody>
         </Card>
       </div>
-      {coach ? null : (
+      {coach ? (
+        <>
+          <h2 className="mb-1 mt-8 text-lg font-bold text-slate-900">Pi Koç fiyatları</h2>
+          <p className="mb-4 text-sm text-slate-500">Bütün özellikler her pakette aynı. Öğrenci sınırınızı değiştirmek için bizimle iletişime geçin.</p>
+          <div className="grid gap-3 sm:grid-cols-3">
+            {parseCoachTiers(settings.piKocTiers).map((t) => (
+              <div key={t.students} className={cn("rounded-xl border p-4", t.students === ctx.center.studentLimit ? "border-brand-500 ring-2 ring-brand-200" : "border-slate-200")}>
+                <p className="font-semibold text-slate-900">{t.students} öğrenciye kadar</p>
+                <p className="mt-1 text-xl font-black text-slate-900">{formatMoney(t.priceTl * 100)} <span className="text-sm font-semibold text-slate-500">/ ay</span></p>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
         <>
           <h2 className="mb-3 mt-8 text-lg font-bold text-slate-900">Paketiniz</h2>
           <PackageCard current />

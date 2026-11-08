@@ -12,6 +12,7 @@ const FLASH: Record<string, { tone: "success" | "warning"; text: string }> = {
   kaydedildi: { tone: "success", text: "Öğrenci kaydedildi." },
   guncellendi: { tone: "success", text: "Öğrenci bilgileri güncellendi." },
   silindi: { tone: "success", text: "Öğrenci silindi." },
+  koc: { tone: "warning", text: "Bu bölüm Pi Koç'ta yok." },
   yetki: { tone: "warning", text: "Bu bölüm için yetkiniz yok. Kurum yöneticinizden yetki isteyebilirsiniz." },
   modul: { tone: "warning", text: "Bu modül kurum ayarlarından kapatılmış. Kurum ayarları → Modüller bölümünden açabilirsiniz." },
   "sinif-silindi": { tone: "success", text: "Sınıf silindi." },

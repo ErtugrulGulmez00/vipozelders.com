@@ -4,6 +4,7 @@ import { refresh, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { failure, success, zodFieldErrors, type ActionState } from "@/lib/action-state";
+import { parseCoachTiers } from "@/lib/pi-koc";
 import { parseMoneyInput } from "@/lib/money";
 import { normalizePhone, slugify } from "@/lib/text";
 import { AccountError, createTeacherAccount, resetTeacherPassword } from "@/server/accounts";
@@ -429,6 +430,11 @@ export async function saveSettingsAction(_: ActionState, formData: FormData): Pr
     const days = parsePayoutDays(parsed.data.payoutDays);
     if (!days.length) return failure("Bazı değerler geçersiz.", { payoutDays: "1 ile 28 arasında en az bir gün yazın; örnek: 1,15" });
     parsed.data.payoutDays = days.join(",");
+  }
+  if (parsed.data.piKocTiers !== undefined) {
+    const tiers = parseCoachTiers(parsed.data.piKocTiers);
+    if (!tiers.length) return failure("Bazı değerler geçersiz.", { piKocTiers: "En az bir kademe yazın; örnek: 3:299,5:449" });
+    parsed.data.piKocTiers = tiers.map((t) => `${t.students}:${t.priceTl}`).join(",");
   }
   await saveSettings(parsed.data);
   resetMaintenanceCache();

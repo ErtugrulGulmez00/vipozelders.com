@@ -14,8 +14,10 @@ import { ActionForm, FieldError, SubmitButton, useActionResult } from "@/compone
 import { buttonClasses } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/form";
 import { CENTER_KIND_LABEL, CENTER_PLAN_LABEL, CENTER_STATUS } from "@/lib/center/labels";
+import { COACH_DEFAULT_STUDENT_LIMIT } from "@/lib/center/modules";
 
 export type CenterPrefill = {
+  coachStudents?: number;
   applicationId?: string;
   name?: string;
   kind?: string;
@@ -79,6 +81,9 @@ export function CreateCenterForm({ cities, trialDays, prefill = {} }: { cities: 
               </option>
             ))}
           </Select>
+        </Field>
+        <Field label="Pi Koç öğrenci sınırı" hint="Yalnızca Bireysel koç türünde kullanılır.">
+          <Input name="coachStudentLimit" type="number" min={1} max={1000} defaultValue={prefill.coachStudents ?? COACH_DEFAULT_STUDENT_LIMIT} />
         </Field>
         <Field label="Ücretsiz deneme (gün)">
           <Input name="trialDays" type="number" min={1} max={90} defaultValue={trialDays} />

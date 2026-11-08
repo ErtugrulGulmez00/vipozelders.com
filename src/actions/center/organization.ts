@@ -10,7 +10,7 @@ import { CENTERS_CACHE_TAG } from "@/server/center/public";
 import { bool, email, guard, int, opt, phone, requiredText, str } from "@/server/center/form";
 import { addStaff, resetStaffPassword, updateStaff } from "@/server/center/staff";
 import { db } from "@/server/db";
-import { OPTIONAL_MODULES } from "@/lib/center/modules";
+import { coachAllows, OPTIONAL_MODULES } from "@/lib/center/modules";
 import { deleteUpload, saveUpload, UploadError } from "@/server/storage";
 
 const ROLES: CenterRoleName[] = ["OWNER", "MANAGER", "TEACHER", "ACCOUNTANT"];
@@ -90,7 +90,8 @@ export async function updateCenterSettingsAction(_: ActionState, formData: FormD
       where: { id: ctx.center.id },
       data: {
         name: requiredText(formData, "name", "Kurum adı", 3, 120),
-        kind: (["ETUT", "KURS", "OTHER"] as const).find((k) => k === str(formData, "kind")) ?? ctx.center.kind,
+        // Pi Koç hesabı türünü kendisi değiştiremez (kapalı bölümler açılmasın)
+        kind: ctx.center.kind === "COACH" ? "COACH" : ((["ETUT", "KURS", "OTHER"] as const).find((k) => k === str(formData, "kind")) ?? ctx.center.kind),
         // Sabit hat da olabilir (0212 ...); serbest metin.
         phone: opt(formData, "phone", 30),
         email: email(formData, "email"),
@@ -108,7 +109,7 @@ export async function updateCenterSettingsAction(_: ActionState, formData: FormD
         showTeacherSuggestions: bool(formData, "showTeacherSuggestions"),
         // Pakette olmayan modüllerin eski durumu korunur (paket yükseltilince kurumun tercihiyle açılır)
         disabledModules: [
-          ...OPTIONAL_MODULES.filter((m) => !bool(formData, `module:${m.key}`)).map((m) => m.key),
+          ...OPTIONAL_MODULES.filter((m) => !bool(formData, `module:${m.key}`) || (ctx.center.kind === "COACH" && !coachAllows(m.key))).map((m) => m.key),
         ],
         ...(logoKey !== undefined ? { logoKey } : {}),
       },

@@ -9,7 +9,7 @@ import { notifyRole } from "../notifications";
 import { loadSettings } from "../settings";
 import { CenterError } from "./errors";
 import { notifyCenterManagers } from "./messages";
-import { COACH_DEFAULT_STUDENT_LIMIT, COACH_DISABLED_MODULES } from "@/lib/center/modules";
+import { COACH_DISABLED_MODULES } from "@/lib/center/modules";
 import { planStudentLimit, type CenterPlanName } from "./plans";
 import { createCenterUser } from "./staff";
 
@@ -30,6 +30,8 @@ export type NewCenterInput = {
   kind: "ETUT" | "DERSHANE" | "KURS" | "OTHER" | "COACH";
   cityId: number | null;
   plan: CenterPlanName;
+  /** Yalnızca Pi Koç hesabında kullanılır */
+  coachStudentLimit: number;
   trialDays: number;
   phone: string | null;
   email: string | null;
@@ -47,7 +49,7 @@ export async function adminCreateCenter(adminId: string, input: NewCenterInput) 
       kind: input.kind,
       cityId: input.cityId,
       plan: input.plan,
-      studentLimit: input.kind === "COACH" ? COACH_DEFAULT_STUDENT_LIMIT : planStudentLimit(input.plan, settings, 0),
+      studentLimit: input.kind === "COACH" ? input.coachStudentLimit : planStudentLimit(input.plan, settings, 0),
       disabledModules: input.kind === "COACH" ? COACH_DISABLED_MODULES : [],
       status: "TRIAL",
       trialEndsAt: new Date(Date.now() + Math.max(input.trialDays, 1) * 86_400_000),
@@ -144,7 +146,7 @@ export async function adminRecordSubscriptionPayment(adminId: string, centerId: 
 
 export const centerApplicationSchema = z.object({
   centerName: z.string().trim().min(3, "Kurum adını yazın.").max(120),
-  kind: z.enum(["ETUT", "KURS", "OTHER"]).default("ETUT"),
+  kind: z.enum(["ETUT", "KURS", "OTHER", "COACH"]).default("ETUT"),
   contactName: z.string().trim().min(3, "Adınızı ve soyadınızı yazın.").max(80),
   phone: z.string().trim().min(10, "Telefon numaranızı yazın.").max(20),
   email: z.email("Geçerli bir e-posta yazın.").max(120),
@@ -166,14 +168,14 @@ export async function submitCenterApplication(input: CenterApplicationInput, ipA
   const application = await db.centerApplication.create({
     data: { centerName: input.centerName, kind: input.kind, edition: "ETUT", contactName: input.contactName, phone, email, cityId: input.cityId ?? null, studentCount: input.studentCount || null, message: input.message || null },
   });
-  await notifyRole("ADMIN", { type: "center.application", title: "Yeni kurum başvurusu", body: `${input.centerName} · ${input.contactName} · ${phone}`, link: "/yonetim/kurum-basvurulari", email: false });
+  await notifyRole("ADMIN", { type: "center.application", title: input.kind === "COACH" ? "Yeni Pi Koç başvurusu" : "Yeni kurum başvurusu", body: `${input.centerName} · ${input.contactName} · ${phone}`, link: "/yonetim/kurum-basvurulari", email: false });
   const settings = await loadSettings();
   const { html, text } = renderEmail({
     siteName: settings.siteName,
     greetingName: input.contactName.split(" ")[0],
-    title: "Kurum paneli başvurunuzu aldık",
+    title: input.kind === "COACH" ? "Pi Koç başvurunuzu aldık" : "Kurum paneli başvurunuzu aldık",
     lines: [
-      `${input.centerName} için ${settings.siteName} kurum paneli başvurunuz bize ulaştı.`,
+      input.kind === "COACH" ? `${input.centerName} için Pi Koç başvurunuz bize ulaştı.` : `${input.centerName} için ${settings.siteName} kurum paneli başvurunuz bize ulaştı.`,
       "Ekibimiz en kısa sürede sizi arayıp paneli birlikte kuracak.",
     ],
   });
