@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { getSiteSettings } from "@/server/site";
 import { Logo } from "./logo";
+import { PiMark } from "./pi-mark";
 import { UserMenu, UserMenuFallback } from "./user-menu";
 
 const NAV = [
@@ -29,6 +30,12 @@ export async function SiteHeader() {
                   {item.label}
                 </Link>
               ))}
+              <Link href="/pi-koc" title="Bireysel koçluk asistanı" aria-label="Pi Koç: bireysel koçluk asistanı" className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-bold text-ink-900 transition hover:bg-white">
+                <span className="inline-flex size-5 -rotate-6 items-center justify-center rounded-md bg-brand-600 text-white">
+                  <PiMark className="size-3.5" />
+                </span>
+                Koç
+              </Link>
             </nav>
           </div>
           <div className="flex items-center gap-1 sm:gap-2">
@@ -45,6 +52,15 @@ export async function SiteHeader() {
                     {item.label}
                   </Link>
                 ))}
+                <Link href="/pi-koc" className="flex items-center gap-2.5 rounded-xl px-3 py-2 hover:bg-ink-50">
+                  <span className="inline-flex size-7 shrink-0 -rotate-6 items-center justify-center rounded-lg bg-brand-600 text-white">
+                    <PiMark className="size-4.5" />
+                  </span>
+                  <span>
+                    <span className="block text-sm font-semibold text-ink-700">Pi Koç</span>
+                    <span className="block text-xs text-ink-500">Bireysel koçluk asistanı</span>
+                  </span>
+                </Link>
               </nav>
             </details>
           </div>

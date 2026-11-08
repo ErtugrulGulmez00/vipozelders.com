@@ -43,7 +43,7 @@ export default async function PiKocPage() {
       <section className="bg-white">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:py-14 lg:grid-cols-[1fr_1.05fr]">
           <div className="flex min-w-0 flex-col gap-5">
-            <p className="self-start rounded-full bg-brand-50 px-3.5 py-1.5 text-sm font-bold text-brand-700">Pi Koç · Bireysel koçlar için</p>
+            <p className="self-start rounded-full bg-brand-50 px-3.5 py-1.5 text-sm font-bold text-brand-700">Pi Koç · Bireysel koçluk asistanı</p>
             <h1 className="font-display text-[2.6rem] font-extrabold leading-[1.08] tracking-tight text-ink-900 sm:text-[3.3rem]">Öğrencilerinizi tek panelden takip edin.</h1>
             <p className="text-lg leading-relaxed text-ink-600">Program, kaynak, deneme ve veli bilgilendirmesi tek yerde. LGS ve YKS koçları için.</p>
             <div className="flex flex-wrap items-center gap-4">
