@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 import { formatCompact } from "@/lib/dates";
 import { db } from "@/server/db";
 import { ModerateThreadForm } from "../moderate-form";
+import { requireRole } from "@/server/auth/current-user";
 
 export const metadata: Metadata = { title: "Konuşma denetimi" };
 
@@ -13,6 +14,7 @@ const name = (u: { firstName: string; lastName: string }) => `${u.firstName} ${u
 
 /** Yönetici konuşmayı salt okunur görür (taraflar için "okundu" işaretlenmez); gizlenen mesajların aslı da görünür. */
 export default async function ThreadModerationPage({ params }: PageProps<"/yonetim/mesajlar/[id]">) {
+  await requireRole("ADMIN");
   const { id } = await params;
   const thread = await db.messageThread.findUnique({
     where: { id },

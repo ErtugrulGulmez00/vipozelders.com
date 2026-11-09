@@ -7,6 +7,7 @@ import { cn } from "@/lib/cn";
 import { addDaysToDateString, toLocalDateString, zonedDateTime } from "@/lib/dates";
 import { db } from "@/server/db";
 import { statsSummary } from "@/server/stats";
+import { requireRole } from "@/server/auth/current-user";
 
 export const metadata: Metadata = { title: "İstatistik" };
 
@@ -14,6 +15,7 @@ const RANGES = [7, 30, 90] as const;
 const DEVICE: Record<string, string> = { mobile: "Telefon", tablet: "Tablet", desktop: "Bilgisayar" };
 
 export default async function StatsPage({ searchParams }: PageProps<"/yonetim/istatistik">) {
+  await requireRole("ADMIN");
   const { gun } = await searchParams;
   const days = RANGES.find((r) => String(r) === gun) ?? 30;
   // Sayfa her istekte güncel hesaplanır (bugünün tarihi).

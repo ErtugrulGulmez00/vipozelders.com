@@ -5,6 +5,7 @@ import { Badge, Card, CardBody, EmptyState, PageHeader } from "@/components/ui/p
 import { formatCompact } from "@/lib/dates";
 import { db } from "@/server/db";
 import { LessonRequestStatusForm } from "./request-form";
+import { requireRole } from "@/server/auth/current-user";
 
 export const metadata: Metadata = { title: "Öğretmen talepleri" };
 
@@ -17,6 +18,7 @@ const STATUS: Record<string, { label: string; tone: "amber" | "sky" | "green" | 
 const MODE: Record<string, string> = { online: "Online", "yuz-yuze": "Yüz yüze", farketmez: "Online / yüz yüze" };
 
 export default async function LessonRequestsPage({ searchParams }: PageProps<"/yonetim/talepler">) {
+  await requireRole("ADMIN");
   const { durum } = await searchParams;
   const filter = typeof durum === "string" && durum in STATUS ? durum : "acik";
   const requests = await db.lessonRequest.findMany({

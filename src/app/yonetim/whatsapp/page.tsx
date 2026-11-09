@@ -6,12 +6,14 @@ import { db } from "@/server/db";
 import { loadSettings } from "@/server/settings";
 import { letsbotConfigured, whatsappSessionStatus } from "@/server/whatsapp";
 import { WhatsAppTestForm } from "./test-form";
+import { requireRole } from "@/server/auth/current-user";
 
 export const metadata: Metadata = { title: "WhatsApp" };
 
 const STATUS = { PENDING: { label: "Sırada", tone: "amber" }, SENT: { label: "Gönderildi", tone: "green" }, FAILED: { label: "Gönderilemedi", tone: "rose" } } as const;
 
 export default async function WhatsAppAdminPage() {
+  await requireRole("ADMIN");
   // LetsBot durumu her açılışta sorgulanır (derlemede önceden hazırlanmaz)
   await connection();
   const since = new Date();

@@ -6,6 +6,7 @@ import { db } from "@/server/db";
 import { defaultGarantiMode, garantiConfigured } from "@/server/payments/garanti";
 import { getPaymentProvider } from "@/server/payments/service";
 import { RefundTestForm, StartTestForm } from "./forms";
+import { requireRole } from "@/server/auth/current-user";
 
 export const metadata: Metadata = { title: "Ödeme testi" };
 
@@ -17,6 +18,7 @@ type DiagnosticRaw = {
 };
 
 export default async function PaymentTestPage({ searchParams }: PageProps<"/yonetim/odeme-testi">) {
+  await requireRole("ADMIN");
   const { p } = await searchParams;
   const tests = await db.payment.findMany({ where: { provider: "garanti", bookingId: null, creditPurchaseId: null }, orderBy: { createdAt: "desc" }, take: 20 });
   const configured = garantiConfigured();

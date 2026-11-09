@@ -5,10 +5,12 @@ import { LinkButton } from "@/components/ui/button";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/primitives";
 import { formatCompact } from "@/lib/dates";
 import { db } from "@/server/db";
+import { requireRole } from "@/server/auth/current-user";
 
 export const metadata: Metadata = { title: "Rehber yazıları" };
 
 export default async function AdminBlogPage() {
+  await requireRole("ADMIN");
   const posts = await db.blogPost.findMany({ orderBy: { updatedAt: "desc" }, take: 200, select: { id: true, title: true, slug: true, category: true, isPublished: true, updatedAt: true } });
   return (
     <>

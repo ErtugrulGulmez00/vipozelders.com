@@ -5,6 +5,7 @@ import { ActionForm, SubmitButton } from "@/components/forms/action-form";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/primitives";
 import { formatCompact } from "@/lib/dates";
 import { db } from "@/server/db";
+import { requireRole } from "@/server/auth/current-user";
 
 export const metadata: Metadata = { title: "Hatalar" };
 
@@ -22,6 +23,7 @@ function ResolveButton({ id, label }: { id?: string; label: string }) {
 }
 
 export default async function ErrorsPage() {
+  await requireRole("ADMIN");
   const [open, resolved] = await Promise.all([
     db.errorEvent.findMany({ where: { resolvedAt: null }, orderBy: { lastSeenAt: "desc" }, take: 100 }),
     db.errorEvent.findMany({ where: { resolvedAt: { not: null } }, orderBy: { lastSeenAt: "desc" }, take: 20 }),

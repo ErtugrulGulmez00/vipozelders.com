@@ -5,10 +5,12 @@ import { formatMoney } from "@/lib/money";
 import { db } from "@/server/db";
 import { TARGET_LABELS, type DiscountTarget } from "@/server/discounts";
 import { CreateCouponForm, ToggleCouponForm } from "./coupon-forms";
+import { requireRole } from "@/server/auth/current-user";
 
 export const metadata: Metadata = { title: "İndirim kodları" };
 
 export default async function CouponsPage() {
+  await requireRole("ADMIN");
   const [coupons, usage, referral] = await Promise.all([
     db.coupon.findMany({ orderBy: { createdAt: "desc" }, take: 100 }),
     db.couponRedemption.groupBy({ by: ["couponId"], where: { couponId: { not: null } }, _count: true, _sum: { amount: true } }),

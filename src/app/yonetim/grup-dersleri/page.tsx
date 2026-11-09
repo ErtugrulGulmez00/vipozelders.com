@@ -8,10 +8,12 @@ import { GROUP_COURSE_STATUS } from "@/lib/labels";
 import { formatMoney } from "@/lib/money";
 import { fullName } from "@/lib/text";
 import { db } from "@/server/db";
+import { requireRole } from "@/server/auth/current-user";
 
 export const metadata: Metadata = { title: "Grup dersleri" };
 
 export default async function AdminGroupsPage({ searchParams }: PageProps<"/yonetim/grup-dersleri">) {
+  await requireRole("ADMIN");
   const { ders } = await searchParams;
   const courseId = typeof ders === "string" ? ders : "";
   const [sales, courses] = await Promise.all([

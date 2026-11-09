@@ -6,6 +6,7 @@ import { Badge, Card, EmptyState, PageHeader, Table, Td, Th } from "@/components
 import { cn } from "@/lib/cn";
 import { formatCompact } from "@/lib/dates";
 import { db } from "@/server/db";
+import { requireRole } from "@/server/auth/current-user";
 
 export const metadata: Metadata = { title: "Mesaj denetimi" };
 
@@ -18,6 +19,7 @@ const TABS = [
 const name = (u: { firstName: string; lastName: string }) => `${u.firstName} ${u.lastName}`;
 
 export default async function MessageModerationPage({ searchParams }: PageProps<"/yonetim/mesajlar">) {
+  await requireRole("ADMIN");
   const { sekme, ogretmen } = await searchParams;
   const tab = TABS.find((t) => t.key === sekme)?.key ?? "incelenecek";
   const teacherId = typeof ogretmen === "string" ? ogretmen : undefined;

@@ -5,12 +5,14 @@ import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/primitives"
 import { formatCompact, formatLessonRange } from "@/lib/dates";
 import { db } from "@/server/db";
 import { ResolveReportForm } from "./resolve-form";
+import { requireRole } from "@/server/auth/current-user";
 
 export const metadata: Metadata = { title: "Ders bildirimleri" };
 
 const name = (u: { firstName: string; lastName: string }) => `${u.firstName} ${u.lastName}`;
 
 export default async function ClassroomReportsPage() {
+  await requireRole("ADMIN");
   const [open, closed] = await Promise.all([
     db.classroomReport.findMany({
       where: { resolvedAt: null },
