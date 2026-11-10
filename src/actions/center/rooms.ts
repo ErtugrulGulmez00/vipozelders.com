@@ -9,7 +9,7 @@ import { deleteRoom, saveRoom } from "@/server/center/rooms";
 // Derslikler.
 
 export async function saveRoomAction(_: ActionState, formData: FormData): Promise<ActionState> {
-  const auth = await centerAction("groups.manage");
+  const auth = await centerAction("groups.manage", { section: "derslikler" });
   if (!auth.ok) return auth.state;
   return guard(async () => {
     const roomId = opt(formData, "roomId");
@@ -26,7 +26,7 @@ export async function saveRoomAction(_: ActionState, formData: FormData): Promis
 }
 
 export async function deleteRoomAction(_: ActionState, formData: FormData): Promise<ActionState> {
-  const auth = await centerAction("groups.manage");
+  const auth = await centerAction("groups.manage", { section: "derslikler" });
   if (!auth.ok) return auth.state;
   return guard(async () => {
     const roomId = str(formData, "roomId");

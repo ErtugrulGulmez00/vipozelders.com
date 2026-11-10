@@ -1,5 +1,6 @@
 "use client";
 
+import { PhoneInput } from "@/components/ui/phone-input";
 import Link from "next/link";
 import { applyTeacherAction } from "@/actions/applications";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
@@ -27,7 +28,7 @@ export function ApplicationForm({ cities }: { cities: { id: number; name: string
           <FieldError name="email" />
         </Field>
         <Field label="Cep telefonu" htmlFor="a-phone">
-          <Input id="a-phone" name="phone" type="tel" autoComplete="tel" placeholder="05XX XXX XX XX" required />
+          <PhoneInput id="a-phone" name="phone" autoComplete="tel" placeholder="05XX XXX XX XX" required />
           <FieldError name="phone" />
         </Field>
       </div>

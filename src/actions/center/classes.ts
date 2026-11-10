@@ -67,7 +67,7 @@ export async function setGroupStudentsAction(_: ActionState, formData: FormData)
 }
 
 export async function saveSlotAction(_: ActionState, formData: FormData): Promise<ActionState> {
-  const auth = await centerAction("groups.manage");
+  const auth = await centerAction("groups.manage", { section: "program" });
   if (!auth.ok) return auth.state;
   return guard(async () => {
     const weekday = int(formData, "weekday", 0, 0, 7);
@@ -86,7 +86,7 @@ export async function saveSlotAction(_: ActionState, formData: FormData): Promis
 }
 
 export async function deleteSlotAction(_: ActionState, formData: FormData): Promise<ActionState> {
-  const auth = await centerAction("groups.manage");
+  const auth = await centerAction("groups.manage", { section: "program" });
   if (!auth.ok) return auth.state;
   return guard(async () => {
     await deleteSlot(auth.ctx, str(formData, "slotId"));
@@ -98,7 +98,7 @@ export async function deleteSlotAction(_: ActionState, formData: FormData): Prom
 const STATUSES: AttendanceStatusName[] = ["PRESENT", "ABSENT", "LATE", "EXCUSED"];
 
 export async function saveAttendanceAction(_: ActionState, formData: FormData): Promise<ActionState> {
-  const auth = await centerAction("attendance.take");
+  const auth = await centerAction("attendance.take", { section: "yoklama" });
   if (!auth.ok) return auth.state;
   return guard(async () => {
     const records = list(formData, "studentIds").map((studentId) => {

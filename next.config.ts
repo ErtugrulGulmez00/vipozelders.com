@@ -33,6 +33,7 @@ const nextConfig: NextConfig = {
       { source: "/ogretmen-paneli/soru-havuzu/:path*", destination: "/ogretmen-paneli/soru-cozum", permanent: true },
       { source: "/ogretmen-paneli/soru-aboneligi", destination: "/ogretmen-paneli/soru-cozum", permanent: true },
       { source: "/yonetim/soru-havuzu", destination: "/yonetim", permanent: true },
+      { source: "/yonetim/kuponlar", destination: "/yonetim", permanent: true },
     ];
   },
   experimental: {

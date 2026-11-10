@@ -1,5 +1,6 @@
 "use client";
 
+import { PhoneInput } from "@/components/ui/phone-input";
 import { KeyRound } from "lucide-react";
 import Link from "next/link";
 import { createTeacherAction } from "@/actions/admin";
@@ -61,7 +62,7 @@ export function NewTeacherForm() {
           <Input id="email" name="email" type="email" />
         </Field>
         <Field label="Telefon (isteğe bağlı)" htmlFor="phone">
-          <Input id="phone" name="phone" type="tel" placeholder="05XX XXX XX XX" />
+          <PhoneInput id="phone" name="phone" placeholder="05XX XXX XX XX" />
         </Field>
       </div>
       <FieldError name="email" />

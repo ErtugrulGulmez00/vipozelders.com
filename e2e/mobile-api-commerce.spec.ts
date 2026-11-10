@@ -2,7 +2,7 @@ import { expect, test, type APIRequestContext, type Page } from "@playwright/tes
 import pg from "pg";
 
 /**
- * Mobil API: indirim kodu ve arkadaşını getir, paket ders (paketten ders, toplu onay, erteleme), grup dersi kaydı ve
+ * Mobil API: arkadaşını getir, paket ders (paketten ders, toplu onay, erteleme), grup dersi kaydı ve
  * öğretmen talep formu. Demo öğretmen ayse.yilmaz'a geçici paket indirimi ve grup dersi eklenir; sonunda tüm kayıtlar geri alınır.
  */
 
@@ -10,7 +10,6 @@ const DB_URL = process.env.E2E_DATABASE_URL ?? "postgresql://postgres:postgres@l
 const API = "/api/mobil/v1";
 const stamp = Date.now().toString(36);
 const emails = [`e2e-mobil-ticaret-${stamp}@example.com`, `e2e-mobil-davetli-${stamp}@example.com`];
-const coupon = `E2E${stamp.toUpperCase()}`.slice(0, 12);
 const TEACHER = `(SELECT id FROM "User" WHERE username = 'ayse.yilmaz')`;
 let previousDiscounts: string;
 let courseId: string;
@@ -66,7 +65,6 @@ test.beforeAll(async () => {
     `INSERT INTO "GroupSession" (id, "courseId", index, "startAt", "endAt", "videoRoomName") VALUES ($1, $2, 0, now() + interval '25 days', now() + interval '25 days 1 hour', $3)`,
     [`e2e-oturum-${stamp}`, courseId, `e2e-oda-${stamp}`],
   );
-  await sql(`INSERT INTO "Coupon" (id, code, kind, value, targets) VALUES ($1, $2, 'PERCENT', 10, ARRAY['booking'])`, [`e2e-kupon-${stamp}`, coupon]);
 });
 
 test.afterAll(async () => {
@@ -83,12 +81,11 @@ test.afterAll(async () => {
   await sql(`DELETE FROM "LessonRequest" WHERE name = $1`, [`E2E Talep ${stamp}`]);
   await sql(`DELETE FROM "Notification" WHERE type IN ('admin.lesson_request', 'lesson_request') AND "createdAt" > now() - interval '1 hour'`);
   await sql(`DELETE FROM "GroupCourse" WHERE id = $1`, [courseId]);
-  await sql(`DELETE FROM "Coupon" WHERE code = $1`, [coupon]);
   await sql(`DELETE FROM "Session" WHERE "userAgent" = 'mobil: e2e-test'`);
   await sql(`UPDATE "TeacherProfile" SET "packageDiscounts" = $1 WHERE "userId" = ${TEACHER}`, [previousDiscounts]);
 });
 
-test("mobil API: indirim kodu, davet, paket ve erteleme, grup dersi, öğretmen talebi", async ({ request, page }) => {
+test("mobil API: davet, paket ve erteleme, grup dersi, öğretmen talebi", async ({ request, page }) => {
   const anon = client(request);
   const registered = await anon.post("/kayit", { firstName: "Ticaret", lastName: "Veli", email: emails[0], password: "MobilVeli2026", accountType: "PARENT", kvkk: true, terms: true, deviceName: "e2e-test" });
   expect(registered.status()).toBe(201);
@@ -111,10 +108,7 @@ test("mobil API: indirim kodu, davet, paket ve erteleme, grup dersi, öğretmen 
   expect(profile.groupCourses.find((c: { code: string }) => c.code === courseCode)).toMatchObject({ price: 40000, sessionCount: 1 });
   const offering = profile.offerings[0];
 
-  // İndirim kodu: derste %10 (hizmet bedelinden)
-  const quote = await (await student.post("/indirim-kodu", { target: "booking", code: coupon.toLowerCase(), ref: offering.id, duration: 60 })).json();
-  expect(quote).toMatchObject({ ok: true, discount: Math.floor(offering.hourlyPrice / 10), finalPrice: offering.hourlyPrice - Math.floor(offering.hourlyPrice / 10) });
-  expect((await (await student.post("/indirim-kodu", { target: "booking", code: "YOKBOYLEKOD", ref: offering.id, duration: 60 })).json()).ok).toBe(false);
+
   const duration = offering.durations.find((d: { minutes: number }) => d.minutes === 60)?.minutes ?? offering.durations[0].minutes;
 
   // Paket: 3 ders %10 indirimli, ödeme WebView'da

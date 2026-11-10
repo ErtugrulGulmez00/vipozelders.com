@@ -1,4 +1,4 @@
-import { BookMarked, ChartColumn, HeartHandshake, NotebookPen, UserRound, Wallet } from "lucide-react";
+import { AlertTriangle, BookMarked, ChartColumn, HeartHandshake, NotebookPen, UserRound } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -12,22 +12,22 @@ import { CoachApplicationForm } from "./coach-application-form";
 
 export const metadata: Metadata = {
   title: "Pi Koç: koçlar için öğrenci takip paneli",
-  description: "Öğrenci koçları için program, kaynak, deneme analizi ve veli takibi tek panelde. LGS ve YKS koçluğu için, aylık 299 TL'den başlayan fiyatlarla.",
+  description: "Öğrenci koçları için görüşme notları, program, soru ve deneme takibi grafiklerle tek panelde. LGS ve YKS koçluğu için, aylık 299 TL'den başlayan fiyatlarla.",
 };
 
 const FEATURES = [
-  { Icon: UserRound, tile: "bg-brand-600 text-white", title: "Öğrenci kartı", text: "Her öğrencinin bilgileri, velisi, denemeleri ve görüşmeleri tek kartta." },
-  { Icon: HeartHandshake, tile: "bg-gold-400 text-ink-900", title: "Koçluk görüşmeleri", text: "Haftalık görüşme gününü belirleyin, her görüşmenin notunu tutun." },
-  { Icon: BookMarked, tile: "bg-mint-400 text-ink-950", title: "Kaynak ve program", text: "Kitap atayın, konu konu ilerlemeyi görün, gün gün çalışma programı yazın." },
-  { Icon: ChartColumn, tile: "bg-ink-900 text-gold-400", title: "Deneme analizi", text: "Yayınevinin sonuç PDF'ini yükleyin ya da optik okutun; net gelişimi, karne ve konu eksikleri hazır." },
-  { Icon: NotebookPen, tile: "bg-iris-500 text-white", title: "Ödev ve soru", text: "Ödev verin, teslimi kontrol edin. Öğrenci takıldığı sorunun fotoğrafını size göndersin." },
-  { Icon: Wallet, tile: "bg-brand-100 text-brand-700", title: "Veli ve tahsilat", text: "Veli kendi girişiyle takip eder. Ödeme planı, tahsilat ve makbuz panelde." },
+  { Icon: UserRound, tile: "bg-brand-600 text-white", title: "Öğrenci sayfası", text: "Her öğrencinin neti, çözdüğü soru, programı ve görüşmeleri grafiklerle tek sayfada." },
+  { Icon: HeartHandshake, tile: "bg-gold-400 text-ink-900", title: "Görüşme notları", text: "Haftalık görüşme gününü belirleyin; not, öncelikli konu ve sonraki hedefi kaydedin." },
+  { Icon: BookMarked, tile: "bg-mint-400 text-ink-950", title: "Kaynak ve program", text: "Kitaplarınızı bir kez tanımlayın, öğrenciye ekleyin; gün gün çalışma programı yazın." },
+  { Icon: ChartColumn, tile: "bg-ink-900 text-gold-400", title: "Deneme takibi", text: "Sonuç kâğıdındaki doğru ve yanlışı girin; net gelişim grafiği ve ders analizi hazır." },
+  { Icon: NotebookPen, tile: "bg-iris-500 text-white", title: "Soru takibi", text: "Gün gün, ders ders çözülen soruyu girin; haftalık grafik ve doğruluk oranı çıkar." },
+  { Icon: AlertTriangle, tile: "bg-brand-100 text-brand-700", title: "Dikkat isteyenler", text: "Görüşmesi aksayan, neti düşen ya da programı geride kalan öğrenci özet ekranında öne çıkar." },
 ];
 
 const STEPS = [
   ["Başvurun", "Formu doldurun, kaç öğrenciyle çalıştığınızı seçin."],
   ["Hesabınızı açalım", "Sizi arayıp panelinizi açıyoruz; giriş bilgileriniz e-postanıza gelir."],
-  ["Öğrencilerinizi ekleyin", "Excel'den aktarın ya da tek tek ekleyin, velileri davet edin."],
+  ["Öğrencilerinizi ekleyin", "Sınıfını, hedefini ve haftalık görüşme gününü yazın; takip hemen başlar."],
 ];
 
 const CHUNKY = "inline-flex items-center justify-center rounded-2xl border-b-[5px] font-display font-extrabold transition-colors active:translate-y-px";
@@ -45,7 +45,7 @@ export default async function PiKocPage() {
           <div className="flex min-w-0 flex-col gap-5">
             <p className="self-start rounded-full bg-brand-50 px-3.5 py-1.5 text-sm font-bold text-brand-700">Pi Koç · Bireysel koçluk asistanı</p>
             <h1 className="font-display text-[2.6rem] font-extrabold leading-[1.08] tracking-tight text-ink-900 sm:text-[3.3rem]">Öğrencilerinizi tek panelden takip edin.</h1>
-            <p className="text-lg leading-relaxed text-ink-600">Program, kaynak, deneme ve veli bilgilendirmesi tek yerde. LGS ve YKS koçları için.</p>
+            <p className="text-lg leading-relaxed text-ink-600">Görüşme, program, soru ve deneme takibi grafiklerle tek yerde. LGS ve YKS koçları için.</p>
             <div className="flex flex-wrap items-center gap-4">
               <a href="#basvuru" className={cn(CHUNKY, "min-h-14 border-brand-800 bg-brand-600 px-7 text-base text-white hover:bg-brand-700")}>
                 {cta}

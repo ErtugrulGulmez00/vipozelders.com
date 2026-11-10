@@ -1,3 +1,4 @@
+import { SectionTabs } from "@/components/center/section-tabs";
 import type { Metadata } from "next";
 import Form from "next/form";
 import { buttonClasses } from "@/components/ui/button";
@@ -39,6 +40,7 @@ export default async function MessagesPage({ searchParams }: PageProps<"/kurum/m
   const href = (p: number) => `/kurum/mesajlar?${new URLSearchParams({ ...(channel ? { kanal: channel } : {}), ...(kind ? { tur: kind } : {}), sayfa: String(p) }).toString()}`;
   return (
     <>
+      <SectionTabs ctx={ctx} group="iletisim" active="mesajlar" />
       <PageHeader title="Mesaj geçmişi" description="Velilere giden tüm otomatik ve elle gönderilen WhatsApp ve e-posta mesajları" />
       {!whatsapp.enabled ? (
         <Alert tone="info" className="mb-4" title="WhatsApp: çok yakında">

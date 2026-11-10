@@ -1,6 +1,6 @@
 import { requireCenterSection } from "@/server/center/context";
 
-// Pi Koç hesabında bu bölüm açılmaz.
+// Kurum türünde olmayan bölüm (Pi Koç ya da etüt merkezinde dershane bölümleri) açılmaz.
 export default async function SectionLayout({ children }: { children: React.ReactNode }) {
   await requireCenterSection("derslikler");
   return children;

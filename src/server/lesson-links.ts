@@ -27,6 +27,15 @@ export const GENERAL_OFFERING = "genel";
 const HOUR = 3_600_000;
 const DAY = 24 * HOUR;
 
+/** Geçerli telafi: iptal edilmemiş; kaydolunmamışsa süresi dolmamış, kaydolunmuşsa dersi iptal olmamış. */
+function liveMakeup(now: Date): Prisma.LessonLinkWhereInput {
+  return {
+    cancelledAt: null,
+    isQuestionSession: false,
+    OR: [{ bookingId: null, endAt: { gt: now } }, { booking: { status: { notIn: ["CANCELLED_BY_STUDENT", "CANCELLED_BY_TEACHER", "CANCELLED_BY_ADMIN"] } } }],
+  };
+}
+
 /**
  * Telafi bağlantısı açılabilecek ücretli dersler: online, onaylı ya da tamamlanmış, iadesiz, son 30 günde, telafisi
  * açılmamış ve öğretmenle öğrencinin ikisinin birden sınıfa girmediği. Yüz yüze derste kimin geldiği bilinmediği için
@@ -42,7 +51,7 @@ function makeupSourceWhere(teacherId: string, now: Date): Prisma.BookingWhereInp
     refundedAmount: 0,
     status: { in: ["CONFIRMED", "COMPLETED"] },
     startAt: { gte: new Date(now.getTime() - MAKEUP_WINDOW_DAYS * DAY) },
-    makeupLinks: { none: { cancelledAt: null, isQuestionSession: false } },
+    makeupLinks: { none: liveMakeup(now) },
     NOT: { AND: [{ attendance: { some: { userId: teacherId } } }, { attendance: { some: { userId: { not: teacherId } } } }] },
   };
 }
@@ -91,8 +100,8 @@ export async function canOpenMakeup(teacherId: string, bookingId: string, now = 
 }
 
 /** Dersin iptal edilmemiş telafi bağlantısı: varsa ders yapılmaz, sınıfı kapalıdır. */
-export async function activeMakeup(bookingId: string) {
-  return db.lessonLink.findFirst({ where: { sourceBookingId: bookingId, cancelledAt: null, isQuestionSession: false }, select: { token: true, startAt: true, endAt: true, bookingId: true } });
+export async function activeMakeup(bookingId: string, now = new Date()) {
+  return db.lessonLink.findFirst({ where: { sourceBookingId: bookingId, ...liveMakeup(now) }, select: { token: true, startAt: true, endAt: true, bookingId: true } });
 }
 
 export async function makeupSources(teacherId: string, now = new Date()) {

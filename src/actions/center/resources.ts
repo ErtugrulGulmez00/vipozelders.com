@@ -40,7 +40,8 @@ export async function createResourceAction(_: ActionState, formData: FormData): 
     return success();
   });
   if (!result.ok) return result;
-  redirect(`/kurum/kaynaklar/${id}?durum=kaynak-eklendi`);
+  // Pi Koç hesabı kendi panelinde kalır
+  redirect(`${auth.ctx.center.kind === "COACH" ? "/koc" : "/kurum"}/kaynaklar/${id}?durum=kaynak-eklendi`);
 }
 
 export async function updateResourceAction(_: ActionState, formData: FormData): Promise<ActionState> {
@@ -63,7 +64,7 @@ export async function deleteResourceAction(_: ActionState, formData: FormData): 
     return success();
   });
   if (!result.ok) return result;
-  redirect("/kurum/kaynaklar?durum=kaynak-silindi");
+  redirect(`${auth.ctx.center.kind === "COACH" ? "/koc" : "/kurum"}/kaynaklar?durum=kaynak-silindi`);
 }
 
 export async function assignResourceAction(_: ActionState, formData: FormData): Promise<ActionState> {

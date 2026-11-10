@@ -1,5 +1,6 @@
 "use client";
 
+import { DateInput } from "@/components/ui/date-input";
 import { Lock } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -142,7 +143,7 @@ export function RescheduleForm({ bookingId, teacherId, duration, today }: { book
       <input type="hidden" name="bookingId" value={bookingId} />
       <div className="flex flex-wrap items-end gap-2">
         <Field label="Hafta başlangıcı">
-          <Input type="date" value={start} min={today} onChange={(e) => setStart(e.target.value || today)} />
+          <DateInput value={start} min={today} onValueChange={(v) => setStart(v || today)} />
         </Field>
         <Field label="Yeni saat" className="min-w-56 flex-1">
           <Select name="newStartAt" value={picked} onChange={(e) => setPicked(e.target.value)} required>

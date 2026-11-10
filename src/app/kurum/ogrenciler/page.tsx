@@ -1,3 +1,4 @@
+import { SectionTabs } from "@/components/center/section-tabs";
 import { Download, FileSpreadsheet, PlusCircle, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Form from "next/form";
@@ -71,6 +72,7 @@ export default async function CenterStudentsPage({ searchParams }: PageProps<"/k
 
   return (
     <>
+      <SectionTabs ctx={ctx} group="ogrenciler" active="ogrenciler" />
       <PageHeader
         title="Öğrenciler"
         description={`${total} öğrenci${status === "ACTIVE" ? " (aktif)" : ""}`}

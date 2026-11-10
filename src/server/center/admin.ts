@@ -86,7 +86,16 @@ export async function adminUpdateCenter(adminId: string, centerId: string, input
   if (!center) throw new CenterError("Kurum bulunamadı.");
   // Süre değiştiyse bitiş hatırlatmaları yeniden başlar.
   const datesChanged = input.trialEndsAt?.getTime() !== center.trialEndsAt?.getTime() || input.paidUntil?.getTime() !== center.paidUntil?.getTime() || input.status !== center.status;
-  await db.center.update({ where: { id: centerId }, data: { ...input, ...(datesChanged ? { expiryNoticeDays: null } : {}) } });
+  // Tür Pi Koç'a geçince koçta olmayan modüller kapanır, Pi Koç'tan çıkınca açılır
+  const disabledModules =
+    input.kind === center.kind
+      ? undefined
+      : input.kind === "COACH"
+        ? [...new Set([...center.disabledModules, ...COACH_DISABLED_MODULES])]
+        : center.kind === "COACH"
+          ? center.disabledModules.filter((m) => !COACH_DISABLED_MODULES.includes(m as (typeof COACH_DISABLED_MODULES)[number]))
+          : undefined;
+  await db.center.update({ where: { id: centerId }, data: { ...input, ...(disabledModules ? { disabledModules } : {}), ...(datesChanged ? { expiryNoticeDays: null } : {}) } });
   await audit({ actorId: adminId, action: "center.update", entityType: "Center", entityId: centerId, details: { plan: input.plan, status: input.status, studentLimit: input.studentLimit } });
 }
 

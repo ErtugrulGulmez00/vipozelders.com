@@ -1,5 +1,6 @@
 "use client";
 
+import { PhoneInput } from "@/components/ui/phone-input";
 import type { ReactNode } from "react";
 import { saveSettingsAction } from "@/actions/admin";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
@@ -40,7 +41,7 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
           <Input name="contactEmail" type="email" defaultValue={settings.contactEmail} />
         </Field>
         <Field label="İletişim telefonu">
-          <Input name="contactPhone" defaultValue={settings.contactPhone} />
+          <PhoneInput name="contactPhone" defaultValue={settings.contactPhone} />
         </Field>
         <Field label="WhatsApp destek numarası" hint="Sitenin sağ altındaki WhatsApp düğmesi bu numaraya yazar. Boş bırakırsanız düğme gösterilmez.">
           <Input name="supportWhatsapp" defaultValue={settings.supportWhatsapp} placeholder="+90 5xx xxx xx xx" />

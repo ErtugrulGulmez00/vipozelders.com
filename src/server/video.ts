@@ -31,6 +31,8 @@ export async function classroomAccess(bookingId: string, userId: string, now = n
   // Telafisi açılan ders yapılmaz (aynı ders iki kez yapılmasın); ders telafi saatinde, telafi bağlantısıyla yapılır
   const makeup = await activeMakeup(booking.id);
   if (makeup) return { ok: false, reason: `Bu dersin yerine ${formatLessonRange(makeup.startAt, makeup.endAt)} saatinde telafi dersi açıldı; ders o saatte yapılacak.`, booking };
+  // Uygunsuz durum bildirilen derste sınıf, yönetici karar verene kadar kapalı kalır
+  if ((await db.classroomReport.count({ where: { bookingId, resolvedAt: null } })) > 0) return { ok: false, reason: "Bu ders için yapılan bildirim inceleniyor; sınıf kapalı.", booking };
   const settings = await loadSettings();
   const opensAt = new Date(booking.startAt.getTime() - settings.classroomOpensMinutesBefore * 60_000);
   const closesAt = new Date(booking.endAt.getTime() + CLOSE_AFTER_MINUTES * 60_000);

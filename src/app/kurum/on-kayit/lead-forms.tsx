@@ -1,5 +1,6 @@
 "use client";
 
+import { PhoneInput } from "@/components/ui/phone-input";
 import { createLeadAction, deleteLeadAction, updateLeadAction } from "@/actions/center/communication";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
@@ -17,7 +18,7 @@ export function LeadForm() {
           <Input name="parentName" />
         </Field>
         <Field label="Telefon">
-          <Input name="phone" type="tel" placeholder="05XX XXX XX XX" required />
+          <PhoneInput name="phone" placeholder="05XX XXX XX XX" required />
           <FieldError name="phone" />
         </Field>
         <Field label="Sınıf">

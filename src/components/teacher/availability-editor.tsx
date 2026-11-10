@@ -1,5 +1,6 @@
 "use client";
 
+import { DateInput } from "@/components/ui/date-input";
 import { Copy, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { addExceptionAction, removeExceptionAction, saveAvailabilityAction } from "@/actions/teacher";
@@ -111,7 +112,7 @@ export function ExceptionsEditor({ teacherId, exceptions, minDate }: { teacherId
       <ActionForm action={addExceptionAction} resetOnSuccess className="grid gap-3 rounded-xl bg-slate-50 p-4 sm:grid-cols-2">
         <input type="hidden" name="teacherId" value={teacherId} />
         <Field label="Tarih">
-          <Input type="date" name="date" min={minDate} required />
+          <DateInput name="date" min={minDate} required />
         </Field>
         <Field label="Tür">
           <Select name="kind" value={kind} onChange={(e) => setKind(e.target.value)}>

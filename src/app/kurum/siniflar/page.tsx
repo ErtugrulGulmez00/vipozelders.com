@@ -1,3 +1,4 @@
+import { SectionTabs } from "@/components/center/section-tabs";
 import { UsersRound } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -30,9 +31,10 @@ export default async function GroupsPage({ searchParams }: PageProps<"/kurum/sin
   const canManage = ctx.can("groups.manage");
   return (
     <>
+      <SectionTabs ctx={ctx} group="ogrenciler" active="siniflar" />
       <PageHeader
         title="Sınıflar"
-        description="Öğrenci grupları, sorumlu öğretmenler ve haftalık ders saatleri"
+        description={ctx.center.kind === "DERSHANE" ? "Öğrenci grupları, sorumlu öğretmenler ve haftalık ders saatleri" : "Öğrencileri gruplayın (ör. 8. sınıflar, LGS grubu): ödev, duyuru, kaynak ve deneme analizinde grup seçerek çalışırsınız."}
         actions={
           <Link href={showArchived ? "/kurum/siniflar" : "/kurum/siniflar?arsiv=1"} className="text-sm font-semibold text-brand-700 hover:underline">
             {showArchived ? "Etkin sınıflar" : "Arşivdeki sınıflar"}
@@ -56,11 +58,13 @@ export default async function GroupsPage({ searchParams }: PageProps<"/kurum/sin
                     {[g.gradeName, g.targetExam, g.room].filter(Boolean).join(" · ") || "—"}
                   </p>
                   <p className="mt-2 text-sm text-slate-700">{g.teacher ? `Rehber: ${g.teacher.user.firstName} ${g.teacher.user.lastName}` : "Rehber öğretmen atanmadı"}</p>
+                  {ctx.center.kind === "DERSHANE" ? (
                   <p className="mt-3 text-xs text-slate-500">
                     {g.slots.length
                       ? `${g.slots.length} ders/hafta · ${[...new Set(g.slots.map((s) => WEEKDAY_SHORT[s.weekday - 1]))].join(", ")} · ${minutesToTime(Math.min(...g.slots.map((s) => s.startMinute)))}'dan itibaren`
                       : "Haftalık program girilmedi"}
                   </p>
+                  ) : null}
                 </Link>
               ))}
             </div>

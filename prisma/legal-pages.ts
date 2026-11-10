@@ -82,8 +82,8 @@ Evet. Dersten en az {rescheduleMinHours} saat önce ders sayfasından yeni saat 
 ## Grup dersi nasıl işliyor?
 Öğretmen bir program ilan eder (ör. 4 hafta, haftada 2 ders). Kayıt bitişinde en az katılımcı sayısına ulaşılırsa ders kesinleşir; ulaşılmazsa ücretin tamamı iade edilir. İlk dersten önce kaydınızı iptal ederseniz tam iade alırsınız.
 
-## İndirim kodumu nereye yazarım?
-Ödeme adımındaki "İndirim kodum var" bağlantısına tıklayıp kodu yazın ve "Uygula"ya basın. Arkadaşınızın davet bağlantısıyla kayıt olduysanız ilk siparişinizde indirim kendiliğinden uygulanır.
+## Davet indirimi nasıl uygulanır?
+Arkadaşınızın davet bağlantısıyla kayıt olduysanız ilk siparişinizde indirim kendiliğinden uygulanır.
 
 ## Arkadaşımı nasıl davet ederim?
 Hesabım → Arkadaşını davet et sayfasındaki bağlantınızı paylaşın. Arkadaşınız ilk siparişinde indirim kazanır.

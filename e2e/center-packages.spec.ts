@@ -72,8 +72,9 @@ test("yeni kurum bütün bölümleri görür; ödemeyle kademe yükselir", async
   await page.getByLabel("Yeni şifre (tekrar)").fill("PaketSifre123");
   await page.getByRole("button", { name: "Şifremi kaydet" }).click();
   await expect(page).toHaveURL(/\/kurum$/);
-  for (const label of ["Etütler", "Ödevler", "Denemeler", "Çalışma salonu", "Muhasebe"]) await expect(nav(page).getByRole("link", { name: label, exact: true })).toBeVisible();
-  for (const label of ["Ders programı", "Yoklama", "Sınıf defteri", "Derslikler", "Raporlar"]) await expect(nav(page).getByRole("link", { name: label, exact: true })).toBeVisible();
+  for (const label of ["Etüt planı", "Ödevler", "Denemeler", "Çalışma salonu", "Muhasebe", "Koçluk ve kaynaklar", "Duyuru ve mesajlar"]) await expect(nav(page).getByRole("link", { name: label, exact: true })).toBeVisible();
+  // Etüt merkezinde dershane bölümleri (sınıf programı ve yoklaması, defter, derslik, rapor) yok
+  for (const label of ["Ders programı", "Sınıf yoklaması", "Sınıf defteri", "Derslikler", "Raporlar"]) await expect(nav(page).getByRole("link", { name: label, exact: true })).toHaveCount(0);
   await page.goto("/kurum/abonelik");
   await expect(page.getByText("Etüt Merkezi · 20 öğrenciye kadar")).toBeVisible();
 
@@ -89,16 +90,12 @@ test("yeni kurum bütün bölümleri görür; ödemeyle kademe yükselir", async
   const [updated] = await sql<{ plan: string; studentLimit: number; status: string }>(`SELECT plan, "studentLimit", status FROM "Center" WHERE id = $1`, [center.id]);
   expect(updated).toMatchObject({ plan: "PRO", studentLimit: 100, status: "ACTIVE" });
 
-  // 4) Kurum sahibi derslik ekler; aboneliğinde yeni kademe yazar
+  // 4) Etüt merkezinde dershane bölümleri adresle de açılmaz; aboneliğinde yeni kademe yazar
   await login(page, username, "PaketSifre123");
-  await page.goto("/kurum/derslikler");
-  await expect(page.getByRole("heading", { name: "Derslikler" })).toBeVisible();
-  await page.getByLabel("Derslik adı").fill("101");
-  await page.getByLabel("Kapasite").fill("12");
-  await page.getByRole("button", { name: "Ekle" }).click();
-  await expect(page.getByText("Derslik eklendi.")).toBeVisible();
-  await page.goto("/kurum/raporlar");
-  await expect(page.getByRole("heading", { name: "Raporlar" })).toBeVisible();
+  for (const section of ["derslikler", "raporlar", "program", "yoklama", "sinif-defteri"]) {
+    await page.goto(`/kurum/${section}`);
+    await expect(page).toHaveURL(/\/kurum$/);
+  }
   await page.goto("/kurum/abonelik");
   await expect(page.getByText("Etüt Merkezi · 100 öğrenciye kadar")).toBeVisible();
 });

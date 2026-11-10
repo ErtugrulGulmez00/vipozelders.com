@@ -1,3 +1,4 @@
+import { DateInput } from "@/components/ui/date-input";
 import type { Metadata } from "next";
 import Form from "next/form";
 import Link from "next/link";
@@ -111,10 +112,10 @@ export default async function CollectionsPage({ searchParams }: PageProps<"/kuru
             <Form action="/kurum/muhasebe/tahsilat" className="flex flex-wrap items-end gap-2">
               {studentId ? <input type="hidden" name="ogrenci" value={studentId} /> : null}
               <Field label="Başlangıç">
-                <Input name="baslangic" type="date" defaultValue={from} className="h-9 w-40" />
+                <DateInput name="baslangic" defaultValue={from} className="h-9 w-40" />
               </Field>
               <Field label="Bitiş">
-                <Input name="bitis" type="date" defaultValue={to} className="h-9 w-40" />
+                <DateInput name="bitis" defaultValue={to} className="h-9 w-40" />
               </Field>
               <button type="submit" className={buttonClasses("secondary", "sm", "h-9")}>
                 Göster

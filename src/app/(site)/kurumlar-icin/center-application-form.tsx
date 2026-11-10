@@ -1,5 +1,6 @@
 "use client";
 
+import { PhoneInput } from "@/components/ui/phone-input";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { applyCenterAction } from "@/actions/center-public";
@@ -25,7 +26,7 @@ export function CenterApplicationForm() {
           <FieldError name="contactName" />
         </Field>
         <Field label="Cep telefonu" htmlFor="c-phone">
-          <Input id="c-phone" name="phone" type="tel" autoComplete="tel" placeholder="05XX XXX XX XX" required />
+          <PhoneInput id="c-phone" name="phone" autoComplete="tel" placeholder="05XX XXX XX XX" required />
           <FieldError name="phone" />
         </Field>
       </div>

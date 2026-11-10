@@ -1,5 +1,6 @@
 "use client";
 
+import { DateInput } from "@/components/ui/date-input";
 import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -42,7 +43,7 @@ export function CreateExamForm({ subjects, today }: { subjects: Subject[]; today
           </Select>
         </Field>
         <Field label="Tarih">
-          <Input name="date" type="date" defaultValue={today} required />
+          <DateInput name="date" defaultValue={today} required />
         </Field>
         <Field label="Deneme adı" className="sm:col-span-2">
           <Input name="name" placeholder={`Örn: ${preset.label} Türkiye Geneli 3`} required />
@@ -105,7 +106,7 @@ export function ExamMetaForm({ exam }: { exam: { id: string; name: string; date:
           <Input name="name" defaultValue={exam.name} required />
         </Field>
         <Field label="Tarih">
-          <Input name="date" type="date" defaultValue={exam.date} required />
+          <DateInput name="date" defaultValue={exam.date} required />
         </Field>
         <Field label="Yayınevi">
           <Input name="publisher" defaultValue={exam.publisher ?? ""} />

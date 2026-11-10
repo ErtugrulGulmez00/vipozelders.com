@@ -51,7 +51,7 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
     ...(on("odevler") ? [{ key: "odevler", label: "Ödevler", href: `${base}?sekme=odevler` }] : []),
     ...(on("kaynaklar") ? [{ key: "calisma", label: "Çalışma programı", href: `${base}?sekme=calisma` }] : []),
     ...(on("sorular") ? [{ key: "sorular", label: "Soru sor", href: `${base}?sekme=sorular` }] : []),
-    ...(coach ? [] : [{ key: "program", label: "Ders programı", href: `${base}?sekme=program` }]),
+    ...(student.center.kind === "DERSHANE" ? [{ key: "program", label: "Ders programı", href: `${base}?sekme=program` }] : []),
   ];
   const tab = tabs.some((t) => t.key === requested) ? requested : "ozet";
   return (

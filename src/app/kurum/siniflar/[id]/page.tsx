@@ -27,11 +27,13 @@ export default async function GroupPage({ params }: PageProps<"/kurum/siniflar/[
   });
   if (!group) notFound();
   const canManage = ctx.can("groups.manage");
+  // Sınıf programı ve sınıf yoklaması yalnızca dershanede
+  const dershane = ctx.center.kind === "DERSHANE";
   const today = toLocalDateString(new Date());
   const [teachers, allStudents, report] = await Promise.all([
     canManage ? centerTeachers(centerId) : Promise.resolve([]),
     canManage ? db.centerStudent.findMany({ where: { centerId, status: "ACTIVE" }, orderBy: [{ firstName: "asc" }, { lastName: "asc" }], select: { id: true, firstName: true, lastName: true, gradeName: true } }) : Promise.resolve([]),
-    attendanceReport(centerId, addDaysToDateString(today, -30), today, group.id),
+    dershane ? attendanceReport(centerId, addDaysToDateString(today, -30), today, group.id) : Promise.resolve([]),
   ]);
   const members = group.students.map((s) => s.student).sort((a, b) => a.firstName.localeCompare(b.firstName, "tr"));
   const reportById = new Map(report.map((r) => [r.studentId, r]));
@@ -42,7 +44,7 @@ export default async function GroupPage({ params }: PageProps<"/kurum/siniflar/[
         description={[group.gradeName, group.targetExam, group.room, group.teacher ? `Rehber: ${group.teacher.user.firstName} ${group.teacher.user.lastName}` : null].filter(Boolean).join(" · ")}
         actions={
           <>
-            {ctx.can("attendance.take") ? (
+            {dershane && ctx.can("attendance.take") ? (
               <LinkButton href={`/kurum/yoklama?grup=${group.id}`} size="sm" variant="outline">
                 Yoklama
               </LinkButton>
@@ -54,15 +56,15 @@ export default async function GroupPage({ params }: PageProps<"/kurum/siniflar/[
       {!group.isActive ? <Badge tone="slate" className="mb-4">Arşivde</Badge> : null}
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         <Card>
-          <CardHeader title={`Öğrenciler (${members.length})`} description="Son 30 günün devam oranı" />
+          <CardHeader title={`Öğrenciler (${members.length})`} description={dershane ? "Son 30 günün devam oranı" : undefined} />
           {members.length ? (
             <Table>
               <thead>
                 <tr>
                   <Th>No</Th>
                   <Th>Öğrenci</Th>
-                  <Th className="text-right">Devamsızlık</Th>
-                  <Th className="text-right">Devam</Th>
+                  {dershane ? <Th className="text-right">Devamsızlık</Th> : null}
+                  {dershane ? <Th className="text-right">Devam</Th> : null}
                 </tr>
               </thead>
               <tbody>
@@ -77,8 +79,8 @@ export default async function GroupPage({ params }: PageProps<"/kurum/siniflar/[
                         </Link>
                         {s.status !== "ACTIVE" ? <Badge tone="slate" className="ml-2">{s.status === "LEFT" ? "Ayrıldı" : "Pasif"}</Badge> : null}
                       </Td>
-                      <Td className="text-right text-sm">{r ? r.absent : "—"}</Td>
-                      <Td className="text-right text-sm">{r ? percent(r.rate) : "—"}</Td>
+                      {dershane ? <Td className="text-right text-sm">{r ? r.absent : "—"}</Td> : null}
+                      {dershane ? <Td className="text-right text-sm">{r ? percent(r.rate) : "—"}</Td> : null}
                     </tr>
                   );
                 })}
@@ -90,6 +92,7 @@ export default async function GroupPage({ params }: PageProps<"/kurum/siniflar/[
             </CardBody>
           )}
         </Card>
+        {dershane ? (
         <Card>
           <CardHeader title="Haftalık program" />
           {group.slots.length ? (
@@ -117,6 +120,7 @@ export default async function GroupPage({ params }: PageProps<"/kurum/siniflar/[
             </CardBody>
           ) : null}
         </Card>
+        ) : null}
         {canManage ? (
           <>
             <Card>

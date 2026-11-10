@@ -77,6 +77,8 @@ test("kurum başvurusu → kurum paneli → yoklama, deneme, makbuz → veli por
   const password = (await page.getByTestId("new-password").innerText()).trim();
   const [application] = await sql<{ status: string; centerId: string }>(`SELECT status, "centerId" FROM "CenterApplication" WHERE email = $1`, [ownerEmail]);
   expect(application.status).toBe("APPROVED");
+  // Bu akış sınıf programı ve sınıf yoklamasını sınar: bu bölümler yalnızca dershane türündeki kurumda açık
+  await sql(`UPDATE "Center" SET kind = 'DERSHANE' WHERE id = $1`, [application.centerId]);
 
   // 3) Kurum sahibi geçici şifreyle girer, kendi şifresini belirler, panele düşer
   await login(page, username, password);

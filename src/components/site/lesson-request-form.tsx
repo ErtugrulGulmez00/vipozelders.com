@@ -1,5 +1,6 @@
 "use client";
 
+import { PhoneInput } from "@/components/ui/phone-input";
 import Link from "next/link";
 import { useState } from "react";
 import { submitLessonRequestAction } from "@/actions/lesson-requests";
@@ -62,7 +63,7 @@ export function LessonRequestForm({
         <FieldError name="name" />
       </Field>
       <Field label="Telefon">
-        <Input name="phone" type="tel" required placeholder="05XX XXX XX XX" defaultValue={defaults.phone} />
+        <PhoneInput name="phone" required placeholder="05XX XXX XX XX" defaultValue={defaults.phone} />
         <FieldError name="phone" />
       </Field>
       <Field label="E-posta (isteğe bağlı)" className="sm:col-span-2">

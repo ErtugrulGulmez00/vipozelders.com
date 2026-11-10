@@ -1,5 +1,6 @@
 "use client";
 
+import { DateInput } from "@/components/ui/date-input";
 import { openQuestionSessionAction, saveQuestionSessionOfferAction } from "@/actions/lesson-links";
 import { ActionForm, SubmitButton } from "@/components/forms/action-form";
 import { Checkbox, Field, Input } from "@/components/ui/form";
@@ -18,7 +19,7 @@ export function OpenQuestionSessionForm({ bookingId, today }: { bookingId: strin
     <ActionForm action={openQuestionSessionAction} resetOnSuccess className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
       <input type="hidden" name="bookingId" value={bookingId} />
       <Field label="Gün">
-        <Input type="date" name="date" min={today} defaultValue={today} required />
+        <DateInput name="date" min={today} defaultValue={today} required />
       </Field>
       <Field label="Saat">
         <Input type="time" name="time" step={300} required />

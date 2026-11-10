@@ -1,5 +1,6 @@
 "use client";
 
+import { PhoneInput } from "@/components/ui/phone-input";
 import { useState } from "react";
 import { addStaffAction, resetStaffPasswordAction, updateStaffAction } from "@/actions/center/organization";
 import { CredentialsBox } from "@/components/center/center-client";
@@ -38,7 +39,7 @@ export function AddStaffForm({ allowOwner }: { allowOwner: boolean }) {
           <FieldError name="email" />
         </Field>
         <Field label="Cep telefonu">
-          <Input name="phone" type="tel" placeholder="05XX XXX XX XX" />
+          <PhoneInput name="phone" placeholder="05XX XXX XX XX" />
           <FieldError name="phone" />
         </Field>
         <Field label="Rol" className="sm:col-span-2">

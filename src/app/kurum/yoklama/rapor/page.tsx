@@ -1,3 +1,4 @@
+import { DateInput } from "@/components/ui/date-input";
 import { Download } from "lucide-react";
 import type { Metadata } from "next";
 import Form from "next/form";
@@ -43,10 +44,10 @@ export default async function AttendanceReportPage({ searchParams }: PageProps<"
       />
       <Form action="/kurum/yoklama/rapor" className="mb-4 flex flex-wrap items-end gap-2">
         <Field label="Başlangıç">
-          <Input name="baslangic" type="date" defaultValue={from} className="w-40" />
+          <DateInput name="baslangic" defaultValue={from} className="w-40" />
         </Field>
         <Field label="Bitiş">
-          <Input name="bitis" type="date" defaultValue={to} className="w-40" />
+          <DateInput name="bitis" defaultValue={to} className="w-40" />
         </Field>
         <Field label="Sınıf">
           <Select name="grup" defaultValue={groupId ?? ""} className="w-44">

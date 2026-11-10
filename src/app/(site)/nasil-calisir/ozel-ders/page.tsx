@@ -184,7 +184,6 @@ export default async function PrivateLessonGuidePage() {
             ["Ödemeye geç.", "Kart bilgileri yalnızca bankanın sayfasında girilir."],
           ]}
         >
-          <Tip title="İndirim kodunuz mu var?">Formdaki &quot;İndirim kodum var&quot; bağlantısından girin; tutar ödemeden önce güncellenir.</Tip>
         </Feature>
         <div className="mt-8">
           <GuideVideo src={video("v2-randevu")} poster={img("05-rezervasyon")} title="Randevu alma ve ödeme" seconds={25} />

@@ -1,5 +1,6 @@
 "use client";
 
+import { DateInput } from "@/components/ui/date-input";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { cancelPaymentAction, createExpenseAction, deleteExpenseAction, recordPaymentAction, remindOverdueAction } from "@/actions/center/finance";
@@ -64,7 +65,7 @@ export function PaymentForm({ studentId, suggested, payerName, today, guardiansR
           </Select>
         </Field>
         <Field label="Tarih">
-          <Input name="paidAt" type="date" defaultValue={today} max={today} required />
+          <DateInput name="paidAt" defaultValue={today} max={today} required />
         </Field>
         <Field label="Ödeyen">
           <Input name="payerName" defaultValue={payerName ?? ""} />
@@ -198,7 +199,7 @@ export function ExpenseForm({ members, today }: { members: { id: string; name: s
           <FieldError name="amount" />
         </Field>
         <Field label="Tarih">
-          <Input name="date" type="date" defaultValue={today} required />
+          <DateInput name="date" defaultValue={today} required />
         </Field>
         {category === "SALARY" ? (
           <Field label="Personel">

@@ -1,5 +1,6 @@
 "use client";
 
+import { DateInput } from "@/components/ui/date-input";
 import { useMemo, useState } from "react";
 import { checkHomeworkAction, createHomeworkAction, deleteHomeworkAction } from "@/actions/center/homework";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
@@ -66,7 +67,7 @@ export function HomeworkForm({ groups, students, today, nextWeek }: { groups: { 
           <FieldError name="subject" />
         </Field>
         <Field label="Teslim tarihi">
-          <Input name="dueDate" type="date" defaultValue={nextWeek} required />
+          <DateInput name="dueDate" defaultValue={nextWeek} required />
           <FieldError name="dueDate" />
         </Field>
       </div>

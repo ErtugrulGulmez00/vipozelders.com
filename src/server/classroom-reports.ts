@@ -9,11 +9,17 @@ import { closeClassroom } from "./video";
 
 export class ReportError extends Error {}
 
+const REPORT_BEFORE_MS = 30 * 60_000;
+const REPORT_AFTER_MS = 60 * 60_000;
+
 
 export async function reportClassroom(bookingId: string, reporterId: string, reason: string, details: string | null, now = new Date()) {
   const booking = await db.booking.findUnique({ where: { id: bookingId }, include: { teacher: { select: { status: true } } } });
   if (!booking || (booking.studentId !== reporterId && booking.teacherId !== reporterId)) throw new ReportError("Ders bulunamadı.");
   if (!REPORT_REASONS.includes(reason as (typeof REPORT_REASONS)[number])) throw new ReportError("Bir neden seçin.");
+  // Bildirim yalnızca dersin kendisi için: eski, iptal edilmiş ya da yüz yüze ders üzerinden öğretmen askıya aldırılamaz
+  const inWindow = now.getTime() >= booking.startAt.getTime() - REPORT_BEFORE_MS && now.getTime() <= booking.endAt.getTime() + REPORT_AFTER_MS;
+  if (booking.mode !== "ONLINE" || !["CONFIRMED", "COMPLETED"].includes(booking.status) || !inWindow) throw new ReportError("Bu bildirim yalnızca sanal sınıftaki ders sırasında yapılabilir. Dersle ilgili başka bir sorununuz varsa ders sayfasından bildirin.");
   const byStudent = booking.studentId === reporterId;
   const suspend = byStudent && booking.teacher.status === "PUBLISHED";
 

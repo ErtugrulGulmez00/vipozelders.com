@@ -8,7 +8,7 @@ import { bool, date, guard, list, opt, requiredText, str } from "@/server/center
 import { addHallStudents, createHall, deleteHall, parsePeriods, saveHallDay, updateHall, updateHallStudent } from "@/server/center/study-hall";
 
 export async function createHallAction(_: ActionState, formData: FormData): Promise<ActionState> {
-  const auth = await centerAction("attendance.take");
+  const auth = await centerAction("attendance.take", { module: "calisma-salonu" });
   if (!auth.ok) return auth.state;
   let id = "";
   const result = await guard(async () => {
@@ -20,7 +20,7 @@ export async function createHallAction(_: ActionState, formData: FormData): Prom
 }
 
 export async function updateHallAction(_: ActionState, formData: FormData): Promise<ActionState> {
-  const auth = await centerAction("attendance.take");
+  const auth = await centerAction("attendance.take", { module: "calisma-salonu" });
   if (!auth.ok) return auth.state;
   return guard(async () => {
     await updateHall(auth.ctx, str(formData, "hallId"), { name: requiredText(formData, "name", "Salon adı", 2, 60), periods: parsePeriods(str(formData, "periods", 2000)), isActive: !bool(formData, "archived") });
@@ -30,7 +30,7 @@ export async function updateHallAction(_: ActionState, formData: FormData): Prom
 }
 
 export async function deleteHallAction(_: ActionState, formData: FormData): Promise<ActionState> {
-  const auth = await centerAction("groups.manage");
+  const auth = await centerAction("groups.manage", { module: "calisma-salonu" });
   if (!auth.ok) return auth.state;
   const hallId = str(formData, "hallId");
   const result = await guard(async () => {
@@ -43,7 +43,7 @@ export async function deleteHallAction(_: ActionState, formData: FormData): Prom
 }
 
 export async function addHallStudentsAction(_: ActionState, formData: FormData): Promise<ActionState> {
-  const auth = await centerAction("attendance.take");
+  const auth = await centerAction("attendance.take", { module: "calisma-salonu" });
   if (!auth.ok) return auth.state;
   return guard(async () => {
     const added = await addHallStudents(auth.ctx, str(formData, "hallId"), { groupId: opt(formData, "groupId"), studentIds: list(formData, "studentIds") });
@@ -53,7 +53,7 @@ export async function addHallStudentsAction(_: ActionState, formData: FormData):
 }
 
 export async function updateHallStudentAction(_: ActionState, formData: FormData): Promise<ActionState> {
-  const auth = await centerAction("attendance.take");
+  const auth = await centerAction("attendance.take", { module: "calisma-salonu" });
   if (!auth.ok) return auth.state;
   return guard(async () => {
     await updateHallStudent(auth.ctx, str(formData, "hallId"), str(formData, "studentId"), opt(formData, "deskNo", 10), bool(formData, "remove"));
@@ -63,7 +63,7 @@ export async function updateHallStudentAction(_: ActionState, formData: FormData
 }
 
 export async function saveHallDayAction(_: ActionState, formData: FormData): Promise<ActionState> {
-  const auth = await centerAction("attendance.take");
+  const auth = await centerAction("attendance.take", { module: "calisma-salonu" });
   if (!auth.ok) return auth.state;
   return guard(async () => {
     const rows = list(formData, "studentIds").map((studentId) => ({ studentId, marks: str(formData, `marks:${studentId}`, 32) }));

@@ -14,7 +14,6 @@ export const GET = publicRoute<{ code: string }>(async ({ request, params }) => 
 
 const schema = z.object({
   learnerName: z.string().trim().max(80).optional(),
-  couponCode: z.string().trim().max(30).optional(),
   consent: z.literal(true, { error: "Ön bilgilendirme formunu ve mesafeli satış sözleşmesini onaylayın." }),
 });
 
@@ -24,7 +23,7 @@ export const POST = withUser<{ code: string }>(async ({ request, user, params })
   const input = await readBody(request, schema);
   const course = await db.groupCourse.findUnique({ where: { code: params.code }, select: { id: true } });
   if (!course) throw notFound("Grup dersi bulunamadı.");
-  const enrollment = await enrollInGroup(user.id, course.id, input.learnerName ?? null, new Date(), input.couponCode ?? null);
+  const enrollment = await enrollInGroup(user.id, course.id, input.learnerName ?? null, new Date());
   const redirectUrl = await startGroupCheckout(enrollment.id, user.id, clientIp(request) ?? "127.0.0.1");
   return json({ enrollment: { id: enrollment.id, code: enrollment.code, price: enrollment.price }, payment: { url: await paymentLink(user.id, redirectUrl), returnUrlPrefix: paymentReturnPrefix() } }, 201);
 });

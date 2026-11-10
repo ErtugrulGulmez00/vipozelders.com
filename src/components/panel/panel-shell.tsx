@@ -20,6 +20,8 @@ export function PanelShell({
   headerSlot,
   switchLinks = [],
   hideSiteLink = false,
+  headerActions,
+  accountHref,
 }: {
   user: SessionUser;
   title: string;
@@ -35,6 +37,10 @@ export function PanelShell({
   switchLinks?: SideSwitch[];
   /** Kurum tarafında vitrin (özel ders) bağlantısı gösterilmez */
   hideSiteLink?: boolean;
+  /** Üst çubukta çıkışın solunda (ör. bildirim zili) */
+  headerActions?: ReactNode;
+  /** Sol alttaki kullanıcı kartı bu sayfaya gider (ör. hesap ayarları) */
+  accountHref?: string;
 }) {
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[260px_1fr]">
@@ -47,7 +53,7 @@ export function PanelShell({
           <SideNav items={nav} />
         </div>
         <div className="border-t border-white/10 p-4">
-          <div className="flex items-center gap-3">
+          <UserCard href={accountHref}>
             <span className="inline-flex size-9 items-center justify-center rounded-full bg-brand-600 text-xs font-bold text-white">{initials(user)}</span>
             <div className="min-w-0">
               <p className="truncate text-sm font-semibold text-white">
@@ -55,7 +61,7 @@ export function PanelShell({
               </p>
               <p className="text-xs text-slate-400">{roleLabel ?? ROLE_LABEL[user.role]}</p>
             </div>
-          </div>
+          </UserCard>
         </div>
       </aside>
       <div className="flex min-w-0 flex-col">
@@ -66,6 +72,7 @@ export function PanelShell({
           </div>
           <div className="hidden min-w-0 flex-1 lg:block">{headerSlot}</div>
           <div className="flex items-center gap-1">
+            {headerActions}
             {switchLinks.map((link) => (
               // Üst çubukta her ekranda görünür; telefonda kısa ad
               <Link key={link.href} href={link.href} aria-label={link.label} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-50">
@@ -94,5 +101,14 @@ export function PanelShell({
         </main>
       </div>
     </div>
+  );
+}
+
+function UserCard({ href, children }: { href?: string; children: ReactNode }) {
+  if (!href) return <div className="flex items-center gap-3">{children}</div>;
+  return (
+    <Link href={href} className="-m-2 flex items-center gap-3 rounded-lg p-2 hover:bg-white/10" title="Hesabım">
+      {children}
+    </Link>
   );
 }

@@ -1,3 +1,4 @@
+import { SectionTabs } from "@/components/center/section-tabs";
 import { Megaphone } from "lucide-react";
 import type { Metadata } from "next";
 import { Badge, Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/components/ui/primitives";
@@ -20,6 +21,7 @@ export default async function AnnouncementsPage() {
   ]);
   return (
     <>
+      <SectionTabs ctx={ctx} group="iletisim" active="duyurular" />
       <PageHeader title="Duyurular" description="Tüm kuruma ya da bir sınıfa duyuru; velilere WhatsApp ve site/uygulama bildirimi, isterseniz e-posta" />
       <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr] lg:items-start">
         <Card>

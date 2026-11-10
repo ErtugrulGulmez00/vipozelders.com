@@ -1,24 +1,20 @@
 import { randomInt } from "node:crypto";
-import type { Coupon } from "@/generated/prisma/client";
-import { formatMoney } from "@/lib/money";
 import { db, type DbTransaction } from "./db";
 import { loadSettings } from "./settings";
 
-// İndirim kodları ve "arkadaşını getir". İndirim platformun hizmet bedelinden karşılanır: öğretmen payı değişmez,
+// "Arkadaşını getir". İndirim platformun hizmet bedelinden karşılanır: öğretmen payı değişmez,
 // indirim en fazla hizmet bedeli kadar olur.
-// Kod girilmezse ve kullanıcı davetle geldiyse ilk siparişinde davet indirimi uygulanır. Kullanım, ödeme
+// Davetle gelen kullanıcının ilk siparişinde uygulanır. Kullanım, ödeme
 // başarıyla tamamlandığında kaydedilir.
 
 export class DiscountError extends Error {}
 
 export type DiscountTarget = "booking" | "group";
-export type Discount = { amount: number; couponCode: string | null; source: "coupon" | "referral" | null; label: string | null };
+export type Discount = { amount: number; couponCode: string | null; source: "referral" | null; label: string | null };
 
 type Tx = DbTransaction | typeof db;
 
 const NONE: Discount = { amount: 0, couponCode: null, source: null, label: null };
-
-export const TARGET_LABELS: Record<DiscountTarget, string> = { booking: "Birebir ders", group: "Grup dersi" };
 
 /**
  * Kodlar büyük harfle saklanır ve karşılaştırılır. "hosgeldin" Türkçe kurala göre "HOSGELDİN" olur, İngilizce klavyeyle
@@ -54,32 +50,16 @@ async function openDiscountedOrders(couponCode: string | null, userId: string | 
   return counts.reduce((t, n) => t + n, 0);
 }
 
-const OPEN_ORDER_ERROR = "Bu indirimle açtığınız ve ödemesi tamamlanmamış bir siparişiniz var. Onu tamamlayın ya da süresinin dolmasını bekleyin.";
-
 function cap(amount: number, commission: number) {
   return Math.max(0, Math.min(amount, commission));
 }
 
-async function couponProblem(coupon: Coupon, userId: string, target: DiscountTarget, price: number, now: Date, exclude?: DiscountExclude): Promise<string | null> {
-  if (!coupon.isActive || (coupon.startsAt && coupon.startsAt > now) || (coupon.endsAt && coupon.endsAt <= now)) return "Bu indirim kodunun süresi dolmuş ya da henüz başlamamış.";
-  if (coupon.targets.length && !coupon.targets.includes(target)) return `Bu kod ${coupon.targets.map((t) => TARGET_LABELS[t as DiscountTarget] ?? t).join(", ")} için geçerli.`;
-  if (coupon.minAmount && price < coupon.minAmount) return `Bu kod ${formatMoney(coupon.minAmount)} ve üzeri siparişlerde geçerli.`;
-  if (coupon.maxUses !== null && (await db.couponRedemption.count({ where: { couponId: coupon.id } })) + (await openDiscountedOrders(coupon.code, null, exclude, now)) >= coupon.maxUses) {
-    return "Bu indirim kodunun kullanım hakkı doldu.";
-  }
-  if ((await db.couponRedemption.count({ where: { couponId: coupon.id, userId } })) >= coupon.perUserLimit) return "Bu indirim kodunu daha önce kullandınız.";
-  if ((await db.couponRedemption.count({ where: { couponId: coupon.id, userId } })) + (await openDiscountedOrders(coupon.code, userId, exclude, now)) >= coupon.perUserLimit) return OPEN_ORDER_ERROR;
-  if (coupon.firstOrderOnly && ((await hasPaidOrder(userId)) || (await openDiscountedOrders(coupon.code, userId, exclude, now)) > 0)) return "Bu kod yalnızca ilk siparişte geçerli.";
-  return null;
-}
-
 /**
- * Sipariş için indirim: kod verildiyse kod (geçersizse hata), verilmediyse uygunsa davet indirimi.
+ * Sipariş için davet indirimi (uygunsa).
  * price: indirimsiz tutar; commission: platformun hizmet bedeli (indirim bundan karşılanır).
  */
 export async function resolveDiscount(
   userId: string,
-  code: string | null | undefined,
   target: DiscountTarget,
   price: number,
   commission: number,
@@ -87,17 +67,6 @@ export async function resolveDiscount(
   exclude?: DiscountExclude,
 ): Promise<Discount> {
   if (price <= 0) return NONE;
-  const normalized = code ? normalizeCode(code) : "";
-  if (normalized) {
-    const coupon = await db.coupon.findUnique({ where: { code: normalized } });
-    if (!coupon) throw new DiscountError("İndirim kodu bulunamadı.");
-    const problem = await couponProblem(coupon, userId, target, price, now, exclude);
-    if (problem) throw new DiscountError(problem);
-    const raw = coupon.kind === "PERCENT" ? Math.floor((price * coupon.value) / 100) : coupon.value;
-    const amount = cap(coupon.maxDiscount ? Math.min(raw, coupon.maxDiscount) : raw, commission);
-    if (amount <= 0) throw new DiscountError("Bu siparişte bu kodla indirim uygulanamıyor.");
-    return { amount, couponCode: coupon.code, source: "coupon", label: `${coupon.code} indirimi` };
-  }
   const settings = await loadSettings();
   if (!settings.referralEnabled || settings.referralDiscountPercent <= 0) return NONE;
   const user = await db.user.findUnique({ where: { id: userId }, select: { referredById: true } });

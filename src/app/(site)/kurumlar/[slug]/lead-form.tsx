@@ -1,5 +1,6 @@
 "use client";
 
+import { PhoneInput } from "@/components/ui/phone-input";
 import Link from "next/link";
 import { submitLeadAction } from "@/actions/center-public";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
@@ -30,7 +31,7 @@ export function LeadForm({ slug }: { slug: string }) {
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Cep telefonu" htmlFor="l-phone">
-          <Input id="l-phone" name="phone" type="tel" autoComplete="tel" placeholder="05XX XXX XX XX" required />
+          <PhoneInput id="l-phone" name="phone" autoComplete="tel" placeholder="05XX XXX XX XX" required />
           <FieldError name="phone" />
         </Field>
         <Field label="E-posta (isteğe bağlı)" htmlFor="l-email">

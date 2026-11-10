@@ -1,5 +1,6 @@
 "use client";
 
+import { PhoneInput } from "@/components/ui/phone-input";
 import { useEffect, useState } from "react";
 import { updateCenterSettingsAction } from "@/actions/center/organization";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
@@ -77,7 +78,7 @@ export function CenterSettingsForm({ values, cities, initialDistricts }: { value
           </Field>
         )}
         <Field label="Telefon">
-          <Input name="phone" defaultValue={values.phone ?? ""} placeholder="0212 000 00 00" />
+          <PhoneInput name="phone" defaultValue={values.phone ?? ""} placeholder="0212 000 00 00" />
         </Field>
         <Field label="E-posta">
           <Input name="email" type="email" defaultValue={values.email ?? ""} />

@@ -1,5 +1,6 @@
 "use client";
 
+import { DateInput } from "@/components/ui/date-input";
 import { Lock } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
@@ -14,7 +15,6 @@ import {
 } from "@/actions/groups";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
 import { CardLogos } from "@/components/site/card-logos";
-import { CouponField } from "@/components/forms/coupon-field";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
 import { WEEKDAY_SHORT } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
@@ -55,7 +55,7 @@ export function CreateCourseForm({ pairs, limits, today }: { pairs: { value: str
       </Field>
 
       <Field label="İlk ders günü">
-        <Input name="firstDate" type="date" min={today} required />
+        <DateInput name="firstDate" min={today} required />
         <FieldError name="firstDate" />
       </Field>
       <Field label="Ders saati">
@@ -98,7 +98,7 @@ export function CreateCourseForm({ pairs, limits, today }: { pairs: { value: str
         </Field>
       </div>
       <Field label="Kayıt bitiş günü" hint="İlk dersten önce olmalı. Bu tarihte en az kişi sayısı dolmazsa ders iptal olur, herkese tam iade yapılır.">
-        <Input name="deadlineDate" type="date" min={today} required />
+        <DateInput name="deadlineDate" min={today} required />
         <FieldError name="deadlineDate" />
       </Field>
       <Field label="Kayıt bitiş saati">
@@ -185,7 +185,6 @@ export function EnrollForm({ courseId, label, defaultName }: { courseId: string;
         <Input name="learnerName" required maxLength={80} defaultValue={defaultName} />
         <FieldError name="learnerName" />
       </Field>
-      <CouponField target="group" refId={courseId} />
       <div className="rounded-xl border border-slate-200 p-4">
         <Checkbox
           name="consent"

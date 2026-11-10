@@ -67,7 +67,6 @@ export async function createBookingAction(_: ActionState, formData: FormData): P
       address: input.address ?? null,
       studentNote: input.note ?? null,
       intro,
-      couponCode: String(formData.get("couponCode") ?? "").trim() || null,
       packageId,
     });
     if (intro || packageId) {

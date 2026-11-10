@@ -1,5 +1,7 @@
 "use client";
 
+import { DateInput } from "@/components/ui/date-input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import Link from "next/link";
 import {
   addCenterOwnerAction,
@@ -89,7 +91,7 @@ export function CreateCenterForm({ cities, trialDays, prefill = {} }: { cities: 
           <Input name="trialDays" type="number" min={1} max={90} defaultValue={trialDays} />
         </Field>
         <Field label="Kurum telefonu">
-          <Input name="phone" defaultValue={prefill.phone} />
+          <PhoneInput name="phone" defaultValue={prefill.phone} />
         </Field>
         <Field label="Kurum e-postası">
           <Input name="centerEmail" type="email" defaultValue={prefill.email} />
@@ -111,7 +113,7 @@ export function CreateCenterForm({ cities, trialDays, prefill = {} }: { cities: 
           <FieldError name="ownerEmail" />
         </Field>
         <Field label="Cep telefonu">
-          <Input name="ownerPhone" type="tel" defaultValue={prefill.phone} placeholder="05XX XXX XX XX" />
+          <PhoneInput name="ownerPhone" defaultValue={prefill.phone} placeholder="05XX XXX XX XX" />
           <FieldError name="ownerPhone" />
         </Field>
       </div>
@@ -161,10 +163,10 @@ export function CenterAdminForm({ center }: { center: { id: string; name: string
           <Input name="studentLimit" type="number" min={1} defaultValue={center.studentLimit} />
         </Field>
         <Field label="Deneme bitişi">
-          <Input name="trialEndsAt" type="date" defaultValue={toInputDate(center.trialEndsAt)} />
+          <DateInput name="trialEndsAt" defaultValue={toInputDate(center.trialEndsAt)} />
         </Field>
         <Field label="Abonelik bitişi">
-          <Input name="paidUntil" type="date" defaultValue={toInputDate(center.paidUntil)} />
+          <DateInput name="paidUntil" defaultValue={toInputDate(center.paidUntil)} />
         </Field>
       </div>
       <SubmitButton size="sm">Kaydet</SubmitButton>
@@ -226,7 +228,7 @@ export function AddOwnerForm({ centerId }: { centerId: string }) {
           <FieldError name="email" />
         </Field>
         <Field label="Cep telefonu">
-          <Input name="phone" type="tel" />
+          <PhoneInput name="phone" />
           <FieldError name="phone" />
         </Field>
       </div>

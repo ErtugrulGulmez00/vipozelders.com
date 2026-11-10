@@ -1,5 +1,6 @@
 "use client";
 
+import { DateInput } from "@/components/ui/date-input";
 import { MessageCircle, X } from "lucide-react";
 import { cancelLessonLinkAction, createLessonLinkAction } from "@/actions/lesson-links";
 import { ActionForm, SubmitButton, useActionResult } from "@/components/forms/action-form";
@@ -78,7 +79,7 @@ export function LessonLinkForm({
         </Field>
       )}
       <Field label="Gün">
-        <Input type="date" name="date" min={today} defaultValue={today} required />
+        <DateInput name="date" min={today} defaultValue={today} required />
       </Field>
       <Field label="Saat">
         <Input type="time" name="time" step={300} required />

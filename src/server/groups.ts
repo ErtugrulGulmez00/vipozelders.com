@@ -195,7 +195,7 @@ export async function inviteToGroup(teacherId: string, courseId: string, emailOr
 }
 
 /** Öğrencinin bu derse kayıt olabilmesi (yer ayırır, ödeme bekler). */
-export async function enrollInGroup(studentId: string, courseId: string, learnerName: string | null, now = new Date(), couponCode?: string | null) {
+export async function enrollInGroup(studentId: string, courseId: string, learnerName: string | null, now = new Date()) {
   if (!salesOpen()) throw new GroupError("Online ödeme altyapımız çok yakında açılıyor; şu an grup dersi satışı yapılamıyor.");
   const settings = await loadSettings();
   if (!settings.groupsEnabled) throw new GroupError("Grup dersi şu an kapalı.");
@@ -218,7 +218,7 @@ export async function enrollInGroup(studentId: string, courseId: string, learner
       throw new GroupError("Kontenjan doldu.");
     }
     const split = splitCommission(course.price, course.commissionRateBps);
-    const discount = await resolveDiscount(studentId, couponCode, "group", course.price, split.commissionAmount, now, existing ? { target: "group", id: existing.id } : undefined).catch((error: unknown) => {
+    const discount = await resolveDiscount(studentId, "group", course.price, split.commissionAmount, now, existing ? { target: "group", id: existing.id } : undefined).catch((error: unknown) => {
       if (error instanceof DiscountError) throw new GroupError(error.message);
       throw error;
     });

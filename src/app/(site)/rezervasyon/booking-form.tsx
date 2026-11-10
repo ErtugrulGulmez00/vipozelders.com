@@ -6,7 +6,6 @@ import { useState } from "react";
 import { createBookingAction } from "@/actions/student";
 import { CardLogos } from "@/components/site/card-logos";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
-import { CouponField } from "@/components/forms/coupon-field";
 import { Checkbox, Field, Input, Label, Select, Textarea } from "@/components/ui/form";
 import { cn } from "@/lib/cn";
 
@@ -142,7 +141,6 @@ export function BookingForm({
         <Textarea id="note" name="note" rows={3} maxLength={1000} placeholder={notePlaceholder} />
       </Field>
 
-      {intro || packageId ? null : <CouponField target="booking" refId={offeringId} duration={duration} />}
 
       {intro || packageId ? null : (
         <div className="rounded-xl border border-slate-200 p-4">

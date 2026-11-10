@@ -78,7 +78,7 @@ export async function deleteStudentAction(_: ActionState, formData: FormData): P
     return success();
   });
   if (!result.ok) return result;
-  redirect("/kurum/ogrenciler?durum=silindi");
+  redirect(`${auth.ctx.center.kind === "COACH" ? "/koc" : "/kurum"}/ogrenciler?durum=silindi`);
 }
 
 export async function saveGuardianAction(_: ActionState, formData: FormData): Promise<ActionState> {

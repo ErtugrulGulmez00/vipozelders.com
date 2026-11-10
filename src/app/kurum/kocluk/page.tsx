@@ -1,3 +1,4 @@
+import { SectionTabs } from "@/components/center/section-tabs";
 import { HeartHandshake } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -58,6 +59,7 @@ export default async function CoachingPage({ searchParams }: PageProps<"/kurum/k
 
   return (
     <>
+      <SectionTabs ctx={ctx} group="kocluk" active="kocluk" />
       <PageHeader
         title="Koçluk ve rehberlik"
         description={`Bu hafta (${overview.weekStart.slice(8)}.${overview.weekStart.slice(5, 7)} – ${addDaysToDateString(overview.weekStart, 6).slice(8)}.${addDaysToDateString(overview.weekStart, 6).slice(5, 7)}) koç görüşmeleri`}

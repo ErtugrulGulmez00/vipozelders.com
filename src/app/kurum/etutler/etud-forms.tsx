@@ -1,5 +1,6 @@
 "use client";
 
+import { DateInput } from "@/components/ui/date-input";
 import { useMemo, useState } from "react";
 import { completeEtudAction, deleteEtudAction, saveEtudAction, setEtudStatusAction } from "@/actions/center/classes";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
@@ -38,7 +39,7 @@ export function EtudForm({ teachers, students, values, teacherLocked }: { teache
       ))}
       <div className="grid gap-3 sm:grid-cols-3">
         <Field label="Tarih">
-          <Input name="date" type="date" defaultValue={values.date} required />
+          <DateInput name="date" defaultValue={values.date} required />
         </Field>
         <Field label="Başlangıç">
           <Input name="start" type="time" defaultValue={values.start} required />

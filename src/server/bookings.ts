@@ -17,6 +17,7 @@ import { addLedgerEntry, pendingForBooking, resetPendingForBooking } from "./led
 import { notify, notifyRole } from "./notifications";
 import { getPaymentProvider, getProviderById, PAYMENT_PROVIDERS, processRefund, requestRefund, salesOpen } from "./payments/service";
 import { completeGroupCheckout, groupBusy } from "./groups";
+import { maskContacts } from "@/lib/text";
 import { DiscountError, recordPaidOrder, resolveDiscount } from "./discounts";
 import { approvalDeadline, INTRO_MINUTES, lessonPrice, settledReleaseAt, splitCommission, splitRetained, studentCancellationRefund } from "./pricing";
 import { appUrl } from "./email";
@@ -162,8 +163,6 @@ export type CreateBookingInput = {
   studentNote?: string | null;
   /** Ücretsiz 15 dakikalık tanışma görüşmesi: ödeme yok, doğrudan öğretmen onayına düşer. */
   intro?: boolean;
-  /** İndirim kodu (boşsa uygunsa davet indirimi) */
-  couponCode?: string | null;
   /** Paketten alınan ders: ödeme yok, ders paketten düşer ve doğrudan öğretmen onayına gider */
   packageId?: string | null;
 };
@@ -248,7 +247,7 @@ export async function createBookingHold(input: CreateBookingInput, now = new Dat
   // İndirim platformun hizmet bedelinden düşer; öğretmen payı değişmez.
   const discount = intro || pkg
     ? { amount: 0, couponCode: null }
-    : await resolveDiscount(input.studentId, input.couponCode, "booking", listPrice, split.commissionAmount, now).catch((error: unknown) => {
+    : await resolveDiscount(input.studentId, "booking", listPrice, split.commissionAmount, now).catch((error: unknown) => {
         if (error instanceof DiscountError) throw new BookingError(error.message);
         throw error;
       });
@@ -320,7 +319,7 @@ export async function createBookingHold(input: CreateBookingInput, now = new Dat
           cityId: input.mode === "IN_PERSON" ? (district?.cityId ?? teacher.cityId) : null,
           districtId: input.mode === "IN_PERSON" ? (district?.id ?? teacher.districtId) : null,
           address: input.mode === "IN_PERSON" && input.inPersonPlace === "STUDENT_HOME" ? input.address?.trim() : null,
-          studentNote: input.studentNote?.trim() || null,
+          studentNote: input.studentNote?.trim() ? maskContacts(input.studentNote.trim()) : null,
           startAt: input.startAt,
           endAt,
           blockEndAt,
@@ -1011,7 +1010,12 @@ export async function expireOverdueApprovals(now = new Date()): Promise<number> 
 export async function completeFinishedLessons(now = new Date()): Promise<number> {
   const settings = await loadSettings();
   const due = await db.booking.findMany({
-    where: { status: "CONFIRMED", endAt: { lte: now } },
+    where: {
+      status: "CONFIRMED",
+      endAt: { lte: now },
+      // Süren telafisi olan ders telafi bitmeden tamamlanmaz (hakediş ve itiraz süresi erken işlemesin)
+      makeupLinks: { none: { cancelledAt: null, isQuestionSession: false, OR: [{ bookingId: null, endAt: { gt: now } }, { booking: { status: { in: ["PENDING_APPROVAL", "CONFIRMED"] } } }] } },
+    },
     include: { attendance: { select: { userId: true } } },
     take: 100,
   });

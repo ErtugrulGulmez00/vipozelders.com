@@ -42,7 +42,7 @@ export function sideHome(f: SideFacts, side: Side): string {
 
 export function sideOfPath(path: string): Side {
   const inside = (prefix: string) => path === prefix || path.startsWith(`${prefix}/`);
-  return inside("/kurum") || inside("/hesabim/kurum") ? "kurum" : "ozel";
+  return inside("/kurum") || inside("/koc") || inside("/hesabim/kurum") ? "kurum" : "ozel";
 }
 
 export type NotificationScope = "center" | "private" | "all";
@@ -70,7 +70,7 @@ export type SideSwitch = { href: string; label: string; short: string };
 
 export function sideSwitches(f: SideFacts, current: "teacher" | "student" | "center" | "portal"): SideSwitch[] {
   const links: SideSwitch[] = [];
-  if (current === "teacher" && f.staff) links.push({ href: "/kurum", label: f.coach ? "Pi Koç'a geç" : "Kurum paneline geç", short: f.coach ? "Pi Koç" : "Kurum" });
+  if (current === "teacher" && f.staff) links.push({ href: f.coach ? "/koc" : "/kurum", label: f.coach ? "Pi Koç'a geç" : "Kurum paneline geç", short: f.coach ? "Pi Koç" : "Kurum" });
   if (current === "student") {
     if (f.portal) links.push({ href: "/hesabim/kurum", label: "Kurum tarafına geç", short: "Kurum" });
     if (f.staff) links.push({ href: "/kurum", label: "Kurum paneline geç", short: "Kurum paneli" });

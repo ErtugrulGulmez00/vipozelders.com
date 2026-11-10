@@ -46,6 +46,7 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
+  await sql(`UPDATE "Center" SET kind = 'ETUT' WHERE slug = 'basari-etut-merkezi'`);
   await sql(`DELETE FROM "CenterCoachingSession" WHERE notes LIKE $1`, [`%${stamp}%`]);
   await sql(`UPDATE "CenterStudent" SET "coachId" = NULL, "coachWeekday" = NULL, "coachMinute" = NULL WHERE id = $1`, [ali.id]);
   await sql(`DELETE FROM "CenterStudyHall" WHERE name = $1`, [`E2e salon ${stamp}`]);
@@ -86,13 +87,15 @@ test("öğrenci arama, koçluk, sınıf defteri, salon ve veli portalı", async 
   await expect(page.getByText("Görüşme kaydedildi.")).toBeVisible();
   await expect(page.getByText(`Deneme netleri yükseliyor ${stamp}`)).toBeVisible();
 
-  // Sınıf defteri: yoklamada işlenen konu
+  // Sınıf defteri: yoklamada işlenen konu (dershane bölümü; demo kurum geçici olarak dershane yapılır)
+  await sql(`UPDATE "Center" SET kind = 'DERSHANE' WHERE slug = 'basari-etut-merkezi'`);
   await page.goto(`/kurum/yoklama/al?grup=${ali.groupId}&tarih=${istanbulToday()}&saat=07:00&bitis=07:40&konu=${encodeURIComponent(`E2e ders ${stamp}`)}`);
   await page.getByLabel(/Sınıf defteri/).fill(`Kareköklü ifadeler ${stamp}`);
   await page.getByRole("button", { name: "Yoklamayı kaydet" }).click();
   await expect(page.getByText("Yoklama kaydedildi", { exact: false })).toBeVisible();
   await page.goto(`/kurum/sinif-defteri?grup=${ali.groupId}`);
   await expect(page.getByText(`Kareköklü ifadeler ${stamp}`)).toBeVisible();
+  await sql(`UPDATE "Center" SET kind = 'ETUT' WHERE slug = 'basari-etut-merkezi'`);
 
   // Çalışma salonu: salon aç, 8-A'yı ekle, Ali 1. periyot geldi
   await page.goto("/kurum/calisma-salonu");

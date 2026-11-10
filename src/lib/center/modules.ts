@@ -1,5 +1,5 @@
 // Kurumun açıp kapatabildiği modüller. Kapalı modül menüde görünmez, sayfaları açılmaz; kayıtlar silinmez.
-// Öğrenciler, sınıflar, program, yoklama, duyurular, personel, ayarlar ve abonelik her zaman açıktır.
+// Öğrenciler, sınıflar, duyurular, personel, ayarlar ve abonelik her zaman açıktır.
 
 export const OPTIONAL_MODULES = [
   { key: "etutler", label: "Etütler", hint: "Birebir / küçük grup etüt planı" },
@@ -26,7 +26,11 @@ export function moduleEnabled(center: { disabledModules: string[] }, key: Center
   return !center.disabledModules.includes(key);
 }
 
-// Pi Koç: tek kişilik koç hesabında sınıf ve kurum işleyişine ait bölümler kullanılmaz.
+// Dershane bölümleri (sınıf programı, sınıf yoklaması, sınıf defteri, derslik, sınıf raporları) şimdilik yalnızca
+// türü Dershane olan kurumda açılır; etüt merkezinde yoklama etütten ve çalışma salonundan alınır.
+export const DERSHANE_SECTIONS = new Set(["program", "yoklama", "sinif-defteri", "derslikler", "raporlar"]);
+
+// Pi Koç: bireysel koç hesabı kurum paneli yerine kendi paneli /koc'u kullanır; bu modüller koçta kapalı tutulur.
 const COACH_HIDDEN_SECTIONS = new Set(["siniflar", "program", "yoklama", "etutler", "calisma-salonu", "sinif-defteri", "derslikler", "raporlar", "on-kayit", "personel"]);
 /** Koç hesabı açılırken kapatılan isteğe bağlı modüller */
 export const COACH_DISABLED_MODULES: CenterModuleKey[] = OPTIONAL_MODULES.filter((m) => COACH_HIDDEN_SECTIONS.has(m.key)).map((m) => m.key);
@@ -35,6 +39,12 @@ export const COACH_DEFAULT_STUDENT_LIMIT = 10;
 
 export function coachAllows(section: string): boolean {
   return !COACH_HIDDEN_SECTIONS.has(section);
+}
+
+/** Kurum panelindeki bölüm (/kurum/<bölüm>) bu kurum türünde açık mı? */
+export function sectionAllowed(center: { kind: string }, section: string): boolean {
+  if (center.kind === "COACH") return coachAllows(section);
+  return center.kind === "DERSHANE" || !DERSHANE_SECTIONS.has(section);
 }
 
 /** /kurum/<modül>/... adresinin modülü (isteğe bağlı modül değilse null). */

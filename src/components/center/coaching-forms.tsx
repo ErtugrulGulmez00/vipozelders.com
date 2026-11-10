@@ -1,5 +1,6 @@
 "use client";
 
+import { DateInput } from "@/components/ui/date-input";
 import { Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { addCoachingSessionAction, deleteCoachingSessionAction, saveCoachAssignmentsAction } from "@/actions/center/coaching";
@@ -79,7 +80,7 @@ export function CoachingSessionForm({ studentId, today, suggestions }: { student
       <input type="hidden" name="studentId" value={studentId} />
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Görüşme tarihi">
-          <Input name="date" type="date" defaultValue={today} required />
+          <DateInput name="date" defaultValue={today} required />
         </Field>
         <div className="flex items-end pb-2">
           <Checkbox name="missed" checked={missed} onChange={(e) => setMissed(e.target.checked)} label="Görüşme yapılamadı (öğrenci gelmedi)" />

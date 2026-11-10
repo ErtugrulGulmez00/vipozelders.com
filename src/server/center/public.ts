@@ -6,7 +6,7 @@ import { db } from "../db";
 
 export const CENTERS_CACHE_TAG = "centers";
 
-const publicWhere = { isPublic: true, status: { not: "SUSPENDED" as const } };
+const publicWhere = { kind: { not: "COACH" as const }, isPublic: true, status: { not: "SUSPENDED" as const } };
 
 function visible(center: { status: "TRIAL" | "ACTIVE" | "SUSPENDED"; trialEndsAt: Date | null; paidUntil: Date | null }) {
   const state = centerAccess(center).state;
@@ -71,8 +71,9 @@ export async function getPublicCenter(slug: string) {
   "use cache";
   cacheTag(CENTERS_CACHE_TAG);
   cacheLife("minutes");
-  const center = await db.center.findUnique({
-    where: { slug },
+  const center = await db.center.findFirst({
+    // Pi Koç hesabının vitrini ve ön kaydı yoktur
+    where: { slug, kind: { not: "COACH" } },
     select: {
       slug: true,
       name: true,

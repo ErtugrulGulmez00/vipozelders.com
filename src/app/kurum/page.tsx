@@ -25,7 +25,8 @@ export default async function CenterDashboard({ searchParams }: PageProps<"/kuru
   const teacherOnly = ctx.member.role === "TEACHER";
   const on = (key: CenterModuleKey) => moduleEnabled(ctx.center, key);
   const coach = ctx.center.kind === "COACH";
-  const classes = ctx.can("attendance.take") && !coach;
+  // Sınıf programı ve sınıf yoklaması yalnızca dershanede; etüt merkezinde devamsızlık etüt ve salondan gelir
+  const classes = ctx.can("attendance.take") && ctx.center.kind === "DERSHANE";
   const [activeStudents, lessons, absentToday, etudsToday, finance, overdue, exams, newLeads, groupCount, weeklySlots] = await Promise.all([
     db.centerStudent.count({ where: { centerId, status: "ACTIVE" } }),
     classes ? lessonsForDate(centerId, today, teacherOnly ? { teacherId: ctx.member.id } : {}) : Promise.resolve([]),

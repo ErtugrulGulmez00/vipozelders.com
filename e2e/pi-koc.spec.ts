@@ -3,7 +3,7 @@ import pg from "pg";
 
 /**
  * Pi Koç: tanıtım sayfası ve başvuru; yönetici "Bireysel koç" türünde hesap açar → koç ilk girişte şifresini belirler,
- * yalnızca takip bölümlerini görür (sınıf, yoklama, etüt, personel yok; adresle de açılmaz) → abonelikte Pi Koç fiyatları çıkar.
+ * kendi paneline (/koc) düşer: öğrenci ekler, soru ve deneme girer, grafikleri görür; kurum paneli adresleri /koc'a döner.
  */
 
 const DB_URL = process.env.E2E_DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5433/vipozelders";
@@ -90,31 +90,62 @@ test("yönetici koç hesabı açar; koç yalnızca takip bölümlerini görür",
   await page.getByLabel("Yeni şifre", { exact: true }).fill("KocSifre123");
   await page.getByLabel("Yeni şifre (tekrar)").fill("KocSifre123");
   await page.getByRole("button", { name: "Şifremi kaydet" }).click();
-  await expect(page).toHaveURL(/\/kurum$/);
-
+  // Koç kurum paneline değil kendi paneline (Pi Koç) düşer
+  await expect(page).toHaveURL(/\/koc$/);
   const nav = page.getByRole("navigation").first();
-  for (const label of ["Öğrenciler", "Ödevler", "Kaynaklar ve kitaplar", "Koçluk", "Denemeler", "Muhasebe", "Abonelik"]) await expect(nav.getByRole("link", { name: label, exact: true })).toBeVisible();
-  for (const label of ["Sınıflar", "Ders programı", "Yoklama", "Etütler", "Çalışma salonu", "Sınıf defteri", "Derslikler", "Raporlar", "Personel"]) await expect(nav.getByRole("link", { name: label, exact: true })).toHaveCount(0);
+  for (const label of ["Genel bakış", "Öğrencilerim", "Haftalık görüşmeler", "Kaynak kütüphanesi", "Hesap ve abonelik"]) await expect(nav.getByRole("link", { name: label, exact: true })).toBeVisible();
 
-  await page.goto("/kurum/abonelik");
+  // Kurum paneli adresleri Pi Koç'a döner
+  for (const path of ["/kurum", "/kurum/siniflar", "/kurum/ogrenciler"]) {
+    await page.goto(path);
+    await expect(page).toHaveURL(/\/koc$/);
+  }
+
+  // Öğrenci ekle → öğrenci sayfası
+  await page.goto("/koc/ogrenciler/yeni");
+  await page.getByLabel("Ad", { exact: true }).fill("Elif");
+  await page.getByLabel("Soyad", { exact: true }).fill(`Koç${stamp}`);
+  await page.locator("select[name=gradeName]").selectOption("12. sınıf");
+  await page.locator("select[name=targetExam]").selectOption("YKS (Sayısal)");
+  await page.locator("select[name=coachWeekday]").selectOption("2");
+  await page.getByLabel("Saat", { exact: true }).fill("18:30");
+  await page.getByRole("button", { name: "Öğrenciyi ekle" }).click();
+  await expect(page).toHaveURL(/\/koc\/ogrenciler\/c[a-z0-9]+\?durum=eklendi$/);
+  await expect(page.getByRole("heading", { name: `Elif Koç${stamp}` })).toBeVisible();
+  const studentUrl = page.url().split("?")[0];
+
+  // Soru takibi; doğru + yanlış çözülenden fazla olamaz
+  await page.goto(`${studentUrl}?sekme=sorular`);
+  await page.locator("input[name=subject]").fill("Matematik");
+  await page.locator("input[name=solved]").fill("40");
+  await page.locator("input[name=correct]").fill("30");
+  await page.locator("input[name=wrong]").fill("6");
+  await page.getByRole("button", { name: "Ekle", exact: true }).click();
+  await expect(page.getByText("Soru kaydı eklendi.")).toBeVisible();
+  await page.locator("input[name=subject]").fill("Fizik");
+  await page.locator("input[name=solved]").fill("10");
+  await page.locator("input[name=correct]").fill("9");
+  await page.locator("input[name=wrong]").fill("5");
+  await page.getByRole("button", { name: "Ekle", exact: true }).click();
+  await expect(page.getByText("Doğru + yanlış, çözülen sorudan fazla olamaz.")).toBeVisible();
+
+  // Deneme sonucu (TYT): Türkçe 30 doğru 8 yanlış → 28 net
+  await page.goto(`${studentUrl}?sekme=denemeler`);
+  await page.locator("select[name=kind]").selectOption("TYT");
+  await page.locator("input[name=name]").fill("E2e TYT 1");
+  await page.getByLabel("Türkçe doğru").fill("30");
+  await page.getByLabel("Türkçe yanlış").fill("8");
+  await page.getByRole("button", { name: "Sonucu kaydet" }).click();
+  await expect(page.getByText("Deneme sonucu kaydedildi.")).toBeVisible();
+  const [exam] = await sql<{ net: number }>(`SELECT r.net FROM "CenterExamResult" r JOIN "CenterExam" e ON e.id = r."examId" JOIN "Center" c ON c.id = e."centerId" WHERE e.name = 'E2e TYT 1' AND c.name = $1`, [centerName]);
+  expect(Number(exam.net)).toBe(28);
+
+  // Genel bakış: göstergeler ve grafikler
+  await page.goto(studentUrl);
+  await expect(page.getByText("Son TYT neti")).toBeVisible();
+  await expect(page.getByText("Son denemede dersler")).toBeVisible();
+  await page.goto("/koc");
+  await expect(page.getByRole("link", { name: new RegExp(`Elif Koç${stamp}`) }).first()).toBeVisible();
+  await page.goto("/koc/abonelik");
   await expect(page.getByText("Pi Koç · 5 öğrenciye kadar")).toBeVisible();
-  await expect(page.getByText("Pi Koç fiyatları")).toBeVisible();
-  await expect(page.getByText("Öğrenci sayısına göre fiyat")).toHaveCount(0);
-
-  // Kapalı bölümler adresle de açılmaz
-  for (const section of ["siniflar", "program", "yoklama", "derslikler", "raporlar", "personel"]) {
-    await page.goto(`/kurum/${section}`);
-    await expect(page).toHaveURL(/\/kurum\?durum=koc$/);
-  }
-  await expect(page.getByText("Bu bölüm Pi Koç'ta yok.")).toBeVisible();
-
-  // Koç türünü kendisi değiştiremez; açık bölümler sorunsuz açılır
-  await page.goto("/kurum/ayarlar");
-  await expect(page.getByRole("heading", { name: "Ayarlar", exact: true })).toBeVisible();
-  await expect(page.getByLabel("Kurum türü")).toHaveCount(0);
-  for (const section of ["ogrenciler", "odevler", "kaynaklar", "kocluk", "sorular", "denemeler", "muhasebe", "duyurular", "mesajlar"]) {
-    const response = await page.goto(`/kurum/${section}`);
-    expect(response?.status()).toBe(200);
-    await expect(page).toHaveURL(new RegExp(`/kurum/${section}`));
-  }
 });

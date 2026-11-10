@@ -133,12 +133,12 @@ test("veli portalı paket bölümlerini bildirir; kurumun kapattığı soru mod�
   // Tek paket: tüm bölümler açık
   await sql(`UPDATE "Center" SET "disabledModules" = '{}' WHERE id = ${CENTER}`);
   const full = await (await api.get(`/kurum/${ali.id}`)).json();
-  expect(full.modules).toEqual({ exams: true, payments: true, homework: true, study: true, questions: true, etuds: true, hall: true, schedule: true });
+  expect(full.modules).toEqual({ exams: true, payments: true, homework: true, study: true, questions: true, etuds: true, hall: true, schedule: false });
 
   // Kurum soru modülünü kapattı
   await sql(`UPDATE "Center" SET "disabledModules" = '{sorular}' WHERE id = ${CENTER}`);
   const etut = await (await api.get(`/kurum/${ali.id}`)).json();
-  expect(etut.modules).toMatchObject({ schedule: true, questions: false, exams: true });
+  expect(etut.modules).toMatchObject({ schedule: false, questions: false, exams: true });
   const asked = await api.multipart(`/kurum/${ali.id}/sorular`, { subject: "Matematik", image: { name: "soru.png", mimeType: "image/png", buffer: PNG } });
   expect(asked.status()).toBe(422);
   expect((await asked.json()).error.message).toContain("kapattı");

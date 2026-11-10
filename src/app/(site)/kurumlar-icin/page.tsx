@@ -46,7 +46,7 @@ const FEATURES = [
 ];
 
 const faq = (trialDays: number) => [
-  { q: "Kurulum ne kadar sürer?", a: "Aynı gün. Öğrenci listenizi Excel'den aktarır, sınıflarınızı ve ders programınızı girersiniz; isterseniz ekibimiz kurulumu sizinle birlikte yapar." },
+  { q: "Kurulum ne kadar sürer?", a: "Aynı gün. Öğrenci listenizi Excel'den aktarır, etüt planınızı girersiniz; isterseniz ekibimiz kurulumu sizinle birlikte yapar." },
   { q: "Veriler güvende mi?", a: "Veriler şifreli bağlantıyla taşınır, T.C. kimlik numaraları veritabanında şifreli saklanır. Her personel yalnızca yetkili olduğu bölümleri görür ve yapılan işlemler kayıt altına alınır." },
   ...(trialDays > 0
     ? [{ q: "Ücretsiz deneme var mı?", a: `Evet, ${trialDays} gün ücretsiz deneyebilirsiniz; kart bilgisi istenmez. Süre bitince kayıtlarınız silinmez, panel salt okunur olur; aboneliğinizi başlatınca kaldığınız yerden devam edersiniz.` }]

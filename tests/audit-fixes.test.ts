@@ -12,19 +12,6 @@ afterAll(async () => {
   await db.$disconnect();
 });
 
-const code = (prefix: string) => `${prefix}${randomUUID().slice(0, 6).toUpperCase()}`;
-
-describe("indirim kodu aynı anda birden fazla siparişte kullanılamaz", () => {
-  it("ders rezervasyonunda da aynı kural: ikinci saat aynı kodla tutulamaz", async () => {
-    const f = await createFixture({ hourlyPrice: 100000 });
-    const student = await f.createStudent();
-    const coupon = await db.coupon.create({ data: { code: code("DERS"), kind: "PERCENT", value: 10, targets: ["booking"] } });
-    await createBookingHold({ studentId: student.id, offeringId: f.offering.id, startAt: at(LESSON_DAY, "10:00"), durationMinutes: 60, mode: "ONLINE", learnerName: "Ali", couponCode: coupon.code }, NOW);
-    await expect(
-      createBookingHold({ studentId: student.id, offeringId: f.offering.id, startAt: at(LESSON_DAY, "12:00"), durationMinutes: 60, mode: "ONLINE", learnerName: "Ali", couponCode: coupon.code }, NOW),
-    ).rejects.toThrow(/ödemesi tamamlanmamış/);
-  });
-});
 
 describe("herkese açık metinlerde iletişim bilgisi", () => {
   it("öğretmenin yoruma cevabındaki telefon gizlenir", async () => {

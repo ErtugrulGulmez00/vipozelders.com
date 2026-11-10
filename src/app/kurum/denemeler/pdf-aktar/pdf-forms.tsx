@@ -1,5 +1,6 @@
 "use client";
 
+import { DateInput } from "@/components/ui/date-input";
 import { useMemo, useState } from "react";
 import { confirmExamPdfAction, discardExamPdfAction, uploadExamPdfAction } from "@/actions/center/exams";
 import { ActionForm, SubmitButton } from "@/components/forms/action-form";
@@ -99,7 +100,7 @@ export function PdfMatchForm({ draftId, exams, candidates, today }: { draftId: s
                     <Input name={`name:${e}`} defaultValue={exam.name} required maxLength={120} />
                   </Field>
                   <Field label="Sınav tarihi">
-                    <Input name={`date:${e}`} type="date" defaultValue={today} required />
+                    <DateInput name={`date:${e}`} defaultValue={today} required />
                   </Field>
                   <Field label="Yayınevi (isteğe bağlı)">
                     <Input name={`publisher:${e}`} maxLength={80} />

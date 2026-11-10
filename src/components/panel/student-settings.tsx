@@ -1,3 +1,4 @@
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Trash2 } from "lucide-react";
 import { addLearnerAction, removeLearnerAction, updateStudentProfileAction } from "@/actions/student";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
@@ -41,7 +42,7 @@ export async function StudentSettings({ userId, side }: { userId: string; side: 
                 </Field>
               </div>
               <Field label="Cep telefonu" htmlFor="phone">
-                <Input id="phone" name="phone" type="tel" defaultValue={profile.phone ?? ""} placeholder="05XX XXX XX XX" />
+                <PhoneInput id="phone" name="phone" defaultValue={profile.phone ?? ""} placeholder="05XX XXX XX XX" />
               </Field>
               <FieldError name="phone" />
               {privateSide ? (

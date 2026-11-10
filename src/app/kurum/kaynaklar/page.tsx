@@ -1,3 +1,4 @@
+import { SectionTabs } from "@/components/center/section-tabs";
 import { BookOpen } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -19,6 +20,7 @@ export default async function ResourcesPage({ searchParams }: PageProps<"/kurum/
   });
   return (
     <>
+      <SectionTabs ctx={ctx} group="kocluk" active="kaynaklar" />
       <PageHeader title="Kaynaklar ve kitaplar" description="Soru bankalarını ve kitapları konu listesiyle tanımlayın, öğrencilere atayın; konu konu ilerlemeyi ve başarıyı izleyin. Çalışma programı öğrenci kartındaki “Program ve kaynaklar” sekmesindedir." />
       <CenterFlash code={sp.durum} />
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr] lg:items-start">

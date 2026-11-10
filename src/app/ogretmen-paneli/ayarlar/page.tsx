@@ -1,3 +1,4 @@
+import { PhoneInput } from "@/components/ui/phone-input";
 import type { Metadata } from "next";
 import { updateTeacherContactAction } from "@/actions/teacher";
 import { ActionForm, SubmitButton } from "@/components/forms/action-form";
@@ -32,7 +33,7 @@ export default async function TeacherSettingsPage() {
             />
             <ActionForm action={updateTeacherContactAction} className="space-y-3">
               <Field label="Cep telefonu" htmlFor="phone" hint="Yalnızca onaylı yüz yüze derslerde veliyle paylaşılır.">
-                <Input id="phone" name="phone" type="tel" defaultValue={user.phone ?? ""} placeholder="05XX XXX XX XX" />
+                <PhoneInput id="phone" name="phone" defaultValue={user.phone ?? ""} placeholder="05XX XXX XX XX" />
               </Field>
               <SubmitButton variant="outline">Kaydet</SubmitButton>
             </ActionForm>

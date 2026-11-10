@@ -1,5 +1,7 @@
 "use client";
 
+import { DateInput } from "@/components/ui/date-input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { createStudentAction, updateStudentAction } from "@/actions/center/students";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
 import { WhatsAppCheckbox } from "@/components/notification-channel";
@@ -50,7 +52,7 @@ function GuardianFields({ prefix, title, required }: { prefix: string; title: st
         </Select>
       </Field>
       <Field label="Cep telefonu" htmlFor={`${prefix}Phone`}>
-        <Input id={`${prefix}Phone`} name={`${prefix}Phone`} type="tel" placeholder="05XX XXX XX XX" />
+        <PhoneInput id={`${prefix}Phone`} name={`${prefix}Phone`} placeholder="05XX XXX XX XX" />
         <FieldError name={`${prefix}Phone`} />
       </Field>
       <Field label="E-posta" htmlFor={`${prefix}Email`} hint="Veli eklenirse zorunlu; bildirimler bu adrese gider.">
@@ -120,7 +122,7 @@ export function StudentForm({
           </Select>
         </Field>
         <Field label="Doğum tarihi" htmlFor="birthDate">
-          <Input id="birthDate" name="birthDate" type="date" defaultValue={values.birthDate ?? ""} />
+          <DateInput id="birthDate" name="birthDate" defaultValue={values.birthDate ?? ""} />
           <FieldError name="birthDate" />
         </Field>
         <Field label="T.C. kimlik no" htmlFor="identityNumber" hint={values.identityMasked ? `Kayıtlı: ${values.identityMasked} (değiştirmek için yeni numara yazın)` : "Şifreli saklanır; isteğe bağlı."}>
@@ -129,7 +131,7 @@ export function StudentForm({
           {values.identityMasked ? <Checkbox name="clearIdentity" label="Kayıtlı kimlik numarasını sil" className="mt-2" /> : null}
         </Field>
         <Field label="Öğrenci telefonu" htmlFor="phone">
-          <Input id="phone" name="phone" type="tel" defaultValue={values.phone ?? ""} placeholder="05XX XXX XX XX" />
+          <PhoneInput id="phone" name="phone" defaultValue={values.phone ?? ""} placeholder="05XX XXX XX XX" />
           <FieldError name="phone" />
         </Field>
         <Field label="Öğrenci e-postası" htmlFor="email">

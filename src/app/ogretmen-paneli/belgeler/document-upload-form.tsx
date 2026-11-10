@@ -1,5 +1,6 @@
 "use client";
 
+import { DateInput } from "@/components/ui/date-input";
 import { useState } from "react";
 import { uploadDocumentAction } from "@/actions/teacher";
 import { ActionForm, SubmitButton } from "@/components/forms/action-form";
@@ -36,7 +37,7 @@ export function DocumentUploadForm() {
             Adli sicil kaydını e-Devlet’ten (turkiye.gov.tr → Adli Sicil Kaydı) son 30 gün içinde alın. Belgenin üzerindeki barkod numarasıyla doğrulama yapılır.
           </p>
           <Field label="Belgenin alındığı tarih" htmlFor="doc-issued">
-            <Input id="doc-issued" name="issuedAt" type="date" required />
+            <DateInput id="doc-issued" name="issuedAt" required />
           </Field>
           <Field label="e-Devlet barkod numarası" htmlFor="doc-barcode">
             <Input id="doc-barcode" name="barcode" required placeholder="Belgenin altındaki barkod / doğrulama kodu" />

@@ -33,9 +33,9 @@ export async function proxy(request: NextRequest) {
 
   const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
   if (isProtected && !sessionToken) {
-    const isCenterPanel = pathname === "/kurum" || pathname.startsWith("/kurum/");
+    const isCenterPanel = ["/kurum", "/koc"].some((p) => pathname === p || pathname.startsWith(`${p}/`));
     const url = new URL(isCenterPanel ? "/kurum-giris" : "/giris", request.url);
-    if (!isCenterPanel || pathname !== "/kurum") url.searchParams.set("next", `${pathname}${search}`);
+    if (!isCenterPanel || (pathname !== "/kurum" && pathname !== "/koc")) url.searchParams.set("next", `${pathname}${search}`);
     return NextResponse.redirect(url);
   }
 

@@ -62,7 +62,10 @@ export default async function StudentCardPage({ params, searchParams }: PageProp
     ...(canFinance ? [{ key: "odemeler", label: "Ödemeler", href: `/kurum/ogrenciler/${id}?sekme=odemeler` }] : []),
   ];
   const [attendanceStats, balance] = await Promise.all([
-    db.centerAttendance.groupBy({ by: ["status"], where: { studentId: id }, _count: true }),
+    // Etüt merkezinde devam etüt katılımından, dershanede sınıf yoklamasından hesaplanır
+    ctx.center.kind === "DERSHANE"
+      ? db.centerAttendance.groupBy({ by: ["status"], where: { studentId: id }, _count: true })
+      : db.centerEtudStudent.groupBy({ by: ["attendance"], where: { studentId: id, attendance: { not: null } }, _count: true }).then((rows) => rows.map((r) => ({ status: r.attendance as string, _count: r._count }))),
     canFinance ? studentBalance(centerId, id, today) : Promise.resolve(null),
   ]);
   const totalRecords = attendanceStats.reduce((t, s) => t + s._count, 0);

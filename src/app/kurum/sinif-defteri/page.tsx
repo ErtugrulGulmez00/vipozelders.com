@@ -1,3 +1,4 @@
+import { DateInput } from "@/components/ui/date-input";
 import { BookText } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -59,7 +60,7 @@ export default async function ClassLogPage({ searchParams }: PageProps<"/kurum/s
         </label>
         <label className="text-sm">
           <span className="mb-1 block text-xs text-slate-500">Başlangıç</span>
-          <input name="bas" type="date" defaultValue={from} className="h-9 rounded-lg border border-slate-300 px-2 text-sm" />
+          <DateInput name="bas" defaultValue={from} className="h-9 rounded-lg border border-slate-300 px-2 text-sm" />
         </label>
         <button type="submit" className="h-9 rounded-lg bg-brand-600 px-4 text-sm font-semibold text-white hover:bg-brand-700">
           Göster

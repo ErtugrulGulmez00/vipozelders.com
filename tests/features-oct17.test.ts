@@ -86,8 +86,11 @@ describe("derste uygunsuz durum bildirimi", () => {
     const booking = await createBookingHold({ studentId: student.id, offeringId: fixture.offering.id, startAt: at(LESSON_DAY, "15:00"), durationMinutes: 15, mode: "ONLINE", learnerName: "Ece", intro: true }, NOW);
     const admin = await db.user.create({ data: { role: "ADMIN", username: `admin.r.${booking.id}`, firstName: "A", lastName: "B", passwordHash: "x" } });
 
-    await expect(reportClassroom(booking.id, student.id, "Uydurma neden", null)).rejects.toThrow(/neden/);
-    const report = await reportClassroom(booking.id, student.id, "Uygunsuz görüntü", "Kamerada uygunsuz görüntü vardı");
+    await db.booking.update({ where: { id: booking.id }, data: { status: "CONFIRMED", mode: "ONLINE" } });
+    const during = at(LESSON_DAY, "15:05");
+    await expect(reportClassroom(booking.id, student.id, "Uygunsuz görüntü", null, at(LESSON_DAY, "20:00"))).rejects.toThrow(/ders sırasında/);
+    await expect(reportClassroom(booking.id, student.id, "Uydurma neden", null, during)).rejects.toThrow(/neden/);
+    const report = await reportClassroom(booking.id, student.id, "Uygunsuz görüntü", "Kamerada uygunsuz görüntü vardı", during);
     expect(report.teacherSuspended).toBe(true);
     expect((await db.teacherProfile.findUniqueOrThrow({ where: { userId: fixture.teacher.id } })).status).toBe("SUSPENDED");
     expect(await db.notification.count({ where: { userId: admin.id, type: "admin.classroom_report" } })).toBe(1);

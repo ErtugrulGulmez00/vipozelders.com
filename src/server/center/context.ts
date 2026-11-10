@@ -2,7 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { cache } from "react";
-import { coachAllows, moduleEnabled, type CenterModuleKey } from "@/lib/center/modules";
+import { moduleEnabled, sectionAllowed, type CenterModuleKey } from "@/lib/center/modules";
 import { failure, type ActionState } from "@/lib/action-state";
 import { centerAccess, type CenterAccess } from "@/lib/center/subscription";
 import { centerCan, type CenterPermission, type CenterRoleName } from "@/lib/center/permissions";
@@ -122,15 +122,33 @@ export async function requireCenter(permission?: CenterPermission): Promise<Cent
 
 export type CenterActionResult = { ok: true; ctx: CenterContext } | { ok: false; state: ActionState };
 
+// Yazma işlemleri de modül ve Pi Koç kilitlerine uyar (sayfa kilidi eski sekmeden gönderilen formu durdurmaz)
+const PERMISSION_MODULE: Partial<Record<CenterPermission, CenterModuleKey>> = {
+  "etud.manage": "etutler",
+  "homework.manage": "odevler",
+  "resources.manage": "kaynaklar",
+  "coaching.manage": "kocluk",
+  "leads.manage": "on-kayit",
+  "exams.manage": "denemeler",
+  "questions.answer": "sorular",
+  "finance.edit": "muhasebe",
+  "expenses.manage": "muhasebe",
+};
+const COACH_BLOCKED = new Set<CenterPermission>(["groups.manage", "attendance.take", "staff.manage"]);
+
 /**
  * Server Action'lar için yetki kontrolü. Yazma işlemlerinde aboneliğin süresi dolmuşsa
  * işlem yapılmaz (veriler silinmez, panel salt okunur olur).
  */
-export async function centerAction(permission: CenterPermission | null, options: { write?: boolean } = {}): Promise<CenterActionResult> {
+export async function centerAction(permission: CenterPermission | null, options: { write?: boolean; module?: CenterModuleKey; section?: string } = {}): Promise<CenterActionResult> {
   const resolved = await resolveCenter();
   if (resolved.kind !== "ok") return { ok: false, state: failure("Oturumunuz kapanmış ya da kurum hesabınız etkin değil. Sayfayı yenileyip tekrar giriş yapın.") };
   const { ctx } = resolved;
   if (permission && !ctx.can(permission)) return { ok: false, state: failure("Bu işlem için yetkiniz yok. Kurum yöneticinizle görüşün.") };
+  const moduleKey = options.module ?? (permission ? PERMISSION_MODULE[permission] : undefined);
+  if (moduleKey && !moduleEnabled(ctx.center, moduleKey)) return { ok: false, state: failure("Bu modül kurum ayarlarından kapatılmış.") };
+  if (ctx.center.kind === "COACH" && permission && COACH_BLOCKED.has(permission)) return { ok: false, state: failure("Bu işlem Pi Koç'ta yok.") };
+  if (options.section && !sectionAllowed(ctx.center, options.section)) return { ok: false, state: failure("Bu bölüm kurumunuzda kullanılmıyor.") };
   if (options.write !== false && !ctx.access.writable) {
     return { ok: false, state: failure("Abonelik süreniz dolduğu için panel salt okunur. Kayıtlarınız duruyor; aboneliği yenileyince kaldığınız yerden devam edersiniz.") };
   }
@@ -147,10 +165,10 @@ export async function selectCenterCookie(centerId: string) {
   (await cookies()).set(CENTER_COOKIE, centerId, { httpOnly: true, secure: secureCookies(), sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 365 });
 }
 
-/** Pi Koç'ta olmayan bölümün sayfaları açılmaz (bölüm klasörünün layout'unda çağrılır). */
+/** Kurum türünde olmayan bölümün sayfaları açılmaz (bölüm klasörünün layout'unda çağrılır). */
 export async function requireCenterSection(section: string): Promise<CenterContext> {
   const ctx = await requireCenter();
-  if (ctx.center.kind === "COACH" && !coachAllows(section)) redirect("/kurum?durum=koc");
+  if (!sectionAllowed(ctx.center, section)) redirect("/kurum");
   return ctx;
 }
 

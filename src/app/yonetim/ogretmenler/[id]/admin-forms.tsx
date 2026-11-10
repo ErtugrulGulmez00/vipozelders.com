@@ -1,5 +1,6 @@
 "use client";
 
+import { PhoneInput } from "@/components/ui/phone-input";
 import { KeyRound } from "lucide-react";
 import {
   recordPayoutAction,
@@ -32,7 +33,7 @@ export function AccountForm({ user }: { user: { id: string; firstName: string; l
         <Input name="email" type="email" defaultValue={user.email ?? ""} />
       </Field>
       <Field label="Telefon">
-        <Input name="phone" defaultValue={user.phone ?? ""} />
+        <PhoneInput name="phone" defaultValue={user.phone ?? ""} />
       </Field>
       <SubmitButton variant="outline">Hesabı kaydet</SubmitButton>
     </ActionForm>

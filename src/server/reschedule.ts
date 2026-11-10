@@ -1,4 +1,5 @@
 import { formatLessonRange } from "@/lib/dates";
+import { maskContacts } from "@/lib/text";
 import { BookingError, lessonSummary, lockTeacher, rescheduleSlotFree } from "./bookings";
 import { db } from "./db";
 import { notify } from "./notifications";
@@ -36,7 +37,7 @@ export async function requestReschedule(bookingId: string, userId: string, newSt
     await lockTeacher(tx, booking.teacherId);
     if (await tx.rescheduleRequest.count({ where: { bookingId, status: "PENDING" } })) throw new BookingError("Bu ders için yanıt bekleyen bir erteleme önerisi zaten var.");
     if (!(await rescheduleSlotFree(tx, booking, newStartAt, now))) throw new BookingError("Seçtiğiniz saat öğretmenin takviminde uygun değil.");
-    return tx.rescheduleRequest.create({ data: { bookingId, requestedById: userId, newStartAt, note: note?.trim().slice(0, 300) || null } });
+    return tx.rescheduleRequest.create({ data: { bookingId, requestedById: userId, newStartAt, note: note?.trim() ? maskContacts(note.trim()).slice(0, 300) : null } });
   });
   const newRange = formatLessonRange(newStartAt, new Date(newStartAt.getTime() + booking.durationMinutes * 60_000));
   await notify(

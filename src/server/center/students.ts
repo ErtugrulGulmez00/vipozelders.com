@@ -57,6 +57,11 @@ export async function assertStudentCapacity(ctx: CenterContext, adding = 1, tx: 
   }
 }
 
+/** Excel güncellemesinde yalnızca dosyada dolu gelen alanlar yazılır; boş sütun mevcut bilgiyi silmez. */
+function filled<T extends Record<string, unknown>>(data: T): Partial<T> {
+  return Object.fromEntries(Object.entries(data).filter(([, v]) => v !== null && v !== undefined && v !== "")) as Partial<T>;
+}
+
 function studentData(input: StudentInput) {
   return {
     studentNumber: input.studentNumber,
@@ -219,7 +224,7 @@ export async function importStudents(ctx: CenterContext, rows: ImportedStudent[]
     try {
       await db.$transaction(async (tx) => {
         let groupId: string | null = null;
-        if (row.group) {
+        if (row.group && ctx.center.kind !== "COACH") {
           const key = row.group.toLocaleLowerCase("tr-TR");
           groupId = groups.get(key) ?? null;
           if (!groupId) {
@@ -235,7 +240,7 @@ export async function importStudents(ctx: CenterContext, rows: ImportedStudent[]
         if (existingId) {
           await tx.centerStudent.update({
             where: { id: existingId },
-            data: { ...studentData(input), ...(row.identityNumber ? { identityNumberEnc: encryptText(row.identityNumber) } : {}) },
+            data: { ...filled(studentData(input)), ...(row.identityNumber ? { identityNumberEnc: encryptText(row.identityNumber) } : {}) },
           });
           studentId = existingId;
           summary.updated++;
@@ -252,7 +257,7 @@ export async function importStudents(ctx: CenterContext, rows: ImportedStudent[]
             where: { studentId, OR: [{ fullName: row.guardian.fullName }, ...(row.guardian.phone ? [{ phone: row.guardian.phone }] : [])] },
           });
           if (sameGuardian) {
-            await tx.centerGuardian.update({ where: { id: sameGuardian.id }, data: { ...row.guardian } });
+            await tx.centerGuardian.update({ where: { id: sameGuardian.id }, data: filled({ ...row.guardian }) });
           } else {
             const count = await tx.centerGuardian.count({ where: { studentId } });
             await tx.centerGuardian.create({ data: { centerId, studentId, ...row.guardian, isPrimary: count === 0 } });

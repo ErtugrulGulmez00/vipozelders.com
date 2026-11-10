@@ -37,7 +37,8 @@ const nav = (page: Page) => page.getByRole("navigation").first();
 
 async function expectBlocked(page: Page, path: string) {
   await page.goto(path);
-  await expect(page, `${path} açılmamalı`).toHaveURL(/\/kurum\?durum=(yetki|paket|modul)$/);
+  // Yetkisiz bölüm ?durum=yetki ile, kurum türünde olmayan (dershane) bölüm doğrudan özete döner
+  await expect(page, `${path} açılmamalı`).toHaveURL(/\/kurum(\?durum=(yetki|paket|modul))?$/);
 }
 
 test.beforeEach(async ({ page }) => {
@@ -62,8 +63,8 @@ test("kurum öğretmeni: yetkili bölümler açık, yönetim/muhasebe bölümler
   test.setTimeout(120_000);
   await login(page, "burak.sahin.kurum", "Ogretmen123");
   await expect(page).toHaveURL(/\/kurum$/);
-  for (const label of ["Öğrenciler", "Yoklama", "Etütler", "Ödevler", "Koçluk", "Öğrenci soruları", "Denemeler"]) await expect(nav(page).getByRole("link", { name: label, exact: true })).toBeVisible();
-  for (const label of ["Muhasebe", "Duyurular", "Mesaj geçmişi", "Ön kayıtlar", "Personel", "Kurum ayarları", "Abonelik", "Raporlar"]) await expect(nav(page).getByRole("link", { name: label, exact: true })).toHaveCount(0);
+  for (const label of ["Öğrenciler", "Etüt planı", "Çalışma salonu", "Ödevler", "Koçluk ve kaynaklar", "Öğrenci soruları", "Denemeler"]) await expect(nav(page).getByRole("link", { name: new RegExp(`^${label}`) })).toBeVisible();
+  for (const label of ["Muhasebe", "Duyuru ve mesajlar", "Ön kayıtlar", "Personel", "Kurum ayarları", "Abonelik", "Sınıf yoklaması", "Raporlar"]) await expect(nav(page).getByRole("link", { name: label, exact: true })).toHaveCount(0);
   for (const path of ["/kurum/muhasebe", "/kurum/muhasebe/giderler", "/kurum/duyurular", "/kurum/mesajlar", "/kurum/on-kayit", "/kurum/personel", "/kurum/ayarlar", "/kurum/abonelik", "/kurum/raporlar"]) await expectBlocked(page, path);
   await page.goto("/kurum");
   await expect(page.getByText("Bu bölüm için yetkiniz yok", { exact: false })).toHaveCount(0);
@@ -84,8 +85,8 @@ test("kurum muhasebecisi: muhasebe ve iletişim açık, yoklama/deneme/yönetim 
   test.setTimeout(120_000);
   await login(page, "derya.koc", "Muhasebe123");
   await expect(page).toHaveURL(/\/kurum$/);
-  for (const label of ["Öğrenciler", "Muhasebe", "Duyurular", "Ön kayıtlar"]) await expect(nav(page).getByRole("link", { name: new RegExp(`^${label}`) })).toBeVisible();
-  for (const label of ["Yoklama", "Etütler", "Denemeler", "Personel", "Kurum ayarları", "Abonelik", "Raporlar"]) await expect(nav(page).getByRole("link", { name: label, exact: true })).toHaveCount(0);
+  for (const label of ["Öğrenciler", "Muhasebe", "Duyuru ve mesajlar", "Ön kayıtlar"]) await expect(nav(page).getByRole("link", { name: new RegExp(`^${label}`) })).toBeVisible();
+  for (const label of ["Sınıf yoklaması", "Etüt planı", "Denemeler", "Personel", "Kurum ayarları", "Abonelik", "Raporlar"]) await expect(nav(page).getByRole("link", { name: label, exact: true })).toHaveCount(0);
   for (const path of ["/kurum/yoklama", "/kurum/etutler", "/kurum/denemeler", "/kurum/personel", "/kurum/ayarlar", "/kurum/abonelik", "/kurum/raporlar"]) await expectBlocked(page, path);
 
   await page.goto("/kurum/muhasebe/giderler");

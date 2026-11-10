@@ -1,5 +1,6 @@
 "use client";
 
+import { PhoneInput } from "@/components/ui/phone-input";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { registerAction } from "@/actions/auth";
@@ -48,7 +49,7 @@ export function RegisterForm() {
         <FieldError name="email" />
       </div>
       <Field label="Cep telefonu (isteğe bağlı)" htmlFor="phone" hint="Ders hatırlatmaları için kullanılır.">
-        <Input id="phone" name="phone" type="tel" placeholder="05XX XXX XX XX" autoComplete="tel" />
+        <PhoneInput id="phone" name="phone" placeholder="05XX XXX XX XX" autoComplete="tel" />
       </Field>
       <FieldError name="phone" />
       <Field label="Şifre" htmlFor="password" hint="En az 8 karakter, en az bir harf ve bir rakam.">

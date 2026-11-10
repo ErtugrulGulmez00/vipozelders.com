@@ -1120,6 +1120,7 @@ model Center {
   opticTemplates       CenterOpticTemplate[]
   examImports          CenterExamImport[]
   examAliases          CenterExamAlias[]
+  questionLogs         CenterQuestionLog[]
 
   @@index([status])
 }
@@ -1213,6 +1214,7 @@ model CenterStudent {
   halls        CenterHallStudent[]
   hallDays     CenterHallDay[]
   examAliases  CenterExamAlias[]
+  questionLogs CenterQuestionLog[]
 
   @@unique([centerId, studentNumber])
   @@index([centerId, status])
@@ -2555,4 +2557,22 @@ model WhatsAppMessage {
   sentAt     DateTime?
 
   @@index([status, createdAt])
+}
+
+// Pi Koç: günlük soru takibi (öğrencinin gün gün, ders ders çözdüğü soru, doğru ve yanlış)
+model CenterQuestionLog {
+  id        String        @id @default(cuid())
+  centerId  String
+  center    Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  studentId String
+  student   CenterStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  date      DateTime      @db.Date
+  subject   String
+  solved    Int
+  correct   Int           @default(0)
+  wrong     Int           @default(0)
+  createdAt DateTime      @default(now())
+
+  @@index([studentId, date])
+  @@index([centerId, date])
 }

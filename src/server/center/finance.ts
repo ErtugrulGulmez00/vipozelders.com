@@ -129,11 +129,13 @@ export async function cancelPayment(ctx: CenterContext, paymentId: string, reaso
   const payment = await db.centerPayment.findFirst({ where: { id: paymentId, centerId: ctx.center.id }, include: { allocations: true } });
   if (!payment) throw new CenterError("Tahsilat bulunamadı.");
   if (payment.cancelledAt) throw new CenterError("Bu tahsilat zaten iptal edilmiş.");
-  await db.$transaction([
-    db.centerPayment.update({ where: { id: paymentId }, data: { cancelledAt: new Date(), cancelReason: reason } }),
-    ...payment.allocations.map((a) => db.centerInstallment.update({ where: { id: a.installmentId }, data: { paidAmount: { decrement: a.amount } } })),
-    db.centerPaymentAllocation.deleteMany({ where: { paymentId } }),
-  ]);
+  await db.$transaction(async (tx) => {
+    // Aynı tahsilat üst üste iptal edilirse yalnızca ilki taksitlerden düşer
+    const claimed = await tx.centerPayment.updateMany({ where: { id: paymentId, cancelledAt: null }, data: { cancelledAt: new Date(), cancelReason: reason } });
+    if (claimed.count !== 1) throw new CenterError("Bu tahsilat zaten iptal edilmiş.");
+    for (const a of payment.allocations) await tx.centerInstallment.update({ where: { id: a.installmentId }, data: { paidAmount: { decrement: a.amount } } });
+    await tx.centerPaymentAllocation.deleteMany({ where: { paymentId } });
+  });
 }
 
 /** Öğrencinin toplam borcu, ödenen, kalan ve geciken tutarı. */

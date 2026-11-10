@@ -2,7 +2,9 @@
 
 > 2026-11-09: Tek paket vardır (Etüt Merkezi). Bütün bölümler her kuruma açıktır; fiyatı öğrenci kademesi belirler. Aşağıda Dershane paketinden söz edilen yerler eskidir.
 >
-> Pi Koç denemesi: yönetici kurum açarken türü "Bireysel koç (Pi Koç)" seçer. Tek kişiliktir; sınıf, yoklama, etüt, derslik, rapor, ön kayıt ve personel bölümleri kapalıdır. Öğrenci sınırı kurum sayfasından verilir, ödeme elle kaydedilir.
+> 2026-11-10: Etüt merkezi yalnızca etüt özellikleriyle çalışır. Ders programı, sınıf yoklaması, sınıf defteri, derslikler ve raporlar yalnızca türü Dershane olan kurumda açılır (`DERSHANE_SECTIONS`, `src/lib/center/modules.ts`); etüt merkezinde devam etütten ve çalışma salonundan gelir. Menü başlıklar altında toplanır; sınıflar Öğrenciler'in, kaynaklar Koçluk'un, mesaj geçmişi Duyurular'ın sekmesidir.
+>
+> Pi Koç: yönetici kurum açarken türü "Bireysel koç (Pi Koç)" seçer. Koç kurum panelini değil kendi panelini kullanır: `/koc` (genel bakış, öğrenciler, haftalık görüşmeler, kaynak kütüphanesi, hesap). Öğrenci sayfasında net gelişim, haftalık soru, program ve kaynak grafikleri; görüşme notları; günlük soru takibi (`CenterQuestionLog`); tek öğrenciye deneme sonucu girişi. Şimdilik yalnızca koç görür (öğrenci/veli girişi yok). Öğrenci sınırı kurum sayfasından verilir, ödeme elle kaydedilir.
 
 Etüt merkezlerine, dershanelere ve kurslara aylık abonelikle satılan yönetim paneli. Pazaryeriyle aynı uygulamada çalışır: kurumun velileri sitedeki hesaplarından çocuklarını takip eder, eksik konular için pazaryerindeki öğretmenlere yönlendirilir.
 

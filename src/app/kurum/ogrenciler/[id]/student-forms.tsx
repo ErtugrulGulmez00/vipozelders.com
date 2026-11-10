@@ -1,5 +1,7 @@
 "use client";
 
+import { DateInput } from "@/components/ui/date-input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Pencil, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { cancelFeePlanAction, createFeePlanAction, updateInstallmentAction } from "@/actions/center/finance";
@@ -51,7 +53,7 @@ function GuardianFields({ guardian }: { guardian?: GuardianView }) {
         </Select>
       </Field>
       <Field label="Cep telefonu">
-        <Input name="phone" type="tel" defaultValue={guardian?.phone ?? ""} placeholder="05XX XXX XX XX" />
+        <PhoneInput name="phone" defaultValue={guardian?.phone ?? ""} placeholder="05XX XXX XX XX" />
         <FieldError name="phone" />
       </Field>
       <Field label="E-posta" hint="Bildirimler bu adrese gider.">
@@ -277,7 +279,7 @@ export function FeePlanForm({ studentId, academicYear, today }: { studentId: str
           <Input name="count" type="number" min={1} max={36} value={count} onChange={(e) => setCount(e.target.value)} required />
         </Field>
         <Field label="İlk taksit tarihi">
-          <Input name="firstDueDate" type="date" value={first} onChange={(e) => setFirst(e.target.value)} required />
+          <DateInput name="firstDueDate" value={first} onValueChange={(v) => setFirst(v)} required />
         </Field>
         <Field label="Not" className="sm:col-span-2 lg:col-span-3">
           <Input name="note" placeholder="Örn: Kardeş indirimi uygulandı" />
@@ -311,7 +313,7 @@ export function InstallmentEditForm({ installmentId, dueDate, amount }: { instal
   return (
     <ActionForm action={updateInstallmentAction} className="mt-2 flex flex-wrap items-center gap-2">
       <input type="hidden" name="installmentId" value={installmentId} />
-      <Input name="dueDate" type="date" defaultValue={dueDate} className="h-8 w-40" />
+      <DateInput name="dueDate" defaultValue={dueDate} className="h-8 w-40" />
       <Input name="amount" inputMode="decimal" defaultValue={String(amount / 100).replace(".", ",")} className="h-8 w-28" />
       <SubmitButton size="sm" pendingText="…">
         Kaydet
