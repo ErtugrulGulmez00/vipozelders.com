@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { notificationScope, sideHome, sideOfPath, sideSwitches, type SideFacts } from "@/lib/sides";
+import { gateHome, kurumHome, notificationScope, sideHome, sideOfPath, sideSwitches, wrongGateMessage, type SideFacts } from "@/lib/sides";
 
 const facts = (f: Partial<SideFacts> & Pick<SideFacts, "role">): SideFacts => ({ staff: false, portal: false, privateSide: true, privateActivity: false, ...f });
 
@@ -52,5 +52,39 @@ describe("Giriş kapısı ve taraflar", () => {
     expect(sideOfPath("/hesabim/kurum/abc")).toBe("kurum");
     expect(sideOfPath("/hesabim")).toBe("ozel");
     expect(sideOfPath("/kurumlar")).toBe("ozel");
+    expect(sideOfPath("/koc/ogrenciler")).toBe("koc");
+    expect(sideOfPath("/kocum/abc")).toBe("koc");
+  });
+});
+
+describe("Giriş kapısı kuralı (gateHome): girilen kapının tarafı açılır, yoksa giriş yapılmaz", () => {
+  const coach = facts({ role: "CENTER", kocStaff: true, privateSide: false });
+  const kocStudent = facts({ role: "STUDENT", kocStudent: true, privateSide: false });
+  const owner = facts({ role: "CENTER", staff: true, privateSide: false });
+  const parent = facts({ role: "STUDENT", portal: true });
+  const teacher = facts({ role: "TEACHER", staff: true, privateActivity: true });
+  const teacherCoach = facts({ role: "TEACHER", kocStaff: true, privateActivity: true });
+
+  it("her hesap yalnızca kendi tarafının kapısından girer", () => {
+    const row = (f: SideFacts) => [gateHome(f, "ozel"), gateHome(f, "kurum"), gateHome(f, "koc")];
+    expect(row(coach)).toEqual([null, null, "/koc"]);
+    expect(row(kocStudent)).toEqual([null, null, "/kocum"]);
+    expect(row(owner)).toEqual([null, "/kurum", null]);
+    expect(row(parent)).toEqual(["/hesabim", "/hesabim/kurum", null]);
+    expect(row(teacher)).toEqual(["/ogretmen-paneli", "/kurum", null]);
+    expect(row(teacherCoach)).toEqual(["/ogretmen-paneli", null, "/koc"]);
+    expect(row(facts({ role: "ADMIN" }))).toEqual(["/yonetim", "/yonetim", "/yonetim"]);
+  });
+
+  it("yanlış kapıda kişinin hangi sekmeden girmesi gerektiği söylenir", () => {
+    expect(wrongGateMessage(coach, "ozel")).toBe("Bu hesapla Özel ders tarafında kaydınız yok. Hesabınız Pi Koç tarafında: üstteki “Pi Koç” sekmesinden girin.");
+    expect(wrongGateMessage(teacher, "koc")).toContain("Özel ders ve Kurum tarafında");
+    expect(wrongGateMessage(facts({ role: "CENTER", privateSide: false }), "kurum")).toBe("Bu hesapla Kurum tarafında kaydınız yok.");
+  });
+
+  it("Pi Koç hesabı kurum tarafına sayılmaz; geçiş bağlantıları doğru tarafa gider", () => {
+    expect(kurumHome(coach)).toBeNull();
+    expect(sideSwitches(teacherCoach, "teacher").map((s) => s.href)).toEqual(["/koc"]);
+    expect(sideSwitches(teacherCoach, "koc").map((s) => s.href)).toEqual(["/ogretmen-paneli"]);
   });
 });

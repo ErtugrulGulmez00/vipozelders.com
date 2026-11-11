@@ -1,3 +1,4 @@
+import { gateLogin } from "./gate-login";
 import { expect, test, type Page } from "@playwright/test";
 import pg from "pg";
 
@@ -21,12 +22,7 @@ async function sql<T = Record<string, unknown>>(text: string, values: unknown[] 
 }
 
 async function login(page: Page, identifier: string, password: string) {
-  await page.context().clearCookies();
-  await page.goto("/giris");
-  await page.getByLabel("E-posta veya kullanıcı adı").fill(identifier);
-  await page.getByLabel("Şifre", { exact: true }).fill(password);
-  await page.getByRole("button", { name: "Giriş yap" }).click();
-  await expect(page).not.toHaveURL(/\/giris/);
+  await gateLogin(page, identifier, password);
 }
 
 test.afterAll(async () => {

@@ -41,6 +41,27 @@ function privateHome(f: SideFacts): string | null {
   return roleHome(f.role);
 }
 
+/**
+ * Giriş kapısının açacağı sayfa; kişinin o tarafı yoksa null (giriş yapılmaz, doğru kapı söylenir).
+ * Özel ders tarafı: öğretmen ve kendi kayıt olan veli/öğrenci; kurumun ya da koçun açtığı öğrenci hesabında
+ * (özel derste işlemi yoksa) özel ders tarafı yoktur. Yönetici her kapıdan yönetime girer.
+ */
+export function gateHome(f: SideFacts, side: Side): string | null {
+  if (f.role === "ADMIN") return "/yonetim";
+  if (side === "kurum") return kurumHome(f);
+  if (side === "koc") return kocHome(f);
+  return privateHome(f);
+}
+
+const SIDE_LABEL: Record<Side, string> = { ozel: "Özel ders", kurum: "Kurum", koc: "Pi Koç" };
+
+/** Yanlış kapıdan girişte gösterilecek mesaj: kişinin hangi taraflarda hesabı var. */
+export function wrongGateMessage(f: SideFacts, side: Side): string {
+  const others = (["ozel", "kurum", "koc"] as Side[]).filter((s) => s !== side && gateHome(f, s));
+  const where = others.map((s) => `“${SIDE_LABEL[s]}”`).join(" ya da ");
+  return `Bu hesapla ${SIDE_LABEL[side]} tarafında kaydınız yok.${where ? ` Hesabınız ${others.map((s) => SIDE_LABEL[s]).join(" ve ")} tarafında: üstteki ${where} sekmesinden girin.` : ""}`;
+}
+
 /** Girişten (ya da taraf değiştirince) açılacak sayfa: önce girilen kapının tarafı, yoksa kişinin diğer tarafları. */
 export function sideHome(f: SideFacts, side: Side): string {
   if (f.role === "ADMIN") return "/yonetim";

@@ -1,3 +1,4 @@
+import { gateLogin } from "./gate-login";
 import { expect, test, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import pg from "pg";
 
@@ -33,11 +34,7 @@ async function newContext(browser: Browser): Promise<BrowserContext> {
 }
 
 async function login(page: Page, identifier: string, password: string) {
-  await page.goto("/giris");
-  await page.getByLabel("E-posta veya kullanıcı adı").fill(identifier);
-  await page.getByLabel("Şifre", { exact: true }).fill(password);
-  await page.getByRole("button", { name: "Giriş yap" }).click();
-  await expect(page).not.toHaveURL(/\/giris/);
+  await gateLogin(page, identifier, password, { keepCookies: true });
 }
 
 let teacherStats: { ratingAvg: number; ratingCount: number; completedLessons: number };

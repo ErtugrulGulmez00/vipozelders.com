@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { failure, success, zodFieldErrors, type ActionState } from "@/lib/action-state";
 import { safeNextPath } from "@/lib/auth-constants";
-import { sideHome, type Side } from "@/lib/sides";
+import { gateHome, sideHome, wrongGateMessage, type Side } from "@/lib/sides";
 import { normalizePhone } from "@/lib/text";
 import { AccountError, registerStudent, sendPasswordResetEmail, sendVerificationEmail } from "@/server/accounts";
 import { DELETION_REQUEST_MESSAGE, requestAccountDeletion } from "@/server/account-deletion";
@@ -46,6 +46,12 @@ export async function loginAction(_: ActionState, formData: FormData): Promise<A
   if (!user || !valid) return failure("Kullanıcı adı/e-posta veya şifre hatalı.");
   if (user.status !== "ACTIVE") return failure("Hesabınız askıya alınmış. Destek ekibimizle iletişime geçin.");
 
+  // Kapı kuralı: girilen kapının tarafı açılır; kişinin o tarafı yoksa giriş yapılmaz, doğru kapı söylenir.
+  // Belirli bir sayfaya dönülecekse (ör. kurum daveti ?next=) kapı aranmaz; erişimi o sayfa denetler.
+  const facts = await sideFacts(user.id, user.role);
+  const home = gateHome(facts, gate);
+  if (!home && !next) return failure(wrongGateMessage(facts, gate));
+
   // İki adımlı doğrulama açıksa oturum, doğrulayıcı uygulamadaki kod girilince açılır.
   if (user.totpEnabledAt && user.totpSecretEnc) {
     await startTwoFactorChallenge(user.id);
@@ -57,7 +63,7 @@ export async function loginAction(_: ActionState, formData: FormData): Promise<A
   await db.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
 
   if (user.mustChangePassword) redirect("/sifre-degistir");
-  redirect(next ?? (await landingFor(user, gate)));
+  redirect(next ?? home ?? sideHome(facts, gate));
 }
 
 export async function verifyTwoFactorAction(_: ActionState, formData: FormData): Promise<ActionState> {
