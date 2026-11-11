@@ -50,6 +50,7 @@ export async function createCenterAction(_: ActionState, formData: FormData): Pr
       password: owner.temporaryPassword,
       linkedExisting: owner.linkedExisting,
       emailSent: Boolean(str(formData, "ownerEmail")),
+      loginPath: center.kind === "COACH" ? "/koc-giris" : "/kurum-giris",
     });
   });
 }

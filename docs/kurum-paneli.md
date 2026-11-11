@@ -4,7 +4,16 @@
 >
 > 2026-11-10: Etüt merkezi yalnızca etüt özellikleriyle çalışır. Ders programı, sınıf yoklaması, sınıf defteri, derslikler ve raporlar yalnızca türü Dershane olan kurumda açılır (`DERSHANE_SECTIONS`, `src/lib/center/modules.ts`); etüt merkezinde devam etütten ve çalışma salonundan gelir. Menü başlıklar altında toplanır; sınıflar Öğrenciler'in, kaynaklar Koçluk'un, mesaj geçmişi Duyurular'ın sekmesidir.
 >
-> Pi Koç: yönetici kurum açarken türü "Bireysel koç (Pi Koç)" seçer. Koç kurum panelini değil kendi panelini kullanır: `/koc` (genel bakış, öğrenciler, haftalık görüşmeler, kaynak kütüphanesi, hesap). Öğrenci sayfasında net gelişim, haftalık soru, program ve kaynak grafikleri; görüşme notları; günlük soru takibi (`CenterQuestionLog`); tek öğrenciye deneme sonucu girişi. Şimdilik yalnızca koç görür (öğrenci/veli girişi yok). Öğrenci sınırı kurum sayfasından verilir, ödeme elle kaydedilir.
+> Pi Koç: yönetici kurum açarken türü "Bireysel koç (Pi Koç)" seçer. Koç kurum panelini değil kendi panelini kullanır: `/koc` (genel bakış, öğrenciler, haftalık görüşmeler, kaynak kütüphanesi, hesap). Öğrenci sayfasında net gelişim, haftalık soru, program ve kaynak grafikleri; görüşme notları; günlük soru takibi (`CenterQuestionLog`); tek öğrenciye deneme sonucu girişi. Pi Koç ayrı bir giriş kapısıdır (`/koc-giris`): koç `/koc` paneline, koçun açtığı öğrenci hesabı (ve bağlı veli) `/kocum` ekranına girer; bu bağlantılar kurum girişine ve veli portalına sayılmaz (`kocHome`, `src/lib/sides.ts`; mobil `GET /ben` → `sides.koc`). Öğrenci bugünkü görevlerini işaretler, çözdüğü soruyu girer (`byStudent`), programını, deneme netlerini ve paylaşılan görüşme notlarını görür.
+>
+> Pi Koç araçları (`src/server/koc*.ts`):
+> - **Haftalık veli raporu:** `/koc/ogrenciler/<id>/rapor`; veli `/rapor/<token>` bağlantısını girişsiz açar (30 gün). Kayıt `CenterWeeklyReport`; e-posta / WhatsApp paylaşımı ve PDF.
+> - **Hedef takibi:** `CenterStudentGoal`; ders ders hedef net, "hedefe X net kaldı", net grafiğinde hedef çizgisi. Hedefi koç ya da öğrenci girer.
+> - **Konu eksik haritası:** kaynak ilerlemesi, deneme konu analizi ve görüşmedeki öncelikli konulardan; zayıf konu tek tıkla programa eklenir.
+> - **Hazır program şablonları:** hazır şablonlar `src/lib/koc-templates.ts`, koçun kendi şablonları `CenterPlanTemplate`.
+> - **Kitap bitiş tahmini:** son 4 haftanın konu hızına göre.
+> - **Online görüşme:** `/gorusme/<öğrenci>`; LiveKit odası `koc-<öğrenci>`, koç girince öğrenciye bildirim gider.
+> - **Hatırlatmalar (zamanlayıcı):** koça 08:00-11:00 arası "bugünkü görüşmeler"; programı %40'ın altında kalan öğrenciye perşembe-pazar 18:00-21:00 arası haftada bir uyarı. Öğrenci sınırı kurum sayfasından verilir, ödeme elle kaydedilir.
 
 Etüt merkezlerine, dershanelere ve kurslara aylık abonelikle satılan yönetim paneli. Pazaryeriyle aynı uygulamada çalışır: kurumun velileri sitedeki hesaplarından çocuklarını takip eder, eksik konular için pazaryerindeki öğretmenlere yönlendirilir.
 

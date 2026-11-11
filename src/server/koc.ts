@@ -1,6 +1,7 @@
 import "server-only";
 import { computeNet, EXAM_PRESETS, round2, type ExamKindName } from "@/lib/center/exams";
-import { addDaysToDateString, dateStringToDbDate, dbDateToString, isoWeekday } from "@/lib/dates";
+import { centerAccess } from "@/lib/center/subscription";
+import { addDaysToDateString, dateStringToDbDate, dbDateToString, isoWeekday, toLocalDateString } from "@/lib/dates";
 import type { CenterContext } from "./center/context";
 import { CenterError } from "./center/errors";
 import { upsertResult } from "./center/exams";
@@ -24,16 +25,58 @@ export async function kocStudentOrThrow(ctx: CenterContext, studentId: string) {
 
 export type QuestionLogInput = { date: string; subject: string; solved: number; correct: number; wrong: number };
 
-export async function addQuestionLog(ctx: CenterContext, studentId: string, input: QuestionLogInput) {
-  await kocStudentOrThrow(ctx, studentId);
+function checkLog(input: QuestionLogInput, today: string) {
   if (input.solved < 1) throw new CenterError("Çözülen soru sayısını yazın.", { solved: "En az 1." });
   if (input.correct + input.wrong > input.solved) throw new CenterError("Doğru + yanlış, çözülen sorudan fazla olamaz.", { correct: "Toplamı kontrol edin." });
+  if (input.date > today) throw new CenterError("İleri tarihli soru girilemez.", { date: "Bugün ya da önceki bir gün." });
+}
+
+export async function addQuestionLog(ctx: CenterContext, studentId: string, input: QuestionLogInput) {
+  await kocStudentOrThrow(ctx, studentId);
+  checkLog(input, toLocalDateString(new Date()));
   return db.centerQuestionLog.create({ data: { centerId: ctx.center.id, studentId, ...input, date: dateStringToDbDate(input.date) } });
 }
 
 export async function deleteQuestionLog(ctx: CenterContext, logId: string) {
   const row = await db.centerQuestionLog.findFirst({ where: { id: logId, centerId: ctx.center.id }, select: { id: true } });
   if (!row) throw new CenterError("Kayıt bulunamadı.");
+  await db.centerQuestionLog.delete({ where: { id: logId } });
+}
+
+// ---------------------------------------------------------------------------
+// Öğrencinin kendi hesabı (portal): yalnızca Pi Koç öğrencisi, yalnızca kendi kaydı
+// ---------------------------------------------------------------------------
+
+/** Kullanıcının Pi Koç bağlantıları (öğrencinin kendi hesabı ya da velinin çocukları). */
+export async function kocPortalLinks(userId: string) {
+  return db.centerGuardian.findMany({
+    where: { userId, student: { status: "ACTIVE", center: { kind: "COACH", status: { not: "SUSPENDED" } } } },
+    include: { student: { include: { center: { select: { name: true } } } } },
+    orderBy: { linkedAt: "asc" },
+  });
+}
+
+/** Kullanıcı bu Pi Koç öğrencisinin kendi giriş hesabı mı? Değilse null. */
+export async function kocPortalStudent(userId: string, studentId: string) {
+  const link = await db.centerGuardian.findFirst({
+    where: { userId, studentId, isStudentAccount: true, student: { status: "ACTIVE", center: { kind: "COACH", status: { not: "SUSPENDED" } } } },
+    include: { student: { include: { center: true } } },
+  });
+  return link?.student ?? null;
+}
+
+export async function addPortalQuestionLog(userId: string, studentId: string, input: QuestionLogInput) {
+  const student = await kocPortalStudent(userId, studentId);
+  if (!student) throw new CenterError("Kayıt bulunamadı.");
+  if (!centerAccess(student.center).writable) throw new CenterError("Koçunuzun aboneliği yenilenene kadar yeni kayıt girilemiyor.");
+  checkLog(input, toLocalDateString(new Date()));
+  return db.centerQuestionLog.create({ data: { centerId: student.centerId, studentId, ...input, date: dateStringToDbDate(input.date), byStudent: true } });
+}
+
+/** Öğrenci yalnızca kendi girdiği kaydı siler. */
+export async function deletePortalQuestionLog(userId: string, logId: string) {
+  const row = await db.centerQuestionLog.findUnique({ where: { id: logId }, select: { id: true, studentId: true, byStudent: true } });
+  if (!row || !row.byStudent || !(await kocPortalStudent(userId, row.studentId))) throw new CenterError("Kayıt bulunamadı.");
   await db.centerQuestionLog.delete({ where: { id: logId } });
 }
 
@@ -210,4 +253,93 @@ export async function kocOverview(ctx: CenterContext, today: string) {
     };
   });
   return { cards, weekStart, todayWeekday };
+}
+
+// ---------------------------------------------------------------------------
+// Hedef takibi: sınav türüne göre ders ders hedef net; son denemeyle fark
+// ---------------------------------------------------------------------------
+
+export type GoalInput = { kind: ExamKindName; label: string | null; sectionNets: Record<string, number> };
+
+function cleanGoal(input: GoalInput): GoalInput {
+  if (!KOC_EXAM_KINDS.includes(input.kind)) throw new CenterError("Sınav türünü seçin.", { kind: "Seçin." });
+  const sections = EXAM_PRESETS[input.kind].sections;
+  const sectionNets: Record<string, number> = {};
+  for (const s of sections) {
+    const value = input.sectionNets[s.name];
+    if (value === undefined || !Number.isFinite(value)) continue;
+    if (value < 0 || value > s.questionCount) throw new CenterError(`${s.name}: hedef net 0 ile ${s.questionCount} arasında olmalı.`);
+    if (value > 0) sectionNets[s.name] = round2(value);
+  }
+  if (!Object.keys(sectionNets).length) throw new CenterError("En az bir dersin hedef netini yazın.");
+  return { kind: input.kind, label: input.label, sectionNets };
+}
+
+async function upsertGoal(studentId: string, input: GoalInput) {
+  const goal = cleanGoal(input);
+  return db.centerStudentGoal.upsert({
+    where: { studentId_kind: { studentId, kind: goal.kind } },
+    create: { studentId, kind: goal.kind, label: goal.label, sectionNets: goal.sectionNets },
+    update: { label: goal.label, sectionNets: goal.sectionNets },
+  });
+}
+
+export async function saveGoal(ctx: CenterContext, studentId: string, input: GoalInput) {
+  await kocStudentOrThrow(ctx, studentId);
+  return upsertGoal(studentId, input);
+}
+
+/** Öğrenci kendi hedefini yazar (yalnızca kendi hesabı). */
+export async function savePortalGoal(userId: string, studentId: string, input: GoalInput) {
+  const student = await kocPortalStudent(userId, studentId);
+  if (!student) throw new CenterError("Kayıt bulunamadı.");
+  return upsertGoal(studentId, input);
+}
+
+export async function deleteGoal(ctx: CenterContext, studentId: string, kind: ExamKindName) {
+  await kocStudentOrThrow(ctx, studentId);
+  await db.centerStudentGoal.deleteMany({ where: { studentId, kind } });
+}
+
+export type GoalView = {
+  kind: ExamKindName;
+  kindLabel: string;
+  label: string | null;
+  targetNet: number;
+  sectionNets: Record<string, number>;
+  /** Son deneme (aynı tür) */
+  current: { examName: string; date: string; net: number } | null;
+  /** Hedefe kalan toplam net (son denemeye göre; ulaşıldıysa 0) */
+  gap: number | null;
+  sections: { name: string; target: number; current: number | null; gap: number | null }[];
+};
+
+/** Öğrencinin hedefleri ve son denemeye göre durum; en son deneme yapılan tür önce. */
+export async function studentGoals(centerId: string, studentId: string): Promise<GoalView[]> {
+  const [goals, exams] = await Promise.all([db.centerStudentGoal.findMany({ where: { studentId } }), studentExams(centerId, studentId)]);
+  return goals
+    .map((g) => {
+      const kind = g.kind as ExamKindName;
+      const sectionNets = (g.sectionNets ?? {}) as Record<string, number>;
+      const latest = exams.find((e) => e.kind === kind) ?? null;
+      const targetNet = round2(Object.values(sectionNets).reduce((t, n) => t + n, 0));
+      const sections = EXAM_PRESETS[kind].sections
+        .filter((s) => sectionNets[s.name] !== undefined)
+        .map((s) => {
+          const current = latest?.sections.find((x) => x.name === s.name)?.net ?? null;
+          return { name: s.name, target: sectionNets[s.name], current, gap: current === null ? null : round2(Math.max(0, sectionNets[s.name] - current)) };
+        });
+      const currentTotal = latest ? round2(sections.reduce((t, s) => t + (s.current ?? 0), 0)) : null;
+      return {
+        kind,
+        kindLabel: EXAM_PRESETS[kind].label,
+        label: g.label,
+        targetNet,
+        sectionNets,
+        current: latest ? { examName: latest.name, date: latest.date, net: latest.net } : null,
+        gap: currentTotal === null ? null : round2(Math.max(0, targetNet - currentTotal)),
+        sections,
+      };
+    })
+    .sort((a, b) => (exams.findIndex((e) => e.kind === a.kind) + 1 || 99) - (exams.findIndex((e) => e.kind === b.kind) + 1 || 99));
 }

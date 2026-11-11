@@ -20,22 +20,22 @@ export type StaffInput = {
   branch: string | null;
 };
 
-async function queueWelcomeEmail(userId: string, email: string, firstName: string, centerName: string, username: string, role: CenterRoleName) {
+async function queueWelcomeEmail(userId: string, email: string, firstName: string, centerName: string, username: string, role: CenterRoleName, coach: boolean) {
   const settings = await loadSettings();
   const token = await issueUserToken(userId, "PASSWORD_RESET", 3 * 24 * 60 * 60 * 1000);
   const { html, text } = renderEmail({
     siteName: settings.siteName,
     greetingName: firstName,
-    title: `${centerName} kurum paneline davet edildiniz`,
+    title: coach ? "Pi Koç hesabınız hazır" : `${centerName} kurum paneline davet edildiniz`,
     lines: [
-      `${centerName} sizi ${settings.siteName} kurum paneline “${CENTER_ROLE_LABEL[role]}” olarak ekledi.`,
-      `Giriş adresi: ${appUrl("/kurum-giris")}`,
+      coach ? `${settings.siteName} Pi Koç hesabınız açıldı. Öğrencilerinizi ekleyip takibe hemen başlayabilirsiniz.` : `${centerName} sizi ${settings.siteName} kurum paneline “${CENTER_ROLE_LABEL[role]}” olarak ekledi.`,
+      `Giriş adresi: ${appUrl(coach ? "/koc-giris" : "/kurum-giris")}`,
       `Kullanıcı adınız: ${username}`,
       "Aşağıdaki bağlantıdan şifrenizi belirleyip giriş yapabilirsiniz (bağlantı 3 gün geçerlidir). Kurumunuz size geçici bir şifre de iletmiş olabilir.",
     ],
     action: { label: "Şifremi belirle", url: `/sifre-sifirla/${token}` },
   });
-  await db.emailMessage.create({ data: { userId, to: email, subject: `Kurum paneli daveti · ${centerName}`, html, text } });
+  await db.emailMessage.create({ data: { userId, to: email, subject: coach ? "Pi Koç hesabınız hazır" : `Kurum paneli daveti · ${centerName}`, html, text } });
 }
 
 /**
@@ -43,6 +43,7 @@ async function queueWelcomeEmail(userId: string, email: string, firstName: strin
  * tek hesap; kurum girişinden kurum panelini, özel ders girişinden kendi tarafını görür. E-posta zorunlu (bildirimler).
  */
 export async function createCenterUser(centerId: string, centerName: string, input: StaffInput) {
+  const coach = (await db.center.findUnique({ where: { id: centerId }, select: { kind: true } }))?.kind === "COACH";
   const email = input.email?.trim().toLowerCase() || null;
   if (!email) throw new CenterError("E-posta adresini yazın; giriş bilgileri ve bildirimler e-postayla gider.", { email: "E-posta gerekli." });
   const existing = await db.user.findUnique({ where: { email } });
@@ -50,7 +51,7 @@ export async function createCenterUser(centerId: string, centerName: string, inp
     if (existing.role === "ADMIN") throw new CenterError("Bu e-posta bir yönetici hesabında kayıtlı; farklı bir e-posta kullanın.", { email: "E-posta kullanımda." });
     if (await db.centerMember.findUnique({ where: { centerId_userId: { centerId, userId: existing.id } } })) throw new CenterError("Bu kişi zaten kurum personeli.", { email: "Zaten ekli." });
     const member = await db.centerMember.create({ data: { centerId, userId: existing.id, role: input.role, title: input.title, branch: input.branch } });
-    await db.notification.create({ data: { userId: existing.id, type: "center.staff", title: `${centerName} sizi kurum paneline ekledi`, body: `Rolünüz: ${CENTER_ROLE_LABEL[input.role]}`, link: "/kurum" } });
+    await db.notification.create({ data: { userId: existing.id, type: "center.staff", title: coach ? "Pi Koç hesabınız açıldı" : `${centerName} sizi kurum paneline ekledi`, body: coach ? "Pi Koç girişinden panelinize girebilirsiniz." : `Rolünüz: ${CENTER_ROLE_LABEL[input.role]}`, link: coach ? "/koc" : "/kurum" } });
     return { member, username: existing.username, temporaryPassword: null, linkedExisting: true };
   }
   const username = await generateUsername(input.firstName, input.lastName);
@@ -69,7 +70,7 @@ export async function createCenterUser(centerId: string, centerName: string, inp
     },
     include: { centerMemberships: true },
   });
-  await queueWelcomeEmail(user.id, email, user.firstName, centerName, username, input.role);
+  await queueWelcomeEmail(user.id, email, user.firstName, centerName, username, input.role, coach);
   return { member: user.centerMemberships[0], username, temporaryPassword, linkedExisting: false };
 }
 

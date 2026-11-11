@@ -20,14 +20,23 @@ async function hasPrivateActivity(userId: string): Promise<boolean> {
 /** Kullanıcının hangi tarafları olduğu; istek başına bir kez hesaplanır. */
 export const sideFacts = cache(async (userId: string, role: AppRole): Promise<SideFacts> => {
   if (role === "ADMIN") return { role, staff: false, portal: false, privateSide: true, privateActivity: false };
-  const [staff, nonCoach, links] = await Promise.all([
-    db.centerMember.count({ where: { userId, isActive: true } }),
-    db.centerMember.count({ where: { userId, isActive: true, center: { kind: { not: "COACH" } } } }),
-    role === "STUDENT" ? db.centerGuardian.findMany({ where: { userId }, select: { isStudentAccount: true } }) : Promise.resolve([]),
+  const [memberships, links] = await Promise.all([
+    db.centerMember.findMany({ where: { userId, isActive: true }, select: { center: { select: { kind: true } } } }),
+    role === "STUDENT" ? db.centerGuardian.findMany({ where: { userId }, select: { isStudentAccount: true, student: { select: { center: { select: { kind: true } } } } } }) : Promise.resolve([]),
   ]);
   const privateActivity = role === "STUDENT" ? await hasPrivateActivity(userId) : role === "TEACHER";
-  // Kurumun açtığı öğrenci hesabında özel ders tarafı, öğrenci orada bir işlem yapana kadar kapalı
+  // Kurumun (ya da koçun) açtığı öğrenci hesabında özel ders tarafı, öğrenci orada bir işlem yapana kadar kapalı
   const studentAccount = links.some((l) => l.isStudentAccount);
   const privateSide = role === "TEACHER" || (role === "STUDENT" && (!studentAccount || privateActivity));
-  return { role, staff: staff > 0, coach: staff > 0 && nonCoach === 0, portal: links.length > 0, privateSide, privateActivity };
+  // Pi Koç ayrı kapıdır: koç üyeliği ve koç öğrencisi bağlantısı kurum tarafına sayılmaz
+  const isCoach = (kind: string) => kind === "COACH";
+  return {
+    role,
+    staff: memberships.some((m) => !isCoach(m.center.kind)),
+    portal: links.some((l) => !isCoach(l.student.center.kind)),
+    kocStaff: memberships.some((m) => isCoach(m.center.kind)),
+    kocStudent: links.some((l) => isCoach(l.student.center.kind)),
+    privateSide,
+    privateActivity,
+  };
 });

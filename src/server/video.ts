@@ -89,6 +89,8 @@ export async function handleLiveKitWebhook(body: string, authorization: string |
   const identity = event.participant?.identity;
   if (!roomName || !identity) return;
   if (roomName.startsWith("grup-")) return handleGroupRoomEvent(roomName, identity, event.event);
+  // Pi Koç görüşme odası (koc-<öğrenci>): yoklama tutulmaz
+  if (roomName.startsWith("koc-")) return;
 
   const booking = await db.booking.findUnique({ where: { videoRoomName: roomName }, select: { id: true, teacherId: true, studentId: true } });
   if (!booking || (identity !== booking.teacherId && identity !== booking.studentId)) return;

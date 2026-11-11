@@ -22,6 +22,7 @@ import { sendPendingWhatsApps } from "./whatsapp";
 import { processGroups } from "./groups";
 import { expirePackages } from "./packages";
 import { expireRescheduleRequests } from "./reschedule";
+import { sendCoachDigests, sendPlanNudges } from "./koc-plan";
 
 const HOLDER = `${hostname()}-${process.pid}-${randomUUID().slice(0, 8)}`;
 
@@ -57,6 +58,9 @@ const TASKS = {
   // Kurum paneli: taksit hatırlatmaları WhatsApp kuyruğuna girer; mesaj geçmişinin durumu kuyruklardan eşitlenir.
   centerReminders: sendCenterPaymentReminders,
   centerExpiry: sendCenterExpiryNotices,
+  // Pi Koç: koça sabah görüşme özeti, programı geride kalan öğrenciye akşam hatırlatma
+  kocDigests: sendCoachDigests,
+  kocPlanNudges: sendPlanNudges,
   centerMessages: () => processCenterMessages(),
   emails: () => sendPendingEmails(),
   pushes: sendPendingPushes,

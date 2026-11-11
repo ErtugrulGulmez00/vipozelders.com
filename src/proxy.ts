@@ -33,9 +33,12 @@ export async function proxy(request: NextRequest) {
 
   const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
   if (isProtected && !sessionToken) {
-    const isCenterPanel = ["/kurum", "/koc"].some((p) => pathname === p || pathname.startsWith(`${p}/`));
-    const url = new URL(isCenterPanel ? "/kurum-giris" : "/giris", request.url);
-    if (!isCenterPanel || (pathname !== "/kurum" && pathname !== "/koc")) url.searchParams.set("next", `${pathname}${search}`);
+    const under = (p: string) => pathname === p || pathname.startsWith(`${p}/`);
+    // Her taraf kendi giriş kapısına gider: kurum paneli → kurum girişi, Pi Koç (koç ve öğrencisi) → Pi Koç girişi
+    const gate = under("/kurum") ? "/kurum-giris" : under("/koc") || under("/kocum") || under("/gorusme") ? "/koc-giris" : "/giris";
+    const isCenterPanel = gate !== "/giris";
+    const url = new URL(gate, request.url);
+    if (!isCenterPanel || !["/kurum", "/koc", "/kocum"].includes(pathname)) url.searchParams.set("next", `${pathname}${search}`);
     return NextResponse.redirect(url);
   }
 

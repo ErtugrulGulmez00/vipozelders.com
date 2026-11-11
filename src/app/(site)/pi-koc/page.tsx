@@ -53,6 +53,9 @@ export default async function PiKocPage() {
               <a href="#fiyatlar" className="font-bold text-brand-700 hover:underline">
                 Fiyatları görün
               </a>
+              <Link href="/koc-giris" className="font-bold text-ink-600 hover:text-ink-900 hover:underline">
+                Pi Koç girişi
+              </Link>
             </div>
             {trialDays > 0 ? <p className="text-sm text-ink-500">{trialDays} gün ücretsiz · kart bilgisi gerekmez</p> : null}
           </div>

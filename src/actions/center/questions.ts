@@ -37,7 +37,7 @@ export async function createStudentAccountAction(_: ActionState, formData: FormD
       refresh();
       return success(`Bu e-posta sitede kayıtlı bir hesaba ait. Öğrenciye davet gönderildi (${result.email}); kabul edince hesabı bağlanır.`);
     }
-    return success("Öğrenci giriş hesabı açıldı.", { username: result.username, password: result.temporaryPassword, emailSent: true, loginPath: "/kurum-giris" });
+    return success("Öğrenci giriş hesabı açıldı.", { username: result.username, password: result.temporaryPassword, emailSent: true, loginPath: auth.ctx.center.kind === "COACH" ? "/koc-giris" : "/kurum-giris" });
   });
 }
 
@@ -47,7 +47,7 @@ export async function resetStudentAccountAction(_: ActionState, formData: FormDa
   return guard(async () => {
     const result = await resetStudentAccountPassword(auth.ctx, str(formData, "studentId"));
     await centerAudit(auth.ctx, "student.account_reset", "CenterStudent", str(formData, "studentId"));
-    return success("Yeni geçici şifre oluşturuldu.", { username: result.username, password: result.temporaryPassword, loginPath: "/kurum-giris" });
+    return success("Yeni geçici şifre oluşturuldu.", { username: result.username, password: result.temporaryPassword, loginPath: auth.ctx.center.kind === "COACH" ? "/koc-giris" : "/kurum-giris" });
   });
 }
 

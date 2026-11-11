@@ -13,6 +13,17 @@ import {
   kocSetStudentActiveAction,
   kocSaveSettingsAction,
   kocUpdateStudentAction,
+  portalAddQuestionLogAction,
+  portalDeleteQuestionLogAction,
+  kocSaveReportAction,
+  kocSaveGoalAction,
+  kocDeleteGoalAction,
+  portalSaveGoalAction,
+  kocAddTopicToPlanAction,
+  kocApplyTemplateAction,
+  kocSaveTemplateAction,
+  kocDeleteTemplateAction,
+  kocSendReportAction,
 } from "@/actions/koc";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
@@ -133,9 +144,10 @@ export function ArchiveStudentButton({ studentId, active }: { studentId: string;
   );
 }
 
-export function QuestionLogForm({ studentId, today, subjects }: { studentId: string; today: string; subjects: string[] }) {
+/** portal: öğrencinin kendi hesabından giriş (koç panelinde değil) */
+export function QuestionLogForm({ studentId, today, subjects, portal = false }: { studentId: string; today: string; subjects: string[]; portal?: boolean }) {
   return (
-    <ActionForm action={kocAddQuestionLogAction} resetOnSuccess className="space-y-3">
+    <ActionForm action={portal ? portalAddQuestionLogAction : kocAddQuestionLogAction} resetOnSuccess className="space-y-3">
       <input type="hidden" name="studentId" value={studentId} />
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Gün">
@@ -169,9 +181,9 @@ export function QuestionLogForm({ studentId, today, subjects }: { studentId: str
   );
 }
 
-export function DeleteLogButton({ logId }: { logId: string }) {
+export function DeleteLogButton({ logId, portal = false }: { logId: string; portal?: boolean }) {
   return (
-    <ActionForm action={kocDeleteQuestionLogAction} hideMessages>
+    <ActionForm action={portal ? portalDeleteQuestionLogAction : kocDeleteQuestionLogAction} hideMessages>
       <input type="hidden" name="logId" value={logId} />
       <SubmitButton size="sm" variant="ghost" className="h-7 px-1.5 text-slate-400 hover:text-rose-600" pendingText="…" confirmMessage="Kayıt silinsin mi?" aria-label="Sil">
         <Trash2 className="size-3.5" aria-hidden />
@@ -274,6 +286,156 @@ export function KocSettingsForm({ values }: { values: { name: string; phone: str
         </Field>
       </div>
       <SubmitButton>Kaydet</SubmitButton>
+    </ActionForm>
+  );
+}
+
+export function ReportNoteForm({ studentId, weekStart, note }: { studentId: string; weekStart: string; note: string | null }) {
+  return (
+    <ActionForm action={kocSaveReportAction} className="space-y-3">
+      <input type="hidden" name="studentId" value={studentId} />
+      <input type="hidden" name="weekStart" value={weekStart} />
+      <Field label="Bu haftanın değerlendirmesi" hint="Rapora olduğu gibi yazılır; veli görür.">
+        <Textarea name="note" rows={5} maxLength={3000} defaultValue={note ?? ""} placeholder="Bu hafta programın büyük bölümünü uyguladı; paragrafta hızlandı. Gelecek hafta geometriye ağırlık vereceğiz…" />
+      </Field>
+      <SubmitButton variant="outline">Kaydet</SubmitButton>
+    </ActionForm>
+  );
+}
+
+export function SendReportButton({ studentId, weekStart, sentAt }: { studentId: string; weekStart: string; sentAt: string | null }) {
+  return (
+    <ActionForm action={kocSendReportAction} className="space-y-2">
+      <input type="hidden" name="studentId" value={studentId} />
+      <input type="hidden" name="weekStart" value={weekStart} />
+      <SubmitButton className="w-full" confirmMessage={sentAt ? "Bu rapor daha önce gönderildi. Yeniden gönderilsin mi?" : undefined}>
+        Velilere gönder
+      </SubmitButton>
+      {sentAt ? <p className="text-xs text-slate-500">Son gönderim: {sentAt}</p> : null}
+    </ActionForm>
+  );
+}
+
+/** Hedef: sınav türü, hedef (okul/bölüm/puan) ve ders ders hedef net. portal: öğrencinin kendi formu. */
+export function GoalForm({ studentId, initial, portal = false }: { studentId: string; initial?: { kind: ExamKindName; label: string | null; sectionNets: Record<string, number> }; portal?: boolean }) {
+  const [kind, setKind] = useState<ExamKindName>(initial?.kind ?? "TYT");
+  const sections = EXAM_PRESETS[kind].sections;
+  const values = initial && initial.kind === kind ? initial.sectionNets : {};
+  return (
+    <ActionForm action={portal ? portalSaveGoalAction : kocSaveGoalAction} className="space-y-4">
+      <input type="hidden" name="studentId" value={studentId} />
+      <div className="grid gap-3 sm:grid-cols-[150px_1fr]">
+        <Field label="Sınav">
+          <Select name="kind" value={kind} onChange={(e) => setKind(e.target.value as ExamKindName)}>
+            {KINDS.map((k) => (
+              <option key={k} value={k}>
+                {EXAM_PRESETS[k].label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Hedef (isteğe bağlı)">
+          <Input name="label" maxLength={120} defaultValue={initial?.label ?? ""} placeholder="Örn. İTÜ Bilgisayar Mühendisliği" />
+        </Field>
+      </div>
+      <div className="overflow-hidden rounded-2xl border border-slate-200">
+        <div className="grid grid-cols-[1fr_96px] gap-2 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500">
+          <span>Ders</span>
+          <span className="text-center">Hedef net</span>
+        </div>
+        {sections.map((s, i) => (
+          <div key={`${kind}-${s.name}`} className="grid grid-cols-[1fr_96px] items-center gap-2 border-t border-slate-100 px-3 py-1.5">
+            <span className="text-sm text-slate-700">
+              {s.name} <span className="text-xs text-slate-400">({s.questionCount})</span>
+            </span>
+            <Input name={`t${i}`} type="number" inputMode="decimal" step="0.25" min={0} max={s.questionCount} defaultValue={values[s.name] ?? ""} className="h-9 text-center" aria-label={`${s.name} hedef net`} />
+          </div>
+        ))}
+      </div>
+      <SubmitButton>Hedefi kaydet</SubmitButton>
+    </ActionForm>
+  );
+}
+
+export function DeleteGoalButton({ studentId, kind }: { studentId: string; kind: ExamKindName }) {
+  return (
+    <ActionForm action={kocDeleteGoalAction} hideMessages>
+      <input type="hidden" name="studentId" value={studentId} />
+      <input type="hidden" name="kind" value={kind} />
+      <SubmitButton size="sm" variant="ghost" className="h-7 px-1.5 text-slate-400 hover:text-rose-600" pendingText="…" confirmMessage="Hedef silinsin mi?" aria-label="Hedefi sil">
+        <Trash2 className="size-3.5" aria-hidden />
+      </SubmitButton>
+    </ActionForm>
+  );
+}
+
+/** Zayıf konuyu seçilen güne programa ekler (konu haritası). */
+export function AddTopicToPlanForm({ studentId, subject, topic, resourceId, days }: { studentId: string; subject: string; topic: string; resourceId: string | null; days: { date: string; label: string }[] }) {
+  return (
+    <ActionForm action={kocAddTopicToPlanAction} className="flex flex-wrap items-center gap-1.5">
+      <input type="hidden" name="studentId" value={studentId} />
+      <input type="hidden" name="subject" value={subject} />
+      <input type="hidden" name="topic" value={topic} />
+      {resourceId ? <input type="hidden" name="resourceId" value={resourceId} /> : null}
+      <input type="hidden" name="targetQuestions" value="30" />
+      <Select name="date" className="h-8 w-36 text-xs" aria-label={`${topic} hangi gün`} defaultValue={days[0]?.date}>
+        {days.map((d) => (
+          <option key={d.date} value={d.date}>
+            {d.label}
+          </option>
+        ))}
+      </Select>
+      <SubmitButton size="sm" variant="outline" className="h-8 px-3 text-xs" pendingText="…">
+        Programa ekle
+      </SubmitButton>
+    </ActionForm>
+  );
+}
+
+export function ApplyTemplateForm({ studentId, weekStart, templates }: { studentId: string; weekStart: string; templates: { id: string; name: string; description: string }[] }) {
+  const [id, setId] = useState(templates[0]?.id ?? "");
+  const chosen = templates.find((t) => t.id === id);
+  return (
+    <ActionForm action={kocApplyTemplateAction} className="space-y-2">
+      <input type="hidden" name="studentId" value={studentId} />
+      <input type="hidden" name="weekStart" value={weekStart} />
+      <Field label="Şablon">
+        <Select name="templateId" value={id} onChange={(e) => setId(e.target.value)}>
+          {templates.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      {chosen ? <p className="text-xs text-slate-500">{chosen.description}</p> : null}
+      <SubmitButton size="sm">Bu haftaya uygula</SubmitButton>
+    </ActionForm>
+  );
+}
+
+export function SaveTemplateForm({ studentId, weekStart }: { studentId: string; weekStart: string }) {
+  return (
+    <ActionForm action={kocSaveTemplateAction} resetOnSuccess className="flex flex-wrap items-end gap-2">
+      <input type="hidden" name="studentId" value={studentId} />
+      <input type="hidden" name="weekStart" value={weekStart} />
+      <Field label="Bu haftayı şablon olarak kaydet" className="min-w-0 flex-1">
+        <Input name="name" required maxLength={80} placeholder="Örn. YKS son 3 ay haftası" />
+      </Field>
+      <SubmitButton size="sm" variant="outline">
+        Kaydet
+      </SubmitButton>
+    </ActionForm>
+  );
+}
+
+export function DeleteTemplateButton({ templateId }: { templateId: string }) {
+  return (
+    <ActionForm action={kocDeleteTemplateAction} hideMessages>
+      <input type="hidden" name="templateId" value={templateId} />
+      <SubmitButton size="sm" variant="ghost" className="h-7 px-1.5 text-slate-400 hover:text-rose-600" pendingText="…" confirmMessage="Şablon silinsin mi?" aria-label="Şablonu sil">
+        <Trash2 className="size-3.5" aria-hidden />
+      </SubmitButton>
     </ActionForm>
   );
 }

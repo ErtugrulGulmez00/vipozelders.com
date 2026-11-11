@@ -1095,6 +1095,8 @@ model Center {
   // Abonelik bitiş hatırlatması: en son gönderilen eşik (7, 3, 1, 0 gün); süre uzayınca sıfırlanır
   expiryNoticeDays       Int?
   nextReceiptNo          Int          @default(1)
+  // Pi Koç: koça "bugünkü görüşmeleriniz" sabah özeti en son hangi gün gitti
+  coachDigestOn          DateTime?    @db.Date
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt
 
@@ -1121,6 +1123,8 @@ model Center {
   examImports          CenterExamImport[]
   examAliases          CenterExamAlias[]
   questionLogs         CenterQuestionLog[]
+  weeklyReports        CenterWeeklyReport[]
+  planTemplates        CenterPlanTemplate[]
 
   @@index([status])
 }
@@ -1192,6 +1196,8 @@ model CenterStudent {
   coach             CenterMember?       @relation("StudentCoach", fields: [coachId], references: [id], onDelete: SetNull)
   coachWeekday      Int?
   coachMinute       Int?
+  // Pi Koç: "program geride" hatırlatması en son hangi hafta (pazartesi) gitti
+  planNudgedWeek    DateTime?           @db.Date
   enrolledAt        DateTime            @default(now())
   leftAt            DateTime?
   createdAt         DateTime            @default(now())
@@ -1215,6 +1221,8 @@ model CenterStudent {
   hallDays     CenterHallDay[]
   examAliases  CenterExamAlias[]
   questionLogs CenterQuestionLog[]
+  weeklyReports CenterWeeklyReport[]
+  goals        CenterStudentGoal[]
 
   @@unique([centerId, studentNumber])
   @@index([centerId, status])
@@ -2571,8 +2579,61 @@ model CenterQuestionLog {
   solved    Int
   correct   Int           @default(0)
   wrong     Int           @default(0)
+  // Öğrenci kendi hesabından girdiyse true (koç kendisi girdiyse false)
+  byStudent Boolean       @default(false)
   createdAt DateTime      @default(now())
 
   @@index([studentId, date])
   @@index([centerId, date])
+}
+
+// Pi Koç: öğrencinin haftalık raporu (koçun değerlendirmesi). Veli giriş yapmadan tahmin edilemeyen bağlantıyla açar.
+model CenterWeeklyReport {
+  id        String        @id @default(cuid())
+  centerId  String
+  center    Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  studentId String
+  student   CenterStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  // Haftanın pazartesisi
+  weekStart DateTime      @db.Date
+  // Koçun bu haftaki değerlendirmesi (rapora yazılır)
+  note      String?
+  // Paylaşım bağlantısı: /rapor/<token>; süresi dolunca bağlantı açılmaz (yeniden paylaşınca uzar)
+  token     String        @unique
+  expiresAt DateTime
+  sentAt    DateTime?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@unique([studentId, weekStart])
+  @@index([centerId])
+}
+
+// Pi Koç: öğrencinin sınav türüne göre hedefi (ör. "İTÜ Bilgisayar", TYT'de ders ders hedef net)
+model CenterStudentGoal {
+  id         String        @id @default(cuid())
+  studentId  String
+  student    CenterStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  kind       ExamKind
+  // Hedef bölüm / okul / puan (serbest metin)
+  label      String?
+  // Bölüm adı → hedef net: { "Türkçe": 32, "Temel Matematik": 28 }
+  sectionNets Json
+  updatedAt  DateTime      @updatedAt
+  createdAt  DateTime      @default(now())
+
+  @@unique([studentId, kind])
+}
+
+// Pi Koç: hazır haftalık program şablonu (gün gün ders, konu, hedef soru); öğrencinin haftasına uygulanır
+model CenterPlanTemplate {
+  id        String   @id @default(cuid())
+  centerId  String
+  center    Center   @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  name      String
+  // [{ weekday: 1-7, subject, topic, targetQuestions, note }]
+  items     Json
+  createdAt DateTime @default(now())
+
+  @@index([centerId])
 }

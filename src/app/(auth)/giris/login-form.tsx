@@ -7,7 +7,7 @@ import { ActionForm, SubmitButton } from "@/components/forms/action-form";
 import { Field, Input } from "@/components/ui/form";
 
 /** gate: girilen kapı (kurum girişi kurum tarafını açar); adresteki ?next= önceliklidir. */
-export function LoginForm({ gate }: { gate?: "kurum" }) {
+export function LoginForm({ gate }: { gate?: "kurum" | "koc" }) {
   const next = useSearchParams().get("next") ?? "";
   return (
     <ActionForm action={loginAction} className="space-y-4">

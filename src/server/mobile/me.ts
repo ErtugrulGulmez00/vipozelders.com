@@ -1,5 +1,5 @@
 import { whatsappAllowed } from "@/lib/notification-channels";
-import { CENTER_NOTIFICATION_PREFIX, kurumHome, notificationScope } from "@/lib/sides";
+import { CENTER_NOTIFICATION_PREFIX, kocHome, kurumHome, notificationScope } from "@/lib/sides";
 import { db } from "../db";
 import { unreadThreadCount } from "../messages";
 import { sideFacts } from "../sides";
@@ -52,6 +52,10 @@ export async function meJson(userId: string) {
       staff: facts.staff,
       portal: facts.portal,
       privateActivity: facts.privateActivity,
+      // Pi Koç ayrı kapı: koç (/koc) ya da koç öğrencisi/velisi (/kocum); kurum tarafına sayılmaz
+      koc: Boolean(kocHome(facts)),
+      kocStaff: Boolean(facts.kocStaff),
+      kocStudent: Boolean(facts.kocStudent),
     },
     student: user.studentProfile
       ? {

@@ -30,7 +30,7 @@ export default async function KocLayout({ children }: { children: React.ReactNod
     { href: "/koc/hesap", label: "Hesap ve abonelik", icon: <UserCog />, also: ["/koc/abonelik", "/koc/bildirimler"] },
   ];
   return (
-    <KocShell user={ctx.user} nav={nav} switchLinks={sideSwitches(facts, "center")} unread={unread} usage={{ active, limit: ctx.center.studentLimit }} banner={<SubscriptionBanner access={ctx.access} canManage={ctx.can("subscription.view")} />}>
+    <KocShell user={ctx.user} nav={nav} switchLinks={sideSwitches(facts, "koc")} unread={unread} usage={{ active, limit: ctx.center.studentLimit }} banner={<SubscriptionBanner access={ctx.access} canManage={ctx.can("subscription.view")} />}>
       {children}
     </KocShell>
   );

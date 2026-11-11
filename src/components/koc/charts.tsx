@@ -30,12 +30,13 @@ export function Sparkline({ values, className }: { values: number[]; className?:
 }
 
 /** Çizgi + alan grafiği (ör. deneme netleri). */
-export function LineChart({ points, label, unit = "net", max }: { points: { label: string; sub?: string; value: number }[]; label: string; unit?: string; max?: number }) {
+/** target: hedef değer (kesikli yatay çizgi) */
+export function LineChart({ points, label, unit = "net", max, target }: { points: { label: string; sub?: string; value: number }[]; label: string; unit?: string; max?: number; target?: number | null }) {
   if (points.length < 2) return <p className="py-8 text-center text-sm text-slate-500">Grafik için en az iki kayıt gerekir.</p>;
   const width = 640;
   const height = 240;
   const pad = { left: 40, right: 20, top: 24, bottom: 46 };
-  const top = Math.max(max ?? 0, ...points.map((p) => p.value), 1);
+  const top = Math.max(max ?? 0, target ?? 0, ...points.map((p) => p.value), 1);
   const niceTop = Math.ceil(top / 5) * 5;
   const x = (i: number) => pad.left + (i * (width - pad.left - pad.right)) / (points.length - 1);
   const y = (v: number) => pad.top + (1 - Math.max(0, v) / niceTop) * (height - pad.top - pad.bottom);
@@ -60,6 +61,15 @@ export function LineChart({ points, label, unit = "net", max }: { points: { labe
           </text>
         </g>
       ))}
+      {target ? (
+        <g>
+          <title>{`Hedef: ${fmt(target, 2)} ${unit}`}</title>
+          <line x1={pad.left} x2={width - pad.right} y1={y(target)} y2={y(target)} stroke={INK} strokeWidth="1.5" strokeDasharray="6 5" opacity="0.55" />
+          <text x={width - pad.right} y={y(target) - 6} textAnchor="end" fontSize="11" fontWeight="700" fill={INK} opacity="0.75">
+            Hedef {fmt(target)}
+          </text>
+        </g>
+      ) : null}
       <path d={`${d} L${x(points.length - 1)},${base} L${x(0)},${base} Z`} fill="url(#koc-area)" />
       <path d={d} fill="none" stroke={BRAND} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" />
       {points.map((p, i) => {

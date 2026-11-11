@@ -4,7 +4,7 @@ export const SESSION_COOKIE = "vd_session";
 
 export const SESSION_TTL_DAYS = 30;
 
-export const PROTECTED_PREFIXES = ["/yonetim", "/ogretmen-paneli", "/hesabim", "/kurum", "/ders", "/rezervasyon", "/koc"];
+export const PROTECTED_PREFIXES = ["/yonetim", "/ogretmen-paneli", "/hesabim", "/kurum", "/ders", "/rezervasyon", "/koc", "/kocum", "/gorusme"];
 
 /** CENTER: etüt merkezi personeli (kurum paneli) */
 export type AppRole = "ADMIN" | "TEACHER" | "STUDENT" | "CENTER";

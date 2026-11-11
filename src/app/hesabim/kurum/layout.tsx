@@ -15,7 +15,8 @@ export default async function PortalLayout({ children }: { children: React.React
   const [unread, links] = await Promise.all([
     db.notification.count({ where: { userId: user.id, readAt: null, ...notificationScopeWhere(notificationScope(facts, "kurum")) } }),
     db.centerGuardian.findMany({
-      where: { userId: user.id, student: { center: { status: { not: "SUSPENDED" } } } },
+      // Pi Koç bağlantıları burada değil, /kocum'da
+      where: { userId: user.id, student: { center: { status: { not: "SUSPENDED" }, kind: { not: "COACH" } } } },
       select: { id: true, isStudentAccount: true, student: { select: { firstName: true, lastName: true } } },
       orderBy: { linkedAt: "asc" },
     }),

@@ -30,7 +30,8 @@ export async function loginAction(_: ActionState, formData: FormData): Promise<A
   const identifier = text(formData, "identifier").toLocaleLowerCase("tr-TR").replace(/ı/g, "i");
   const password = String(formData.get("password") ?? "");
   const next = safeNextPath(text(formData, "next"));
-  const gate: Side = text(formData, "gate") === "kurum" ? "kurum" : "ozel";
+  const gateText = text(formData, "gate");
+  const gate: Side = gateText === "kurum" || gateText === "koc" ? gateText : "ozel";
   if (!identifier || !password) return failure("Kullanıcı adı/e-posta ve şifre gerekli.");
 
   const { ipAddress } = await requestMeta();
@@ -48,7 +49,7 @@ export async function loginAction(_: ActionState, formData: FormData): Promise<A
   // İki adımlı doğrulama açıksa oturum, doğrulayıcı uygulamadaki kod girilince açılır.
   if (user.totpEnabledAt && user.totpSecretEnc) {
     await startTwoFactorChallenge(user.id);
-    const after = next ?? (gate === "kurum" ? "/panel?taraf=kurum" : null);
+    const after = next ?? (gate === "ozel" ? null : `/panel?taraf=${gate}`);
     redirect(`/giris/dogrulama${after ? `?next=${encodeURIComponent(after)}` : ""}`);
   }
 

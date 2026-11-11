@@ -1,19 +1,21 @@
 import { roleHome, type AppRole } from "./auth-constants";
 
-// Tek hesap, iki taraf: kurum (etüt merkezi) ve özel ders. Kişi hangi kapıdan girerse o tarafı görür;
-// o tarafta hiçbir şeyi yoksa kendi tarafına yönlenir. Veriler zaten ayrı; burada yalnızca açılış sayfası ve
-// bildirimlerin hangi tarafta görüneceği belirlenir.
+// Tek hesap, üç kapı: özel ders, kurum (etüt merkezi) ve Pi Koç (bireysel koç ve öğrencileri). Kişi hangi kapıdan
+// girerse o tarafı görür; o tarafta hiçbir şeyi yoksa kendi tarafına yönlenir. Veriler zaten ayrı; burada yalnızca
+// açılış sayfası ve bildirimlerin hangi tarafta görüneceği belirlenir.
 
-export type Side = "kurum" | "ozel";
+export type Side = "kurum" | "ozel" | "koc";
 
 export type SideFacts = {
   role: AppRole;
-  /** Etkin kurum personeli üyeliği var (/kurum) */
+  /** Etkin kurum personeli üyeliği var (/kurum); Pi Koç hesapları sayılmaz */
   staff: boolean;
-  /** Kurum üyeliklerinin hepsi Pi Koç hesabı */
-  coach?: boolean;
-  /** Veli/öğrenci portalı bağlantısı var (/hesabim/kurum) */
+  /** Veli/öğrenci portalı bağlantısı var (/hesabim/kurum); Pi Koç öğrencisi sayılmaz */
   portal: boolean;
+  /** Pi Koç hesabının koçu (/koc) */
+  kocStaff?: boolean;
+  /** Pi Koç öğrencisi ya da velisi (/kocum) */
+  kocStudent?: boolean;
   /** Özel ders tarafı bu hesapta açık (kurumun açtığı ve özel derste işlemi olmayan öğrenci hesabında kapalı) */
   privateSide: boolean;
   /** Özel ders tarafında işlem yapmış (ders, kredi, paket, abonelik, grup dersi, soru, mesaj, favori) */
@@ -28,21 +30,29 @@ export function kurumHome(f: SideFacts): string | null {
   return null;
 }
 
+export function kocHome(f: SideFacts): string | null {
+  if (f.kocStaff) return "/koc";
+  if (f.kocStudent && f.role === "STUDENT") return "/kocum";
+  return null;
+}
+
 function privateHome(f: SideFacts): string | null {
   if (f.role === "CENTER" || !f.privateSide) return null;
   return roleHome(f.role);
 }
 
-/** Girişten (ya da taraf değiştirince) açılacak sayfa. */
+/** Girişten (ya da taraf değiştirince) açılacak sayfa: önce girilen kapının tarafı, yoksa kişinin diğer tarafları. */
 export function sideHome(f: SideFacts, side: Side): string {
   if (f.role === "ADMIN") return "/yonetim";
-  const order = side === "kurum" ? [kurumHome(f), privateHome(f)] : [privateHome(f), kurumHome(f)];
+  const order =
+    side === "koc" ? [kocHome(f), kurumHome(f), privateHome(f)] : side === "kurum" ? [kurumHome(f), kocHome(f), privateHome(f)] : [privateHome(f), kurumHome(f), kocHome(f)];
   return order.find(Boolean) ?? roleHome(f.role);
 }
 
 export function sideOfPath(path: string): Side {
   const inside = (prefix: string) => path === prefix || path.startsWith(`${prefix}/`);
-  return inside("/kurum") || inside("/koc") || inside("/hesabim/kurum") ? "kurum" : "ozel";
+  if (inside("/koc") || inside("/kocum")) return "koc";
+  return inside("/kurum") || inside("/hesabim/kurum") ? "kurum" : "ozel";
 }
 
 export type NotificationScope = "center" | "private" | "all";
@@ -50,9 +60,10 @@ export type NotificationScope = "center" | "private" | "all";
 /** O tarafta hangi bildirimler görünür: tek taraflı hesapta hepsi, iki taraflıda yalnızca o tarafın bildirimleri. */
 export function notificationScope(f: SideFacts, side: Side): NotificationScope {
   if (f.role === "ADMIN") return "all";
-  const both = Boolean(kurumHome(f)) && Boolean(privateHome(f));
+  // Kurum ve Pi Koç bildirimleri aynı türdedir (center.*)
+  const both = Boolean(kurumHome(f) || kocHome(f)) && Boolean(privateHome(f));
   if (!both) return "all";
-  return side === "kurum" ? "center" : "private";
+  return side === "ozel" ? "private" : "center";
 }
 
 export function notificationScopeWhere(scope: NotificationScope) {
@@ -68,23 +79,40 @@ export function parseNotificationScope(value: unknown): NotificationScope {
 /** Panelin "diğer tarafa geç" bağlantıları. */
 export type SideSwitch = { href: string; label: string; short: string };
 
-export function sideSwitches(f: SideFacts, current: "teacher" | "student" | "center" | "portal"): SideSwitch[] {
+export function sideSwitches(f: SideFacts, current: "teacher" | "student" | "center" | "portal" | "koc"): SideSwitch[] {
   const links: SideSwitch[] = [];
-  if (current === "teacher" && f.staff) links.push({ href: f.coach ? "/koc" : "/kurum", label: f.coach ? "Pi Koç'a geç" : "Kurum paneline geç", short: f.coach ? "Pi Koç" : "Kurum" });
+  const toKoc = () => {
+    const home = kocHome(f);
+    if (home) links.push({ href: home, label: "Pi Koç'a geç", short: "Pi Koç" });
+  };
+  if (current === "teacher") {
+    if (f.staff) links.push({ href: "/kurum", label: "Kurum paneline geç", short: "Kurum" });
+    toKoc();
+  }
   if (current === "student") {
     if (f.portal) links.push({ href: "/hesabim/kurum", label: "Kurum tarafına geç", short: "Kurum" });
     if (f.staff) links.push({ href: "/kurum", label: "Kurum paneline geç", short: "Kurum paneli" });
+    toKoc();
   }
   if (current === "center") {
     if (f.role === "TEACHER") links.push({ href: "/ogretmen-paneli", label: "Özel ders paneline geç", short: "Özel ders" });
     // Kurum personeli olan veli: özel ders tarafı ve (varsa) kendi veli portalı
     if (f.role === "STUDENT" && f.privateSide) links.push({ href: "/hesabim", label: "Özel ders tarafına geç", short: "Özel ders" });
     if (f.role === "STUDENT" && f.portal) links.push({ href: "/hesabim/kurum", label: "Veli / öğrenci portalı", short: "Portal" });
+    toKoc();
   }
   // Kurumun davet ettiği veliye özel dersi biz tanıtmayız: geçiş yalnızca özel derste işlemi olana görünür
   if (current === "portal") {
     if (f.privateActivity) links.push({ href: "/hesabim", label: "Özel ders tarafına geç", short: "Özel ders" });
     if (f.staff) links.push({ href: "/kurum", label: "Kurum paneline geç", short: "Kurum paneli" });
+    toKoc();
+  }
+  // Pi Koç tarafı: koç olan özel ders öğretmeni ve kurum tarafı da olan kişi
+  if (current === "koc") {
+    if (f.role === "TEACHER") links.push({ href: "/ogretmen-paneli", label: "Özel ders paneline geç", short: "Özel ders" });
+    if (f.role === "STUDENT" && f.privateActivity) links.push({ href: "/hesabim", label: "Özel ders tarafına geç", short: "Özel ders" });
+    const kurum = kurumHome(f);
+    if (kurum) links.push({ href: kurum, label: "Kurum tarafına geç", short: "Kurum" });
   }
   return links;
 }

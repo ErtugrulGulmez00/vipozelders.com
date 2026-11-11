@@ -96,6 +96,11 @@ export async function SiteFooter() {
                 Kurum paneli girişi
               </Link>
             </li>
+            <li>
+              <Link href="/koc-giris" className="hover:text-white">
+                Pi Koç girişi
+              </Link>
+            </li>
           </ul>
         </div>
         <div>

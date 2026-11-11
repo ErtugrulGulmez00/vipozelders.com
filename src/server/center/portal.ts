@@ -69,7 +69,8 @@ export async function unlinkGuardian(userId: string, guardianId: string) {
 /** Velinin bağlı olduğu öğrenciler. */
 export async function portalChildren(userId: string) {
   return db.centerGuardian.findMany({
-    where: { userId, student: { center: { status: { not: "SUSPENDED" } } } },
+    // Pi Koç bağlantıları kurum portalında değil, /kocum'da
+    where: { userId, student: { center: { status: { not: "SUSPENDED" }, kind: { not: "COACH" } } } },
     include: { student: { include: { center: { select: { name: true, slug: true, phone: true, logoKey: true } }, groups: { include: { group: { select: { name: true } } } } } } },
     orderBy: { linkedAt: "asc" },
   });

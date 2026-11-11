@@ -1,4 +1,4 @@
-import { CalendarClock, ChevronLeft, Phone, School } from "lucide-react";
+import { CalendarClock, ChevronLeft, FileText, Phone, School, Video } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -7,16 +7,21 @@ import { CenterFlash, Tabs } from "@/components/center/center-ui";
 import { CoachingView } from "@/components/center/coaching-view";
 import { StudyView } from "@/components/center/study-view";
 import { BarChart, HBarList, LineChart, Ring } from "@/components/koc/charts";
-import { ArchiveStudentButton, AssignBookForm, DeleteExamButton, DeleteLogButton, ExamForm, KocStudentForm, QuestionLogForm } from "@/components/koc/koc-forms";
+import { ApplyTemplateForm, ArchiveStudentButton, AssignBookForm, DeleteTemplateButton, SaveTemplateForm, DeleteExamButton, DeleteLogButton, ExamForm, KocStudentForm, QuestionLogForm } from "@/components/koc/koc-forms";
 import { meetingLabel, StudentAvatar } from "@/components/koc/student-card";
+import { LinkButton } from "@/components/ui/button";
 import { Badge, Card, CardBody, CardHeader, EmptyState } from "@/components/ui/primitives";
 import { EXAM_PRESETS, formatNet, type ExamKindName } from "@/lib/center/exams";
 import { cn } from "@/lib/cn";
-import { addDaysToDateString, dateStringToDbDate, dbDateToString, minutesToTime, toLocalDateString } from "@/lib/dates";
+import { addDaysToDateString, dateStringToDbDate, dbDateToString, formatCompact, isDateString, minutesToTime, toLocalDateString } from "@/lib/dates";
+import { StudentAccountCard } from "@/app/kurum/ogrenciler/[id]/student-forms";
 import { requireCenter } from "@/server/center/context";
 import { resourceSummary, weekStartOf } from "@/server/center/resources";
 import { db } from "@/server/db";
-import { questionStats, studentExams } from "@/server/koc";
+import { questionStats, studentExams, studentGoals } from "@/server/koc";
+import { GoalCard } from "@/components/koc/goal-card";
+import { TopicMapCard } from "@/components/koc/topic-map";
+import { planTemplates, resourceForecast } from "@/server/koc-plan";
 
 export const metadata: Metadata = { title: "Öğrenci" };
 
@@ -29,7 +34,10 @@ export default async function KocStudentPage({ params, searchParams }: PageProps
   const { id } = await params;
   const sp = await searchParams;
   const centerId = ctx.center.id;
-  const student = await db.centerStudent.findFirst({ where: { id, centerId }, include: { guardians: { orderBy: { isPrimary: "desc" } } } });
+  const student = await db.centerStudent.findFirst({
+    where: { id, centerId },
+    include: { guardians: { orderBy: { isPrimary: "desc" }, include: { user: { select: { username: true, email: true, lastLoginAt: true } } } } },
+  });
   if (!student) notFound();
   const tab = typeof sp.sekme === "string" ? sp.sekme : "genel";
   const today = toLocalDateString(new Date());
@@ -44,7 +52,10 @@ export default async function KocStudentPage({ params, searchParams }: PageProps
   ];
   const name = `${student.firstName} ${student.lastName}`;
   const meeting = student.coachWeekday ? { weekday: student.coachWeekday, minute: student.coachMinute } : null;
-  const guardian = student.guardians[0];
+  // Veliler ve öğrencinin kendi giriş hesabı aynı tabloda tutulur
+  const parents = student.guardians.filter((g) => !g.isStudentAccount);
+  const account = student.guardians.find((g) => g.isStudentAccount);
+  const guardian = parents[0];
 
   return (
     <>
@@ -75,6 +86,14 @@ export default async function KocStudentPage({ params, searchParams }: PageProps
               </a>
             ) : null}
           </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <LinkButton href={`/gorusme/${student.id}`} size="sm" variant="outline">
+            <Video className="size-4" aria-hidden /> Online görüşme
+          </LinkButton>
+          <LinkButton href={`/koc/ogrenciler/${student.id}/rapor`} size="sm">
+            <FileText className="size-4" aria-hidden /> Haftalık rapor
+          </LinkButton>
         </div>
       </section>
       <CenterFlash code={sp.durum} />
@@ -110,11 +129,23 @@ export default async function KocStudentPage({ params, searchParams }: PageProps
           </Card>
           <div className="space-y-6">
             <Card>
+              <CardHeader title="Öğrenci girişi" description="Öğrenci kendi hesabıyla görevlerini işaretler, çözdüğü soruyu girer." />
+              <CardBody>
+                <StudentAccountCard
+                  studentId={student.id}
+                  defaultEmail={student.email}
+                  gateLabel="Pi Koç girişi"
+                  intro="Hesap açınca öğrenci “Pi Koç girişi”nden (pikampus.com/koc-giris) girer: bugünkü görevlerini işaretler, çözdüğü soruyu ders ders girer, haftalık programını, deneme netlerini ve sizin paylaştığınız görüşme notlarını görür. Giriş bilgileri bu e-postaya da gider."
+                  account={account?.user ? { username: account.user.username, email: account.user.email, lastLoginAt: account.user.lastLoginAt ? formatCompact(account.user.lastLoginAt) : null } : account?.email ? { pendingEmail: account.email } : null}
+                />
+              </CardBody>
+            </Card>
+            <Card>
               <CardHeader title="Veli" />
               <CardBody>
-                {student.guardians.length ? (
+                {parents.length ? (
                   <ul className="space-y-2 text-sm">
-                    {student.guardians.map((g) => (
+                    {parents.map((g) => (
                       <li key={g.id}>
                         <p className="font-semibold text-ink-900">{g.fullName}</p>
                         <p className="text-slate-500">{[g.phone, g.email].filter(Boolean).join(" · ") || "İletişim bilgisi yok"}</p>
@@ -143,12 +174,13 @@ export default async function KocStudentPage({ params, searchParams }: PageProps
 
 async function OverviewTab({ centerId, studentId, today, kindParam, base }: { centerId: string; studentId: string; today: string; kindParam?: string; base: string }) {
   const weekStart = weekStartOf(today);
-  const [exams, stats, plan, resources, lastSession] = await Promise.all([
+  const [exams, stats, plan, resources, lastSession, goals] = await Promise.all([
     studentExams(centerId, studentId),
     questionStats(centerId, today, studentId),
     db.centerStudyPlanItem.findMany({ where: { centerId, studentId, date: { gte: dateStringToDbDate(weekStart), lt: dateStringToDbDate(addDaysToDateString(weekStart, 7)) } }, select: { doneAt: true } }),
     db.centerStudentResource.findMany({ where: { studentId }, include: { resource: true, progress: true }, orderBy: { assignedAt: "asc" } }),
     db.centerCoachingSession.findFirst({ where: { centerId, studentId, held: true }, orderBy: { date: "desc" } }),
+    studentGoals(centerId, studentId),
   ]);
   const kinds = [...new Set(exams.map((e) => e.kind))];
   const kind: ExamKindName | null = (kinds.find((k) => k === kindParam) as ExamKindName | undefined) ?? exams[0]?.kind ?? null;
@@ -169,6 +201,8 @@ async function OverviewTab({ centerId, studentId, today, kindParam, base }: { ce
         <Tile label="Son görüşme" value={lastSession ? dmy(dbDateToString(lastSession.date)).slice(0, 5) : "—"} hint={lastSession?.nextGoal ? `Hedef: ${lastSession.nextGoal}` : lastSession ? "Hedef yazılmadı" : "Görüşme kaydı yok"} />
       </div>
 
+      <GoalCard studentId={studentId} goals={goals} editable />
+
       <div className="grid gap-6 lg:grid-cols-[1.6fr_1fr]">
         <Card>
           <CardHeader
@@ -188,7 +222,7 @@ async function OverviewTab({ centerId, studentId, today, kindParam, base }: { ce
           />
           <CardBody>
             {series.length ? (
-              <LineChart label="Net gelişimi" points={series.map((e) => ({ label: e.name, sub: dmy(e.date).slice(0, 5), value: e.net }))} />
+              <LineChart label="Net gelişimi" target={goals.find((g) => g.kind === kind)?.targetNet ?? null} points={series.map((e) => ({ label: e.name, sub: dmy(e.date).slice(0, 5), value: e.net }))} />
             ) : (
               <EmptyLine text="Denemeler sekmesinden sonuç girin; net grafiği burada çıkar." href={`${base}?sekme=denemeler`} />
             )}
@@ -238,7 +272,10 @@ async function OverviewTab({ centerId, studentId, today, kindParam, base }: { ce
             <HBarList
               rows={resources.map((r) => {
                 const sum = resourceSummary(r.resource.topics, r.progress);
-                return { label: `${r.resource.name} · ${r.resource.subject}`, value: sum.completion, max: 1, display: `%${Math.round(sum.completion * 100)} · ${sum.doneCount}/${r.resource.topics.length} konu`, hint: `${sum.solved} soru çözüldü` };
+                // Kitap bitiş tahmini: son 4 haftada biten konu hızıyla
+                const f = resourceForecast(r.resource.topics, r.progress, today);
+                const eta = f.finished ? "bitti" : f.finishDate ? `tahmini bitiş ${dmy(f.finishDate)}` : "son 4 haftada konu bitmedi";
+                return { label: `${r.resource.name} · ${r.resource.subject}`, value: sum.completion, max: 1, display: `%${Math.round(sum.completion * 100)} · ${sum.doneCount}/${r.resource.topics.length} konu · ${eta}`, hint: `${sum.solved} soru çözüldü${f.perWeek ? ` · haftada ${f.perWeek.toLocaleString("tr-TR")} konu` : ""}` };
               })}
             />
           ) : (
@@ -272,15 +309,36 @@ function EmptyLine({ text, href }: { text: string; href: string }) {
 }
 
 async function ProgramTab({ centerId, studentId, week }: { centerId: string; studentId: string; week?: string }) {
-  const [library, assigned] = await Promise.all([
+  const today = toLocalDateString(new Date());
+  const weekStart = weekStartOf(week && isDateString(week) ? week : today);
+  const [library, assigned, templates] = await Promise.all([
     db.centerResource.findMany({ where: { centerId, isActive: true }, orderBy: [{ subject: "asc" }, { name: "asc" }], select: { id: true, name: true, subject: true } }),
     db.centerStudentResource.findMany({ where: { studentId }, select: { resourceId: true } }),
+    planTemplates(centerId),
   ]);
   const taken = new Set(assigned.map((a) => a.resourceId));
   const options = library.filter((r) => !taken.has(r.id)).map((r) => ({ id: r.id, label: `${r.subject} · ${r.name}` }));
   return (
     <div className="space-y-6">
       <StudyView centerId={centerId} studentId={studentId} week={week} baseHref={`/koc/ogrenciler/${studentId}?sekme=program`} mode="staff" canEdit />
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+      <Card>
+        <CardHeader title="Hazır program" description={`${weekStart.slice(8)}.${weekStart.slice(5, 7)} haftasına şablon uygulayın ya da bu haftayı şablon yapın.`} />
+        <CardBody className="space-y-5">
+          <ApplyTemplateForm studentId={studentId} weekStart={weekStart} templates={templates.map((t) => ({ id: t.id, name: t.name, description: t.description }))} />
+          <SaveTemplateForm studentId={studentId} weekStart={weekStart} />
+          {templates.some((t) => t.own) ? (
+            <ul className="space-y-1 border-t border-slate-100 pt-3 text-sm">
+              {templates.filter((t) => t.own).map((t) => (
+                <li key={t.id} className="flex items-center justify-between gap-2">
+                  <span className="text-slate-700">{t.name} <span className="text-xs text-slate-400">· {t.items.length} görev</span></span>
+                  <DeleteTemplateButton templateId={t.id} />
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </CardBody>
+      </Card>
       <Card>
         <CardHeader title="Kaynak ekle" description={library.length ? "Kütüphanenizdeki kitap ve soru bankalarından öğrenciye ekleyin; konu konu ilerlemesini yukarıda girersiniz." : undefined} />
         <CardBody>
@@ -296,6 +354,8 @@ async function ProgramTab({ centerId, studentId, week }: { centerId: string; stu
           )}
         </CardBody>
       </Card>
+      </div>
+      <TopicMapCard centerId={centerId} studentId={studentId} today={today} />
     </div>
   );
 }
@@ -329,7 +389,9 @@ async function QuestionsTab({ centerId, studentId, today }: { centerId: string; 
             {logs.map((l) => (
               <li key={l.id} className="flex items-center gap-3 px-5 py-2.5 text-sm">
                 <span className="w-12 shrink-0 text-xs font-semibold text-slate-500">{dmy(dbDateToString(l.date)).slice(0, 5)}</span>
-                <span className="min-w-0 flex-1 truncate font-medium text-ink-900">{l.subject}</span>
+                <span className="min-w-0 flex-1 truncate font-medium text-ink-900">
+                  {l.subject} {l.byStudent ? <Badge tone="sky" className="ml-1">Öğrenci girdi</Badge> : null}
+                </span>
                 <span className="tabular-nums text-slate-700">{l.solved} soru</span>
                 <span className="hidden w-24 text-right text-xs tabular-nums text-slate-500 sm:inline">{l.correct || l.wrong ? `${l.correct} D · ${l.wrong} Y` : ""}</span>
                 <DeleteLogButton logId={l.id} />

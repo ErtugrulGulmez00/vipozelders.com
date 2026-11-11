@@ -307,7 +307,9 @@ export async function createStudentAccount(ctx: CenterContext, studentId: string
     await db.centerGuardian.create({ data: { ...base, inviteTokenHash: hashToken(token), inviteExpiresAt: new Date(Date.now() + STUDENT_INVITE_DAYS * 86_400_000) } });
     await queueStudentEmail(email, student.firstName, "Öğrenci hesabı daveti", [
       `${ctx.center.name}, sitedeki hesabınızı öğrenci kaydınıza bağlamak istiyor.`,
-      "Bağlayınca devamsızlığınızı, ödevlerinizi ve deneme sonuçlarınızı görür, öğretmenlerinize fotoğrafla soru gönderirsiniz.",
+      ctx.center.kind === "COACH"
+        ? "Bağlayınca koçunuzun yazdığı programı görür, görevlerinizi işaretler ve çözdüğünüz soruları girersiniz."
+        : "Bağlayınca devamsızlığınızı, ödevlerinizi ve deneme sonuçlarınızı görür, öğretmenlerinize fotoğrafla soru gönderirsiniz.",
       `Bağlantı ${STUDENT_INVITE_DAYS} gün geçerlidir; hesabınızla giriş yapıp onaylamanız yeterli.`,
     ], { label: "Daveti aç", url: `/kurum-davet/${token}` }, ctx.center.name);
     return { kind: "invited", email };
@@ -331,8 +333,8 @@ export async function createStudentAccount(ctx: CenterContext, studentId: string
   await db.centerGuardian.create({ data: { ...base, userId: user.id, linkedAt: new Date() } });
   const token = await issueUserToken(user.id, "PASSWORD_RESET", 3 * 24 * 60 * 60 * 1000);
   await queueStudentEmail(email, student.firstName, "Öğrenci hesabınız açıldı", [
-    `${ctx.center.name} size öğrenci hesabı açtı.`,
-    `Giriş adresi: ${appUrl("/kurum-giris")}`,
+    ctx.center.kind === "COACH" ? `Koçunuz ${ctx.center.name} size Pi Koç öğrenci hesabı açtı.` : `${ctx.center.name} size öğrenci hesabı açtı.`,
+    `Giriş adresi: ${appUrl(ctx.center.kind === "COACH" ? "/koc-giris" : "/kurum-giris")}`,
     `Kullanıcı adınız: ${username} (e-posta adresinizle de girebilirsiniz)`,
     "Aşağıdaki bağlantıdan şifrenizi belirleyin (3 gün geçerli). Kurumunuz size geçici bir şifre de vermiş olabilir.",
   ], { label: "Şifremi belirle", url: `/sifre-sifirla/${token}` }, ctx.center.name);

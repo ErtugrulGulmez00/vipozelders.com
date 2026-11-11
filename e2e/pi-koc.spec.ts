@@ -11,6 +11,7 @@ const stamp = Date.now().toString(36);
 const centerName = `E2e Koç ${stamp}`;
 const ownerEmail = `e2e-koc-${stamp}@example.com`;
 const applicantEmail = `e2e-koc-basvuru-${stamp}@example.com`;
+const studentEmail = `e2e-koc-ogrenci-${stamp}@example.com`;
 
 async function sql<T = Record<string, unknown>>(text: string, values: unknown[] = []): Promise<T[]> {
   const client = new pg.Client({ connectionString: DB_URL });
@@ -32,13 +33,13 @@ async function login(page: Page, identifier: string, password: string) {
 }
 
 test.afterAll(async () => {
-  const users = await sql<{ id: string }>(`SELECT id FROM "User" WHERE email = $1`, [ownerEmail]);
+  const users = await sql<{ id: string }>(`SELECT id FROM "User" WHERE email = ANY($1)`, [[ownerEmail, studentEmail]]);
   const ids = users.map((u) => u.id);
   await sql(`DELETE FROM "Center" WHERE name = $1`, [centerName]);
   await sql(`DELETE FROM "Notification" WHERE "userId" = ANY($1)`, [ids]);
   await sql(`DELETE FROM "AuditLog" WHERE "actorId" = ANY($1) OR "entityId" = ANY($1) OR details::text LIKE $2`, [ids, `%${centerName}%`]);
   await sql(`DELETE FROM "User" WHERE id = ANY($1)`, [ids]);
-  await sql(`DELETE FROM "EmailMessage" WHERE "to" = ANY($1)`, [[ownerEmail, applicantEmail]]);
+  await sql(`DELETE FROM "EmailMessage" WHERE "to" = ANY($1)`, [[ownerEmail, applicantEmail, studentEmail]]);
   await sql(`DELETE FROM "CenterApplication" WHERE email = $1`, [applicantEmail]);
   await sql(`DELETE FROM "Notification" WHERE type = 'center.application' AND body LIKE $1`, [`%${centerName}%`]);
 });
@@ -148,4 +149,105 @@ test("yönetici koç hesabı açar; koç yalnızca takip bölümlerini görür",
   await expect(page.getByRole("link", { name: new RegExp(`Elif Koç${stamp}`) }).first()).toBeVisible();
   await page.goto("/koc/abonelik");
   await expect(page.getByText("Pi Koç · 5 öğrenciye kadar")).toBeVisible();
+
+  // Öğrenci girişi: koç hesap açar, bugüne bir görev yazar
+  const studentId = studentUrl.split("/").pop()!;
+  const [coachCenter] = await sql<{ id: string }>(`SELECT id FROM "Center" WHERE name = $1`, [centerName]);
+  await sql(`INSERT INTO "CenterStudyPlanItem" (id, "centerId", "studentId", date, subject, topic, "createdAt") VALUES ($1, $2, $3, (now() AT TIME ZONE 'Europe/Istanbul')::date, 'Matematik', $4, now())`, [`e2e-plan-${stamp}`, coachCenter.id, studentId, `Türev ${stamp}`]);
+  await page.goto(`${studentUrl}?sekme=bilgiler`);
+  await page.getByLabel("Öğrencinin e-postası").fill(studentEmail);
+  await page.getByRole("button", { name: "Öğrenci giriş hesabı aç" }).click();
+  await expect(page.getByText("Öğrenci giriş hesabı açıldı.")).toBeVisible();
+  const studentUsername = (await page.getByTestId("new-username").innerText()).trim();
+  const studentPassword = (await page.getByTestId("new-password").innerText()).trim();
+
+  // Öğrenci Pi Koç kapısından girer, şifresini belirler; kendi koçluk ekranına (/kocum) düşer
+  await page.context().clearCookies();
+  await page.goto("/kocum");
+  await expect(page).toHaveURL(/\/koc-giris$/);
+  await page.goto("/koc-giris");
+  await page.getByLabel("E-posta veya kullanıcı adı").fill(studentUsername);
+  await page.getByLabel("Şifre", { exact: true }).fill(studentPassword);
+  await page.getByRole("button", { name: "Giriş yap" }).click();
+  await expect(page).toHaveURL(/\/sifre-degistir$/);
+  await page.getByLabel("Geçici şifre").fill(studentPassword);
+  await page.getByLabel("Yeni şifre", { exact: true }).fill("OgrenciSifre123");
+  await page.getByLabel("Yeni şifre (tekrar)").fill("OgrenciSifre123");
+  await page.getByRole("button", { name: "Şifremi kaydet" }).click();
+  await expect(page).toHaveURL(/\/kocum\/c[a-z0-9]+$/);
+  await expect(page.getByRole("heading", { name: "Merhaba Elif" })).toBeVisible();
+  const kocumUrl = page.url();
+
+  // Bugünkü görevi işaretler, soru girer
+  await expect(page.getByText(`Türev ${stamp}`)).toBeVisible();
+  await page.getByRole("button", { name: "Tamamlandı işaretle" }).click();
+  await expect(page.getByRole("button", { name: "Tamamlanmadı yap" })).toBeVisible();
+  await page.locator("input[name=subject]").fill("Geometri");
+  await page.locator("input[name=solved]").fill("25");
+  await page.locator("input[name=correct]").fill("20");
+  await page.locator("input[name=wrong]").fill("3");
+  await page.getByRole("button", { name: "Ekle", exact: true }).click();
+  await expect(page.getByText("Kaydedildi. Koçun görecek.")).toBeVisible();
+  const [log] = await sql<{ byStudent: boolean; solved: number }>(`SELECT "byStudent", solved FROM "CenterQuestionLog" WHERE "studentId" = $1 AND subject = 'Geometri'`, [studentId]);
+  expect(log).toMatchObject({ byStudent: true, solved: 25 });
+
+  // Koç paneli öğrenciye açılmaz; kurum portalında Pi Koç kaydı listelenmez, eski adres /kocum'a döner
+  await page.goto("/koc");
+  await expect(page).not.toHaveURL(/\/koc$/);
+  await page.goto(kocumUrl.replace("/kocum/", "/hesabim/kurum/"));
+  await expect(page).toHaveURL(kocumUrl);
+  // Pi Koç girişindeki oturum açık kişi doğrudan ekranına geçer
+  await page.goto("/koc-giris");
+  await expect(page).toHaveURL(kocumUrl);
+
+  // Koç, öğrencinin girdiği kaydı işaretli görür
+  await login(page, username, "KocSifre123");
+  await page.goto(`${studentUrl}?sekme=sorular`);
+  await expect(page.getByText("Öğrenci girdi")).toBeVisible();
+
+  // Hedef: TYT Türkçe 34 net → son denemede 28 net, 6 net kaldı
+  await page.goto(studentUrl);
+  await page.locator("select[name=kind]").selectOption("TYT");
+  await page.locator("input[name=label]").fill("İTÜ Bilgisayar");
+  await page.getByLabel("Türkçe hedef net").fill("34");
+  await page.getByRole("button", { name: "Hedefi kaydet" }).click();
+  // Kayıttan sonra boş form yerini hedef kartına bırakır
+  await expect(page.getByText("Hedefe 6 net kaldı")).toBeVisible();
+  await expect(page.getByText("İTÜ Bilgisayar", { exact: true })).toBeVisible();
+  await expect(page.getByRole("img", { name: "Net gelişimi" })).toHaveCount(0); // tek deneme: grafik yerine bilgi
+
+  // Haftalık rapor: değerlendirme yazılır; veli bağlantıyı giriş yapmadan açar
+  await page.getByRole("link", { name: "Haftalık rapor" }).click();
+  await expect(page).toHaveURL(/\/rapor$/);
+  await page.locator("textarea[name=note]").fill(`Harika bir hafta ${stamp}`);
+  await page.getByRole("button", { name: "Kaydet", exact: true }).click();
+  await expect(page.getByText("Değerlendirme kaydedildi.")).toBeVisible();
+  await expect(page.getByText(`Harika bir hafta ${stamp}`).first()).toBeVisible();
+  const [report] = await sql<{ token: string }>(`SELECT token FROM "CenterWeeklyReport" WHERE "studentId" = $1`, [studentId]);
+  // Velinin e-postası yok: otomatik gönderim açıkça reddedilir
+  await page.getByRole("button", { name: "Velilere gönder" }).click();
+  await expect(page.getByText("Velinin e-posta adresi kayıtlı değil", { exact: false })).toBeVisible();
+  await page.context().clearCookies();
+  await page.goto(`/rapor/${report.token}`);
+  await expect(page.getByRole("heading", { name: `Elif Koç${stamp}` })).toBeVisible();
+  await expect(page.getByText(`Harika bir hafta ${stamp}`)).toBeVisible();
+  await expect(page.getByText("Hedefe", { exact: false }).or(page.getByText("net kaldı", { exact: false })).first()).toBeVisible();
+  await page.goto("/rapor/olmayanbaglantiolmayanbaglanti");
+  await expect(page.getByText("bulunamadı", { exact: false }).first()).toBeVisible();
+
+  // Hazır program: şablon bu haftaya uygulanır; ikinci kez uygulanınca tekrar eklenmez
+  await login(page, username, "KocSifre123");
+  await page.goto(`${studentUrl}?sekme=program`);
+  await page.locator("select[name=templateId]").selectOption({ label: "TYT · dengeli hafta" });
+  await page.getByRole("button", { name: "Bu haftaya uygula" }).click();
+  await expect(page.getByText(/görev haftaya eklendi/)).toBeVisible();
+  await page.getByRole("button", { name: "Bu haftaya uygula" }).click();
+  await expect(page.getByText("Şablondaki görevler bu haftada zaten var.")).toBeVisible();
+
+  // Online görüşme odası: koç girer; başka kurumun personeli giremez
+  await page.goto(`/gorusme/${studentId}`);
+  await expect(page.getByText("Bu görüşme odasına giremezsiniz")).toHaveCount(0);
+  await login(page, "kurum@demo.vipozelders.local", "Kurum12345");
+  await page.goto(`/gorusme/${studentId}`);
+  await expect(page.getByText("Bu görüşme odasına giremezsiniz")).toBeVisible();
 });

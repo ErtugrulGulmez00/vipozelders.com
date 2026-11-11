@@ -335,7 +335,8 @@ export function CancelPlanForm({ planId }: { planId: string }) {
 
 type StudentAccountInfo = { username: string | null; email: string | null; lastLoginAt: string | null } | { pendingEmail: string } | null;
 
-export function StudentAccountCard({ studentId, account, defaultEmail }: { studentId: string; account: StudentAccountInfo; defaultEmail: string | null }) {
+/** intro: hesap yokken gösterilen açıklama (Pi Koç kendi metnini verir) */
+export function StudentAccountCard({ studentId, account, defaultEmail, intro, gateLabel = "Kurum girişi" }: { studentId: string; account: StudentAccountInfo; defaultEmail: string | null; intro?: string; gateLabel?: string }) {
   return (
     <div className="space-y-3">
       {account && "pendingEmail" in account ? (
@@ -356,7 +357,7 @@ export function StudentAccountCard({ studentId, account, defaultEmail }: { stude
           <p className="text-sm text-slate-700">
             Kullanıcı adı: <span className="font-mono font-semibold">{account.username}</span>
             {account.email ? <span className="block text-slate-600">E-posta: {account.email}</span> : null}
-            <span className="block text-xs text-slate-500">{account.lastLoginAt ? `Son giriş ${account.lastLoginAt}` : "Henüz giriş yapmadı"} · Giriş adresi: “Kurum girişi” sayfası</span>
+            <span className="block text-xs text-slate-500">{account.lastLoginAt ? `Son giriş ${account.lastLoginAt}` : "Henüz giriş yapmadı"} · Giriş adresi: “{gateLabel}” sayfası</span>
           </p>
           <ActionForm action={resetStudentAccountAction} className="space-y-2">
             <CredentialsBox who="Öğrenci" />
@@ -377,7 +378,7 @@ export function StudentAccountCard({ studentId, account, defaultEmail }: { stude
       ) : (
         <ActionForm action={createStudentAccountAction} className="space-y-2">
           <CredentialsBox who="Öğrenci" />
-          <p className="text-sm text-slate-600">Öğrenci kendi hesabıyla devamsızlığını, ödevlerini, deneme sonuçlarını görür ve öğretmene fotoğrafla soru gönderir. Bildirimler bu e-postaya gider.</p>
+          <p className="text-sm text-slate-600">{intro ?? "Öğrenci kendi hesabıyla devamsızlığını, ödevlerini, deneme sonuçlarını görür ve öğretmene fotoğrafla soru gönderir. Bildirimler bu e-postaya gider."}</p>
           <input type="hidden" name="studentId" value={studentId} />
           <Field label="Öğrencinin e-postası" htmlFor="student-account-email">
             <Input id="student-account-email" name="email" type="email" defaultValue={defaultEmail ?? ""} required />
