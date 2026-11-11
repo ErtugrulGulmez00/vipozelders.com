@@ -5,8 +5,11 @@ import { parseResultPdf, type PdfExam } from "@/lib/center/exam-pdf";
 import { dateStringToDbDate } from "@/lib/dates";
 import { normalizeSearch } from "@/lib/text";
 import { db } from "../db";
+import { notifyRole } from "../notifications";
+import { saveUpload, uploadUrl } from "../storage";
 import type { CenterContext } from "./context";
 import { CenterError } from "./errors";
+import { examPdfAiEnabled, readExamPdfWithAi } from "./exam-pdf-ai";
 import { recomputeExam, upsertResult } from "./exams";
 import { readPdfItems } from "./pdf-text";
 
@@ -23,6 +26,25 @@ function cleanTopic(topic: string): string {
   return topic.length > 120 ? `${topic.slice(0, 119).trimEnd()}…` : topic;
 }
 
+/** Tanınmayan sonuç PDF'leri bu süre saklanır (gerçek öğrenci verisi; yeni okuyucu yazmak için), sonra silinir. */
+export const UNKNOWN_PDF_KEEP_MS = 30 * 24 * 60 * 60 * 1000;
+export const UNKNOWN_PDF_FOLDER = "deneme-pdf";
+
+async function keepUnknownPdf(ctx: CenterContext, file: File) {
+  try {
+    const key = await saveUpload(file, { visibility: "private", folder: UNKNOWN_PDF_FOLDER, maxBytes: MAX_BYTES, kinds: ["pdf"] });
+    await notifyRole("ADMIN", {
+      type: "admin.exam_pdf_unknown",
+      title: "Tanınmayan deneme PDF'i yüklendi",
+      body: `${ctx.center.name}: ${file.name.slice(0, 120)}. Dosya 30 gün saklanır; bu biçim için okuyucu eklenebilir.`,
+      link: uploadUrl(key) ?? "/yonetim",
+      email: false,
+    });
+  } catch (error) {
+    console.warn("[deneme-pdf] tanınmayan PDF saklanamadı:", error instanceof Error ? error.message : error);
+  }
+}
+
 export async function createPdfImport(ctx: CenterContext, file: File | null): Promise<string> {
   if (!(file instanceof File) || file.size === 0) throw new CenterError("Sonuç PDF'ini seçin.", { file: "Dosya gerekli." });
   if (file.size > MAX_BYTES) throw new CenterError("PDF en fazla 25 MB olabilir.");
@@ -35,12 +57,20 @@ export async function createPdfImport(ctx: CenterContext, file: File | null): Pr
     throw new CenterError("PDF açılamadı. Dosya şifreli ya da bozuk olabilir.");
   }
   if (!pages.some((p) => p.length)) throw new CenterError("PDF'te okunabilir yazı yok (taranmış/fotoğraf PDF). Yayınevi sisteminden indirilen orijinal PDF'i yükleyin.");
-  const parsed = parseResultPdf(pages);
-  if (!parsed.exams.length) {
-    throw new CenterError("Bu PDF'te öğrenci sonuç belgesi bulunamadı; bu rapor biçimi henüz tanınmıyor. PDF'i bize gönderin, ekleyelim. O zamana kadar Excel ile aktarabilirsiniz.");
+  let exams = parseResultPdf(pages).exams;
+  if (!exams.length) {
+    // Tanınmayan biçim: PDF bize kalır (yeni okuyucu yazmak için), yapay zekâ açıksa hemen okunur
+    await keepUnknownPdf(ctx, file);
+    if (examPdfAiEnabled()) {
+      const students = (await candidatesFor(ctx.center.id)).map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName }));
+      exams = (await readExamPdfWithAi(pages, students)).exams;
+    }
+    if (!exams.length) {
+      throw new CenterError("Bu PDF'in biçimi henüz tanınmıyor. Dosyanız bize ulaştı; birkaç gün içinde okunur hâle getireceğiz. Acilse sonuçları Excel ile aktarabilirsiniz.");
+    }
   }
   const data: PdfImportData = {
-    exams: parsed.exams.map((e) => ({ ...e, sections: e.sections.map((s) => ({ ...s, topics: s.topics.map(cleanTopic) })) })),
+    exams: exams.map((e) => ({ ...e, sections: e.sections.map((s) => ({ ...s, topics: s.topics.map(cleanTopic) })) })),
   };
   await db.centerExamImport.deleteMany({ where: { centerId: ctx.center.id, createdAt: { lt: new Date(Date.now() - DRAFT_TTL_MS) } } });
   const draft = await db.centerExamImport.create({

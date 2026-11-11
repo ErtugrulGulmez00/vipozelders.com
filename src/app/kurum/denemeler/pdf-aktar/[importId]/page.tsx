@@ -38,6 +38,8 @@ export default async function ExamPdfMatchPage({ params }: PageProps<"/kurum/den
         .filter(Boolean)
         .join(" · "),
       existing: existing?.name ?? null,
+      ai: exam.source === "ai",
+      notes: exam.notes ?? [],
       rows: exam.students.map((st, i) => ({
         name: st.name,
         number: st.number,
@@ -47,11 +49,13 @@ export default async function ExamPdfMatchPage({ params }: PageProps<"/kurum/den
         studentId: matches[i].studentId,
         confidence: matches[i].confidence,
         suggestions: matches[i].suggestions.map((s) => s.id),
+        warnings: st.warnings ?? [],
       })),
     };
   });
   const total = exams.reduce((t, e) => t + e.rows.length, 0);
   const unmatched = exams.reduce((t, e) => t + e.rows.filter((r) => !r.studentId).length, 0);
+  const flagged = exams.reduce((t, e) => t + e.rows.filter((r) => r.warnings.length).length, 0);
   const candidates = data.candidates.map((c) => ({
     id: c.id,
     label: `${c.firstName} ${c.lastName}${c.studentNumber ? ` · ${c.studentNumber}` : ""}${c.groups.length ? ` · ${c.groups.join(", ")}` : ""}${STATUS_NOTE[c.status] ?? ""}`,
@@ -66,10 +70,11 @@ export default async function ExamPdfMatchPage({ params }: PageProps<"/kurum/den
         description={`${data.draft.fileName} · ${exams.length} deneme, ${total} öğrenci`}
         actions={<DiscardPdfForm draftId={data.draft.id} />}
       />
-      <Alert tone={unmatched ? "warning" : "success"} className="mb-6">
+      <Alert tone={unmatched || flagged ? "warning" : "success"} className="mb-6">
         {unmatched
           ? `${total - unmatched} öğrenci otomatik eşleşti. ${unmatched} öğrenci için ${coach ? "öğrencinizi" : "kurumdaki öğrenciyi"} seçin; ${coach ? "öğrencileriniz arasında" : "kurumunuzda"} olmayanları “Aktarma” olarak bırakın.`
           : `Tüm öğrenciler eşleşti. Sarı işaretli satırlara bir göz atıp aktarın.`}
+        {flagged ? ` ${flagged} satırda değerler tutarsız (kırmızı); PDF'ten kontrol edin.` : null}
       </Alert>
       {candidates.length === 0 ? (
         <Alert tone="warning" className="mb-6">

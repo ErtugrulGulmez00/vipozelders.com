@@ -13,7 +13,7 @@ export function PdfUploadForm() {
   return (
     <ActionForm action={uploadExamPdfAction} className="space-y-4">
       <FileInput name="file" accept=".pdf,application/pdf" maxMb={25} placeholder="Sonuç PDF’ini seçin" required />
-      <SubmitButton size="lg" pendingText="PDF okunuyor…">
+      <SubmitButton size="lg" pendingText="PDF okunuyor (bir dakikayı bulabilir)…">
         PDF’i oku
       </SubmitButton>
     </ActionForm>
@@ -29,6 +29,8 @@ export type MatchRow = {
   studentId: string | null;
   confidence: MatchConfidence;
   suggestions: string[];
+  /** Tutarlılık denetiminde takılan noktalar (yapay zekâyla okunan PDF) */
+  warnings: string[];
 };
 
 export type MatchExam = {
@@ -36,6 +38,9 @@ export type MatchExam = {
   kindLabel: string;
   summary: string;
   existing: string | null;
+  /** Yapay zekâyla okundu: kurum değerleri kontrol etmeli */
+  ai: boolean;
+  notes: string[];
   rows: MatchRow[];
 };
 
@@ -92,6 +97,17 @@ export function PdfMatchForm({ draftId, exams, candidates, today, coach = false 
                   {exam.rows.length - matched ? <Badge tone="rose">{exam.rows.length - matched} aktarılmayacak</Badge> : null}
                 </div>
               </div>
+              {exam.ai ? (
+                <p className="rounded-lg bg-violet-50 px-3 py-2 text-xs text-violet-900">
+                  Bu PDF&apos;in biçimi henüz tanınmıyor; sonuçlar yapay zekâyla okundu. Aktarmadan önce birkaç öğrencinin netini PDF ile karşılaştırın.
+                  {exam.rows.some((r) => r.warnings.length) ? " Kırmızı satırlarda tutarsızlık var; o öğrencileri PDF'ten kontrol edin ya da “Aktarma” bırakın." : " Tutarlılık denetiminde sorun bulunmadı."}
+                </p>
+              ) : null}
+              {exam.notes.map((note) => (
+                <p key={note} className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                  {note}
+                </p>
+              ))}
               {exam.existing ? (
                 <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">“{exam.existing}” adlı deneme zaten var; sonuçlar onun üzerine yazılır. Ayrı deneme olsun istiyorsanız adını değiştirin.</p>
               ) : null}
@@ -125,16 +141,22 @@ export function PdfMatchForm({ draftId, exams, candidates, today, coach = false 
                     {exam.rows.map((row, i) => {
                       const pick = chosen[i];
                       const dup = pick && (counts.get(pick) ?? 0) > 1;
-                      const sure = pick && !dup && (row.confidence === "alias" || row.confidence === "exact" || row.confidence === "number") && pick === row.studentId;
+                      const flagged = row.warnings.length > 0;
+                      const sure = !flagged && pick && !dup && (row.confidence === "alias" || row.confidence === "exact" || row.confidence === "number") && pick === row.studentId;
                       const status = !pick ? CONFIDENCE.none : pick !== row.studentId ? { tone: "sky" as Tone, text: "Elle seçildi" } : CONFIDENCE[row.confidence];
                       return (
-                        <tr key={i} className={dup ? "bg-rose-50" : onlyCheck && sure ? "hidden" : undefined}>
+                        <tr key={i} className={dup || flagged ? "bg-rose-50" : onlyCheck && sure ? "hidden" : undefined}>
                           <td className="px-3 py-2">
                             <p className="font-medium text-slate-900">{row.name || "Adsız form"}</p>
                             <p className="text-xs text-slate-500">
                               No {row.number || "—"} · {row.className || "sınıf yok"}
                               {row.score ? ` · ${row.score.toLocaleString("tr-TR")} puan` : ""}
                             </p>
+                            {row.warnings.map((w) => (
+                              <p key={w} className="mt-0.5 text-xs font-medium text-rose-700">
+                                {w}
+                              </p>
+                            ))}
                           </td>
                           <td className="px-3 py-2 text-right font-semibold">{row.net.toLocaleString("tr-TR", { maximumFractionDigits: 2 })}</td>
                           <td className="px-3 py-2">

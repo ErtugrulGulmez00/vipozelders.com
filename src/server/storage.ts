@@ -131,3 +131,25 @@ export async function deleteUpload(key: string | null | undefined) {
 export function uploadUrl(key: string | null | undefined): string | null {
   return key ? `/api/dosya/${key}` : null;
 }
+
+/** Bir klasördeki, belirtilen süreden eski dosyaları siler (ör. saklama süresi dolan deneme PDF'leri). */
+export async function pruneUploadFolder(visibility: "public" | "private", folder: string, maxAgeMs: number, now = new Date()): Promise<number> {
+  if (!/^[a-z0-9-]+$/.test(folder)) return 0;
+  const dir = path.join(/*turbopackIgnore: true*/ ROOT, visibility, folder);
+  let names: string[];
+  try {
+    names = await fs.readdir(/*turbopackIgnore: true*/ dir);
+  } catch {
+    return 0;
+  }
+  let removed = 0;
+  for (const name of names) {
+    const file = path.join(/*turbopackIgnore: true*/ dir, name);
+    const stat = await fs.stat(/*turbopackIgnore: true*/ file).catch(() => null);
+    if (stat?.isFile() && now.getTime() - stat.mtimeMs > maxAgeMs) {
+      await fs.rm(/*turbopackIgnore: true*/ file, { force: true });
+      removed++;
+    }
+  }
+  return removed;
+}

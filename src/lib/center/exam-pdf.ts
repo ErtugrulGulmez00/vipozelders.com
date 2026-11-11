@@ -18,6 +18,8 @@ export type PdfStudent = {
   ranks: ExternalRank[];
   /** Denemenin ders sırasıyla; öğrencinin girmediği ders null */
   sections: (PdfStudentSection | null)[];
+  /** Tutarlılık denetiminde takılan noktalar (yapay zekâyla okunan PDF'te); eşleştirme ekranında kırmızı gösterilir */
+  warnings?: string[];
 };
 
 export type PdfExamSection = { label: string; name: string; questionCount: number; answerKey: string | null; topics: string[]; subjectSlug: string | null };
@@ -29,6 +31,10 @@ export type PdfExam = {
   wrongPenalty: number;
   sections: PdfExamSection[];
   students: PdfStudent[];
+  /** "ai": tanınan bir rapor biçimi değil, yapay zekâyla okundu (kurum değerleri kontrol etmeli) */
+  source?: "ai";
+  /** Okuma sırasında atlanan sayfalar gibi genel uyarılar */
+  notes?: string[];
 };
 
 export type PdfParseResult = { exams: PdfExam[]; pages: number; skippedPages: number };
@@ -311,7 +317,7 @@ export function assignTopics(questionCount: number, c: TopicConstraint, maxNodes
   return run(true) ?? run(false);
 }
 
-function inferPenalty(rows: { correct: number; wrong: number; net: number }[]): number | null {
+export function inferPenalty(rows: { correct: number; wrong: number; net: number }[]): number | null {
   const samples = rows.filter((r) => r.wrong > 0).map((r) => (r.correct - r.net) / r.wrong);
   if (!samples.length) return null;
   const options = PENALTY_OPTIONS.map((p) => p.penalty);
@@ -333,13 +339,13 @@ const SUBJECT_GUESS: [RegExp, string][] = [
   [/SOSYAL/, "sosyal-bilgiler"],
 ];
 
-function guessSubject(name: string): string | null {
+export function guessSubject(name: string): string | null {
   const n = norm(name);
   return SUBJECT_GUESS.find(([re]) => re.test(n))?.[1] ?? null;
 }
 
 /** Ders sayıları bir hazır şablona (LGS, TYT…) uyuyorsa o tür; 5-7. sınıf denemeleri serbest deneme sayılır. */
-function detectKind(name: string, counts: number[]): ExamKindName {
+export function detectKind(name: string, counts: number[]): ExamKindName {
   const lowerGrade = /\b[5-7]\s*\.?\s*SINIF/.test(norm(name));
   for (const kind of Object.keys(EXAM_PRESETS) as ExamKindName[]) {
     const preset = EXAM_PRESETS[kind];

@@ -16,6 +16,8 @@ import { recordError } from "./errors";
 import { processPendingRefunds } from "./payments/service";
 import { sendPayoutDayReminder } from "./payout-reminder";
 import { pruneStats } from "./stats";
+import { pruneUploadFolder } from "./storage";
+import { UNKNOWN_PDF_FOLDER, UNKNOWN_PDF_KEEP_MS } from "./center/exam-pdf-import";
 import { sendPendingPushes } from "./push";
 import { sendPendingTelegrams } from "./telegram";
 import { sendPendingWhatsApps } from "./whatsapp";
@@ -55,6 +57,8 @@ const TASKS = {
   refunds: () => processPendingRefunds(),
   payoutDay: sendPayoutDayReminder,
   statsPrune: pruneStats,
+  // Tanınmayan deneme PDF'leri (gerçek öğrenci verisi) 30 gün sonra silinir
+  examPdfPrune: (now: Date) => pruneUploadFolder("private", UNKNOWN_PDF_FOLDER, UNKNOWN_PDF_KEEP_MS, now),
   // Kurum paneli: taksit hatırlatmaları WhatsApp kuyruğuna girer; mesaj geçmişinin durumu kuyruklardan eşitlenir.
   centerReminders: sendCenterPaymentReminders,
   centerExpiry: sendCenterExpiryNotices,

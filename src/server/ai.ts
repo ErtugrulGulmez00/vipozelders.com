@@ -14,7 +14,20 @@ function models(): string[] {
   return (list.length ? list : DEFAULT_MODELS).slice(0, 3);
 }
 
-export async function aiText({ system, prompt, timeoutMs = 45_000 }: { system: string; prompt: string; timeoutMs?: number }): Promise<string | null> {
+export async function aiText({
+  system,
+  prompt,
+  timeoutMs = 45_000,
+  maxTokens = 3000,
+  modelList,
+}: {
+  system: string;
+  prompt: string;
+  timeoutMs?: number;
+  maxTokens?: number;
+  /** Verilmezse OPENROUTER_MODELS ya da varsayılan liste */
+  modelList?: string[];
+}): Promise<string | null> {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) return null;
   try {
@@ -22,8 +35,8 @@ export async function aiText({ system, prompt, timeoutMs = 45_000 }: { system: s
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", "X-Title": "Pi Kampus" },
       body: JSON.stringify({
-        models: models(),
-        max_tokens: 3000,
+        models: (modelList?.length ? modelList : models()).slice(0, 3),
+        max_tokens: maxTokens,
         // Ücretli modele geçilince OPENROUTER_DENY_TRAINING=1: veriyi eğitimde kullanan sağlayıcılar dışlanır.
         // Ücretsiz modeller bu şartla çalışmaz; onlara yalnızca isimsiz sayılar gider.
         ...(process.env.OPENROUTER_DENY_TRAINING === "1" ? { provider: { data_collection: "deny" } } : {}),
