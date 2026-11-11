@@ -5,7 +5,7 @@ import { aiConfigured, aiText } from "../ai";
 
 // Tanınmayan sonuç PDF'ini yapay zekâyla okuma (OpenRouter). Kurumdaki öğrenci adları kodlanarak gönderilir.
 // Gizlilik kilidi: gerçek öğrenci verisi yalnızca veriyi eğitimde kullanmayan sağlayıcılara gider
-// (OPENROUTER_DENY_TRAINING=1). Ücretsiz modellerle deneme yalnızca yerelde, EXAM_PDF_AI_ALLOW_FREE=1 ile.
+// (OPENROUTER_DENY_TRAINING=1). Ücretsiz modellerle deneme EXAM_PDF_AI_ALLOW_FREE=1 ile (yalnızca sahte adlarla test).
 
 const MAX_PAGES = 120;
 const PARALLEL = 2;
@@ -13,8 +13,9 @@ const PARALLEL = 2;
 export function examPdfAiEnabled(): boolean {
   if (!aiConfigured()) return false;
   if (process.env.OPENROUTER_DENY_TRAINING === "1") return true;
-  // Ücretsiz modeller veriyi eğitimde kullanır: yalnızca yerelde (HTTPS olmayan adres) ve açıkça izin verilince
-  return process.env.EXAM_PDF_AI_ALLOW_FREE === "1" && !(process.env.APP_URL ?? "").startsWith("https://");
+  // Ücretsiz modeller veriyi eğitimde kullanır: yalnızca açıkça izin verilince (yerel deneme ya da sahte adlarla test).
+  // Gerçek öğrenci verisine geçmeden önce bu kaldırılır, OPENROUTER_DENY_TRAINING=1 ve ücretli model kullanılır.
+  return process.env.EXAM_PDF_AI_ALLOW_FREE === "1";
 }
 
 function pdfModels(): string[] | undefined {
