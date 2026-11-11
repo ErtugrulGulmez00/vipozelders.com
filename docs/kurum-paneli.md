@@ -15,6 +15,7 @@
 > - **Kitap bitiş tahmini:** son 4 haftanın konu hızına göre.
 > - **Online görüşme:** `/gorusme/<öğrenci>`; LiveKit odası `koc-<öğrenci>`, koç girince öğrenciye bildirim gider.
 > - **Deneme PDF aktarımı:** `/koc/denemeler`; kurumdaki yayınevi PDF aktarımının aynısı. Öğrenci de denemesini kendisi girebilir (`enteredByStudent`).
+> - **Pi Koç mobil uygulaması:** ayrı Flutter projesi `pikoc-mobil/` (paket `com.pikampus.pikoc`). API `/api/mobil/v1/koc/...` (`src/server/mobile/koc.ts`): öğrenci/veli `ogrenci`, `ogrenci/{bağlantı}` (+ `program`, `gorev/{id}`, `soru`, `calisma`, `deneme`), koç `panel`, `panel/ogrenci/{id}` (+ `program`), görüşme anahtarı `gorusme/{öğrenci}` (uygulama LiveKit'e kendisi bağlanır; Android'de ekran paylaşımı), `sinavlar`. Giriş, profil, şifre, bildirim mevcut uç noktalarla.
 > - **Çalışma süresi:** `CenterStudySession`; öğrenci sayaçla ya da elle girer, koç grafiği ve haftalık raporda görür.
 > - **Koçun tahsilatı:** `/koc/tahsilat`; öğrenci başına aylık ücret (`monthlyFee`), ay ay ödendi/bekliyor (`CenterCoachPayment`), son 6 ay grafiği.
 > - **Hatırlatmalar (zamanlayıcı):** koça 08:00-11:00 arası "bugünkü görüşmeler"; programı %40'ın altında kalan öğrenciye perşembe-pazar 18:00-21:00 arası haftada bir uyarı. Öğrenci sınırı kurum sayfasından verilir, ödeme elle kaydedilir.
