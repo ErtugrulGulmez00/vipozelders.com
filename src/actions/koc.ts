@@ -11,7 +11,8 @@ import { assignResource } from "@/server/center/resources";
 import { createStudent } from "@/server/center/students";
 import { db } from "@/server/db";
 import { actionUser } from "@/server/auth/current-user";
-import { saveReport, sendReport } from "@/server/koc-report";
+import { draftReportNote, saveReport, sendReport } from "@/server/koc-report";
+import { isDateString } from "@/lib/dates";
 import { addPortalStudySession, addStudySession, deleteCoachPayment, deleteStudySession, recordCoachPayment } from "@/server/koc-extra";
 import { addTopicToPlan, applyTemplate, deleteTemplate, saveWeekAsTemplate } from "@/server/koc-plan";
 import { addPortalQuestionLog, addPortalStudentExam, addQuestionLog, addStudentExam, deletePortalStudentExam, deleteGoal, deletePortalQuestionLog, deleteQuestionLog, deleteStudentExam, KOC_EXAM_KINDS, kocStudentOrThrow, saveGoal, savePortalGoal } from "@/server/koc";
@@ -214,6 +215,19 @@ export async function kocSaveReportAction(_: ActionState, formData: FormData): P
     refresh();
     return success("Değerlendirme kaydedildi.");
   });
+}
+
+/** Değerlendirme taslağı (yapay zekâ ya da kurallı özet); kaydetmez, metni forma döndürür. */
+export async function kocDraftReportAction(studentId: string, weekStart: string): Promise<{ ok: true; text: string; source: "ai" | "rule" } | { ok: false; error: string }> {
+  const auth = await coachAuth("students.edit");
+  if (!auth.ok) return { ok: false, error: auth.state.error ?? "Yetkiniz yok." };
+  if (typeof studentId !== "string" || typeof weekStart !== "string" || !isDateString(weekStart)) return { ok: false, error: "Geçersiz istek." };
+  try {
+    return { ok: true, ...(await draftReportNote(auth.ctx, studentId, weekStart)) };
+  } catch (error) {
+    if (error instanceof CenterError) return { ok: false, error: error.message };
+    throw error;
+  }
 }
 
 export async function kocSendReportAction(_: ActionState, formData: FormData): Promise<ActionState> {

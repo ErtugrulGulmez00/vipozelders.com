@@ -11,6 +11,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/primitives";
 import { addDaysToDateString, formatCompact, formatDate, toLocalDateString } from "@/lib/dates";
 import { requireCenter } from "@/server/center/context";
 import { db } from "@/server/db";
+import { aiConfigured } from "@/server/ai";
 import { appUrl } from "@/server/email";
 import { getReport, reportWeek, weeklyReportData } from "@/server/koc-report";
 import { toWhatsAppNumber } from "@/server/whatsapp";
@@ -66,7 +67,7 @@ export default async function KocReportPage({ params, searchParams }: PageProps<
         <Card>
           <CardHeader title="Değerlendirmeniz" />
           <CardBody>
-            <ReportNoteForm studentId={id} weekStart={weekStart} note={report?.note ?? null} />
+            <ReportNoteForm studentId={id} weekStart={weekStart} note={report?.note ?? null} aiEnabled={aiConfigured()} />
           </CardBody>
         </Card>
         <Card>

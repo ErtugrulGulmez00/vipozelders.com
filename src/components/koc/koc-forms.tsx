@@ -1,8 +1,8 @@
 "use client";
 
 import { DateInput } from "@/components/ui/date-input";
-import { Archive, RotateCcw, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { Archive, RotateCcw, Sparkles, Trash2 } from "lucide-react";
+import { useState, useTransition } from "react";
 import {
   kocAddExamAction,
   kocAddQuestionLogAction,
@@ -24,6 +24,7 @@ import {
   kocSaveTemplateAction,
   kocDeleteTemplateAction,
   kocSendReportAction,
+  kocDraftReportAction,
   portalAddExamAction,
   portalDeleteExamAction,
   kocAddStudyAction,
@@ -305,14 +306,34 @@ export function KocSettingsForm({ values }: { values: { name: string; phone: str
   );
 }
 
-export function ReportNoteForm({ studentId, weekStart, note }: { studentId: string; weekStart: string; note: string | null }) {
+export function ReportNoteForm({ studentId, weekStart, note, aiEnabled }: { studentId: string; weekStart: string; note: string | null; aiEnabled: boolean }) {
+  const [text, setText] = useState(note ?? "");
+  const [info, setInfo] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  function draft() {
+    if (text.trim() && !window.confirm("Yazdığınız metnin yerine taslak gelsin mi?")) return;
+    setInfo(null);
+    startTransition(async () => {
+      const result = await kocDraftReportAction(studentId, weekStart);
+      if (!result.ok) return setInfo(result.error);
+      setText(result.text);
+      setInfo(result.source === "ai" ? "Yapay zekâ taslağı: okuyup düzeltin, sonra kaydedin." : "Haftanın verilerinden özet: düzenleyip kaydedin.");
+    });
+  }
+
   return (
     <ActionForm action={kocSaveReportAction} className="space-y-3">
       <input type="hidden" name="studentId" value={studentId} />
       <input type="hidden" name="weekStart" value={weekStart} />
       <Field label="Bu haftanın değerlendirmesi" hint="Rapora olduğu gibi yazılır; veli görür.">
-        <Textarea name="note" rows={5} maxLength={3000} defaultValue={note ?? ""} placeholder="Bu hafta programın büyük bölümünü uyguladı; paragrafta hızlandı. Gelecek hafta geometriye ağırlık vereceğiz…" />
+        <Textarea name="note" rows={7} maxLength={3000} value={text} onChange={(e) => setText(e.target.value)} placeholder="Bu hafta programın büyük bölümünü uyguladı; paragrafta hızlandı. Gelecek hafta geometriye ağırlık vereceğiz…" />
       </Field>
+      <button type="button" onClick={draft} disabled={pending} className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-full bg-violet-50 px-4 text-sm font-semibold text-violet-700 ring-1 ring-violet-200 hover:bg-violet-100 disabled:opacity-60">
+        <Sparkles className="size-4" aria-hidden />
+        {pending ? (aiEnabled ? "Hazırlanıyor… (yarım dakika sürebilir)" : "Hazırlanıyor…") : aiEnabled ? "Yapay zekâyla taslak yaz" : "Verilerden taslak yaz"}
+      </button>
+      {info ? <p className="text-xs text-slate-500" role="status">{info}</p> : null}
       <SubmitButton variant="outline">Kaydet</SubmitButton>
     </ActionForm>
   );

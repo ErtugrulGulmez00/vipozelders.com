@@ -8,6 +8,7 @@
 >
 > Pi Koç araçları (`src/server/koc*.ts`):
 > - **Haftalık veli raporu:** `/koc/ogrenciler/<id>/rapor`; veli `/rapor/<token>` bağlantısını girişsiz açar (30 gün). Kayıt `CenterWeeklyReport`; e-posta / WhatsApp paylaşımı ve PDF.
+> - **Değerlendirme taslağı:** raporda "taslak yaz" düğmesi. `OPENROUTER_API_KEY` varsa yapay zekâ (OpenRouter; model listesi `OPENROUTER_MODELS`, varsayılan ücretsiz modeller), yoksa ya da yanıt gelmezse kurallı özet (`src/lib/koc-summary.ts`). Yapay zekâya yalnızca isimsiz sayılar gider; koç başına günde 40 taslak. Ücretli modele geçince `OPENROUTER_DENY_TRAINING=1`. Taslak kaydedilmez, koç düzeltip kaydeder.
 > - **Hedef takibi:** `CenterStudentGoal`; ders ders hedef net, "hedefe X net kaldı", net grafiğinde hedef çizgisi. Hedefi koç ya da öğrenci girer.
 > - **Konu eksik haritası:** kaynak ilerlemesi, deneme konu analizi ve görüşmedeki öncelikli konulardan; zayıf konu tek tıkla programa eklenir.
 > - **Hazır program şablonları:** hazır şablonlar `src/lib/koc-templates.ts`, koçun kendi şablonları `CenterPlanTemplate`.

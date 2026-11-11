@@ -1,7 +1,10 @@
 import "server-only";
 import { EXAM_PRESETS, round2, type ExamKindName } from "@/lib/center/exams";
 import { addDaysToDateString, dateStringToDbDate, dbDateToString, isDateString, minutesToTime, WEEKDAY_NAMES } from "@/lib/dates";
+import { ruleBasedSummary, summaryFacts } from "@/lib/koc-summary";
+import { aiConfigured, aiText } from "./ai";
 import { randomToken } from "./auth/password";
+import { countRecentAttempts, recordLoginAttempt } from "./auth/rate-limit";
 import type { CenterContext } from "./center/context";
 import { CenterError } from "./center/errors";
 import { messageGuardians } from "./center/messages";
@@ -157,4 +160,33 @@ export async function reportByToken(token: string) {
   const report = await db.centerWeeklyReport.findUnique({ where: { token }, include: { center: { select: { kind: true, status: true, name: true } } } });
   if (!report || report.expiresAt < new Date() || report.center.status === "SUSPENDED" || report.center.kind !== "COACH") return null;
   return report;
+}
+
+/** Koç başına günlük yapay zekâ taslağı sınırı (ücretsiz modellerin kotasını korur) */
+const AI_DRAFTS_PER_DAY = 40;
+
+const AI_SYSTEM = [
+  "Sen bir eğitim koçusun ve veliye haftalık değerlendirme yazıyorsun.",
+  "Türkçe yaz, veliye 'siz' diye hitap et. En fazla 4 kısa cümle (toplam 90 kelimeyi geçme), sıcak ama abartısız, somut.",
+  "Yalnızca verilen sayılara dayan; sayı, konu ya da olay uydurma, neden-sonuç tahmini yürütme. Önce iyi giden bir şeyi, sonra zayıf noktayı nazikçe söyle ve gelecek hafta için tek bir somut odak öner.",
+  "Sayıları doğal yaz (ör. '5 net düştü', '-5' değil).",
+  "Öğrencinin adını kullanma; gerekirse 'öğrencimiz' de. Başlık, madde işareti, emoji, selamlama ve imza kullanma.",
+].join(" ");
+
+/** Değerlendirme taslağı: yapay zekâ varsa onunla, yoksa (ya da yanıt gelmezse) kurallı özetle. Kaydetmez. */
+export async function draftReportNote(ctx: CenterContext, studentId: string, weekStart: string): Promise<{ text: string; source: "ai" | "rule" }> {
+  await kocStudentOrThrow(ctx, studentId);
+  const data = await weeklyReportData(ctx.center.id, studentId, weekStart);
+  const input = { ...data, priorityTopics: [...new Set(data.sessions.flatMap((s) => s.priorityTopics))] };
+  const rule = ruleBasedSummary(input);
+  if (!aiConfigured() || (data.solved === 0 && !data.plan.total && !data.studyMinutes && !data.exam)) return { text: rule, source: "rule" };
+
+  const limitKey = `ai-draft:${ctx.center.id}`;
+  if ((await countRecentAttempts(limitKey, 86_400_000)) >= AI_DRAFTS_PER_DAY) return { text: rule, source: "rule" };
+  await recordLoginAttempt(limitKey, null, false);
+
+  const text = await aiText({ system: AI_SYSTEM, prompt: summaryFacts(input, data.student.gradeName) });
+  // Model yanlışlıkla düşünme ya da madde işareti döndürürse sade metne indir
+  const clean = text?.replace(/<think>[\s\S]*?<\/think>/g, "").replace(/^[-*•]\s+/gm, "").replace(/\n{2,}/g, "\n\n").trim().slice(0, 3000);
+  return clean ? { text: clean, source: "ai" } : { text: rule, source: "rule" };
 }
