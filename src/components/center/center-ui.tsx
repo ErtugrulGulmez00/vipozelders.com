@@ -11,6 +11,7 @@ import type { CenterAccess } from "@/lib/center/subscription";
 const FLASH: Record<string, { tone: "success" | "warning"; text: string }> = {
   kaydedildi: { tone: "success", text: "Öğrenci kaydedildi." },
   eklendi: { tone: "success", text: "Öğrenci eklendi. Şimdi haftalık programını yapabilir, soru ve deneme girebilirsiniz." },
+  hosgeldin: { tone: "success", text: "Pi Koç hesabınız hazır, ücretsiz deneme başladı. İlk öğrencinizi ekleyerek başlayın; öğrencinize de giriş hesabı açabilirsiniz." },
   guncellendi: { tone: "success", text: "Öğrenci bilgileri güncellendi." },
   silindi: { tone: "success", text: "Öğrenci silindi." },
   koc: { tone: "warning", text: "Bu bölüm Pi Koç'ta yok." },

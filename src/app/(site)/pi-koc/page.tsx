@@ -8,7 +8,7 @@ import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/money";
 import { parseCoachTiers } from "@/lib/pi-koc";
 import { getSiteSettings } from "@/server/site";
-import { CoachApplicationForm } from "./coach-application-form";
+import { KocSignupForm } from "@/components/koc/signup-form";
 
 export const metadata: Metadata = {
   title: "Pi Koç: koçlar için öğrenci takip paneli",
@@ -25,18 +25,19 @@ const FEATURES = [
 ];
 
 const STEPS = [
-  ["Başvurun", "Formu doldurun, kaç öğrenciyle çalıştığınızı seçin."],
-  ["Hesabınızı açalım", "Sizi arayıp panelinizi açıyoruz; giriş bilgileriniz e-postanıza gelir."],
+  ["Kayıt olun", "Formu doldurun; hesabınız hemen açılır, ücretsiz deneme başlar. Kart bilgisi istemeyiz."],
   ["Öğrencilerinizi ekleyin", "Sınıfını, hedefini ve haftalık görüşme gününü yazın; takip hemen başlar."],
+  ["Öğrencinize giriş verin", "Öğrenciniz “Pi Koç girişi”nden girer, görevlerini işaretler ve çözdüğü soruyu kendisi girer."],
 ];
 
 const CHUNKY = "inline-flex items-center justify-center rounded-2xl border-b-[5px] font-display font-extrabold transition-colors active:translate-y-px";
 
 export default async function PiKocPage() {
   const settings = await getSiteSettings();
-  const trialDays = settings.centerTrialDays;
+  // Pi Koç denemesi en az 7 gün (kayıt sayfasıyla aynı)
+  const trialDays = Math.max(settings.centerTrialDays, 7);
   const tiers = parseCoachTiers(settings.piKocTiers);
-  const cta = trialDays > 0 ? "Ücretsiz deneyin" : "Başvurun";
+  const cta = `${trialDays} gün ücretsiz başla`;
 
   return (
     <>
@@ -47,9 +48,9 @@ export default async function PiKocPage() {
             <h1 className="font-display text-[2.6rem] font-extrabold leading-[1.08] tracking-tight text-ink-900 sm:text-[3.3rem]">Öğrencilerinizi tek panelden takip edin.</h1>
             <p className="text-lg leading-relaxed text-ink-600">Görüşme, program, soru ve deneme takibi grafiklerle tek yerde. LGS ve YKS koçları için.</p>
             <div className="flex flex-wrap items-center gap-4">
-              <a href="#basvuru" className={cn(CHUNKY, "min-h-14 border-brand-800 bg-brand-600 px-7 text-base text-white hover:bg-brand-700")}>
+              <Link href="/pi-koc/kayit" className={cn(CHUNKY, "min-h-14 border-brand-800 bg-brand-600 px-7 text-base text-white hover:bg-brand-700")}>
                 {cta}
-              </a>
+              </Link>
               <a href="#fiyatlar" className="font-bold text-brand-700 hover:underline">
                 Fiyatları görün
               </a>
@@ -57,11 +58,10 @@ export default async function PiKocPage() {
                 Pi Koç girişi
               </Link>
             </div>
-            {trialDays > 0 ? <p className="text-sm text-ink-500">{trialDays} gün ücretsiz · kart bilgisi gerekmez</p> : null}
+            <p className="text-sm text-ink-500">Hesabınız hemen açılır · kart bilgisi gerekmez</p>
           </div>
           <div className="min-w-0 overflow-hidden rounded-2xl border border-ink-100 bg-white shadow-xl">
-            {/* Görselin sol menüsü kurum paneline ait; koçta o bölümler yok, kırpılır */}
-            <Image src="/kurumlar/deneme.png" alt="Panelde deneme analizi ekranı" width={1366} height={820} loading="eager" sizes="(min-width: 1024px) 700px, 124vw" className="-ml-[23.6%] h-auto w-[124%] max-w-none" />
+            <Image src="/pi-koc/panel.jpg" alt="Pi Koç paneli: görüşmeler, çözülen soru grafiği, öğrenci kartları ve net eğilimleri" width={1366} height={820} loading="eager" sizes="(min-width: 1024px) 600px, 100vw" className="h-auto w-full" />
           </div>
         </div>
       </section>
@@ -96,13 +96,13 @@ export default async function PiKocPage() {
                   <span className="text-base font-semibold text-ink-500"> / ay</span>
                 </p>
                 <p className="mt-1 text-sm text-ink-500">KDV dahil</p>
-                <Link href={`?ogrenci=${tier.students}#basvuru`} className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl border-2 border-ink-100 font-bold text-ink-900 hover:bg-ink-50">
-                  Bu paketle başvur
+                <Link href={`/pi-koc/kayit?ogrenci=${tier.students}`} className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl border-2 border-ink-100 font-bold text-ink-900 hover:bg-ink-50">
+                  Bu paketle ücretsiz başla
                 </Link>
               </div>
             ))}
           </div>
-          <p className="mt-5 text-sm text-ink-500">Ödemeyi şimdilik havale ya da EFT ile alıyoruz.</p>
+          <p className="mt-5 text-sm text-ink-500">Deneme bitince ödemeyi şimdilik havale ya da EFT ile alıyoruz; kayıtlarınız silinmez.</p>
         </div>
       </section>
 
@@ -123,11 +123,16 @@ export default async function PiKocPage() {
             </ol>
           </div>
           <div className="rounded-3xl bg-white p-6 sm:p-8">
-            <h2 className="font-display text-2xl font-extrabold text-ink-900">Pi Koç başvurusu</h2>
+            <h2 className="font-display text-2xl font-extrabold text-ink-900">{cta}</h2>
+            <p className="mt-1 text-sm text-ink-500">
+              Öğretmen hesabınız varsa{" "}
+              <Link href="/giris?next=/pi-koc/kayit" className="font-semibold text-brand-700 hover:underline">
+                giriş yapıp
+              </Link>{" "}
+              tek tıkla ekleyin.
+            </p>
             <div className="mt-5">
-              <Suspense fallback={<Skeleton className="h-96" />}>
-                <CoachApplicationForm tiers={tiers.map((t) => t.students)} />
-              </Suspense>
+              <KocSignupForm tiers={tiers.map((t) => ({ students: t.students, label: `${t.students} öğrenciye kadar · aylık ${t.priceTl.toLocaleString("tr-TR")} TL` }))} chosen={null} trialDays={trialDays} />
             </div>
           </div>
         </div>

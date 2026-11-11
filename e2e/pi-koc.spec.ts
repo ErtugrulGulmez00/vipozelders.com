@@ -33,9 +33,10 @@ async function login(page: Page, identifier: string, password: string) {
 }
 
 test.afterAll(async () => {
-  const users = await sql<{ id: string }>(`SELECT id FROM "User" WHERE email = ANY($1)`, [[ownerEmail, studentEmail]]);
+  const users = await sql<{ id: string }>(`SELECT id FROM "User" WHERE email = ANY($1)`, [[ownerEmail, studentEmail, applicantEmail]]);
   const ids = users.map((u) => u.id);
-  await sql(`DELETE FROM "Center" WHERE name = $1`, [centerName]);
+  await sql(`DELETE FROM "Center" WHERE name = ANY($1)`, [[centerName, `${centerName} Kayıt`]]);
+  await sql(`DELETE FROM "LoginAttempt" WHERE identifier LIKE 'koc-signup:%'`);
   await sql(`DELETE FROM "Notification" WHERE "userId" = ANY($1)`, [ids]);
   await sql(`DELETE FROM "AuditLog" WHERE "actorId" = ANY($1) OR "entityId" = ANY($1) OR details::text LIKE $2`, [ids, `%${centerName}%`]);
   await sql(`DELETE FROM "User" WHERE id = ANY($1)`, [ids]);
@@ -44,26 +45,43 @@ test.afterAll(async () => {
   await sql(`DELETE FROM "Notification" WHERE type = 'center.application' AND body LIKE $1`, [`%${centerName}%`]);
 });
 
-test("Pi Koç sayfası fiyatları gösterir, başvuru yönetime düşer", async ({ page }) => {
+test("Pi Koç sayfası fiyatları gösterir; koç kendi kaydolur, deneme hemen başlar", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("link", { name: /Koç musunuz/ }).click();
   await expect(page).toHaveURL(/\/pi-koc$/);
   await expect(page.getByRole("heading", { level: 1, name: /Öğrencilerinizi tek panelden/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Bu paketle başvur" })).toHaveCount(6);
+  await expect(page.getByRole("link", { name: "Bu paketle ücretsiz başla" })).toHaveCount(6);
   await expect(page.getByText("₺299", { exact: false })).toBeVisible();
 
-  await page.getByRole("link", { name: "Bu paketle başvur" }).nth(2).click();
-  await expect(page).toHaveURL(/ogrenci=10#basvuru$/);
-  await expect(page.locator("#k-count")).toHaveValue("10");
-  await page.getByLabel("Panelde görünecek ad").fill(centerName);
-  await page.getByLabel("Adınız soyadınız").fill("Deniz Koç");
-  await page.getByLabel("Cep telefonu").fill("05321234567");
+  await page.getByRole("link", { name: "Bu paketle ücretsiz başla" }).nth(2).click();
+  await expect(page).toHaveURL(/\/pi-koc\/kayit\?ogrenci=10$/);
+  // Önceki sayfa (aynı formu içerir) gizli olarak DOM'da kalabilir; temiz yükle
+  await page.reload();
+  await expect(page.locator("#ks-students")).toHaveValue("10");
+  await page.getByLabel("Ad", { exact: true }).fill("Deniz");
+  await page.getByLabel("Soyad", { exact: true }).fill("Kayıt");
   await page.getByLabel("E-posta").fill(applicantEmail);
+  await page.getByLabel("Cep telefonu").fill("05321234567");
+  await page.locator("#ks-password").fill("KocKayit123");
+  await page.locator("#ks-panel").fill(`${centerName} Kayıt`);
   await page.locator('input[name="kvkk"]').check();
-  await page.getByRole("button", { name: "Başvuruyu gönder" }).click();
-  await expect(page.getByText("Başvurunuz alındı", { exact: false })).toBeVisible();
-  const [application] = await sql<{ kind: string; studentCount: string }>(`SELECT kind::text, "studentCount" FROM "CenterApplication" WHERE email = $1`, [applicantEmail]);
-  expect(application).toMatchObject({ kind: "COACH", studentCount: "10" });
+  await page.getByRole("button", { name: /gün ücretsiz başla/ }).click();
+  await expect(page).toHaveURL(/\/koc\?durum=hosgeldin$/);
+  await expect(page.getByText("Pi Koç hesabınız hazır", { exact: false })).toBeVisible();
+  const [center] = await sql<{ kind: string; status: string; studentLimit: number }>(`SELECT kind::text, status::text, "studentLimit" FROM "Center" WHERE name = $1`, [`${centerName} Kayıt`]);
+  expect(center).toMatchObject({ kind: "COACH", status: "TRIAL", studentLimit: 10 });
+
+  // Aynı e-postayla ikinci kayıt reddedilir
+  await page.context().clearCookies();
+  await page.goto("/pi-koc/kayit");
+  await page.getByLabel("Ad", { exact: true }).fill("Deniz");
+  await page.getByLabel("Soyad", { exact: true }).fill("Kayıt");
+  await page.getByLabel("E-posta").fill(applicantEmail);
+  await page.getByLabel("Cep telefonu").fill("05321234567");
+  await page.locator("#ks-password").fill("KocKayit123");
+  await page.locator('input[name="kvkk"]').check();
+  await page.getByRole("button", { name: /gün ücretsiz başla/ }).click();
+  await expect(page.getByText("Bu e-postayla Pi Kampüs hesabı var", { exact: false }).first()).toBeVisible();
 });
 
 test("yönetici koç hesabı açar; koç yalnızca takip bölümlerini görür", async ({ page }) => {

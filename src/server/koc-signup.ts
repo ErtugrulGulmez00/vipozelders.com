@@ -1,0 +1,96 @@
+import "server-only";
+import { COACH_DEFAULT_STUDENT_LIMIT, COACH_DISABLED_MODULES } from "@/lib/center/modules";
+import { parseCoachTiers } from "@/lib/pi-koc";
+import { normalizePhone } from "@/lib/text";
+import { audit } from "./audit";
+import { hashPassword, passwordProblem } from "./auth/password";
+import { countRecentAttempts, recordLoginAttempt } from "./auth/rate-limit";
+import { uniqueCenterSlug } from "./center/admin";
+import { CenterError } from "./center/errors";
+import { db } from "./db";
+import { notify, notifyRole } from "./notifications";
+import { loadSettings } from "./settings";
+import { generateUsername } from "./accounts";
+
+// Pi Koç kendi kendine kayıt: koç formu doldurur, hesabı açılır ve ücretsiz deneme hemen başlar (yönetici onayı gerekmez).
+// Abonelik ödemesi şimdilik havaleyle alınır; yönetim kurum sayfasından süreyi uzatır.
+
+export type CoachSignupInput = { firstName: string; lastName: string; email: string; phone: string; password: string; panelName: string | null; students: number };
+
+async function coachLimit(students: number) {
+  const settings = await loadSettings();
+  const tiers = parseCoachTiers(settings.piKocTiers);
+  const tier = tiers.find((t) => t.students === students) ?? tiers[0];
+  return { limit: tier?.students ?? COACH_DEFAULT_STUDENT_LIMIT, trialDays: Math.max(settings.centerTrialDays, 7) };
+}
+
+async function createCoachCenter(userId: string, name: string, students: number, phone: string | null, email: string | null) {
+  const { limit, trialDays } = await coachLimit(students);
+  const center = await db.center.create({
+    data: {
+      name,
+      slug: await uniqueCenterSlug(name),
+      kind: "COACH",
+      plan: "STARTER",
+      status: "TRIAL",
+      trialEndsAt: new Date(Date.now() + trialDays * 86_400_000),
+      studentLimit: limit,
+      disabledModules: COACH_DISABLED_MODULES,
+      phone,
+      email,
+      members: { create: { userId, role: "OWNER", title: "Koç" } },
+    },
+  });
+  await notifyRole("ADMIN", { type: "center.koc_signup", title: "Yeni Pi Koç kaydı", body: `${name} · ${limit} öğrenci · ${trialDays} gün deneme`, link: `/yonetim/kurumlar/${center.id}`, email: false });
+  await notify({
+    userId,
+    type: "center.koc_welcome",
+    title: "Pi Koç'a hoş geldiniz",
+    body: `${trialDays} günlük ücretsiz deneme başladı. İlk öğrencinizi ekleyin; giriş adresiniz pikampus.com/koc-giris.`,
+    link: "/koc",
+  });
+  await audit({ actorId: userId, action: "center.koc_signup", entityType: "Center", entityId: center.id, details: { name, limit } });
+  return center;
+}
+
+/** Yeni hesapla kayıt: kullanıcı ve Pi Koç hesabı birlikte açılır. Döner: yeni kullanıcının kimliği. */
+export async function signupCoach(input: CoachSignupInput, ipAddress: string | null): Promise<string> {
+  const problem = passwordProblem(input.password);
+  if (problem) throw new CenterError(problem, { password: problem });
+  const phone = normalizePhone(input.phone);
+  if (!phone) throw new CenterError("Telefon numarası 05XX XXX XX XX biçiminde olmalı.", { phone: "Geçersiz telefon numarası." });
+  const email = input.email.trim().toLowerCase();
+  if (ipAddress && (await countRecentAttempts(`koc-signup:${ipAddress}`, 60 * 60 * 1000)) >= 5) {
+    throw new CenterError("Bu bağlantıdan çok fazla kayıt yapıldı. Lütfen daha sonra tekrar deneyin.");
+  }
+  if (await db.user.findUnique({ where: { email }, select: { id: true } })) {
+    throw new CenterError("Bu e-postayla Pi Kampüs hesabı var. Önce giriş yapın; Pi Koç'u tek tıkla hesabınıza ekleriz.", { email: "E-posta kayıtlı." });
+  }
+  if (ipAddress) await recordLoginAttempt(`koc-signup:${ipAddress}`, null, false);
+  const user = await db.user.create({
+    data: {
+      role: "CENTER",
+      email,
+      username: await generateUsername(input.firstName, input.lastName),
+      firstName: input.firstName,
+      lastName: input.lastName,
+      phone,
+      passwordHash: await hashPassword(input.password),
+    },
+  });
+  try {
+    await createCoachCenter(user.id, input.panelName || `${input.firstName} ${input.lastName} Koçluk`, input.students, phone, email);
+  } catch (error) {
+    await db.user.delete({ where: { id: user.id } });
+    throw error;
+  }
+  return user.id;
+}
+
+/** Giriş yapmış kişiye (ör. özel ders öğretmeni) Pi Koç hesabı ekler. */
+export async function addCoachToUser(user: { id: string; firstName: string; lastName: string; email: string | null; phone: string | null; role: string }, panelName: string | null, students: number) {
+  if (user.role === "ADMIN") throw new CenterError("Yönetici hesabına Pi Koç eklenmez; kendi hesabınızla kayıt olun.");
+  const existing = await db.centerMember.findFirst({ where: { userId: user.id, isActive: true, center: { kind: "COACH" } }, select: { id: true } });
+  if (existing) throw new CenterError("Hesabınızda zaten Pi Koç var.");
+  return createCoachCenter(user.id, panelName || `${user.firstName} ${user.lastName} Koçluk`, students, user.phone, user.email);
+}

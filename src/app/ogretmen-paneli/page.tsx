@@ -100,11 +100,16 @@ export default async function TeacherDashboard() {
           <CardBody className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="font-semibold text-slate-900">Kendi öğrencilerinizi Pi Koç ile takip edin</p>
-              <p className="text-sm text-slate-600">Program, kaynak, deneme analizi ve veli takibi tek panelde.</p>
+              <p className="text-sm text-slate-600">Görüşme, program, soru ve deneme takibi grafiklerle; aynı hesapla, ücretsiz deneme.</p>
             </div>
-            <LinkButton href="/pi-koc" variant="outline" size="sm">
-              İnceleyin
-            </LinkButton>
+            <div className="flex gap-2">
+              <LinkButton href="/pi-koc" variant="ghost" size="sm">
+                İnceleyin
+              </LinkButton>
+              <LinkButton href="/pi-koc/kayit" variant="outline" size="sm">
+                Hesabıma ekle
+              </LinkButton>
+            </div>
           </CardBody>
         </Card>
       )}

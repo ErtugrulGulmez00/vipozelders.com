@@ -1,29 +1,31 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { Card, Skeleton } from "@/components/ui/primitives";
-import { LoginTabs } from "@/components/site/login-tabs";
-import { LoginForm } from "./login-form";
+import { GateLoginShell } from "@/components/auth/gate-login";
+import { LoginForm } from "@/components/auth/login-form";
+import { Skeleton } from "@/components/ui/primitives";
 
 export const metadata: Metadata = { title: "Giriş yap" };
 
+/** Özel ders kapısı: veli, öğrenci, öğretmen ve yönetici. */
 export default function LoginPage() {
   return (
-    <Card className="p-6 sm:p-8">
-      <LoginTabs active="personal" />
-      <h1 className="text-2xl font-bold text-slate-900">Giriş yap</h1>
-      <p className="mt-1 text-sm text-slate-500">E-posta adresiniz ya da size verilen kullanıcı adıyla giriş yapın. Etüt merkezi hesabı için “Kurum girişi” sekmesini kullanın.</p>
-      <div className="mt-6">
-        <Suspense fallback={<Skeleton className="h-56" />}>
-          <LoginForm />
-        </Suspense>
-      </div>
-      <p className="mt-6 text-center text-sm text-slate-600">
-        Hesabınız yok mu?{" "}
-        <Link href="/kayit" className="font-semibold text-brand-700 hover:underline">
-          Ücretsiz kayıt olun
-        </Link>
-      </p>
-    </Card>
+    <GateLoginShell
+      gate="personal"
+      title="Giriş yap"
+      subtitle="E-posta adresiniz ya da size verilen kullanıcı adıyla"
+      footer={
+        <p>
+          Hesabınız yok mu?{" "}
+          <Link href="/kayit" className="font-semibold text-brand-700 hover:underline">
+            Ücretsiz kayıt olun
+          </Link>
+        </p>
+      }
+    >
+      <Suspense fallback={<Skeleton className="h-56" />}>
+        <LoginForm />
+      </Suspense>
+    </GateLoginShell>
   );
 }

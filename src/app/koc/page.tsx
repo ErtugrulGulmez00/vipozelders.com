@@ -2,6 +2,7 @@ import { AlertTriangle, BookOpenCheck, CalendarCheck2, CheckCircle2, ListChecks,
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
+import { CenterFlash } from "@/components/center/center-ui";
 import { BarChart } from "@/components/koc/charts";
 import { meetingLabel, StudentAvatar, StudentCard } from "@/components/koc/student-card";
 import { LinkButton } from "@/components/ui/button";
@@ -26,9 +27,10 @@ function Kpi({ icon, label, value, hint, tone = "ink" }: { icon: React.ReactNode
   );
 }
 
-export default async function KocHome() {
+export default async function KocHome({ searchParams }: PageProps<"/koc">) {
   await connection();
   const ctx = await requireCenter();
+  const { durum } = await searchParams;
   const today = toLocalDateString(new Date());
   const [overview, stats] = await Promise.all([kocOverview(ctx, today), questionStats(ctx.center.id, today)]);
   const { cards, todayWeekday } = overview;
@@ -44,6 +46,7 @@ export default async function KocHome() {
 
   return (
     <>
+      <CenterFlash code={durum} />
       <section className="relative mb-6 overflow-hidden rounded-[2rem] bg-ink-900 px-6 py-7 text-white sm:px-8 sm:py-9">
         <div className="pointer-events-none absolute -right-16 -top-20 size-72 rounded-full bg-brand-600/40 blur-3xl" aria-hidden />
         <div className="pointer-events-none absolute -bottom-24 left-1/3 size-60 rounded-full bg-gold-400/15 blur-3xl" aria-hidden />
