@@ -251,7 +251,7 @@ export default async function EtudGuidePage() {
         <Feature
           shot={shot("02-ozet", "pikampus.com/kurum", "Özet ekranı işaretli", 1440, 900)}
           legend={[
-            ["Menü.", "Paketinizdeki bölümler; kapattığınız modüller menüde görünmez."],
+            ["Menü.", "Bölümler dört başlık altında: öğrenci takibi, etüt ve salon, veli ve iletişim, kurum. Kapattığınız modüller menüde görünmez."],
             ["Öğrenci arama.", "Ad, öğrenci numarası ya da veli telefonuyla her sayfadan arayın."],
             ["Hızlı işlemler:", "öğrenci ekle, tahsilat al."],
             ["Bugün gelmeyenler.", "Etütte gelmeyen öğrenciler saatiyle listelenir."],
@@ -413,7 +413,7 @@ export default async function EtudGuidePage() {
         <Pair>
           <GuideVideo src={video("v10-kocluk-salon")} poster={img("12-kocluk")} title="Koçluk ve çalışma salonu" seconds={19} />
           <Figure shot={shot("14-kaynak", "pikampus.com/kurum/kaynaklar/…", "Kaynak ve konu ilerlemesi", 1440, 900)}>
-            <b>Kaynaklar ve kitaplar:</b> soru bankasını konu listesiyle tanımlayın, öğrencilere atayın; konu konu çözülen, doğru ve yanlış sayısı izlenir.
+            <b>Kaynaklar ve kitaplar</b> (Koçluk ve kaynaklar menüsünde sekme): soru bankasını konu listesiyle tanımlayın, öğrencilere atayın; konu konu çözülen, doğru ve yanlış sayısı izlenir.
           </Figure>
         </Pair>
       </GuideSection>
@@ -496,7 +496,7 @@ export default async function EtudGuidePage() {
           </Tip>
         </Feature>
         <Feature flip shot={shot("24-mesaj-gecmisi", "pikampus.com/kurum/mesajlar", "Mesaj geçmişi", 1440, 900)} title="Mesaj geçmişi">
-          <Note>Velilere giden her e-posta zaman, alıcı, içerik ve durumuyla listelenir. &quot;Veliye haber verdik mi?&quot; sorusunun cevabı burada.</Note>
+          <Note>Duyuru ve mesajlar menüsündeki &quot;Gönderilen mesajlar&quot; sekmesi: velilere giden her e-posta zaman, alıcı, içerik ve durumuyla listelenir. &quot;Veliye haber verdik mi?&quot; sorusunun cevabı burada.</Note>
           <BrowserShot className="max-w-[420px]" sizes="420px" shot={shot("31-eposta", "Velinin e-posta kutusu", "Veliye giden örnek e-posta", 1020, 1350)} />
           <p className="text-sm text-ink-500">Veliye giden örnek bildirim: gönderen adında kurumunuzun adı yazar.</p>
         </Feature>
@@ -509,7 +509,7 @@ export default async function EtudGuidePage() {
             <PhoneImage src={img("t2-veli-cocuk")} alt="Veli portalında öğrenci özeti" width={780} height={2552} />
           </Phone>
           <Phone caption="Bildirimler: yeni ödev, deneme sonucu, devamsızlık. Her biri e-postayla da gelir.">
-            <PhoneImage src={img("t4-veli-bildirim")} alt="Veli bildirimleri" width={780} height={1944} />
+            <PhoneImage src={img("t4-veli-bildirim")} alt="Veli bildirimleri" width={780} height={1688} />
           </Phone>
           <Phone caption="Öğrenci haftalık çalışma programını görür ve &quot;yaptım&quot; diye işaretler.">
             <PhoneImage src={img("t6-ogrenci-program")} alt="Öğrencinin haftalık çalışma programı" width={780} height={2800} />

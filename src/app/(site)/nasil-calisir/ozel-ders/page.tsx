@@ -119,7 +119,7 @@ export default async function PrivateLessonGuidePage() {
             </div>
           </div>
           <div className="translate-y-6">
-            <BrowserShot shot={shot("01-ana-sayfa", "pikampus.com", "Pi Kampüs ana sayfası: kademe, ders ve ders şekliyle öğretmen arama", 1440, 900)} sizes="(min-width: 1152px) 1120px, 100vw" />
+            <BrowserShot shot={shot("01-ana-sayfa", "pikampus.com/ozel-ders", "Özel ders sayfası: kademe, ders ve ders şekliyle öğretmen arama", 1440, 900)} sizes="(min-width: 1152px) 1120px, 100vw" />
           </div>
         </div>
       </section>
@@ -136,7 +136,7 @@ export default async function PrivateLessonGuidePage() {
         </ol>
       </GuideSection>
 
-      <GuideSection id="bul" eyebrow="Öğretmen bulma" title="Aradığınız öğretmen birkaç tıkla önünüzde" lead="Ana sayfadan kademe, ders ve ders şeklini seçin; listede fiyat, puan, müsaitlik ve onaylı öğretmen süzgeçleriyle daraltın.">
+      <GuideSection id="bul" eyebrow="Öğretmen bulma" title="Aradığınız öğretmen birkaç tıkla önünüzde" lead="Özel ders sayfasında kademe, ders ve ders şeklini seçin; listede fiyat, puan, müsaitlik ve onaylı öğretmen süzgeçleriyle daraltın.">
         <div className="mt-8">
           <GuideVideo src={video("v1-ogretmen-bul")} poster={img("02-liste")} title="Öğretmen bulma ve profil" seconds={26} />
         </div>
@@ -299,7 +299,7 @@ export default async function PrivateLessonGuidePage() {
           shot={shot("11-panel", "pikampus.com/ogretmen-paneli", "Öğretmen paneli", 1440, 900)}
           title="Öğretmen paneli"
           legend={[
-            ["Menü:", "dersler ve talepler, mesajlar, soru çözüm dersleri, grup dersleri, profil, takvim, kazançlar."],
+            ["Menü:", "dersler ve talepler, ders bağlantıları, mesajlar, soru çözüm dersleri, grup dersleri, profil, takvim, kazançlar, yorumlar."],
             ["Yaklaşan dersler", "ve onay bekleyen talepler tek bakışta."],
           ]}
         >
