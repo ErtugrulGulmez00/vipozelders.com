@@ -1,4 +1,4 @@
-import { BookMarked, CalendarHeart, LayoutDashboard, UserCog, Users } from "lucide-react";
+import { BookMarked, BookOpenCheck, CalendarHeart, LayoutDashboard, UserCog, Users, Wallet } from "lucide-react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { SubscriptionBanner } from "@/components/center/center-ui";
@@ -26,7 +26,9 @@ export default async function KocLayout({ children }: { children: React.ReactNod
     { href: "/koc", label: "Genel bakış", icon: <LayoutDashboard />, exact: true },
     { href: "/koc/ogrenciler", label: "Öğrencilerim", icon: <Users /> },
     { href: "/koc/hafta", label: "Haftalık görüşmeler", icon: <CalendarHeart /> },
+    { href: "/koc/denemeler", label: "Denemeler", icon: <BookOpenCheck /> },
     { href: "/koc/kaynaklar", label: "Kaynak kütüphanesi", icon: <BookMarked /> },
+    { href: "/koc/tahsilat", label: "Tahsilat", icon: <Wallet /> },
     { href: "/koc/hesap", label: "Hesap ve abonelik", icon: <UserCog />, also: ["/koc/abonelik", "/koc/bildirimler"] },
   ];
   return (

@@ -46,3 +46,23 @@ describe("Pi Koç program şablonları", () => {
     expect(cleanTemplateItems("bozuk")).toEqual([]);
   });
 });
+
+const { formatMinutes } = await import("@/lib/koc-format");
+const { isPeriod, periodLabel, shiftPeriod } = await import("@/server/koc-extra");
+
+describe("Pi Koç çalışma süresi ve tahsilat yardımcıları", () => {
+  it("süreyi okunur yazar", () => {
+    expect(formatMinutes(45)).toBe("45 dk");
+    expect(formatMinutes(60)).toBe("1 sa");
+    expect(formatMinutes(135)).toBe("2 sa 15 dk");
+  });
+
+  it("dönemleri ay ay kaydırır, yıl geçişini doğru yapar", () => {
+    expect(shiftPeriod("2026-11", 1)).toBe("2026-12");
+    expect(shiftPeriod("2026-12", 1)).toBe("2027-01");
+    expect(shiftPeriod("2026-02", -5)).toBe("2025-09");
+    expect(periodLabel("2026-11")).toBe("Kasım 2026");
+    expect(isPeriod("2026-13")).toBe(false);
+    expect(isPeriod("2026-09")).toBe(true);
+  });
+});

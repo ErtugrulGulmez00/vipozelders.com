@@ -16,6 +16,8 @@ const STATUS_NOTE: Record<string, string> = { PASSIVE: " (pasif)", LEFT: " (ayr�
 
 export default async function ExamPdfMatchPage({ params }: PageProps<"/kurum/denemeler/pdf-aktar/[importId]">) {
   const ctx = await requireCenter("exams.manage");
+  // Aynı sayfa Pi Koç panelinde de açılır (/koc/denemeler/pdf-aktar/...)
+  const coach = ctx.center.kind === "COACH";
   const { importId } = await params;
   const data = await getPdfImport(ctx, importId).catch((error) => {
     if (error instanceof CenterError) notFound();
@@ -56,7 +58,7 @@ export default async function ExamPdfMatchPage({ params }: PageProps<"/kurum/den
   }));
   return (
     <>
-      <Link href="/kurum/denemeler/pdf-aktar" className="mb-3 inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:underline">
+      <Link href={coach ? "/koc/denemeler" : "/kurum/denemeler/pdf-aktar"} className="mb-3 inline-flex items-center gap-1 text-sm font-semibold text-brand-700 hover:underline">
         <ArrowLeft className="size-4" aria-hidden /> Başka PDF yükle
       </Link>
       <PageHeader
@@ -66,15 +68,15 @@ export default async function ExamPdfMatchPage({ params }: PageProps<"/kurum/den
       />
       <Alert tone={unmatched ? "warning" : "success"} className="mb-6">
         {unmatched
-          ? `${total - unmatched} öğrenci otomatik eşleşti. ${unmatched} öğrenci için kurumdaki öğrenciyi seçin; kurumunuzda olmayanları “Aktarma” olarak bırakın.`
+          ? `${total - unmatched} öğrenci otomatik eşleşti. ${unmatched} öğrenci için ${coach ? "öğrencinizi" : "kurumdaki öğrenciyi"} seçin; ${coach ? "öğrencileriniz arasında" : "kurumunuzda"} olmayanları “Aktarma” olarak bırakın.`
           : `Tüm öğrenciler eşleşti. Sarı işaretli satırlara bir göz atıp aktarın.`}
       </Alert>
       {candidates.length === 0 ? (
         <Alert tone="warning" className="mb-6">
-          Kurumda kayıtlı öğrenci yok. Önce öğrencilerinizi ekleyin (Excel ile toplu ekleyebilirsiniz), sonra bu sayfaya dönün.
+          {coach ? "Henüz öğrenciniz yok. Önce öğrencilerinizi ekleyin, sonra bu sayfaya dönün." : "Kurumda kayıtlı öğrenci yok. Önce öğrencilerinizi ekleyin (Excel ile toplu ekleyebilirsiniz), sonra bu sayfaya dönün."}
         </Alert>
       ) : null}
-      <PdfMatchForm draftId={data.draft.id} exams={exams} candidates={candidates} today={toLocalDateString(new Date())} />
+      <PdfMatchForm draftId={data.draft.id} exams={exams} candidates={candidates} today={toLocalDateString(new Date())} coach={coach} />
       <p className="mt-6 text-xs text-slate-500">
         Puan ve ilçe/il/genel sıralamaları yayınevinin hesapladığı değerlerdir ve karnede ayrıca gösterilir; kurum sırası aktarılan öğrencilerden yeniden hesaplanır.
       </p>

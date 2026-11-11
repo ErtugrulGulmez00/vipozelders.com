@@ -1125,6 +1125,8 @@ model Center {
   questionLogs         CenterQuestionLog[]
   weeklyReports        CenterWeeklyReport[]
   planTemplates        CenterPlanTemplate[]
+  studySessions        CenterStudySession[]
+  coachPayments        CenterCoachPayment[]
 
   @@index([status])
 }
@@ -1198,6 +1200,8 @@ model CenterStudent {
   coachMinute       Int?
   // Pi Koç: "program geride" hatırlatması en son hangi hafta (pazartesi) gitti
   planNudgedWeek    DateTime?           @db.Date
+  // Pi Koç: koçun bu öğrenciden aldığı aylık ücret (kuruş); tahsilat takibi için
+  monthlyFee        Int?
   enrolledAt        DateTime            @default(now())
   leftAt            DateTime?
   createdAt         DateTime            @default(now())
@@ -1223,6 +1227,8 @@ model CenterStudent {
   questionLogs CenterQuestionLog[]
   weeklyReports CenterWeeklyReport[]
   goals        CenterStudentGoal[]
+  studySessions CenterStudySession[]
+  coachPayments CenterCoachPayment[]
 
   @@unique([centerId, studentNumber])
   @@index([centerId, status])
@@ -1406,6 +1412,8 @@ model CenterExam {
   wrongPenalty Float
   // Veliler sonucu portalda görebilir
   isPublished  Boolean  @default(false)
+  // Pi Koç: öğrenci kendi hesabından girdi
+  enteredByStudent Boolean @default(false)
   createdAt    DateTime @default(now())
 
   sections CenterExamSection[]
@@ -2636,4 +2644,39 @@ model CenterPlanTemplate {
   createdAt DateTime @default(now())
 
   @@index([centerId])
+}
+
+// Pi Koç: öğrencinin çalışma süresi (sayaçla ya da elle; dakika)
+model CenterStudySession {
+  id        String        @id @default(cuid())
+  centerId  String
+  center    Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  studentId String
+  student   CenterStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  date      DateTime      @db.Date
+  subject   String?
+  minutes   Int
+  byStudent Boolean       @default(false)
+  createdAt DateTime      @default(now())
+
+  @@index([studentId, date])
+}
+
+// Pi Koç: koçun öğrenciden aylık tahsilatı (dönem başına bir kayıt)
+model CenterCoachPayment {
+  id        String        @id @default(cuid())
+  centerId  String
+  center    Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  studentId String
+  student   CenterStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  // "2026-11"
+  period    String
+  amount    Int
+  paidAt    DateTime
+  method    String?
+  note      String?
+  createdAt DateTime      @default(now())
+
+  @@unique([studentId, period])
+  @@index([centerId, period])
 }

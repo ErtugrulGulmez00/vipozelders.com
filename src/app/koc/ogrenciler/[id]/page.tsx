@@ -20,6 +20,8 @@ import { resourceSummary, weekStartOf } from "@/server/center/resources";
 import { db } from "@/server/db";
 import { questionStats, studentExams, studentGoals } from "@/server/koc";
 import { GoalCard } from "@/components/koc/goal-card";
+import { DeleteStudyButton, StudyEntryForm } from "@/components/koc/koc-tools";
+import { formatMinutes, studyStats } from "@/server/koc-extra";
 import { TopicMapCard } from "@/components/koc/topic-map";
 import { planTemplates, resourceForecast } from "@/server/koc-plan";
 
@@ -46,7 +48,7 @@ export default async function KocStudentPage({ params, searchParams }: PageProps
     { key: "genel", label: "Genel bakış", href: base },
     { key: "program", label: "Program ve kaynaklar", href: `${base}?sekme=program` },
     { key: "gorusmeler", label: "Görüşmeler", href: `${base}?sekme=gorusmeler` },
-    { key: "sorular", label: "Soru takibi", href: `${base}?sekme=sorular` },
+    { key: "sorular", label: "Soru ve çalışma", href: `${base}?sekme=sorular` },
     { key: "denemeler", label: "Denemeler", href: `${base}?sekme=denemeler` },
     { key: "bilgiler", label: "Bilgiler", href: `${base}?sekme=bilgiler` },
   ];
@@ -123,6 +125,7 @@ export default async function KocStudentPage({ params, searchParams }: PageProps
                   notes: student.notes,
                   coachWeekday: student.coachWeekday,
                   coachTime: student.coachMinute !== null ? minutesToTime(student.coachMinute) : "",
+                  monthlyFee: student.monthlyFee ? String(student.monthlyFee / 100) : "",
                 }}
               />
             </CardBody>
@@ -174,13 +177,14 @@ export default async function KocStudentPage({ params, searchParams }: PageProps
 
 async function OverviewTab({ centerId, studentId, today, kindParam, base }: { centerId: string; studentId: string; today: string; kindParam?: string; base: string }) {
   const weekStart = weekStartOf(today);
-  const [exams, stats, plan, resources, lastSession, goals] = await Promise.all([
+  const [exams, stats, plan, resources, lastSession, goals, study] = await Promise.all([
     studentExams(centerId, studentId),
     questionStats(centerId, today, studentId),
     db.centerStudyPlanItem.findMany({ where: { centerId, studentId, date: { gte: dateStringToDbDate(weekStart), lt: dateStringToDbDate(addDaysToDateString(weekStart, 7)) } }, select: { doneAt: true } }),
     db.centerStudentResource.findMany({ where: { studentId }, include: { resource: true, progress: true }, orderBy: { assignedAt: "asc" } }),
     db.centerCoachingSession.findFirst({ where: { centerId, studentId, held: true }, orderBy: { date: "desc" } }),
     studentGoals(centerId, studentId),
+    studyStats(studentId, today),
   ]);
   const kinds = [...new Set(exams.map((e) => e.kind))];
   const kind: ExamKindName | null = (kinds.find((k) => k === kindParam) as ExamKindName | undefined) ?? exams[0]?.kind ?? null;
@@ -255,6 +259,9 @@ async function OverviewTab({ centerId, studentId, today, kindParam, base }: { ce
           <CardHeader title="Bu hafta" />
           <CardBody className="space-y-5">
             <Ring value={plan.length ? planDone / plan.length : 0} label="Program tamamlama" caption={plan.length ? `${planDone}/${plan.length} madde` : "Bu hafta program yok"} />
+            <p className="rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-700">
+              Çalışma süresi: <b className="text-ink-900">{formatMinutes(study.thisWeek)}</b> <span className="text-slate-500">· geçen hafta {formatMinutes(study.lastWeek)}</span>
+            </p>
             {stats.subjects.length ? (
               <div>
                 <p className="mb-3 text-sm font-semibold text-slate-800">Derslere göre soru (30 gün)</p>
@@ -361,9 +368,11 @@ async function ProgramTab({ centerId, studentId, week }: { centerId: string; stu
 }
 
 async function QuestionsTab({ centerId, studentId, today }: { centerId: string; studentId: string; today: string }) {
-  const [logs, stats] = await Promise.all([
+  const [logs, stats, study, sessions] = await Promise.all([
     db.centerQuestionLog.findMany({ where: { centerId, studentId, date: { gte: dateStringToDbDate(addDaysToDateString(today, -60)) } }, orderBy: [{ date: "desc" }, { createdAt: "desc" }], take: 30 }),
     questionStats(centerId, today, studentId),
+    studyStats(studentId, today),
+    db.centerStudySession.findMany({ where: { studentId }, orderBy: [{ date: "desc" }, { createdAt: "desc" }], take: 20 }),
   ]);
   const used = [...new Set(logs.map((l) => l.subject))];
   return (
@@ -379,6 +388,32 @@ async function QuestionsTab({ centerId, studentId, today }: { centerId: string; 
           <CardHeader title="Son 14 gün" />
           <CardBody>
             <BarChart label="Son 14 gün çözülen soru" height={170} bars={stats.days.map((d) => ({ label: d.date.slice(8), value: d.solved, hint: `${d.date.slice(8)}.${d.date.slice(5, 7)}` }))} />
+          </CardBody>
+        </Card>
+        <Card>
+          <CardHeader title="Çalışma süresi" description={`Bu hafta ${formatMinutes(study.thisWeek)} · geçen hafta ${formatMinutes(study.lastWeek)}`} />
+          <CardBody className="space-y-5">
+            <BarChart label="Günlük çalışma (dakika)" unit="dk" height={170} bars={study.days.map((d) => ({ label: d.date.slice(8), value: d.minutes, hint: `${d.date.slice(8)}.${d.date.slice(5, 7)}` }))} />
+            <details className="rounded-2xl bg-slate-50 p-3">
+              <summary className="cursor-pointer text-sm font-semibold text-brand-700">Çalışma süresi ekle</summary>
+              <div className="mt-3">
+                <StudyEntryForm studentId={studentId} today={today} subjects={SUBJECTS} />
+              </div>
+            </details>
+            {sessions.length ? (
+              <ul className="divide-y divide-slate-100 text-sm">
+                {sessions.map((x) => (
+                  <li key={x.id} className="flex items-center gap-3 py-2">
+                    <span className="w-12 shrink-0 text-xs font-semibold text-slate-500">{dmy(dbDateToString(x.date)).slice(0, 5)}</span>
+                    <span className="min-w-0 flex-1 truncate text-ink-900">
+                      {x.subject ?? "Genel"} {x.byStudent ? <Badge tone="sky" className="ml-1">Öğrenci girdi</Badge> : null}
+                    </span>
+                    <span className="tabular-nums text-slate-700">{formatMinutes(x.minutes)}</span>
+                    <DeleteStudyButton sessionId={x.id} />
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </CardBody>
         </Card>
       </div>
@@ -427,6 +462,7 @@ async function ExamsTab({ centerId, studentId, today }: { centerId: string; stud
                   <p className="font-semibold text-ink-900">{e.name}</p>
                   <p className="text-xs text-slate-500">
                     {EXAM_PRESETS[e.kind].label} · {dmy(e.date)} · {e.correct} D, {e.wrong} Y, {e.blank} B
+                    {e.byStudent ? <Badge tone="sky" className="ml-2">Öğrenci girdi</Badge> : null}
                   </p>
                 </div>
                 <div className="flex items-center gap-1">

@@ -131,17 +131,17 @@ test("yönetici koç hesabı açar; koç yalnızca takip bölümlerini görür",
 
   // Soru takibi; doğru + yanlış çözülenden fazla olamaz
   await page.goto(`${studentUrl}?sekme=sorular`);
-  await page.locator("input[name=subject]").fill("Matematik");
-  await page.locator("input[name=solved]").fill("40");
-  await page.locator("input[name=correct]").fill("30");
-  await page.locator("input[name=wrong]").fill("6");
-  await page.getByRole("button", { name: "Ekle", exact: true }).click();
+  await page.locator("form", { has: page.locator("input[name=solved]") }).locator("input[name=subject]").fill("Matematik");
+  await page.locator("form", { has: page.locator("input[name=solved]") }).locator("input[name=solved]").fill("40");
+  await page.locator("form", { has: page.locator("input[name=solved]") }).locator("input[name=correct]").fill("30");
+  await page.locator("form", { has: page.locator("input[name=solved]") }).locator("input[name=wrong]").fill("6");
+  await page.locator("form", { has: page.locator("input[name=solved]") }).getByRole("button", { name: "Ekle", exact: true }).click();
   await expect(page.getByText("Soru kaydı eklendi.")).toBeVisible();
-  await page.locator("input[name=subject]").fill("Fizik");
-  await page.locator("input[name=solved]").fill("10");
-  await page.locator("input[name=correct]").fill("9");
-  await page.locator("input[name=wrong]").fill("5");
-  await page.getByRole("button", { name: "Ekle", exact: true }).click();
+  await page.locator("form", { has: page.locator("input[name=solved]") }).locator("input[name=subject]").fill("Fizik");
+  await page.locator("form", { has: page.locator("input[name=solved]") }).locator("input[name=solved]").fill("10");
+  await page.locator("form", { has: page.locator("input[name=solved]") }).locator("input[name=correct]").fill("9");
+  await page.locator("form", { has: page.locator("input[name=solved]") }).locator("input[name=wrong]").fill("5");
+  await page.locator("form", { has: page.locator("input[name=solved]") }).getByRole("button", { name: "Ekle", exact: true }).click();
   await expect(page.getByText("Doğru + yanlış, çözülen sorudan fazla olamaz.")).toBeVisible();
 
   // Deneme sonucu (TYT): Türkçe 30 doğru 8 yanlış → 28 net
@@ -196,14 +196,37 @@ test("yönetici koç hesabı açar; koç yalnızca takip bölümlerini görür",
   await expect(page.getByText(`Türev ${stamp}`)).toBeVisible();
   await page.getByRole("button", { name: "Tamamlandı işaretle" }).click();
   await expect(page.getByRole("button", { name: "Tamamlanmadı yap" })).toBeVisible();
-  await page.locator("input[name=subject]").fill("Geometri");
-  await page.locator("input[name=solved]").fill("25");
-  await page.locator("input[name=correct]").fill("20");
-  await page.locator("input[name=wrong]").fill("3");
-  await page.getByRole("button", { name: "Ekle", exact: true }).click();
+  await page.locator("form", { has: page.locator("input[name=solved]") }).locator("input[name=subject]").fill("Geometri");
+  await page.locator("form", { has: page.locator("input[name=solved]") }).locator("input[name=solved]").fill("25");
+  await page.locator("form", { has: page.locator("input[name=solved]") }).locator("input[name=correct]").fill("20");
+  await page.locator("form", { has: page.locator("input[name=solved]") }).locator("input[name=wrong]").fill("3");
+  await page.locator("form", { has: page.locator("input[name=solved]") }).getByRole("button", { name: "Ekle", exact: true }).click();
   await expect(page.getByText("Kaydedildi. Koçun görecek.")).toBeVisible();
   const [log] = await sql<{ byStudent: boolean; solved: number }>(`SELECT "byStudent", solved FROM "CenterQuestionLog" WHERE "studentId" = $1 AND subject = 'Geometri'`, [studentId]);
   expect(log).toMatchObject({ byStudent: true, solved: 25 });
+
+  // Öğrenci kendi deneme sonucunu girer (TYT Türkçe 20 doğru 4 yanlış → 19 net)
+  await page.goto(`${kocumUrl}?sekme=denemeler`);
+  const examForm = page.locator("form", { has: page.getByRole("button", { name: "Sonucu kaydet" }) });
+  await examForm.locator("select[name=kind]").selectOption("TYT");
+  await examForm.locator("input[name=name]").fill("Öğrenci TYT 1");
+  await examForm.getByLabel("Türkçe doğru").fill("20");
+  await examForm.getByLabel("Türkçe yanlış").fill("4");
+  await examForm.getByRole("button", { name: "Sonucu kaydet" }).click();
+  await expect(page.getByText("Deneme sonucun kaydedildi.", { exact: false })).toBeVisible();
+  const [own] = await sql<{ net: number; enteredByStudent: boolean }>(`SELECT r.net, e."enteredByStudent" FROM "CenterExamResult" r JOIN "CenterExam" e ON e.id = r."examId" WHERE e.name = 'Öğrenci TYT 1' AND r."studentId" = $1`, [studentId]);
+  expect(own).toMatchObject({ enteredByStudent: true });
+  expect(Number(own.net)).toBe(19);
+
+  // Çalışma süresi: sayaç ve elle giriş
+  await page.goto(`${kocumUrl}?sekme=calisma`);
+  await expect(page.getByRole("button", { name: "Başlat" })).toBeVisible();
+  await page.getByText("Süreyi elle gir").click();
+  await page.locator("input[name=minutes]:not([type=hidden])").fill("45");
+  await page.locator("form", { has: page.locator("input[name=minutes]:not([type=hidden])") }).getByRole("button", { name: "Ekle", exact: true }).click();
+  await expect(page.getByText("Çalışma süren kaydedildi.")).toBeVisible();
+  const [study] = await sql<{ minutes: number; byStudent: boolean }>(`SELECT minutes, "byStudent" FROM "CenterStudySession" WHERE "studentId" = $1`, [studentId]);
+  expect(study).toMatchObject({ minutes: 45, byStudent: true });
 
   // Koç paneli öğrenciye açılmaz; kurum portalında Pi Koç kaydı listelenmez, eski adres /kocum'a döner
   await page.goto("/koc");
@@ -217,7 +240,26 @@ test("yönetici koç hesabı açar; koç yalnızca takip bölümlerini görür",
   // Koç, öğrencinin girdiği kaydı işaretli görür
   await login(page, username, "KocSifre123");
   await page.goto(`${studentUrl}?sekme=sorular`);
-  await expect(page.getByText("Öğrenci girdi")).toBeVisible();
+  await expect(page.getByText("Öğrenci girdi").first()).toBeVisible();
+  await expect(page.getByText("45 dk").first()).toBeVisible();
+
+  // Tahsilat: aylık ücret girilir, bu ayın ödemesi kaydedilir
+  await page.goto(`${studentUrl}?sekme=bilgiler`);
+  await page.locator("input[name=monthlyFee]").fill("2500");
+  await page.getByRole("button", { name: "Kaydet", exact: true }).first().click();
+  await expect(page.getByText("Öğrenci bilgileri kaydedildi.")).toBeVisible();
+  await page.goto("/koc/tahsilat");
+  await expect(page.getByText("Aylık ₺2.500", { exact: false }).or(page.getByText("Aylık 2.500", { exact: false })).first()).toBeVisible();
+  await page.getByRole("button", { name: "Ödendi" }).first().click();
+  // Satır ödendi rozetine döner (form kalkar)
+  await expect(page.getByText("Ödendi · ₺2.500", { exact: false })).toBeVisible();
+  const [paid] = await sql<{ amount: number }>(`SELECT amount FROM "CenterCoachPayment" WHERE "studentId" = $1`, [studentId]);
+  expect(paid.amount).toBe(250000);
+
+  // Denemeler sayfası ve PDF yükleme formu
+  await page.goto("/koc/denemeler");
+  await expect(page.getByText("Öğrenci TYT 1")).toBeVisible();
+  await expect(page.getByRole("button", { name: "PDF’i oku" })).toBeVisible();
 
   // Hedef: TYT Türkçe 34 net → son denemede 28 net, 6 net kaldı
   await page.goto(studentUrl);
@@ -228,7 +270,8 @@ test("yönetici koç hesabı açar; koç yalnızca takip bölümlerini görür",
   // Kayıttan sonra boş form yerini hedef kartına bırakır
   await expect(page.getByText("Hedefe 6 net kaldı")).toBeVisible();
   await expect(page.getByText("İTÜ Bilgisayar", { exact: true })).toBeVisible();
-  await expect(page.getByRole("img", { name: "Net gelişimi" })).toHaveCount(0); // tek deneme: grafik yerine bilgi
+  // Koçun ve öğrencinin girdiği iki TYT denemesi: net grafiği hedef çizgisiyle çizilir
+  await expect(page.getByRole("img", { name: "Net gelişimi" })).toBeVisible();
 
   // Haftalık rapor: değerlendirme yazılır; veli bağlantıyı giriş yapmadan açar
   await page.getByRole("link", { name: "Haftalık rapor" }).click();

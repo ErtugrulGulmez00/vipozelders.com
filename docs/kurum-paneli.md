@@ -13,6 +13,9 @@
 > - **Hazır program şablonları:** hazır şablonlar `src/lib/koc-templates.ts`, koçun kendi şablonları `CenterPlanTemplate`.
 > - **Kitap bitiş tahmini:** son 4 haftanın konu hızına göre.
 > - **Online görüşme:** `/gorusme/<öğrenci>`; LiveKit odası `koc-<öğrenci>`, koç girince öğrenciye bildirim gider.
+> - **Deneme PDF aktarımı:** `/koc/denemeler`; kurumdaki yayınevi PDF aktarımının aynısı. Öğrenci de denemesini kendisi girebilir (`enteredByStudent`).
+> - **Çalışma süresi:** `CenterStudySession`; öğrenci sayaçla ya da elle girer, koç grafiği ve haftalık raporda görür.
+> - **Koçun tahsilatı:** `/koc/tahsilat`; öğrenci başına aylık ücret (`monthlyFee`), ay ay ödendi/bekliyor (`CenterCoachPayment`), son 6 ay grafiği.
 > - **Hatırlatmalar (zamanlayıcı):** koça 08:00-11:00 arası "bugünkü görüşmeler"; programı %40'ın altında kalan öğrenciye perşembe-pazar 18:00-21:00 arası haftada bir uyarı. Öğrenci sınırı kurum sayfasından verilir, ödeme elle kaydedilir.
 
 Etüt merkezlerine, dershanelere ve kurslara aylık abonelikle satılan yönetim paneli. Pazaryeriyle aynı uygulamada çalışır: kurumun velileri sitedeki hesaplarından çocuklarını takip eder, eksik konular için pazaryerindeki öğretmenlere yönlendirilir.

@@ -49,7 +49,8 @@ const CONFIDENCE: Record<MatchConfidence, { tone: Tone; text: string }> = {
   none: { tone: "rose", text: "Eşleşmedi" },
 };
 
-export function PdfMatchForm({ draftId, exams, candidates, today }: { draftId: string; exams: MatchExam[]; candidates: Candidate[]; today: string }) {
+/** coach: Pi Koç hesabında (yayınlama adımı yok) */
+export function PdfMatchForm({ draftId, exams, candidates, today, coach = false }: { draftId: string; exams: MatchExam[]; candidates: Candidate[]; today: string; coach?: boolean }) {
   const [use, setUse] = useState(() => exams.map(() => true));
   const [picks, setPicks] = useState(() => exams.map((e) => e.rows.map((r) => r.studentId ?? "")));
   const [onlyCheck, setOnlyCheck] = useState(false);
@@ -177,7 +178,7 @@ export function PdfMatchForm({ draftId, exams, candidates, today }: { draftId: s
         );
       })}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-slate-500">Eşleştirmeler hatırlanır; aynı öğrenci sonraki PDF’lerde otomatik bulunur. Sonuçlar siz yayınlayana kadar velilere görünmez.</p>
+        <p className="text-xs text-slate-500">Eşleştirmeler hatırlanır; aynı öğrenci sonraki PDF’lerde otomatik bulunur. {coach ? "Sonuçlar öğrencinin sayfasına ve öğrenci ekranına hemen düşer." : "Sonuçlar siz yayınlayana kadar velilere görünmez."}</p>
         <SubmitButton size="lg" pendingText="Aktarılıyor…">
           Sonuçları aktar
         </SubmitButton>

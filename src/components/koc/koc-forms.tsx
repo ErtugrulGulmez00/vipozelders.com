@@ -24,6 +24,14 @@ import {
   kocSaveTemplateAction,
   kocDeleteTemplateAction,
   kocSendReportAction,
+  portalAddExamAction,
+  portalDeleteExamAction,
+  kocAddStudyAction,
+  portalAddStudyAction,
+  kocDeleteStudyAction,
+  portalDeleteStudyAction,
+  kocRecordPaymentAction,
+  kocDeletePaymentAction,
 } from "@/actions/koc";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
 import { Field, Input, Select, Textarea } from "@/components/ui/form";
@@ -46,6 +54,8 @@ export type KocStudentValues = {
   notes: string | null;
   coachWeekday: number | null;
   coachTime: string;
+  /** TL (ör. "2500") */
+  monthlyFee?: string;
 };
 
 export function KocStudentForm({ values }: { values?: KocStudentValues }) {
@@ -102,6 +112,10 @@ export function KocStudentForm({ values }: { values?: KocStudentValues }) {
           <Field label="Saat">
             <Input name="coachTime" type="time" defaultValue={values?.coachTime ?? ""} />
             <FieldError name="coachTime" />
+          </Field>
+          <Field label="Aylık ücret (TL, isteğe bağlı)" hint="Tahsilat sayfasında takip edilir; öğrenci görmez.">
+            <Input name="monthlyFee" inputMode="decimal" defaultValue={values?.monthlyFee ?? ""} placeholder="Örn. 2500" />
+            <FieldError name="monthlyFee" />
           </Field>
         </div>
       </fieldset>
@@ -192,11 +206,12 @@ export function DeleteLogButton({ logId, portal = false }: { logId: string; port
   );
 }
 
-export function ExamForm({ studentId, today, defaultKind }: { studentId: string; today: string; defaultKind: ExamKindName }) {
+/** portal: öğrencinin kendi hesabından giriş */
+export function ExamForm({ studentId, today, defaultKind, portal = false }: { studentId: string; today: string; defaultKind: ExamKindName; portal?: boolean }) {
   const [kind, setKind] = useState<ExamKindName>(defaultKind);
   const sections = EXAM_PRESETS[kind].sections;
   return (
-    <ActionForm action={kocAddExamAction} resetOnSuccess className="space-y-4">
+    <ActionForm action={portal ? portalAddExamAction : kocAddExamAction} resetOnSuccess className="space-y-4">
       <input type="hidden" name="studentId" value={studentId} />
       <div className="grid gap-3 sm:grid-cols-3">
         <Field label="Sınav">
@@ -238,9 +253,9 @@ export function ExamForm({ studentId, today, defaultKind }: { studentId: string;
   );
 }
 
-export function DeleteExamButton({ examId }: { examId: string }) {
+export function DeleteExamButton({ examId, portal = false }: { examId: string; portal?: boolean }) {
   return (
-    <ActionForm action={kocDeleteExamAction} hideMessages>
+    <ActionForm action={portal ? portalDeleteExamAction : kocDeleteExamAction} hideMessages>
       <input type="hidden" name="examId" value={examId} />
       <SubmitButton size="sm" variant="ghost" className="h-7 px-1.5 text-slate-400 hover:text-rose-600" pendingText="…" confirmMessage="Deneme sonucu silinsin mi?" aria-label="Sil">
         <Trash2 className="size-3.5" aria-hidden />

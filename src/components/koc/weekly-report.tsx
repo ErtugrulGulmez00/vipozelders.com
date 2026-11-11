@@ -3,6 +3,7 @@ import { PiMark } from "@/components/site/pi-mark";
 import { formatNet } from "@/lib/center/exams";
 import { cn } from "@/lib/cn";
 import type { WeeklyReportData } from "@/server/koc-report";
+import { formatMinutes } from "@/lib/koc-format";
 import { BarChart, HBarList, Ring } from "./charts";
 
 const dmy = (d: string) => d.split("-").reverse().join(".");
@@ -45,7 +46,7 @@ export function WeeklyReport({ data, note }: { data: WeeklyReportData; note: str
           <Kpi label="Çözülen soru" value={data.solved.toLocaleString("tr-TR")} hint={data.previousSolved || data.solved ? `Geçen hafta ${data.previousSolved.toLocaleString("tr-TR")} (${diff >= 0 ? "+" : ""}${diff.toLocaleString("tr-TR")})` : "Bu hafta giriş yok"} good={data.solved || data.previousSolved ? diff >= 0 : undefined} />
           <Kpi label="Doğruluk" value={pct(data.accuracy)} hint="Doğru / (doğru + yanlış)" />
           <Kpi label="Programa uyum" value={pct(planRate)} hint={data.plan.total ? `${data.plan.done}/${data.plan.total} görev` : "Program yazılmadı"} />
-          <Kpi label="Çalışılan gün" value={`${data.activeDays}/7`} hint="Soru girilen gün" />
+          <Kpi label="Çalışma süresi" value={data.studyMinutes ? formatMinutes(data.studyMinutes) : "—"} hint={`${data.activeDays}/7 gün çalıştı`} />
         </section>
 
         {note ? (

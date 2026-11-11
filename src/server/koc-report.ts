@@ -23,7 +23,7 @@ export async function weeklyReportData(centerId: string, studentId: string, week
   const weekEnd = addDaysToDateString(weekStart, 7);
   const prevStart = addDaysToDateString(weekStart, -7);
   const range = (from: string, to: string) => ({ gte: dateStringToDbDate(from), lt: dateStringToDbDate(to) });
-  const [student, logs, prevLogs, plan, sessions, results, goals] = await Promise.all([
+  const [student, logs, prevLogs, plan, sessions, results, goals, study] = await Promise.all([
     db.centerStudent.findFirstOrThrow({
       where: { id: studentId, centerId },
       select: { firstName: true, lastName: true, gradeName: true, targetExam: true, coachWeekday: true, coachMinute: true, center: { select: { name: true, phone: true } } },
@@ -40,6 +40,7 @@ export async function weeklyReportData(centerId: string, studentId: string, week
       take: 12,
     }),
     studentGoals(centerId, studentId),
+    db.centerStudySession.findMany({ where: { studentId, date: range(weekStart, weekEnd) }, select: { date: true, minutes: true } }),
   ]);
 
   const days = Array.from({ length: 7 }, (_, i) => {
@@ -89,7 +90,9 @@ export async function weeklyReportData(centerId: string, studentId: string, week
     solved,
     previousSolved: prevLogs._sum.solved ?? 0,
     accuracy: correct + wrong ? correct / (correct + wrong) : null,
-    activeDays: days.filter((d) => d.solved > 0).length,
+    // Soru ya da çalışma süresi girilen gün
+    activeDays: days.filter((d) => d.solved > 0 || study.some((x) => dbDateToString(x.date) === d.date)).length,
+    studyMinutes: study.reduce((t, x) => t + x.minutes, 0),
     subjects,
     plan: { done: plan.filter((p) => p.doneAt).length, total: plan.length, bySubject: [...planBySubject.entries()].map(([subject, s]) => ({ subject, ...s })) },
     sessions: sessions.map((s) => ({ date: dbDateToString(s.date), held: s.held, notes: s.visibleToParent ? s.notes : null, nextGoal: s.nextGoal, priorityTopics: s.priorityTopics })),

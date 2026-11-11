@@ -6,14 +6,15 @@ import { failure, success, type ActionState } from "@/lib/action-state";
 import { EXAM_PRESETS, type ExamKindName } from "@/lib/center/exams";
 import { centerAction, centerAudit } from "@/server/center/context";
 import { CenterError } from "@/server/center/errors";
-import { date, email, guard, int, opt, phone, requiredText, str, time } from "@/server/center/form";
+import { date, email, guard, int, money, opt, phone, requiredText, str, time } from "@/server/center/form";
 import { assignResource } from "@/server/center/resources";
 import { createStudent } from "@/server/center/students";
 import { db } from "@/server/db";
 import { actionUser } from "@/server/auth/current-user";
 import { saveReport, sendReport } from "@/server/koc-report";
+import { addPortalStudySession, addStudySession, deleteCoachPayment, deleteStudySession, recordCoachPayment } from "@/server/koc-extra";
 import { addTopicToPlan, applyTemplate, deleteTemplate, saveWeekAsTemplate } from "@/server/koc-plan";
-import { addPortalQuestionLog, addQuestionLog, addStudentExam, deleteGoal, deletePortalQuestionLog, deleteQuestionLog, deleteStudentExam, KOC_EXAM_KINDS, kocStudentOrThrow, saveGoal, savePortalGoal } from "@/server/koc";
+import { addPortalQuestionLog, addPortalStudentExam, addQuestionLog, addStudentExam, deletePortalStudentExam, deleteGoal, deletePortalQuestionLog, deleteQuestionLog, deleteStudentExam, KOC_EXAM_KINDS, kocStudentOrThrow, saveGoal, savePortalGoal } from "@/server/koc";
 
 function logInput(formData: FormData) {
   return {
@@ -67,6 +68,8 @@ function studentFields(formData: FormData) {
     schoolName: opt(formData, "schoolName", 120),
     phone: phone(formData, "phone", "Öğrenci telefonu"),
     notes: opt(formData, "notes", 2000),
+    // Koçun aylık ücreti (tahsilat takibi); boş bırakılabilir
+    monthlyFee: str(formData, "monthlyFee") ? money(formData, "monthlyFee", "Aylık ücret", { allowZero: true }) || null : null,
   };
 }
 
@@ -87,7 +90,7 @@ export async function kocCreateStudentAction(_: ActionState, formData: FormData)
       guardianName ? [{ fullName: guardianName, relation: "Veli", phone: guardianPhone, email: guardianEmail, isPrimary: true, notifyWhatsapp: false, notifyEmail: Boolean(guardianEmail) }] : [],
       [],
     );
-    await db.centerStudent.update({ where: { id: student.id }, data: { coachId: auth.ctx.member.id, ...meeting(formData) } });
+    await db.centerStudent.update({ where: { id: student.id }, data: { coachId: auth.ctx.member.id, monthlyFee: fields.monthlyFee, ...meeting(formData) } });
     id = student.id;
     await centerAudit(auth.ctx, "student.create", "CenterStudent", id);
     return success();
@@ -320,5 +323,103 @@ export async function kocDeleteTemplateAction(_: ActionState, formData: FormData
     await deleteTemplate(auth.ctx, str(formData, "templateId"));
     refresh();
     return success("Şablon silindi.");
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Öğrencinin deneme girişi, çalışma süresi, koçun tahsilatı
+// ---------------------------------------------------------------------------
+
+function examInput(formData: FormData) {
+  const kind = str(formData, "kind") as ExamKindName;
+  if (!KOC_EXAM_KINDS.includes(kind)) throw new CenterError("Sınav türünü seçin.", { kind: "Seçin." });
+  const sections = Array.from({ length: 10 }, (_, i) => ({ correct: int(formData, `c${i}`, 0, 0, 200), wrong: int(formData, `w${i}`, 0, 0, 200) }));
+  return { kind, name: requiredText(formData, "name", "Deneme adı", 2, 120), date: date(formData, "date", "Tarih"), sections };
+}
+
+/** Öğrenci kendi deneme sonucunu girer. */
+export async function portalAddExamAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await actionUser("STUDENT");
+  if (!user) return failure("Oturumunuz kapanmış. Tekrar giriş yapın.");
+  return guard(async () => {
+    await addPortalStudentExam(user.id, str(formData, "studentId"), examInput(formData));
+    refresh();
+    return success("Deneme sonucun kaydedildi. Koçun görecek.");
+  });
+}
+
+export async function portalDeleteExamAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await actionUser("STUDENT");
+  if (!user) return failure("Oturumunuz kapanmış. Tekrar giriş yapın.");
+  return guard(async () => {
+    await deletePortalStudentExam(user.id, str(formData, "examId"));
+    refresh();
+    return success();
+  });
+}
+
+function studyInput(formData: FormData) {
+  return { date: date(formData, "date", "Gün"), subject: opt(formData, "subject", 60), minutes: int(formData, "minutes", 0, 0, 100_000) };
+}
+
+export async function kocAddStudyAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const auth = await coachAuth("resources.manage");
+  if (!auth.ok) return auth.state;
+  return guard(async () => {
+    await addStudySession(auth.ctx, str(formData, "studentId"), studyInput(formData));
+    refresh();
+    return success("Çalışma süresi eklendi.");
+  });
+}
+
+export async function portalAddStudyAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await actionUser("STUDENT");
+  if (!user) return failure("Oturumunuz kapanmış. Tekrar giriş yapın.");
+  return guard(async () => {
+    await addPortalStudySession(user.id, str(formData, "studentId"), studyInput(formData));
+    refresh();
+    return success("Çalışma süren kaydedildi.");
+  });
+}
+
+export async function kocDeleteStudyAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const auth = await coachAuth("resources.manage");
+  if (!auth.ok) return auth.state;
+  return guard(async () => {
+    await deleteStudySession({ ctx: auth.ctx }, str(formData, "sessionId"));
+    refresh();
+    return success();
+  });
+}
+
+export async function portalDeleteStudyAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await actionUser("STUDENT");
+  if (!user) return failure("Oturumunuz kapanmış. Tekrar giriş yapın.");
+  return guard(async () => {
+    await deleteStudySession({ userId: user.id }, str(formData, "sessionId"));
+    refresh();
+    return success();
+  });
+}
+
+export async function kocRecordPaymentAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const auth = await coachAuth("students.edit");
+  if (!auth.ok) return auth.state;
+  return guard(async () => {
+    const studentId = str(formData, "studentId");
+    await recordCoachPayment(auth.ctx, studentId, { period: str(formData, "period", 7), amount: money(formData, "amount", "Tutar"), method: opt(formData, "method", 30), note: opt(formData, "note", 200) });
+    await centerAudit(auth.ctx, "coach.payment", "CenterStudent", studentId);
+    refresh();
+    return success("Ödeme kaydedildi.");
+  });
+}
+
+export async function kocDeletePaymentAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const auth = await coachAuth("students.edit");
+  if (!auth.ok) return auth.state;
+  return guard(async () => {
+    await deleteCoachPayment(auth.ctx, str(formData, "paymentId"));
+    refresh();
+    return success("Ödeme kaydı geri alındı.");
   });
 }

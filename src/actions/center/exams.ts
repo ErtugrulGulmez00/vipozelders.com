@@ -229,7 +229,8 @@ export async function uploadExamPdfAction(_: ActionState, formData: FormData): P
     return success();
   });
   if (!result.ok) return result;
-  redirect(`/kurum/denemeler/pdf-aktar/${draftId}`);
+  // Pi Koç hesabı kendi panelinde kalır
+  redirect(`${auth.ctx.center.kind === "COACH" ? "/koc" : "/kurum"}/denemeler/pdf-aktar/${draftId}`);
 }
 
 export async function confirmExamPdfAction(_: ActionState, formData: FormData): Promise<ActionState> {
@@ -253,7 +254,12 @@ export async function confirmExamPdfAction(_: ActionState, formData: FormData): 
     }
     const { examIds, saved } = await confirmPdfImport(auth.ctx, draftId, choices);
     for (const id of examIds) await centerAudit(auth.ctx, "exam.pdf_import", "CenterExam", id, { saved });
-    target = examIds.length === 1 ? `/kurum/denemeler/${examIds[0]}?durum=pdf-aktarildi` : "/kurum/denemeler?durum=pdf-aktarildi";
+    target =
+      auth.ctx.center.kind === "COACH"
+        ? "/koc/denemeler?durum=koc-pdf"
+        : examIds.length === 1
+          ? `/kurum/denemeler/${examIds[0]}?durum=pdf-aktarildi`
+          : "/kurum/denemeler?durum=pdf-aktarildi";
     return success();
   });
   if (!result.ok) return result;
@@ -264,5 +270,5 @@ export async function discardExamPdfAction(_: ActionState, formData: FormData): 
   const auth = await centerAction("exams.manage");
   if (!auth.ok) return auth.state;
   await discardPdfImport(auth.ctx, str(formData, "draftId"));
-  redirect("/kurum/denemeler");
+  redirect(auth.ctx.center.kind === "COACH" ? "/koc/denemeler" : "/kurum/denemeler");
 }

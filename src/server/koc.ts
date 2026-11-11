@@ -125,6 +125,27 @@ export type KocExamInput = { kind: ExamKindName; name: string; date: string; sec
 
 export async function addStudentExam(ctx: CenterContext, studentId: string, input: KocExamInput) {
   await kocStudentOrThrow(ctx, studentId);
+  return createSingleExam(ctx.center.id, studentId, input, false);
+}
+
+/** Öğrenci kendi hesabından deneme sonucunu girer (yalnızca kendi kaydı). */
+export async function addPortalStudentExam(userId: string, studentId: string, input: KocExamInput) {
+  const student = await kocPortalStudent(userId, studentId);
+  if (!student) throw new CenterError("Kayıt bulunamadı.");
+  if (!centerAccess(student.center).writable) throw new CenterError("Koçunuzun aboneliği yenilenene kadar yeni kayıt girilemiyor.");
+  if (input.date > toLocalDateString(new Date())) throw new CenterError("İleri tarihli deneme girilemez.", { date: "Bugün ya da önceki bir gün." });
+  return createSingleExam(student.centerId, studentId, input, true);
+}
+
+/** Öğrenci yalnızca kendi girdiği denemeyi siler. */
+export async function deletePortalStudentExam(userId: string, examId: string) {
+  const exam = await db.centerExam.findUnique({ where: { id: examId }, select: { id: true, enteredByStudent: true, results: { select: { studentId: true } } } });
+  const studentId = exam?.results[0]?.studentId;
+  if (!exam || !exam.enteredByStudent || !studentId || !(await kocPortalStudent(userId, studentId))) throw new CenterError("Deneme bulunamadı.");
+  await db.centerExam.delete({ where: { id: examId } });
+}
+
+async function createSingleExam(centerId: string, studentId: string, input: KocExamInput, byStudent: boolean) {
   const preset = EXAM_PRESETS[input.kind];
   if (!KOC_EXAM_KINDS.includes(input.kind)) throw new CenterError("Sınav türünü seçin.");
   preset.sections.forEach((section, i) => {
@@ -136,11 +157,12 @@ export async function addStudentExam(ctx: CenterContext, studentId: string, inpu
   if (input.sections.every((s) => !s.correct && !s.wrong)) throw new CenterError("En az bir dersin doğru ve yanlışını yazın.");
   const exam = await db.centerExam.create({
     data: {
-      centerId: ctx.center.id,
+      centerId,
       name: input.name,
       kind: input.kind,
       date: dateStringToDbDate(input.date),
       wrongPenalty: preset.wrongPenalty,
+      enteredByStudent: byStudent,
       sections: { create: preset.sections.map((s, order) => ({ name: s.name, questionCount: s.questionCount, subjectSlug: s.subjectSlug, order, topics: [] })) },
     },
     include: { sections: { orderBy: { order: "asc" } } },
@@ -164,12 +186,13 @@ export async function deleteStudentExam(ctx: CenterContext, examId: string) {
 export async function studentExams(centerId: string, studentId: string) {
   const results = await db.centerExamResult.findMany({
     where: { studentId, exam: { centerId } },
-    include: { exam: { select: { id: true, name: true, kind: true, date: true } }, sections: { include: { section: { select: { name: true, questionCount: true, order: true } } } } },
+    include: { exam: { select: { id: true, name: true, kind: true, date: true, enteredByStudent: true } }, sections: { include: { section: { select: { name: true, questionCount: true, order: true } } } } },
     orderBy: { exam: { date: "desc" } },
   });
   return results.map((r) => ({
     examId: r.exam.id,
     name: r.exam.name,
+    byStudent: r.exam.enteredByStudent,
     kind: r.exam.kind as ExamKindName,
     date: dbDateToString(r.exam.date),
     net: r.net,
