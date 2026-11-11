@@ -14,10 +14,11 @@ import {
   TrackToggle,
   useChat,
   useConnectionState,
+  useLocalParticipant,
   useTracks,
 } from "@livekit/components-react";
-import { ConnectionState, Track, VideoPresets, type RoomOptions } from "livekit-client";
-import { LogOut, MessageSquare, PenLine, Send, X } from "lucide-react";
+import { ConnectionState, Track, VideoPresets, type LocalVideoTrack, type RoomOptions } from "livekit-client";
+import { LogOut, MessageSquare, PenLine, Send, SwitchCamera, X } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -39,9 +40,41 @@ const LABEL = "sr-only sm:not-sr-only";
 /** Ekran paylaşımı başlatılamadığında kullanıcıya gösterilecek açıklama. */
 function screenShareError(error: Error): string {
   if (error.name === "NotAllowedError") return "Ekran paylaşımı başlatılmadı. Açılan pencerede paylaşmak istediğiniz ekranı, pencereyi ya da sekmeyi seçip “Paylaş”a basın. Daha önce engellediyseniz adres çubuğundaki kilit simgesinden izin verin.";
-  if (error.name === "NotSupportedError" || error.name === "TypeError") return "Bu cihazda ekran paylaşımı desteklenmiyor. Telefon tarayıcıları ekran paylaşamaz; bilgisayardan Chrome, Edge ya da Firefox kullanın.";
+  if (error.name === "NotSupportedError" || error.name === "TypeError" || /not supported/i.test(error.message)) return "Bu cihazda ekran paylaşımı desteklenmiyor. Telefon tarayıcıları ekran paylaşamaz; bilgisayardan Chrome, Edge ya da Firefox kullanın.";
   if (error.name === "NotReadableError") return "Ekran yakalanamadı. Başka bir program ekranı kullanıyor olabilir; kapatıp tekrar deneyin.";
   return `Ekran paylaşımı başlatılamadı (${error.message || error.name}).`;
+}
+
+const noSubscribe = () => () => {};
+/** Telefon tarayıcıları (iPhone, Android) ekran paylaşamaz; düğme yalnızca destekleyen cihazda gösterilir. */
+function useCanShareScreen() {
+  return useSyncExternalStore(noSubscribe, () => typeof navigator.mediaDevices?.getDisplayMedia === "function", () => true);
+}
+
+/** Ön / arka kamera geçişi: telefonda öğrenci defterini ya da kitabını arka kamerayla gösterir. */
+function FlipCameraButton({ onError }: { onError: (message: string) => void }) {
+  const { localParticipant } = useLocalParticipant();
+  const [facing, setFacing] = useState<"user" | "environment">("user");
+  const [busy, setBusy] = useState(false);
+  async function flip() {
+    const next = facing === "user" ? "environment" : "user";
+    setBusy(true);
+    try {
+      const track = localParticipant.getTrackPublication(Track.Source.Camera)?.videoTrack as LocalVideoTrack | undefined;
+      if (track) await track.restartTrack({ facingMode: next, resolution: VideoPresets.h720.resolution });
+      else await localParticipant.setCameraEnabled(true, { facingMode: next, resolution: VideoPresets.h720.resolution });
+      setFacing(next);
+    } catch {
+      onError("Kamera değiştirilemedi. Kamera iznini kontrol edip tekrar deneyin.");
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <button type="button" onClick={flip} disabled={busy} className="bg-slate-800 text-white hover:bg-slate-700 disabled:opacity-60" title={facing === "user" ? "Arka kameraya geç (defter, kitap göstermek için)" : "Ön kameraya dön"}>
+      <SwitchCamera className="size-4" aria-hidden /> <span className={LABEL}>{facing === "user" ? "Arka kamera" : "Ön kamera"}</span>
+    </button>
+  );
 }
 
 /**
@@ -171,6 +204,7 @@ function Stage({
   const screenShare = tracks.find((t) => t.source === Track.Source.ScreenShare && isTrackReference(t));
   const cameras = tracks.filter((t) => t.source !== Track.Source.ScreenShare);
   const [shareError, setShareError] = useState<string | null>(null);
+  const canShareScreen = useCanShareScreen();
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 30_000);
@@ -248,6 +282,7 @@ function Stage({
             <TrackToggle source={Track.Source.Camera} className="bg-slate-800 text-white hover:bg-slate-700">
               <span className={LABEL}>Kamera</span>
             </TrackToggle>
+            {canShareScreen ? (
             <TrackToggle
               source={Track.Source.ScreenShare}
               captureOptions={{ audio: true, selfBrowserSurface: "include" }}
@@ -257,6 +292,9 @@ function Stage({
             >
               <span className={LABEL}>Ekran paylaş</span>
             </TrackToggle>
+            ) : (
+              <FlipCameraButton onError={setShareError} />
+            )}
             <button type="button" onClick={toggleBoard} className={cn("text-white", boardOpen ? "bg-brand-600" : "bg-slate-800 hover:bg-slate-700")}>
               <PenLine className="size-4" aria-hidden /> <span className={LABEL}>Beyaz tahta</span>
             </button>
