@@ -26,6 +26,7 @@ import { getSiteSettings } from "@/server/site";
 import { CenterApplicationForm } from "./center-application-form";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/kurumlar-icin" },
   title: "Etüt merkezi yönetim paneli",
   description: "Öğrenci ve veli takibi, yoklama ve devamsızlık bildirimi, deneme analizi ve eksik konular, ödeme planı, tahsilat ve makbuz: etüt merkeziniz için tek panel.",
 };

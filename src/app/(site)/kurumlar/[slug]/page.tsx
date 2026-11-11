@@ -36,6 +36,7 @@ export async function generateMetadata({ params }: PageProps<"/kurumlar/[slug]">
   if (!center) return { title: "Kurum", robots: { index: false } };
   const place = [center.district?.name, center.city?.name].filter(Boolean).join(", ");
   return {
+    alternates: { canonical: `/kurumlar/${slug}` },
     title: `${center.name}${place ? ` · ${place}` : ""}`,
     description: center.description?.slice(0, 160) ?? `${center.name} ${CENTER_KIND_LABEL[center.kind].toLocaleLowerCase("tr-TR")}: programlar, iletişim ve ön kayıt.`,
   };

@@ -22,8 +22,8 @@ export async function generateMetadata(): Promise<Metadata> {
     title: { default: `${settings.siteName} · Özel ders ve koçluk`, template: `%s · ${settings.siteName}` },
     description: settings.siteTagline,
     metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
-    // WhatsApp, Instagram vb. bağlantı önizlemesi (görsel: app/opengraph-image.tsx)
-    openGraph: { type: "website", locale: "tr_TR", siteName: settings.siteName, title: `${settings.siteName} · Özel ders ve koçluk`, description: settings.siteTagline },
+    // WhatsApp, Instagram vb. bağlantı önizlemesi (görsel: app/opengraph-image.tsx). Başlık ve açıklama verilmez: alt sayfalar bunları miras alırdı; önizleme sayfanın kendi <title> ve açıklamasını kullanır
+    openGraph: { type: "website", locale: "tr_TR", siteName: settings.siteName },
     twitter: { card: "summary_large_image" },
     // iPhone: "Ana Ekrana Ekle" ile tam ekran açılır (simge: app/apple-icon.png)
     appleWebApp: { capable: true, title: settings.siteName, statusBarStyle: "default" },

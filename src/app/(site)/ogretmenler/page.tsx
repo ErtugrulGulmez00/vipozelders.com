@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { TeacherListing, TeacherListingSkeleton } from "@/components/site/teacher-listing";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/ogretmenler" },
   title: "Öğretmenler",
   description: "Kademe, ders, hizmet türü, konum ve fiyata göre özel ders öğretmeni bulun.",
 };

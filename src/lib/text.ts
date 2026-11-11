@@ -90,16 +90,36 @@ export function isValidTckn(input: string): boolean {
   return d[9] === tenth && d[10] === eleventh;
 }
 
+
+// Görünmez karakterler (sıfır genişlikli boşluk, yön işaretleri, yumuşak tire)
+const INVISIBLE = /[­​-‏⁠-⁤﻿]/g;
+
+/** Maskelemeden önce metni sadeleştirir: tam genişlik ve Arapça rakamlar ASCII'ye, görünmez karakterler silinir. */
+function normalizeForMask(input: string): string {
+  return input
+    .normalize("NFKC")
+    .replace(INVISIBLE, "")
+    .replace(/[٠-٩]/g, (ch) => String(ch.charCodeAt(0) - 0x0660))
+    .replace(/[۰-۹]/g, (ch) => String(ch.charCodeAt(0) - 0x06f0));
+}
+
+const AT = String.raw`(?:@|\s*[\[(]\s*(?:at|et)\s*[\])]\s*)`;
+const DOT = String.raw`(?:\.|\s*[\[(]\s*(?:dot|nokta|\.)\s*[\])]\s*)`;
+const EMAIL = new RegExp(String.raw`[\w.+-]+${AT}[\w-]+(?:${DOT}[\w-]+)+`, "gi");
+const DOMAIN = new RegExp(String.raw`\b[\w-]+${DOT}(?:com|net|org|me|io|co|tr|app|link|xyz|info|biz|online|site|store)(?:\.tr)?\b\S*`, "gi");
+
 /**
- * Platform dışına yönlendirmeyi önlemek için metindeki iletişim bilgilerini gizler: e-posta, telefon (araya boşluk,
- * nokta, tire konmuş hâlleri dahil), web adresi ve @kullanıcıadı.
+ * Platform dışına yönlendirmeyi önlemek için metindeki iletişim bilgilerini gizler: e-posta ("[at]", "[dot]" yazımları
+ * dahil), telefon (araya boşluk, nokta, tire, eğik çizgi, alt çizgi konmuş hâlleri dahil), web adresi, @kullanıcıadı ve
+ * "instagram: ad" biçimindeki hesaplar.
  */
 export function maskContacts(input: string): string {
-  return input
-    .replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, "[iletişim bilgisi gizlendi]")
+  return normalizeForMask(input)
+    .replace(EMAIL, "[iletişim bilgisi gizlendi]")
     .replace(/(https?:\/\/|www\.)\S+/gi, "[bağlantı gizlendi]")
-    .replace(/\b[\w-]+\.(com|net|org|me|io|co|tr|app|link)(\.tr)?\b\S*/gi, "[bağlantı gizlendi]")
+    .replace(DOMAIN, "[bağlantı gizlendi]")
     // Rakamlar arasındaki boşluk/ayraçlar telefona dahil; sondaki boşluk metinde kalır
-    .replace(/\+?\d(?:[\s.\-()]*\d){9,}/g, "[telefon gizlendi]")
-    .replace(/(^|\s)@[a-z0-9_.]{3,}/gi, "$1[kullanıcı adı gizlendi]");
+    .replace(/\+?\d(?:[\s.\-()/_]*\d){9,}/g, "[telefon gizlendi]")
+    .replace(/(^|\s)@[a-z0-9_.]{3,}/gi, "$1[kullanıcı adı gizlendi]")
+    .replace(/\b(instagram|insta|telegram|tiktok|snapchat|twitter|facebook)\s*[:=\-]\s*@?[\w.]{3,}/gi, "$1: [kullanıcı adı gizlendi]");
 }

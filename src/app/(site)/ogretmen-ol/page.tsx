@@ -7,6 +7,7 @@ import { getCities, getSiteSettings } from "@/server/site";
 import { ApplicationForm } from "./application-form";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/ogretmen-ol" },
   title: "Öğretmen olarak katılın",
   description: "Kendi fiyatınızı ve takviminizi belirleyin; öğrencilere online veya yüz yüze ulaşın. Ödemeniz güvencede.",
 };

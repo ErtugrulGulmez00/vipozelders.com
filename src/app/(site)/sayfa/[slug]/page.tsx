@@ -23,7 +23,7 @@ export async function generateStaticParams() {
 export async function generateMetadata({ params }: PageProps<"/sayfa/[slug]">): Promise<Metadata> {
   const { slug } = await params;
   const page = await getPage(slug);
-  return { title: page?.title ?? "Sayfa bulunamadı" };
+  return page ? { title: page.title, alternates: { canonical: `/sayfa/${slug}` } } : { title: "Sayfa bulunamadı", robots: { index: false } };
 }
 
 export default function ContentPage({ params }: PageProps<"/sayfa/[slug]">) {

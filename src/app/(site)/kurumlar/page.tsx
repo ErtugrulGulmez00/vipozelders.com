@@ -12,6 +12,7 @@ import { listPublicCenters, publicCenterCities } from "@/server/center/public";
 import { uploadUrl } from "@/server/storage";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/kurumlar" },
   title: "Etüt merkezleri",
   description: "Pi Kampüs kurum rehberi: bölgenizdeki etüt merkezleri. Programları inceleyin, ön kayıt bırakın.",
 };

@@ -34,11 +34,28 @@ export function normalizePath(path: string): string | null {
   return clean.slice(0, 200);
 }
 
+// IP başına günlük üst sınır (User-Agent değiştirerek ziyaretçi sınırı aşılmasın). Tek süreç olduğu için bellekte tutulur.
+const IP_DAILY_LIMIT = 2000;
+const ipCounts = new Map<string, number>();
+let ipCountsDay = "";
+
+function overIpLimit(ip: string | null, day: string): boolean {
+  if (!ip) return false;
+  if (ipCountsDay !== day) {
+    ipCounts.clear();
+    ipCountsDay = day;
+  }
+  const count = (ipCounts.get(ip) ?? 0) + 1;
+  ipCounts.set(ip, count);
+  return count > IP_DAILY_LIMIT;
+}
+
 export async function recordPageView(input: { path: string; referrer: string | null; userAgent: string; ip: string | null; ownHost: string }, now = new Date()) {
   if (!input.userAgent || BOT.test(input.userAgent)) return;
   const path = normalizePath(input.path);
   if (!path) return;
   const day = toLocalDateString(now);
+  if (overIpLimit(input.ip, day)) return;
   const visitor = createHash("sha256")
     .update(`${day}|${process.env.APP_SECRET ?? ""}|${input.ip ?? ""}|${input.userAgent}`)
     .digest("hex")

@@ -138,7 +138,6 @@ export function Avatar({ src, name, initials, size = 48, className }: { src: str
         alt={name}
         width={size}
         height={size}
-        unoptimized
         className={cn("shrink-0 rounded-full object-cover ring-2 ring-white", className)}
         style={{ width: size, height: size }}
       />

@@ -24,6 +24,7 @@ import { centerPlans } from "@/server/center/plans";
 import { getSiteSettings } from "@/server/site";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/nasil-calisir/etut-merkezi" },
   title: "Etüt merkezi paneli nasıl çalışır? Ekran ekran rehber",
   description: "Öğrenci kaydı, etüt planı ve yoklama, ödev, koçluk, deneme analizi, fotoğrafla soru, tahsilat ve veli portalı: Etüt Merkezi paketini gerçek ekranlar ve videolarla tanıyın.",
 };

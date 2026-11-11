@@ -73,8 +73,11 @@ test("öğretmen ekleme → yayın → rezervasyon ve ödeme → onay → tamaml
   await page.getByRole("button", { name: "Profili kaydet" }).click();
   await expect(page.getByText("Profil kaydedildi.")).toBeVisible();
   const photoSrc = await page.locator(`img[alt="Test ${teacherLastName}"]`).first().getAttribute("src");
-  expect(photoSrc).toMatch(/^\/api\/dosya\/public\/ogretmen\//);
+  // Avatar küçültülmüş görsel olarak sunulur (/_next/image?url=/api/dosya/...)
+  const original = new URL(photoSrc!, "http://x").searchParams.get("url") ?? photoSrc!;
+  expect(original).toMatch(/^\/api\/dosya\/public\/ogretmen\//);
   expect((await page.request.get(photoSrc!)).status()).toBe(200);
+  expect((await page.request.get(original)).status()).toBe(200);
 
   // 4) Ders ve fiyat
   await page.goto("/ogretmen-paneli/dersler-ve-fiyatlar");

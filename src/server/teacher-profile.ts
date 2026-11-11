@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { Gender } from "@/generated/prisma/client";
 import { dateStringToDbDate, isDateString, timeToMinutes } from "@/lib/dates";
-import { isValidTckn, normalizeIban, normalizePhone } from "@/lib/text";
+import { isValidTckn, maskContacts, normalizeIban, normalizePhone } from "@/lib/text";
 import { encryptText } from "./crypto";
 import { db } from "./db";
 import { getPaymentProvider } from "./payments/service";
@@ -67,8 +67,8 @@ export async function updateTeacherProfile(teacherId: string, formData: FormData
     db.teacherProfile.update({
       where: { userId: teacherId },
       data: {
-        headline: input.headline || null,
-        bio: input.bio || null,
+        headline: input.headline ? maskContacts(input.headline) : null,
+        bio: input.bio ? maskContacts(input.bio) : null,
         education: input.education || null,
         experienceYears: input.experienceYears,
         gender: input.gender as Gender,

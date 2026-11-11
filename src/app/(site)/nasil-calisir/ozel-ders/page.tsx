@@ -23,6 +23,7 @@ import { buttonClasses } from "@/components/ui/button";
 import { getSiteSettings } from "@/server/site";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/nasil-calisir/ozel-ders" },
   title: "Özel ders nasıl çalışır? Adım adım rehber",
   description: "Öğretmen bulma, ücretsiz tanışma, randevu ve güvenli ödeme, öğretmen onayı, sanal sınıf ve paket ders: Pi Kampüs'te özel dersi gerçek ekranlar ve videolarla tanıyın.",
 };

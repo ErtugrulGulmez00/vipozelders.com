@@ -11,6 +11,7 @@ import { getSiteSettings } from "@/server/site";
 import { KocSignupForm } from "@/components/koc/signup-form";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/pi-koc" },
   title: "Pi Koç: koçlar için öğrenci takip paneli",
   description: "Öğrenci koçları için görüşme notları, program, soru ve deneme takibi grafiklerle tek panelde. LGS ve YKS koçluğu için, aylık 299 TL'den başlayan fiyatlarla.",
 };

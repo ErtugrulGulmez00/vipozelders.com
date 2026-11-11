@@ -9,6 +9,7 @@ import { publishedPosts } from "@/server/blog";
 import { uploadUrl } from "@/server/storage";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/rehber" },
   title: "Rehber: sınav hazırlığı, ders çalışma ve kurum yönetimi üzerine yazılar",
   description: "Veliler, öğrenciler ve etüt merkezleri için sınav hazırlığı, ders çalışma, özel ders ve kurum yönetimi üzerine pratik yazılar.",
 };

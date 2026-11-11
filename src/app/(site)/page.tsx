@@ -11,7 +11,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
   const title = `${settings.siteName} · Etüt merkezi yönetim paneli ve özel ders`;
   const description = "Yoklama, veli bildirimi, deneme analizi ve tahsilat tek panelde. Aileler için LGS ve YKS'ye hazırlıkta onaylı özel ders öğretmenleri.";
-  return { title: { absolute: title }, description, openGraph: { type: "website", locale: "tr_TR", siteName: settings.siteName, title, description } };
+  return { title: { absolute: title }, description, alternates: { canonical: "/" }, openGraph: { type: "website", locale: "tr_TR", siteName: settings.siteName, title, description } };
 }
 
 const FEATURES = [

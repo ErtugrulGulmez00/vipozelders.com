@@ -5,6 +5,7 @@ import Link from "next/link";
 import { cn } from "@/lib/cn";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/nasil-calisir" },
   title: "Nasıl çalışır?",
   description: "Özel ders ve etüt merkezi için Pi Kampüs'ün nasıl çalıştığını ekran görüntüleri ve videolarla anlatan rehberler.",
 };

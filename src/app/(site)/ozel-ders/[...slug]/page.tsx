@@ -22,6 +22,7 @@ export async function generateMetadata({ params }: PageProps<"/ozel-ders/[...slu
   const subject = catalog.subjects.find((s) => s.slug === slug[1]);
   const name = [level?.name, subject?.name].filter(Boolean).join(" ");
   return {
+    alternates: { canonical: `/ozel-ders/${slug.slice(0, 2).join("/")}` },
     title: `${name} özel ders öğretmenleri`,
     description: `${name} için online ve yüz yüze özel ders ve koçluk veren öğretmenleri karşılaştırın; puan ve yorumlara bakarak hemen randevu alın.`,
   };

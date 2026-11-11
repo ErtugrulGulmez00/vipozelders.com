@@ -52,6 +52,8 @@ export async function resetPendingForBooking(
 /** Admin'in banka havalesiyle yaptığı ödemeyi kaydeder: serbest bakiye → ödendi. */
 export async function recordManualPayout(input: { teacherId: string; amount: number; reference: string; adminId: string }) {
   return db.$transaction(async (tx) => {
+    // Aynı öğretmene aynı anda iki ödeme kaydı serbest bakiyeyi aşmasın
+    await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtext(${`payout:${input.teacherId}`}))`;
     const balances = await teacherBalances(input.teacherId, tx);
     if (input.amount <= 0 || input.amount > balances.available) {
       throw new Error("Ödeme tutarı serbest bakiyeden büyük olamaz.");

@@ -29,6 +29,7 @@ export async function generateMetadata({ params }: PageProps<"/ogretmen/[slug]">
   if (!meta) return { title: "Öğretmen profili", robots: { index: false } };
   const subjects = meta.subjects.join(", ");
   return {
+    alternates: { canonical: `/ogretmen/${slug}` },
     title: `${meta.name} · ${subjects} öğretmeni`,
     description: meta.headline ?? `${subjects} özel ders`,
   };

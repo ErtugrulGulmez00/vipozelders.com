@@ -764,7 +764,8 @@ export async function previewStudentCancellation(booking: Booking, now = new Dat
   return { allowed: true, ...studentCancellationRefund(booking.price, booking.startAt, now, settings) };
 }
 
-export async function cancelByStudent(bookingId: string, studentId: string, reason: string, now = new Date()) {
+export async function cancelByStudent(bookingId: string, studentId: string, rawReason: string, now = new Date()) {
+  const reason = maskContacts(rawReason);
   const settings = await loadSettings();
   let refundId: string | null = null;
   await db.$transaction(async (tx) => {
@@ -817,7 +818,8 @@ export async function cancelByStudent(bookingId: string, studentId: string, reas
   if (refundId) await processRefund(refundId);
 }
 
-export async function cancelByTeacher(bookingId: string, teacherId: string, reason: string, now = new Date()) {
+export async function cancelByTeacher(bookingId: string, teacherId: string, rawReason: string, now = new Date()) {
+  const reason = maskContacts(rawReason);
   let refundId: string | null = null;
   await db.$transaction(async (tx) => {
     const booking = await tx.booking.findUnique({ where: { id: bookingId } });

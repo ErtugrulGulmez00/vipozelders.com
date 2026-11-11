@@ -9,7 +9,8 @@ async function sitemapData() {
   cacheLife("hours");
   const [catalog, teachers, pages, centers, groups, posts] = await Promise.all([
     loadCatalog(),
-    db.teacherProfile.findMany({ where: { status: "PUBLISHED", user: { status: "ACTIVE" } }, select: { slug: true, updatedAt: true } }),
+    // Aktif dersi olmayan profil boş ders bölümüyle açılır; arama motoruna gönderilmez
+    db.teacherProfile.findMany({ where: { status: "PUBLISHED", user: { status: "ACTIVE" }, offerings: { some: { isActive: true } } }, select: { slug: true, updatedAt: true } }),
     db.page.findMany({ where: { isPublished: true }, select: { slug: true, updatedAt: true } }),
     listPublicCenters(null),
     // Kayıt alan, herkese açık grup dersleri

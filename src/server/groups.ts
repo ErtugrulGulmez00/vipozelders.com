@@ -386,7 +386,8 @@ export async function cancelEnrollment(studentId: string, enrollmentId: string, 
  * Dersi iptal eder: ödeme yapan herkese yapılmamış oturumların ücreti iade edilir. Öğretmen yalnızca ilk oturumdan
  * önce iptal edebilir; yönetici her zaman (yapılan oturumların payı öğretmende kalır).
  */
-export async function cancelGroupCourse(courseId: string, reason: string, actor: { id: string; role: "TEACHER" | "ADMIN" } | null, now = new Date()) {
+export async function cancelGroupCourse(courseId: string, rawReason: string, actor: { id: string; role: "TEACHER" | "ADMIN" } | null, now = new Date()) {
+  const reason = maskContacts(rawReason.trim());
   const refundIds: string[] = [];
   await db.$transaction(async (tx) => {
     await lockCourse(tx, courseId);

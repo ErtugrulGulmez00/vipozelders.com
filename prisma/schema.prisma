@@ -745,6 +745,8 @@ model Refund {
   error            String?
   createdAt        DateTime     @default(now())
   processedAt      DateTime?
+  // Sağlayıcıya gönderilirken sahiplenilir: aynı iade iki kez gönderilmesin (satır içi çağrı + zamanlayıcı + tekrar dene)
+  claimedAt        DateTime?
 
   @@index([status])
 }

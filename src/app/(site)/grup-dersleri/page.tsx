@@ -13,6 +13,7 @@ import { loadSettings } from "@/server/settings";
 import { uploadUrl } from "@/server/storage";
 
 export const metadata: Metadata = {
+  alternates: { canonical: "/grup-dersleri" },
   title: "Grup dersleri: online sınıflar",
   description: "Onaylı öğretmenlerle 4–10 kişilik online grup dersleri ve kamplar. Kişi başı uygun fiyat; en az kişi dolmazsa ücretin tamamı iade.",
 };

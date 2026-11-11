@@ -25,6 +25,7 @@ export async function generateMetadata({ params }: PageProps<"/rehber/[slug]">):
   if (!post) return { title: "Yazı bulunamadı", robots: { index: false } };
   const cover = uploadUrl(post.coverKey);
   return {
+    alternates: { canonical: `/rehber/${slug}` },
     title: post.title,
     description: post.excerpt ?? undefined,
     openGraph: { type: "article", title: post.title, description: post.excerpt ?? undefined, ...(cover ? { images: [cover] } : {}) },

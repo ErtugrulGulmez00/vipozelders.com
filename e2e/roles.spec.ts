@@ -172,7 +172,8 @@ test("roller birbirinin paneline ve başkasının kaydına giremez", async ({ pa
     await expect(page, `${path} veliye açılmamalı`).not.toHaveURL(new RegExp(`${path}$`));
   }
   await page.goto("/kurum");
-  await expect(page).not.toHaveURL(/\/kurum$/);
+  // Veli kendi kurum sayfasına (/hesabim/kurum) gider; kurum paneli (/kurum) açılmamalı
+  await expect(page).not.toHaveURL(/:\/\/[^/]+\/kurum$/);
 
   // Öğrenci başka velinin dersini göremez
   // (Akışla gönderilen sayfada "bulunamadı" ekranı 200 koduyla da gelebilir; ölçüt ekrandaki içerik)

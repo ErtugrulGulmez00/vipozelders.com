@@ -79,9 +79,16 @@ export async function requestRefund(
 }
 
 /** Bekleyen bir iadeyi sağlayıcıya iletir. Başarı/başarısızlık kaydedilir; başarısızsa tekrar denenir. */
-export async function processRefund(refundId: string): Promise<boolean> {
+const REFUND_CLAIM_MS = 10 * 60_000;
+
+export async function processRefund(refundId: string, now = new Date()): Promise<boolean> {
+  // Önce sahiplen: aynı iadeyi aynı anda başka bir çağrı işliyorsa sağlayıcıya ikinci kez gitme
+  const claimed = await db.refund.updateMany({
+    where: { id: refundId, status: "PENDING", OR: [{ claimedAt: null }, { claimedAt: { lt: new Date(now.getTime() - REFUND_CLAIM_MS) } }] },
+    data: { claimedAt: now },
+  });
   const refund = await db.refund.findUnique({ where: { id: refundId }, include: { payment: true } });
-  if (!refund || refund.status !== "PENDING") return refund?.status === "SUCCEEDED";
+  if (!refund || refund.status !== "PENDING" || claimed.count === 0) return refund?.status === "SUCCEEDED";
 
   let result: Awaited<ReturnType<PaymentProvider["refund"]>>;
   try {
@@ -101,7 +108,7 @@ export async function processRefund(refundId: string): Promise<boolean> {
     await db.$transaction(async (tx) => {
       await tx.refund.update({
         where: { id: refund.id },
-        data: { status: "SUCCEEDED", processedAt: new Date(), providerRefundId: result.ok ? result.reference : null, attempts: { increment: 1 }, error: null },
+        data: { status: "SUCCEEDED", processedAt: new Date(), providerRefundId: result.ok ? result.reference : null, attempts: { increment: 1 }, error: null, claimedAt: null },
       });
       const payment = await tx.payment.update({
         where: { id: refund.paymentId },
@@ -118,7 +125,7 @@ export async function processRefund(refundId: string): Promise<boolean> {
   const attempts = refund.attempts + 1;
   await db.refund.update({
     where: { id: refund.id },
-    data: { attempts, error: result.error.slice(0, 500), status: attempts >= 5 ? "FAILED" : "PENDING" },
+    data: { attempts, error: result.error.slice(0, 500), status: attempts >= 5 ? "FAILED" : "PENDING", claimedAt: null },
   });
   return false;
 }

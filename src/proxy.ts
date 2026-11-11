@@ -14,6 +14,8 @@ function withSecurityHeaders(response: NextResponse): NextResponse {
   response.headers.set("X-Content-Type-Options", "nosniff");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   response.headers.set("Permissions-Policy", "camera=(self), microphone=(self), display-capture=(self), geolocation=()");
+  // Temel CSP: eklenti nesnesi, başka köke <base> ve başka sitenin çerçevesi yok (betik kaynakları ayrıca daraltılabilir)
+  response.headers.set("Content-Security-Policy", "object-src 'none'; base-uri 'self'; frame-ancestors 'self'");
   return response;
 }
 
