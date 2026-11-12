@@ -3,16 +3,15 @@ import { coachPriceFor, parseCoachTiers } from "@/lib/pi-koc";
 import { settingsSchema } from "@/server/settings";
 
 describe("Pi Koç kademeleri", () => {
-  it("varsayılan kademeler sıralı okunur", () => {
-    const tiers = parseCoachTiers(settingsSchema.parse({}).piKocTiers);
-    expect(tiers).toEqual([
-      { students: 3, priceTl: 299 },
-      { students: 5, priceTl: 449 },
-      { students: 10, priceTl: 749 },
-      { students: 15, priceTl: 999 },
-      { students: 25, priceTl: 1499 },
-      { students: 50, priceTl: 2499 },
+  it("varsayılan kademeler sıralı okunur; 3 öğrenciye kadar ücretsiz", () => {
+    const settings = settingsSchema.parse({});
+    expect(parseCoachTiers(settings.piKocTiers)).toEqual([
+      { students: 5, priceTl: 349 },
+      { students: 10, priceTl: 599 },
+      { students: 20, priceTl: 999 },
+      { students: 50, priceTl: 2000 },
     ]);
+    expect(settings.piKocFreeStudents).toBe(3);
   });
 
   it("hatalı parçalar atlanır, aynı öğrenci sayısının sonuncusu geçerlidir", () => {

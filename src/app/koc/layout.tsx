@@ -1,7 +1,7 @@
 import { BookMarked, BookOpenCheck, CalendarHeart, LayoutDashboard, UserCog, Users, Wallet } from "lucide-react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { SubscriptionBanner } from "@/components/center/center-ui";
+import { CoachPlanBanner } from "@/components/koc/plan-banner";
 import { KocShell } from "@/components/koc/koc-shell";
 import type { PanelNavItem } from "@/components/panel/nav-links";
 import { notificationScope, notificationScopeWhere, sideSwitches } from "@/lib/sides";
@@ -32,7 +32,7 @@ export default async function KocLayout({ children }: { children: React.ReactNod
     { href: "/koc/hesap", label: "Hesap ve abonelik", icon: <UserCog />, also: ["/koc/abonelik", "/koc/bildirimler"] },
   ];
   return (
-    <KocShell user={ctx.user} nav={nav} switchLinks={sideSwitches(facts, "koc")} unread={unread} usage={{ active, limit: ctx.center.studentLimit }} banner={<SubscriptionBanner access={ctx.access} canManage={ctx.can("subscription.view")} />}>
+    <KocShell user={ctx.user} nav={nav} switchLinks={sideSwitches(facts, "koc")} unread={unread} usage={{ active, limit: ctx.center.studentLimit }} banner={ctx.coach ? <CoachPlanBanner plan={ctx.coach} active={active} /> : null}>
       {children}
     </KocShell>
   );

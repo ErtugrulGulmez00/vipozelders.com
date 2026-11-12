@@ -17,3 +17,50 @@ export function parseCoachTiers(text: string): CoachTier[] {
 export function coachPriceFor(tiers: CoachTier[], students: number): number | null {
   return tiers.find((t) => t.students === students)?.priceTl ?? null;
 }
+
+// ——— Paket durumu ———
+// Ücretsiz paket süresizdir (az öğrenci, temel özellikler). Ücretli paket ödeme süresi boyunca açıktır; süre bitince
+// hesap ücretsiz pakete düşer (kayıtlar silinmez). Eski hesaplardaki deneme süresi bitene kadar ücretli gibi sayılır.
+
+export type CoachPlanState = "free" | "paid" | "trial";
+
+export type CoachPlan = {
+  state: CoachPlanState;
+  /** Ücretli özellikler açık mı (ücretli paket ya da süren eski deneme) */
+  paid: boolean;
+  /** Şu an geçerli öğrenci sınırı */
+  studentLimit: number;
+  /** Ücretli paketin öğrenci sınırı (ücretsizdeyken: ödeme gelince açılacak sınır) */
+  paidLimit: number;
+  /** Ücretli paketin ya da denemenin bitişi */
+  endsAt: Date | null;
+  daysLeft: number | null;
+};
+
+/** Ödeme günü geçtikten sonra ücretli özelliklerin açık kaldığı süre (kurum paneliyle aynı). */
+export const COACH_GRACE_DAYS = 7;
+
+export function coachPlan(
+  center: { status: "TRIAL" | "ACTIVE" | "SUSPENDED"; trialEndsAt: Date | null; paidUntil: Date | null; studentLimit: number },
+  freeStudents: number,
+  now = new Date(),
+): CoachPlan {
+  const free: CoachPlan = { state: "free", paid: false, studentLimit: freeStudents, paidLimit: center.studentLimit, endsAt: null, daysLeft: null };
+  const days = (end: Date) => Math.ceil((end.getTime() - now.getTime()) / 86_400_000);
+  if (center.status === "TRIAL") {
+    // Eski hesap: bitişi olmayan deneme yönetimin açık bıraktığı hesaptır
+    if (!center.trialEndsAt) return { state: "trial", paid: true, studentLimit: center.studentLimit, paidLimit: center.studentLimit, endsAt: null, daysLeft: null };
+    if (center.trialEndsAt.getTime() > now.getTime()) return { state: "trial", paid: true, studentLimit: center.studentLimit, paidLimit: center.studentLimit, endsAt: center.trialEndsAt, daysLeft: days(center.trialEndsAt) };
+    return free;
+  }
+  if (center.status === "ACTIVE" && center.paidUntil && center.paidUntil.getTime() + COACH_GRACE_DAYS * 86_400_000 > now.getTime()) {
+    return { state: "paid", paid: true, studentLimit: Math.max(center.studentLimit, freeStudents), paidLimit: center.studentLimit, endsAt: center.paidUntil, daysLeft: days(center.paidUntil) };
+  }
+  return free;
+}
+
+/** Paketin kısa adı: "Ücretsiz paket · 3 öğrenci" / "10 öğrenci paketi". */
+export function coachPlanLabel(plan: CoachPlan): string {
+  if (plan.state === "free") return `Ücretsiz paket · ${plan.studentLimit} öğrenciye kadar`;
+  return `${plan.studentLimit} öğrenci paketi${plan.state === "trial" ? " (deneme)" : ""}`;
+}

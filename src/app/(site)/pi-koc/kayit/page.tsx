@@ -37,7 +37,7 @@ export default function KocSignupPage({ searchParams }: PageProps<"/pi-koc/kayit
             <h1 className="mt-6 font-display text-4xl font-extrabold leading-[1.1] tracking-tight">
               Öğrencilerinizi <span className="text-brand-400">tek panelden</span> takip edin
             </h1>
-            <p className="mt-3 text-ink-200">Hesabınız hemen açılır, kart bilgisi istemeyiz. Deneme bitince kayıtlarınız silinmez.</p>
+            <p className="mt-3 text-ink-200">Hesabınız hemen açılır, kart bilgisi istemeyiz. Ücretsiz paket süresizdir.</p>
             <ul className="mt-8 space-y-4">
               {POINTS.map(({ Icon, text }) => (
                 <li key={text} className="flex items-center gap-3 text-ink-100">
@@ -69,17 +69,17 @@ async function SignupCard({ searchParams }: { searchParams: Promise<Record<strin
   const tiers = parseCoachTiers(settings.piKocTiers).map((t) => ({ students: t.students, label: `${t.students} öğrenciye kadar · aylık ${t.priceTl.toLocaleString("tr-TR")} TL` }));
   const asked = Number(sp.ogrenci);
   const chosen = tiers.some((t) => t.students === asked) ? asked : null;
-  const trialDays = Math.max(settings.centerTrialDays, 7);
+  const freeStudents = settings.piKocFreeStudents;
   return (
     <>
-      <h2 className="font-display text-2xl font-extrabold tracking-tight text-ink-900">{trialDays} gün ücretsiz deneyin</h2>
+      <h2 className="font-display text-2xl font-extrabold tracking-tight text-ink-900">{freeStudents > 0 ? `${freeStudents} öğrenciye kadar ücretsiz` : "Pi Koç hesabınızı açın"}</h2>
       <p className="mt-1 mb-6 text-sm text-slate-500">
         {user ? "Mevcut hesabınıza Pi Koç ekleyin." : "Bir dakikada hesabınızı açın, ilk öğrencinizi ekleyin."}
       </p>
       {user ? (
-        <KocAddToAccountForm tiers={tiers} chosen={chosen} name={`${user.firstName} ${user.lastName}`} trialDays={trialDays} />
+        <KocAddToAccountForm tiers={tiers} chosen={chosen} name={`${user.firstName} ${user.lastName}`} freeStudents={freeStudents} />
       ) : (
-        <KocSignupForm tiers={tiers} chosen={chosen} trialDays={trialDays} />
+        <KocSignupForm tiers={tiers} chosen={chosen} freeStudents={freeStudents} />
       )}
       <p className="mt-6 border-t border-slate-100 pt-5 text-center text-sm text-slate-600">
         {user ? null : (

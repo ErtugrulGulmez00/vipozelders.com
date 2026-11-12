@@ -6,7 +6,7 @@ import { CENTER_ACCESS_LABEL } from "@/lib/center/labels";
 import { formatDate } from "@/lib/dates";
 import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/money";
-import { parseCoachTiers } from "@/lib/pi-koc";
+import { coachPlanLabel, parseCoachTiers } from "@/lib/pi-koc";
 import { requireCenter } from "@/server/center/context";
 import { centerPlans, subscriptionLabel } from "@/server/center/plans";
 import { db } from "@/server/db";
@@ -31,11 +31,11 @@ export default async function SubscriptionPage() {
       <PageHeader title="Abonelik" description={coach ? "Pi Koç planınız ve ödemeleriniz" : `${settings.siteName} kurum paneli planınız ve ödemeleriniz`} />
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         <Card>
-          <CardHeader title="Planınız" action={<Badge tone={access.tone}>{access.label}</Badge>} />
+          <CardHeader title="Planınız" action={ctx.coach?.state === "free" ? <Badge tone="slate">Ücretsiz</Badge> : <Badge tone={access.tone}>{access.label}</Badge>} />
           <CardBody className="space-y-4">
             <DescriptionList
               items={[
-                { label: "Paket", value: coach ? `Pi Koç · ${ctx.center.studentLimit} öğrenciye kadar` : subscriptionLabel(settings, ctx.center.plan) },
+                { label: "Paket", value: ctx.coach ? `Pi Koç · ${coachPlanLabel(ctx.coach)}` : subscriptionLabel(settings, ctx.center.plan) },
                 {
                   label: ctx.center.status === "TRIAL" ? "Deneme bitişi" : "Geçerlilik",
                   value: ctx.access.endsAt ? `${formatDate(ctx.access.endsAt)}${ctx.access.daysLeft !== null && ctx.access.daysLeft > 0 ? ` (${ctx.access.daysLeft} gün)` : ""}` : "Süresiz",
@@ -57,7 +57,13 @@ export default async function SubscriptionPage() {
         <Card>
           <CardHeader title="Ödeme / yenileme" />
           <CardBody className="space-y-3 text-sm text-slate-700">
-            <p>Aboneliğinizi havale / EFT ile yenileyebilirsiniz. Açıklamaya kurum adınızı yazın; ödemeniz kaydedilince süreniz otomatik uzar.</p>
+            {ctx.coach?.state === "free" ? (
+              <p>
+                Ücretsiz paket süresizdir. Daha fazla öğrenci için aşağıdaki paketlerden birinin tutarını havale / EFT ile gönderin; açıklamaya adınızı ve paketi yazın (ör. “{ctx.center.name} · 10 öğrenci”). Ödemeniz kaydedilince paketiniz açılır.
+              </p>
+            ) : (
+              <p>Aboneliğinizi havale / EFT ile yenileyebilirsiniz. Açıklamaya kurum adınızı yazın; ödemeniz kaydedilince süreniz otomatik uzar.</p>
+            )}
             {settings.centerBankInfo ? <p className="whitespace-pre-line rounded-xl bg-slate-50 p-3 font-mono text-xs">{settings.centerBankInfo}</p> : null}
             <p>
               Sorularınız için: {settings.contactEmail}
@@ -69,10 +75,16 @@ export default async function SubscriptionPage() {
       {coach ? (
         <>
           <h2 className="mb-1 mt-8 text-lg font-bold text-slate-900">Pi Koç fiyatları</h2>
-          <p className="mb-4 text-sm text-slate-500">Bütün özellikler her pakette aynı. Öğrenci sınırınızı değiştirmek için bizimle iletişime geçin.</p>
+          <p className="mb-4 text-sm text-slate-500">Paket değiştirmek için ödeme açıklamasına yeni paketi yazın ya da bizimle iletişime geçin. Ücretli paketin süresi biterse hesabınız ücretsiz pakete döner; kayıtlarınız silinmez.</p>
           <div className="grid gap-3 sm:grid-cols-3">
+            {settings.piKocFreeStudents > 0 ? (
+              <div className={cn("rounded-xl border p-4", ctx.coach?.state === "free" ? "border-brand-500 ring-2 ring-brand-200" : "border-slate-200")}>
+                <p className="font-semibold text-slate-900">{settings.piKocFreeStudents} öğrenciye kadar</p>
+                <p className="mt-1 text-xl font-black text-slate-900">Ücretsiz</p>
+              </div>
+            ) : null}
             {parseCoachTiers(settings.piKocTiers).map((t) => (
-              <div key={t.students} className={cn("rounded-xl border p-4", t.students === ctx.center.studentLimit ? "border-brand-500 ring-2 ring-brand-200" : "border-slate-200")}>
+              <div key={t.students} className={cn("rounded-xl border p-4", ctx.coach?.paid && t.students === ctx.center.studentLimit ? "border-brand-500 ring-2 ring-brand-200" : "border-slate-200")}>
                 <p className="font-semibold text-slate-900">{t.students} öğrenciye kadar</p>
                 <p className="mt-1 text-xl font-black text-slate-900">{formatMoney(t.priceTl * 100)} <span className="text-sm font-semibold text-slate-500">/ ay</span></p>
               </div>

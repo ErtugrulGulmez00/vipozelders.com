@@ -7,6 +7,7 @@ import { Badge, Card, CardBody, CardHeader, DescriptionList, PageHeader } from "
 import { CENTER_ACCESS_LABEL } from "@/lib/center/labels";
 import { formatDate } from "@/lib/dates";
 import { requireCenter } from "@/server/center/context";
+import { coachPlanLabel } from "@/lib/pi-koc";
 import { db } from "@/server/db";
 
 export const metadata: Metadata = { title: "Hesap ve abonelik" };
@@ -20,11 +21,12 @@ export default async function KocAccountPage() {
       <PageHeader title="Hesap ve abonelik" />
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         <Card>
-          <CardHeader title="Abonelik" action={<Badge tone={access.tone}>{access.label}</Badge>} />
+          <CardHeader title="Paketiniz" action={ctx.coach?.state === "free" ? <Badge tone="slate">Ücretsiz</Badge> : <Badge tone={access.tone}>{access.label}</Badge>} />
           <CardBody className="space-y-4">
             <DescriptionList
               items={[
-                { label: ctx.access.state === "trial" ? "Deneme bitişi" : "Bitiş", value: ctx.access.endsAt ? formatDate(ctx.access.endsAt) : "—" },
+                { label: "Paket", value: ctx.coach ? coachPlanLabel(ctx.coach) : "—" },
+                { label: ctx.coach?.state === "trial" ? "Deneme bitişi" : "Bitiş", value: ctx.coach?.endsAt ? formatDate(ctx.coach.endsAt) : "Süresiz" },
                 { label: "Öğrenci", value: `${active} / ${ctx.center.studentLimit}` },
               ]}
             />

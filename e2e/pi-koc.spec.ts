@@ -41,15 +41,17 @@ test.afterAll(async () => {
   await sql(`DELETE FROM "Notification" WHERE type = 'center.application' AND body LIKE $1`, [`%${centerName}%`]);
 });
 
-test("Pi Koç sayfası fiyatları gösterir; koç kendi kaydolur, deneme hemen başlar", async ({ page }) => {
+test("Pi Koç sayfası ücretsiz paketi ve fiyatları gösterir; koç kendi kaydolur, ücretsiz paketle başlar", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("link", { name: /Koç musunuz/ }).click();
   await expect(page).toHaveURL(/\/pi-koc$/);
   await expect(page.getByRole("heading", { level: 1, name: /Öğrencilerinizi tek panelden/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Bu paketle ücretsiz başla" })).toHaveCount(6);
-  await expect(page.getByText("₺299", { exact: false })).toBeVisible();
+  // 3 öğrenciye kadar ücretsiz paket + 4 ücretli paket (5, 10, 20, 50 öğrenci)
+  await expect(page.locator("#fiyatlar").getByText("Ücretsiz", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Bu paketi seç" })).toHaveCount(4);
+  await expect(page.getByText("₺349", { exact: false })).toBeVisible();
 
-  await page.getByRole("link", { name: "Bu paketle ücretsiz başla" }).nth(2).click();
+  await page.getByRole("link", { name: "Bu paketi seç" }).nth(1).click();
   await expect(page).toHaveURL(/\/pi-koc\/kayit\?ogrenci=10$/);
   // Önceki sayfa (aynı formu içerir) gizli olarak DOM'da kalabilir; temiz yükle
   await page.reload();
@@ -61,11 +63,14 @@ test("Pi Koç sayfası fiyatları gösterir; koç kendi kaydolur, deneme hemen b
   await page.locator("#ks-password").fill("KocKayit123");
   await page.locator("#ks-panel").fill(`${centerName} Kayıt`);
   await page.locator('input[name="kvkk"]').check();
-  await page.getByRole("button", { name: /gün ücretsiz başla/ }).click();
+  await page.getByRole("button", { name: "Ücretsiz başla" }).click();
   await expect(page).toHaveURL(/\/koc\?durum=hosgeldin$/);
   await expect(page.getByText("Pi Koç hesabınız hazır", { exact: false })).toBeVisible();
   const [center] = await sql<{ kind: string; status: string; studentLimit: number }>(`SELECT kind::text, status::text, "studentLimit" FROM "Center" WHERE name = $1`, [`${centerName} Kayıt`]);
-  expect(center).toMatchObject({ kind: "COACH", status: "TRIAL", studentLimit: 10 });
+  // Deneme süresi yok: hesap ücretsiz paketle açılır; seçilen 10 öğrencilik paket ödeme gelince geçerli olur
+  expect(center).toMatchObject({ kind: "COACH", status: "ACTIVE", studentLimit: 10 });
+  await page.goto("/koc/abonelik");
+  await expect(page.getByText("Pi Koç · Ücretsiz paket · 3 öğrenciye kadar")).toBeVisible();
 
   // Aynı e-postayla ikinci kayıt reddedilir
   await page.context().clearCookies();
@@ -76,7 +81,7 @@ test("Pi Koç sayfası fiyatları gösterir; koç kendi kaydolur, deneme hemen b
   await page.getByLabel("Cep telefonu").fill("05321234567");
   await page.locator("#ks-password").fill("KocKayit123");
   await page.locator('input[name="kvkk"]').check();
-  await page.getByRole("button", { name: /gün ücretsiz başla/ }).click();
+  await page.getByRole("button", { name: "Ücretsiz başla" }).click();
   await expect(page.getByText("Bu e-postayla Pi Kampüs hesabı var", { exact: false }).first()).toBeVisible();
 });
 
@@ -162,7 +167,8 @@ test("yönetici koç hesabı açar; koç yalnızca takip bölümlerini görür",
   await page.goto("/koc");
   await expect(page.getByRole("link", { name: new RegExp(`Elif Koç${stamp}`) }).first()).toBeVisible();
   await page.goto("/koc/abonelik");
-  await expect(page.getByText("Pi Koç · 5 öğrenciye kadar")).toBeVisible();
+  // Yöneticinin açtığı hesap deneme süresindeyken 5 öğrencilik paket açık
+  await expect(page.getByText("Pi Koç · 5 öğrenci paketi", { exact: false })).toBeVisible();
 
   // Öğrenci girişi: koç hesap açar, bugüne bir görev yazar
   const studentId = studentUrl.split("/").pop()!;

@@ -13,7 +13,7 @@ import { KocSignupForm } from "@/components/koc/signup-form";
 export const metadata: Metadata = {
   alternates: { canonical: "/pi-koc" },
   title: "Pi Koç: koçlar için öğrenci takip paneli",
-  description: "Öğrenci koçları için görüşme notları, program, soru ve deneme takibi grafiklerle tek panelde. LGS ve YKS koçluğu için, aylık 299 TL'den başlayan fiyatlarla.",
+  description: "Öğrenci koçları için görüşme notları, program, soru ve deneme takibi grafiklerle tek panelde. LGS ve YKS koçları ve özel ders öğretmenleri için; 3 öğrenciye kadar ücretsiz.",
 };
 
 const FEATURES = [
@@ -26,7 +26,7 @@ const FEATURES = [
 ];
 
 const STEPS = [
-  ["Kayıt olun", "Formu doldurun; hesabınız hemen açılır, ücretsiz deneme başlar. Kart bilgisi istemeyiz."],
+  ["Kayıt olun", "Formu doldurun; hesabınız ücretsiz paketle hemen açılır. Kart bilgisi istemeyiz."],
   ["Öğrencilerinizi ekleyin", "Sınıfını, hedefini ve haftalık görüşme gününü yazın; takip hemen başlar."],
   ["Öğrencinize giriş verin", "Öğrenciniz “Pi Koç girişi”nden girer, görevlerini işaretler ve çözdüğü soruyu kendisi girer."],
 ];
@@ -35,10 +35,9 @@ const CHUNKY = "inline-flex items-center justify-center rounded-2xl border-b-[5p
 
 export default async function PiKocPage() {
   const settings = await getSiteSettings();
-  // Pi Koç denemesi en az 7 gün (kayıt sayfasıyla aynı)
-  const trialDays = Math.max(settings.centerTrialDays, 7);
+  const freeStudents = settings.piKocFreeStudents;
   const tiers = parseCoachTiers(settings.piKocTiers);
-  const cta = `${trialDays} gün ücretsiz başla`;
+  const cta = "Ücretsiz başla";
 
   return (
     <>
@@ -87,8 +86,18 @@ export default async function PiKocPage() {
       <section id="fiyatlar" className="scroll-mt-20 bg-white">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:py-16">
           <h2 className="font-display text-3xl font-extrabold tracking-tight text-ink-900">Öğrenci sayınıza göre fiyat</h2>
-          <p className="mt-2 text-ink-600">Bütün özellikler her pakette aynı; fark yalnızca aynı anda takip edebileceğiniz öğrenci sayısı.</p>
+          <p className="mt-2 text-ink-600">{freeStudents > 0 ? `${freeStudents} öğrenciye kadar süresiz ücretsiz. Öğrenci sayınız artınca ücretli pakete geçersiniz.` : "Aynı anda takip edeceğiniz öğrenci sayısına göre paket seçin."}</p>
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {freeStudents > 0 ? (
+              <div className="flex flex-col rounded-3xl border-2 border-brand-600 bg-brand-50/40 p-6">
+                <p className="font-bold text-ink-900">{freeStudents} öğrenciye kadar</p>
+                <p className="mt-2 font-display text-4xl font-extrabold text-ink-900">Ücretsiz</p>
+                <p className="mt-1 text-sm text-ink-500">Süresiz · kart bilgisi istenmez</p>
+                <Link href="/pi-koc/kayit" className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-600 font-bold text-white hover:bg-brand-700">
+                  Ücretsiz başla
+                </Link>
+              </div>
+            ) : null}
             {tiers.map((tier) => (
               <div key={tier.students} className="flex flex-col rounded-3xl border-2 border-ink-100 p-6">
                 <p className="font-bold text-ink-900">{tier.students} öğrenciye kadar</p>
@@ -98,12 +107,12 @@ export default async function PiKocPage() {
                 </p>
                 <p className="mt-1 text-sm text-ink-500">KDV dahil</p>
                 <Link href={`/pi-koc/kayit?ogrenci=${tier.students}`} className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl border-2 border-ink-100 font-bold text-ink-900 hover:bg-ink-50">
-                  Bu paketle ücretsiz başla
+                  Bu paketi seç
                 </Link>
               </div>
             ))}
           </div>
-          <p className="mt-5 text-sm text-ink-500">Deneme bitince ödemeyi şimdilik havale ya da EFT ile alıyoruz; kayıtlarınız silinmez.</p>
+          <p className="mt-5 text-sm text-ink-500">Ücretli paket ödemesini şimdilik havale ya da EFT ile alıyoruz; ödemeniz kaydedilene kadar ücretsiz paketle çalışırsınız. Ücretli paketin süresi biterse kayıtlarınız silinmez.</p>
         </div>
       </section>
 
@@ -133,7 +142,7 @@ export default async function PiKocPage() {
               tek tıkla ekleyin.
             </p>
             <div className="mt-5">
-              <KocSignupForm tiers={tiers.map((t) => ({ students: t.students, label: `${t.students} öğrenciye kadar · aylık ${t.priceTl.toLocaleString("tr-TR")} TL` }))} chosen={null} trialDays={trialDays} />
+              <KocSignupForm tiers={tiers.map((t) => ({ students: t.students, label: `${t.students} öğrenciye kadar · aylık ${t.priceTl.toLocaleString("tr-TR")} TL` }))} chosen={null} freeStudents={freeStudents} />
             </div>
           </div>
         </div>

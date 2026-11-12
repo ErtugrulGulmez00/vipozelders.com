@@ -78,7 +78,7 @@ export default async function KocHome({ searchParams }: PageProps<"/koc">) {
       </section>
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <Kpi icon={<Users className="size-4" />} label="Aktif öğrenci" value={`${cards.length}`} hint={`Plan sınırı ${ctx.center.studentLimit}`} />
+        <Kpi icon={<Users className="size-4" />} label="Aktif öğrenci" value={`${cards.length}`} hint={`Paket sınırı ${ctx.center.studentLimit}`} />
         <Kpi icon={<CalendarCheck2 className="size-4" />} label="Bu hafta görüşme" value={`${met}/${withMeeting.length}`} hint={withMeeting.length ? `${withMeeting.length - met} görüşme kaldı` : "Görüşme günü girilmedi"} />
         <Kpi
           tone="brand"

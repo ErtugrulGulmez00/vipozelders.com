@@ -12,28 +12,29 @@ import { notify, notifyRole } from "./notifications";
 import { loadSettings } from "./settings";
 import { generateUsername } from "./accounts";
 
-// Pi Koç kendi kendine kayıt: koç formu doldurur, hesabı açılır ve ücretsiz deneme hemen başlar (yönetici onayı gerekmez).
-// Abonelik ödemesi şimdilik havaleyle alınır; yönetim kurum sayfasından süreyi uzatır.
+// Pi Koç kendi kendine kayıt: koç formu doldurur, hesabı ücretsiz paketle hemen açılır (yönetici onayı ve deneme süresi yok).
+// Ücretli paket ödemesi şimdilik havaleyle alınır; yönetim kurum sayfasından süreyi uzatınca seçilen paket açılır.
 
 export type CoachSignupInput = { firstName: string; lastName: string; email: string; phone: string; password: string; panelName: string | null; students: number };
 
+/** Seçilen ücretli paket (0 ya da geçersiz: ücretsiz başlar, ödeme gelince en küçük ücretli paket açılır). */
 async function coachLimit(students: number) {
   const settings = await loadSettings();
   const tiers = parseCoachTiers(settings.piKocTiers);
-  const tier = tiers.find((t) => t.students === students) ?? tiers[0];
-  return { limit: tier?.students ?? COACH_DEFAULT_STUDENT_LIMIT, trialDays: Math.max(settings.centerTrialDays, 7) };
+  const tier = tiers.find((t) => t.students === students) ?? null;
+  return { limit: tier?.students ?? tiers[0]?.students ?? COACH_DEFAULT_STUDENT_LIMIT, wantsPaid: Boolean(tier), free: settings.piKocFreeStudents };
 }
 
 async function createCoachCenter(userId: string, name: string, students: number, phone: string | null, email: string | null) {
-  const { limit, trialDays } = await coachLimit(students);
+  const { limit, wantsPaid, free } = await coachLimit(students);
   const center = await db.center.create({
     data: {
       name,
       slug: await uniqueCenterSlug(name),
       kind: "COACH",
       plan: "STARTER",
-      status: "TRIAL",
-      trialEndsAt: new Date(Date.now() + trialDays * 86_400_000),
+      // Ücretsiz paket: süresiz. studentLimit ücretli paketin sınırıdır; ödeme kaydedilince geçerli olur (bkz. coachPlan)
+      status: "ACTIVE",
       studentLimit: limit,
       disabledModules: COACH_DISABLED_MODULES,
       phone,
@@ -41,12 +42,14 @@ async function createCoachCenter(userId: string, name: string, students: number,
       members: { create: { userId, role: "OWNER", title: "Koç" } },
     },
   });
-  await notifyRole("ADMIN", { type: "center.koc_signup", title: "Yeni Pi Koç kaydı", body: `${name} · ${limit} öğrenci · ${trialDays} gün deneme`, link: `/yonetim/kurumlar/${center.id}`, email: false });
+  await notifyRole("ADMIN", { type: "center.koc_signup", title: "Yeni Pi Koç kaydı", body: wantsPaid ? `${name} · ${limit} öğrenci paketini istiyor (ödeme bekleniyor); ücretsiz paketle başladı` : `${name} · ücretsiz paket`, link: `/yonetim/kurumlar/${center.id}`, email: false });
   await notify({
     userId,
     type: "center.koc_welcome",
     title: "Pi Koç'a hoş geldiniz",
-    body: `${trialDays} günlük ücretsiz deneme başladı. İlk öğrencinizi ekleyin; giriş adresiniz pikampus.com/koc-giris.`,
+    body: wantsPaid
+      ? `Hesabınız ücretsiz paketle açıldı (${free} öğrenciye kadar). ${limit} öğrenci paketi, ödemeniz kaydedilince açılır; ödeme bilgisi Hesabım sayfasında.`
+      : `Ücretsiz paketle başladınız: ${free} öğrenciye kadar süresiz. İlk öğrencinizi ekleyin; giriş adresiniz pikampus.com/koc-giris.`,
     link: "/koc",
   });
   await audit({ actorId: userId, action: "center.koc_signup", entityType: "Center", entityId: center.id, details: { name, limit } });

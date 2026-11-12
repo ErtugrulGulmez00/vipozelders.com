@@ -6,10 +6,12 @@ import { moduleEnabled, sectionAllowed, type CenterModuleKey } from "@/lib/cente
 import { failure, type ActionState } from "@/lib/action-state";
 import { centerAccess, type CenterAccess } from "@/lib/center/subscription";
 import { centerCan, type CenterPermission, type CenterRoleName } from "@/lib/center/permissions";
+import { coachPlan, type CoachPlan } from "@/lib/pi-koc";
 import { getCurrentUser, type SessionUser } from "../auth/current-user";
 import { requestMeta, secureCookies } from "../auth/session";
 import { audit } from "../audit";
 import { db } from "../db";
+import { getSiteSettings } from "../site";
 
 /** Birden çok kurumda çalışan personelin seçili kurumu */
 export const CENTER_COOKIE = "vd_center";
@@ -65,6 +67,8 @@ export type CenterContext = {
   member: { id: string; role: CenterRoleName; title: string | null; branch: string | null };
   center: CenterSummary;
   access: CenterAccess;
+  /** Pi Koç hesabında paket durumu (ücretsiz / ücretli); kurumlarda null. center.studentLimit geçerli sınırı gösterir. */
+  coach: CoachPlan | null;
   memberships: { centerId: string; centerName: string; role: CenterRoleName }[];
   can: (permission: CenterPermission) => boolean;
 };
@@ -94,8 +98,11 @@ export const resolveCenter = cache(async (): Promise<Resolution> => {
   const member = usable.find((m) => m.centerId === selectedId) ?? usable[0];
   if (!member) return { kind: "suspended", user, centerName: memberships[0].center.name };
 
-  const center = member.center as CenterSummary;
+  let center = member.center as CenterSummary;
   const role = member.role as CenterRoleName;
+  // Pi Koç: geçerli öğrenci sınırı pakete göre (ücretsizde ayardaki sınır, ücretlide paketin sınırı)
+  const coach = center.kind === "COACH" ? coachPlan(center, (await getSiteSettings()).piKocFreeStudents) : null;
+  if (coach) center = { ...center, studentLimit: coach.studentLimit };
   return {
     kind: "ok",
     ctx: {
@@ -103,6 +110,7 @@ export const resolveCenter = cache(async (): Promise<Resolution> => {
       member: { id: member.id, role, title: member.title, branch: member.branch },
       center,
       access: centerAccess(center),
+      coach,
       memberships: usable.map((m) => ({ centerId: m.centerId, centerName: m.center.name, role: m.role as CenterRoleName })),
       can: (permission) => centerCan(role, permission),
     },
@@ -140,7 +148,11 @@ const COACH_BLOCKED = new Set<CenterPermission>(["groups.manage", "attendance.ta
  * Server Action'lar için yetki kontrolü. Yazma işlemlerinde aboneliğin süresi dolmuşsa
  * işlem yapılmaz (veriler silinmez, panel salt okunur olur).
  */
-export async function centerAction(permission: CenterPermission | null, options: { write?: boolean; module?: CenterModuleKey; section?: string } = {}): Promise<CenterActionResult> {
+export async function centerAction(
+  permission: CenterPermission | null,
+  // overLimit: ücretsiz pakette sınırın üstünde öğrencisi olan koçun da yapabildiği işlem (öğrenciyi arşive alma)
+  options: { write?: boolean; module?: CenterModuleKey; section?: string; overLimit?: boolean } = {},
+): Promise<CenterActionResult> {
   const resolved = await resolveCenter();
   if (resolved.kind !== "ok") return { ok: false, state: failure("Oturumunuz kapanmış ya da kurum hesabınız etkin değil. Sayfayı yenileyip tekrar giriş yapın.") };
   const { ctx } = resolved;
@@ -151,6 +163,13 @@ export async function centerAction(permission: CenterPermission | null, options:
   if (options.section && !sectionAllowed(ctx.center, options.section)) return { ok: false, state: failure("Bu bölüm kurumunuzda kullanılmıyor.") };
   if (options.write !== false && !ctx.access.writable) {
     return { ok: false, state: failure("Abonelik süreniz dolduğu için panel salt okunur. Kayıtlarınız duruyor; aboneliği yenileyince kaldığınız yerden devam edersiniz.") };
+  }
+  // Ücretli paketi biten koç ücretsiz pakete düşer; sınırın üstünde öğrencisi varsa önce paketi yenilemeli ya da öğrenci arşivlemeli
+  if (ctx.coach && !ctx.coach.paid && options.write !== false && !options.overLimit) {
+    const active = await db.centerStudent.count({ where: { centerId: ctx.center.id, status: "ACTIVE" } });
+    if (active > ctx.coach.studentLimit) {
+      return { ok: false, state: failure(`Ücretsiz pakette en fazla ${ctx.coach.studentLimit} öğrenci olur; şu an ${active} aktif öğrenciniz var. Paketinizi yenileyin ya da öğrencileri arşive alın. Kayıtlarınız duruyor.`) };
+    }
   }
   return { ok: true, ctx };
 }

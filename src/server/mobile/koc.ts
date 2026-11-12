@@ -3,6 +3,7 @@ import { EXAM_PRESETS, type ExamKindName } from "@/lib/center/exams";
 import { centerCan, type CenterRoleName } from "@/lib/center/permissions";
 import { centerAccess } from "@/lib/center/subscription";
 import { addDaysToDateString, dateStringToDbDate, dbDateToString, isDateString, toLocalDateString } from "@/lib/dates";
+import { coachPlan, coachPlanLabel } from "@/lib/pi-koc";
 import type { CenterContext, CenterSummary } from "../center/context";
 import { studentCoachingHistory } from "../center/coaching";
 import { CenterError } from "../center/errors";
@@ -10,6 +11,7 @@ import { weekStartOf } from "../center/resources";
 import { db } from "../db";
 import { KOC_EXAM_KINDS, kocOverview, questionStats, studentExams, studentGoals } from "../koc";
 import { studyStats } from "../koc-extra";
+import { loadSettings } from "../settings";
 import type { MobileAccount } from "./auth";
 import { ApiError, notFound } from "./http";
 
@@ -147,13 +149,15 @@ export async function mobileCoachContext(user: MobileAccount): Promise<CenterCon
     orderBy: { createdAt: "asc" },
   });
   if (!member) throw new ApiError(403, "NOT_COACH", "Bu hesapta Pi Koç paneli yok.");
-  const center = member.center as unknown as CenterSummary;
+  const coach = coachPlan(member.center, (await loadSettings()).piKocFreeStudents);
+  const center = { ...(member.center as unknown as CenterSummary), studentLimit: coach.studentLimit };
   const role = member.role as CenterRoleName;
   return {
     user: { id: user.id, role: user.role, firstName: user.firstName, lastName: user.lastName, email: user.email, username: user.username, phone: user.phone, mustChangePassword: user.mustChangePassword, emailVerified: user.emailVerified },
     member: { id: member.id, role, title: member.title, branch: member.branch },
     center,
     access: centerAccess(center),
+    coach,
     memberships: [{ centerId: center.id, centerName: center.name, role }],
     can: (permission) => centerCan(role, permission),
   };
@@ -164,7 +168,7 @@ export async function coachHomeJson(ctx: CenterContext) {
   const { cards } = await kocOverview(ctx, today);
   const access = ctx.access;
   return {
-    center: { name: ctx.center.name, status: ctx.center.status, trialEndsAt: ctx.center.trialEndsAt?.toISOString() ?? null, paidUntil: ctx.center.paidUntil?.toISOString() ?? null, studentLimit: ctx.center.studentLimit, writable: access.writable },
+    center: { name: ctx.center.name, status: ctx.center.status, trialEndsAt: ctx.center.trialEndsAt?.toISOString() ?? null, paidUntil: ctx.center.paidUntil?.toISOString() ?? null, studentLimit: ctx.center.studentLimit, writable: access.writable, plan: ctx.coach?.state ?? "paid", planLabel: ctx.coach ? coachPlanLabel(ctx.coach) : null },
     today,
     students: cards.map((c) => ({
       id: c.id,

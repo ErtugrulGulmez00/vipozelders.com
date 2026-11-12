@@ -48,8 +48,8 @@ export async function portalDeleteQuestionLogAction(_: ActionState, formData: Fo
   });
 }
 
-async function coachAuth(permission: Parameters<typeof centerAction>[0]) {
-  const auth = await centerAction(permission);
+async function coachAuth(permission: Parameters<typeof centerAction>[0], options: Parameters<typeof centerAction>[1] = {}) {
+  const auth = await centerAction(permission, options);
   if (auth.ok && auth.ctx.center.kind !== "COACH") return { ok: false as const, state: failure("Bu işlem yalnızca Pi Koç hesabında kullanılır.") };
   return auth;
 }
@@ -112,14 +112,15 @@ export async function kocUpdateStudentAction(_: ActionState, formData: FormData)
 }
 
 export async function kocSetStudentActiveAction(_: ActionState, formData: FormData): Promise<ActionState> {
-  const auth = await coachAuth("students.edit");
+  // Arşive alma, ücretsiz pakette sınırın üstünde kalan koç için de açıktır (sınırın altına inebilmesi için)
+  const auth = await coachAuth("students.edit", { overLimit: true });
   if (!auth.ok) return auth.state;
   return guard(async () => {
     const student = await kocStudentOrThrow(auth.ctx, str(formData, "studentId"));
     const active = str(formData, "active") === "1";
     if (active && student.status !== "ACTIVE") {
       const count = await db.centerStudent.count({ where: { centerId: auth.ctx.center.id, status: "ACTIVE" } });
-      if (count >= auth.ctx.center.studentLimit) throw new CenterError(`Planınızın öğrenci sınırı ${auth.ctx.center.studentLimit}. Önce bir öğrenciyi arşive alın.`);
+      if (count >= auth.ctx.center.studentLimit) throw new CenterError(`Paketinizin öğrenci sınırı ${auth.ctx.center.studentLimit}. Önce bir öğrenciyi arşive alın ya da paketinizi yükseltin.`);
     }
     await db.centerStudent.update({ where: { id: student.id }, data: { status: active ? "ACTIVE" : "PASSIVE" } });
     refresh();

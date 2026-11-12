@@ -24,26 +24,33 @@ export async function sendCenterExpiryNotices(now = new Date()): Promise<number>
         { status: "ACTIVE", paidUntil: { lte: new Date(now.getTime() + 8 * 86_400_000) } },
       ],
     },
-    select: { id: true, name: true, status: true, trialEndsAt: true, paidUntil: true, expiryNoticeDays: true, members: { where: { role: "OWNER", isActive: true }, select: { userId: true } } },
+    select: { id: true, name: true, kind: true, status: true, trialEndsAt: true, paidUntil: true, expiryNoticeDays: true, members: { where: { role: "OWNER", isActive: true }, select: { userId: true } } },
   });
   let sent = 0;
   for (const center of centers) {
-    const access = centerAccess(center, now);
+    // Kalan gün hesabı tür bağımsız (Pi Koç'ta süre bitince erişim kapanmaz; metin ona göre)
+    const coach = center.kind === "COACH";
+    const access = centerAccess({ ...center, kind: undefined }, now);
     if (access.daysLeft === null || access.daysLeft < -30) continue;
     const threshold = expiryThreshold(access.daysLeft);
     if (threshold === null) continue;
     if (center.expiryNoticeDays !== null && center.expiryNoticeDays <= threshold) continue;
     const trial = center.status === "TRIAL";
-    const what = trial ? "Ücretsiz deneme süreniz" : "Aboneliğiniz";
+    const what = trial ? "Ücretsiz deneme süreniz" : coach ? "Pi Koç paketiniz" : "Aboneliğiniz";
     const title = threshold === 0 ? `${what} doldu` : `${what} ${access.daysLeft} gün sonra bitiyor`;
-    const body =
-      threshold === 0
+    const body = coach
+      ? threshold === 0
+        ? trial
+          ? "Hesabınız ücretsiz pakete geçti; kayıtlarınız duruyor. Daha fazla öğrenci ve ücretli özellikler için paket seçin."
+          : "Ödeme yapılmazsa 7 gün sonra hesabınız ücretsiz pakete döner. Kayıtlarınız silinmez."
+        : "Kesintisiz kullanım için Paketler sayfasındaki havale/EFT bilgileriyle ödemenizi yapın."
+      : threshold === 0
         ? trial
           ? "Kayıtlarınız duruyor; panel salt okunur. Aboneliği başlatınca kaldığınız yerden devam edersiniz."
           : "Ödeme yapılmazsa 7 gün sonra panel salt okunur olacak. Kayıtlarınız silinmez."
         : "Kesintisiz kullanım için Abonelik sayfasındaki havale/EFT bilgileriyle ödemenizi yapın.";
     for (const owner of center.members) {
-      await notify({ userId: owner.userId, type: "center.subscription", title, body, link: "/kurum/abonelik" });
+      await notify({ userId: owner.userId, type: "center.subscription", title, body, link: coach ? "/koc/abonelik" : "/kurum/abonelik" });
     }
     if (threshold <= 3) {
       await notifyRole("ADMIN", {

@@ -168,9 +168,13 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
       </Section>
 
       <Section title="Pi Koç" description="Bireysel koçlara satılan panelin fiyatları. /pi-koc sayfasında görünür.">
-        <Field label="Kademeler" hint="Öğrenci sayısı:aylık TL, virgülle. Örnek: 3:299,5:449,10:749. KDV dahil." className="sm:col-span-2">
+        <Field label="Kademeler" hint="Öğrenci sayısı:aylık TL, virgülle. Örnek: 5:349,10:599,20:999. KDV dahil." className="sm:col-span-2">
           <Input name="piKocTiers" defaultValue={settings.piKocTiers} required />
           <FieldError name="piKocTiers" />
+        </Field>
+        <Field label="Pi Koç ücretsiz paket (öğrenci)" hint="Bu sayıya kadar öğrenci süresiz ücretsiz. 0 yazarsanız ücretsiz paket kapanır.">
+          <Input name="piKocFreeStudents" type="number" min={0} max={50} defaultValue={settings.piKocFreeStudents} required />
+          <FieldError name="piKocFreeStudents" />
         </Field>
       </Section>
 

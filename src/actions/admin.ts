@@ -433,7 +433,7 @@ export async function saveSettingsAction(_: ActionState, formData: FormData): Pr
   }
   if (parsed.data.piKocTiers !== undefined) {
     const tiers = parseCoachTiers(parsed.data.piKocTiers);
-    if (!tiers.length) return failure("Bazı değerler geçersiz.", { piKocTiers: "En az bir kademe yazın; örnek: 3:299,5:449" });
+    if (!tiers.length) return failure("Bazı değerler geçersiz.", { piKocTiers: "En az bir kademe yazın; örnek: 5:349,10:599" });
     parsed.data.piKocTiers = tiers.map((t) => `${t.students}:${t.priceTl}`).join(",");
   }
   await saveSettings(parsed.data);

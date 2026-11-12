@@ -31,7 +31,7 @@ export default async function KocStudentsPage({ searchParams }: PageProps<"/koc/
     <>
       <PageHeader
         title="Öğrencilerim"
-        description={`${cards.length} aktif öğrenci · plan sınırı ${ctx.center.studentLimit}`}
+        description={`${cards.length} aktif öğrenci · paket sınırı ${ctx.center.studentLimit}`}
         actions={
           <LinkButton href="/koc/ogrenciler/yeni" size="sm">
             <PlusCircle className="size-4" aria-hidden /> Öğrenci ekle

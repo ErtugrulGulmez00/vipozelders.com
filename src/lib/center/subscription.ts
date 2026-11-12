@@ -21,10 +21,15 @@ export const GRACE_DAYS = 7;
 const DAY_MS = 86_400_000;
 
 export function centerAccess(
-  center: { status: "TRIAL" | "ACTIVE" | "SUSPENDED"; trialEndsAt: Date | null; paidUntil: Date | null },
+  center: { kind?: string; status: "TRIAL" | "ACTIVE" | "SUSPENDED"; trialEndsAt: Date | null; paidUntil: Date | null },
   now = new Date(),
 ): CenterAccess {
   if (center.status === "SUSPENDED") return { state: "suspended", writable: false, canLogin: false, endsAt: null, daysLeft: null };
+  // Pi Koç: süre bitince panel salt okunur olmaz, hesap ücretsiz pakete düşer (bkz. coachPlan)
+  if (center.kind === "COACH") {
+    const access = centerAccess({ ...center, kind: undefined }, now);
+    return access.state === "expired" ? { state: "active", writable: true, canLogin: true, endsAt: null, daysLeft: null } : access;
+  }
   const trial = center.status === "TRIAL";
   const endsAt = trial ? center.trialEndsAt : center.paidUntil;
   if (!endsAt) return { state: trial ? "trial" : "active", writable: true, canLogin: true, endsAt: null, daysLeft: null };
