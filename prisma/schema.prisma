@@ -1120,6 +1120,7 @@ model Center {
   resources            CenterResource[]
   studyPlanItems       CenterStudyPlanItem[]
   coachingSessions     CenterCoachingSession[]
+  coachMeetings        CoachMeeting[]
   studyHalls           CenterStudyHall[]
   opticTemplates       CenterOpticTemplate[]
   examImports          CenterExamImport[]
@@ -1795,6 +1796,23 @@ model CenterQuestion {
 
   @@index([centerId, status, createdAt])
   @@index([studentId])
+}
+
+// Pi Koç görüntülü görüşme kullanımı (paket sınırı için). LiveKit olaylarından tutulur: odaya ilk kişi girince
+// başlar, son kişi çıkınca biter. free: görüşme ücretsiz pakette başladı (40 dk ve aylık havuz sert sınırla).
+model CoachMeeting {
+  id          String    @id @default(cuid())
+  centerId    String
+  center      Center    @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  studentId   String
+  roomName    String
+  free        Boolean   @default(false)
+  activeCount Int       @default(0)
+  startedAt   DateTime  @default(now())
+  endedAt     DateTime?
+
+  @@index([centerId, startedAt])
+  @@index([roomName, endedAt])
 }
 
 // Koçluk / rehberlik görüşmesi

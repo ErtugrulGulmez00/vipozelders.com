@@ -4,6 +4,7 @@ import type { Booking } from "@/generated/prisma/client";
 import { formatLessonRange } from "@/lib/dates";
 import { db } from "./db";
 import { handleGroupRoomEvent } from "./groups";
+import { handleCoachRoomEvent } from "./koc-meeting-usage";
 import { activeMakeup } from "./lesson-links";
 import { loadSettings } from "./settings";
 import { videoConfigured } from "./video-config";
@@ -89,8 +90,8 @@ export async function handleLiveKitWebhook(body: string, authorization: string |
   const identity = event.participant?.identity;
   if (!roomName || !identity) return;
   if (roomName.startsWith("grup-")) return handleGroupRoomEvent(roomName, identity, event.event);
-  // Pi Koç görüşme odası (koc-<öğrenci>): yoklama tutulmaz
-  if (roomName.startsWith("koc-")) return;
+  // Pi Koç görüşme odası (koc-<öğrenci>): yoklama yerine paket sınırı için görüşme süresi tutulur
+  if (roomName.startsWith("koc-")) return handleCoachRoomEvent(roomName, identity, event.event);
 
   const booking = await db.booking.findUnique({ where: { videoRoomName: roomName }, select: { id: true, teacherId: true, studentId: true } });
   if (!booking || (identity !== booking.teacherId && identity !== booking.studentId)) return;

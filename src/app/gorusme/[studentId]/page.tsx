@@ -6,6 +6,7 @@ import { Classroom } from "@/app/ders/[bookingId]/classroom";
 import { buttonClasses } from "@/components/ui/button";
 import { requireUser } from "@/server/auth/current-user";
 import { announceMeeting, meetingAccess, meetingToken } from "@/server/koc-meeting";
+import { coachMeetingAllowance } from "@/server/koc-meeting-usage";
 import { videoConfigured } from "@/server/video";
 
 export const metadata: Metadata = { title: "Online görüşme", robots: { index: false } };
@@ -32,8 +33,17 @@ export default async function KocMeetingPage({ params }: PageProps<"/gorusme/[st
       </Message>
     );
   }
+  // Paket sınırı: ücretsiz pakette aylık süre dolduysa görüşme açılmaz; anahtar süresi kalan süreyle sınırlı
+  const allowance = await coachMeetingAllowance(studentId);
+  if (!allowance.ok) {
+    return (
+      <Message icon={<MonitorX className="size-10 text-brand-400" />} title="Görüşme süresi doldu" backHref={access.role === "teacher" ? "/koc/abonelik" : access.backHref}>
+        <p className="text-slate-300">{access.role === "teacher" ? allowance.reason : "Koçunuzun bu ayki görüşme süresi doldu. Koçunuzla iletişime geçin."}</p>
+      </Message>
+    );
+  }
   if (access.role === "teacher") await announceMeeting(studentId, `${user.firstName} ${user.lastName}`);
-  const { token, serverUrl, endsAt } = await meetingToken(studentId, access.role, user);
+  const { token, serverUrl, endsAt } = await meetingToken(studentId, access.role, user, allowance.minutes);
   return <Classroom token={token} serverUrl={serverUrl} title={title} endsAt={endsAt} backHref={access.backHref} />;
 }
 

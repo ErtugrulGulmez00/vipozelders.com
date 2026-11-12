@@ -7,14 +7,16 @@ import { Badge, Card, CardBody, CardHeader, DescriptionList, PageHeader } from "
 import { CENTER_ACCESS_LABEL } from "@/lib/center/labels";
 import { formatDate } from "@/lib/dates";
 import { requireCenter } from "@/server/center/context";
-import { coachPlanLabel } from "@/lib/pi-koc";
+import { coachPlanLabel, formatHours } from "@/lib/pi-koc";
+import { coachMeetingStatus } from "@/server/koc-meeting-usage";
 import { db } from "@/server/db";
 
 export const metadata: Metadata = { title: "Hesap ve abonelik" };
 
 export default async function KocAccountPage() {
   const ctx = await requireCenter();
-  const active = await db.centerStudent.count({ where: { centerId: ctx.center.id, status: "ACTIVE" } });
+  const [active, meetings] = await Promise.all([db.centerStudent.count({ where: { centerId: ctx.center.id, status: "ACTIVE" } }), coachMeetingStatus(ctx.center.id)]);
+  const meetingRatio = meetings.usedMinutes / Math.max(meetings.policy.poolMinutes, 1);
   const access = CENTER_ACCESS_LABEL[ctx.access.state];
   return (
     <>
@@ -31,6 +33,20 @@ export default async function KocAccountPage() {
               ]}
             />
             <RateBar value={active / Math.max(ctx.center.studentLimit, 1)} />
+            <div>
+              <div className="mb-1 flex justify-between text-sm">
+                <span className="text-slate-600">Bu ay görüntülü görüşme</span>
+                <span className="font-semibold text-slate-900">
+                  {formatHours(meetings.usedMinutes)} / {formatHours(meetings.policy.poolMinutes)}
+                </span>
+              </div>
+              <RateBar value={Math.min(1, meetingRatio)} tone={meetingRatio >= 1 ? "rose" : meetingRatio > 0.8 ? "amber" : "brand"} />
+              <p className="mt-1 text-xs text-slate-500">
+                {meetings.policy.hard
+                  ? `Ücretsiz pakette görüşme başına en fazla ${meetings.policy.maxMeetingMinutes} dakika; aylık süre dolunca yeni görüşme açılmaz.`
+                  : "Görüşme süresi serbest; aylık süreyi aşarsanız görüşme kesilmez, bir üst paket önerilir."}
+              </p>
+            </div>
             {ctx.can("subscription.view") ? (
               <Link href="/koc/abonelik" className="inline-block text-sm font-semibold text-brand-700 hover:underline">
                 Paketler ve ödeme geçmişi

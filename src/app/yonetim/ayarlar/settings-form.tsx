@@ -176,6 +176,8 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
           <Input name="piKocFreeStudents" type="number" min={0} max={50} defaultValue={settings.piKocFreeStudents} required />
           <FieldError name="piKocFreeStudents" />
         </Field>
+        <NumberField name="piKocHoursPerStudent" label="Görüşme havuzu (öğrenci başına)" value={settings.piKocHoursPerStudent} suffix="saat / ay" />
+        <NumberField name="piKocFreeMeetingMinutes" label="Ücretsiz pakette görüşme başına" value={settings.piKocFreeMeetingMinutes} suffix="dakika" />
       </Section>
 
       <Section title="Bakım modu">

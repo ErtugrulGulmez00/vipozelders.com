@@ -82,6 +82,9 @@ export const settingsSchema = z.object({
   piKocTiers: z.string().default("5:349,10:599,20:999,50:2000"),
   // Pi Koç ücretsiz paketi: bu kadar öğrenciye kadar süresiz ücretsiz (0: ücretsiz paket yok)
   piKocFreeStudents: z.number().int().min(0).max(50).default(3),
+  // Görüntülü görüşme: aylık havuz = paket öğrenci sayısı × bu saat; ücretsiz pakette görüşme başına dakika sınırı
+  piKocHoursPerStudent: z.number().int().min(1).max(100).default(4),
+  piKocFreeMeetingMinutes: z.number().int().min(10).max(240).default(40),
   centerTrialDays: z.number().int().min(0).max(90).default(14),
   // Kurum kapasite kademeleri: öğrenci sınırları. Yıllık 0 = yalnızca aylık.
   // Merdiven: bir kademenin yıllık fiyatı bir alttakini aylık ödemeye denk → "aynı paraya daha çok kapasite".

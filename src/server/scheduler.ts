@@ -25,6 +25,7 @@ import { processGroups } from "./groups";
 import { expirePackages } from "./packages";
 import { expireRescheduleRequests } from "./reschedule";
 import { sendCoachDigests, sendPlanNudges } from "./koc-plan";
+import { enforceCoachMeetings } from "./koc-meeting-usage";
 
 const HOLDER = `${hostname()}-${process.pid}-${randomUUID().slice(0, 8)}`;
 
@@ -65,6 +66,8 @@ const TASKS = {
   // Pi Koç: koça sabah görüşme özeti, programı geride kalan öğrenciye akşam hatırlatma
   kocDigests: sendCoachDigests,
   kocPlanNudges: sendPlanNudges,
+  // Pi Koç görüntülü görüşme: ücretsiz pakette süresi dolan oda kapanır, ücretli pakette havuz aşımı bildirilir
+  kocMeetings: enforceCoachMeetings,
   centerMessages: () => processCenterMessages(),
   emails: () => sendPendingEmails(),
   pushes: sendPendingPushes,

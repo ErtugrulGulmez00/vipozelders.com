@@ -43,9 +43,9 @@ export async function announceMeeting(studentId: string, coachName: string) {
   }
 }
 
-/** Görüşme odası anahtarı (MEETING_MINUTES boyunca geçerli). */
-export async function meetingToken(studentId: string, role: "teacher" | "student", user: { id: string; firstName: string; lastName: string }) {
-  const closesAt = new Date(Date.now() + MEETING_MINUTES * 60_000);
+/** Görüşme odası anahtarı (paket izin verdiği süre boyunca geçerli; ücretsiz pakette kısa). */
+export async function meetingToken(studentId: string, role: "teacher" | "student", user: { id: string; firstName: string; lastName: string }, minutes = MEETING_MINUTES) {
+  const closesAt = new Date(Date.now() + minutes * 60_000);
   const { token, serverUrl } = await createRoomToken({ room: meetingRoomName(studentId), role, closesAt }, user);
   return { token, serverUrl, endsAt: closesAt.getTime() };
 }

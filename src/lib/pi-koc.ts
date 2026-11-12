@@ -64,3 +64,49 @@ export function coachPlanLabel(plan: CoachPlan): string {
   if (plan.state === "free") return `Ücretsiz paket · ${plan.studentLimit} öğrenciye kadar`;
   return `${plan.studentLimit} öğrenci paketi${plan.state === "trial" ? " (deneme)" : ""}`;
 }
+
+// ——— Görüntülü görüşme sınırı ———
+// Aylık havuz = paket öğrenci sayısı × saat (ayar). Ücretsiz pakette sert: görüşme başına dakika sınırı ve havuz dolunca
+// yeni görüşme açılmaz. Ücretli pakette yumuşak: süre serbest, havuz aşılınca yalnızca uyarı ve bildirim.
+
+export type MeetingPolicy = { poolMinutes: number; hard: boolean; maxMeetingMinutes: number | null };
+
+export function meetingPolicy(plan: CoachPlan, settings: { piKocFreeStudents: number; piKocHoursPerStudent: number; piKocFreeMeetingMinutes: number }): MeetingPolicy {
+  const students = plan.paid ? plan.paidLimit : settings.piKocFreeStudents;
+  return { poolMinutes: students * settings.piKocHoursPerStudent * 60, hard: !plan.paid, maxMeetingMinutes: plan.paid ? null : settings.piKocFreeMeetingMinutes };
+}
+
+/** Ücretli pakette bir görüşmenin en uzun süresi (anahtar süresi; uzun ders için yeniden girilebilir). */
+export const PAID_MEETING_MINUTES = 120;
+
+export type MeetingAllowance = { ok: true; minutes: number; overPool: boolean } | { ok: false; reason: string };
+
+/** Görüşmeye girerken: bu ay kullanılan dakikaya göre izin ve anahtar süresi. */
+export function meetingAllowance(policy: MeetingPolicy, usedMinutes: number): MeetingAllowance {
+  const left = policy.poolMinutes - usedMinutes;
+  if (!policy.hard) return { ok: true, minutes: PAID_MEETING_MINUTES, overPool: left <= 0 };
+  if (left < 1) {
+    return { ok: false, reason: `Ücretsiz paketin bu ayki görüntülü görüşme süresi (${formatHours(policy.poolMinutes)}) doldu. Ücretli pakete geçerek görüşmeye devam edebilirsiniz.` };
+  }
+  return { ok: true, minutes: Math.min(policy.maxMeetingMinutes ?? PAID_MEETING_MINUTES, Math.floor(left)), overPool: false };
+}
+
+/** 750 → "12 sa 30 dk", 720 → "12 saat", 45 → "45 dk". */
+export function formatHours(minutes: number): string {
+  const m = Math.max(0, Math.round(minutes));
+  const h = Math.floor(m / 60);
+  const rest = m % 60;
+  if (!h) return `${rest} dk`;
+  return rest ? `${h} sa ${rest} dk` : `${h} saat`;
+}
+
+/** Görüşme kayıtlarının bu aydaki toplam dakikası (açık görüşme şu ana kadar sayılır; ay başından önceki kısım sayılmaz). */
+export function meetingMinutes(meetings: { startedAt: Date; endedAt: Date | null }[], monthStart: Date, now: Date): number {
+  let total = 0;
+  for (const m of meetings) {
+    const start = Math.max(m.startedAt.getTime(), monthStart.getTime());
+    const end = (m.endedAt ?? now).getTime();
+    if (end > start) total += (end - start) / 60_000;
+  }
+  return total;
+}
