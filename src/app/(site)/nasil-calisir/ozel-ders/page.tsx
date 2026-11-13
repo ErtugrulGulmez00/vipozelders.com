@@ -1,4 +1,4 @@
-import { BadgeCheck, CreditCard, LockKeyhole, MessageSquareLock, MonitorPlay, PenLine, ScreenShare, Undo2, UserCheck, Users, Video } from "lucide-react";
+import { BadgeCheck, BookOpenCheck, ClipboardList, HandCoins, LineChart, MessageSquareLock, PhoneCall, PhoneOff, ShieldAlert, Video } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
@@ -20,12 +20,13 @@ import {
 } from "@/components/site/guide";
 import { GuideZoom } from "@/components/site/guide-zoom";
 import { buttonClasses } from "@/components/ui/button";
+import { parseCoachTiers } from "@/lib/pi-koc";
 import { getSiteSettings } from "@/server/site";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/nasil-calisir/ozel-ders" },
   title: "Özel ders nasıl çalışır? Adım adım rehber",
-  description: "Öğretmen bulma, ücretsiz tanışma, randevu ve güvenli ödeme, öğretmen onayı, sanal sınıf ve paket ders: Pi Kampüs'te özel dersi gerçek ekranlar ve videolarla tanıyın.",
+  description: "Öğretmen bulma, ücretsiz ders talebi, öğretmenin sizi araması ve Pi Koç ile program, ödev ve deneme takibi: Pi Kampüs'te özel dersi gerçek ekranlar ve videolarla tanıyın.",
 };
 
 const BASE = "/tanitim/ozel-ders";
@@ -37,53 +38,49 @@ const NAV: [string, string][] = [
   ["adimlar", "Adımlar"],
   ["bul", "Öğretmen bul"],
   ["profil", "Profil"],
-  ["randevu", "Randevu"],
-  ["onay", "Onay"],
-  ["ders", "Ders"],
-  ["paket", "Paket"],
-  ["soru", "Soru çözüm dersi"],
+  ["talep", "Ders talebi"],
+  ["kabul", "Kabul"],
+  ["takip", "Takip"],
   ["guvence", "Güvence"],
   ["ogretmen", "Öğretmenler için"],
   ["sss", "SSS"],
 ];
 
-const CLASSROOM = [
-  { Icon: MonitorPlay, title: "Program kurmadan", text: "Ders tarayıcıda açılır; bilgisayar, tablet ya da telefon yeterli." },
-  { Icon: Video, title: "Kamera ve ses", text: "Öğretmen ve öğrenci birbirini görür, duyar." },
-  { Icon: PenLine, title: "Beyaz tahta", text: "Öğretmen soruyu tahtada adım adım çözer." },
-  { Icon: ScreenShare, title: "Ekran paylaşımı", text: "Kitap sayfası, sunum ya da test ekranda paylaşılır." },
-  { Icon: UserCheck, title: "Katılım kaydı", text: "Kimin derse ne zaman girdiği kaydedilir; \"gelmedi\" tartışması olmaz." },
-  { Icon: LockKeyhole, title: "Yalnızca o derse özel", text: "Sınıfa yalnızca dersin öğretmeni ve öğrencisi, ders saatinde girer." },
+const TRACKING = [
+  { Icon: ClipboardList, title: "Haftalık program", text: "Öğretmenin hazırladığı çalışma programı ve ödevler; çocuğunuz yaptıklarını işaretler." },
+  { Icon: BookOpenCheck, title: "Soru takibi", text: "Günlük çözülen soru, doğru ve yanlış sayıları derse göre." },
+  { Icon: LineChart, title: "Deneme sonuçları", text: "Net grafiği ve ders ders gelişim; deneme deneme karşılaştırma." },
+  { Icon: Video, title: "Görüntülü ders", text: "Öğretmen görüşme açar, çocuğunuz aynı hesaptan tek tıkla katılır; program kurmak gerekmez." },
 ];
 
 export default async function PrivateLessonGuidePage() {
   const s = await getSiteSettings();
-  const commission = Math.round(s.commissionRateBps / 100);
+  const tiers = parseCoachTiers(s.piKocTiers);
+  const tierText = tiers.map((t) => `${t.students} öğrenci ${t.priceTl.toLocaleString("tr-TR")} ₺`).join(", ");
 
   const steps = [
-    ["Öğretmeni bulun", "Kademe, ders, ders şekli, il/ilçe ve fiyata göre süzün; onaylı rozetine ve gerçek yorumlara bakın. Birçok öğretmenle ücretsiz 15 dakikalık tanışma görüşmesi yapabilirsiniz."],
-    ["Saati seçin, ödeyin", "Takvimde yalnızca boş saatler seçilebilir. Ödeme 3D Secure ile alınır; seçtiğiniz saat ödeme süresince sizin için ayrılır."],
-    ["Öğretmen onaylar", `Öğretmen talebinizi ${s.approvalWindowHours} saat içinde onaylar. Onaylamazsa ya da süresinde yanıt vermezse ödediğiniz tutarın tamamı kartınıza iade edilir.`],
-    ["Derse katılın", `Online derste ders saatinden ${s.classroomOpensMinutesBefore} dakika önce "Derse Katıl" düğmesi açılır. Yüz yüze derste adres yalnızca onaydan sonra öğretmenle paylaşılır.`],
-    ["Değerlendirin", `Ders bitince puan ve yorum bırakın. Bir sorun yaşadıysanız ${s.disputeWindowHours} saat içinde bildirin; bu süre dolmadan öğretmene ödeme yapılmaz.`],
+    ["Öğretmeni bulun", "Kademe, ders, ders şekli, il/ilçe ve fiyata göre süzün; onaylı rozetine, tanıtımına ve yorumlara bakın."],
+    ["Ders talebi gönderin", "Profildeki kutuya çocuğunuzun adını, sınıfını, dersi ve uygun saatleri yazın. Talep göndermek ücretsizdir."],
+    ["Öğretmen sizi arar", "Talebi kabul eden öğretmen telefonunuzu görür ve sizi arar. Ders saatini ve ücreti birlikte konuşursunuz."],
+    ["Takip tek yerde", "Çocuğunuz öğretmenin Pi Koç'una eklenir. Program, ödev, soru ve deneme takibi hesabınızdaki Koçum bölümünde."],
   ];
 
   const trust = [
     { Icon: BadgeCheck, title: "Onaylı öğretmen", text: "Belgeleri ekibimizce incelenen öğretmenler \"Onaylı öğretmen\" rozeti taşır; listede yalnızca onaylıları gösterebilirsiniz." },
-    { Icon: Undo2, title: "Onay yoksa tam iade", text: `Öğretmen ${s.approvalWindowHours} saat içinde onaylamazsa, dersi iptal ederse ya da derse gelmezse ödediğiniz tutarın tamamı iade edilir.` },
-    { Icon: CreditCard, title: "Kart bilgisi bizde değil", text: "Kart bilgileri yalnızca bankanın 3D Secure sayfasında girilir; Pi Kampüs kart bilgisi saklamaz." },
-    { Icon: LockKeyhole, title: "Ödeme ders sonrası", text: `Ücret, ders tamamlanıp ${s.disputeWindowHours} saatlik itiraz süresi dolana kadar öğretmene geçmez.` },
-    { Icon: MessageSquareLock, title: "Kayıtlı iletişim", text: "Öğretmenle site içinden yazışırsınız; mesajlardaki telefon ve e-posta bilgileri gizlenir, tüm süreç kayıt altında kalır." },
-    { Icon: Users, title: "Gerçek yorumlar", text: "Yorumu yalnızca o öğretmenle dersi tamamlanmış veliler ve öğrenciler yazabilir." },
+    { Icon: PhoneOff, title: "Numaranız korunur", text: "Telefonunuzu yalnızca talebinizi kabul eden öğretmen görür; profilde ve mesajlarda iletişim bilgisi gizlenir." },
+    { Icon: HandCoins, title: "Aracı komisyon yok", text: "Ücreti öğretmenle doğrudan konuşursunuz. Pi Kampüs ders ücretine karışmaz, araya ücret eklemez." },
+    { Icon: MessageSquareLock, title: "Kayıtlı mesajlaşma", text: "Talepten önce öğretmenle site içinden yazışabilirsiniz; yazışmalar kayıt altında kalır." },
+    { Icon: PhoneCall, title: "Geri dönüş haberi", text: "Öğretmen talebinizi kabul ettiğinde ya da geri çevirdiğinde size bildirim gelir; beklemede kalmazsınız." },
+    { Icon: ShieldAlert, title: "Şikâyet ve kurallar", text: "Öğretmenler saygılı iletişim ve doğru bilgi kurallarını kabul eder. Sorun yaşarsanız bize yazın; kurala uymayan öğretmenin hesabı kapatılır." },
   ];
 
   const faq = [
-    ["Üyelik ücretli mi?", "Hayır. Öğretmenlere ve fiyatlara üye olmadan bakabilirsiniz; randevu ve ödeme için ücretsiz üyelik yeterli."],
-    ["Dersi iptal edersem ne olur?", `Dersin başlamasına ${s.fullRefundHours} saat veya daha fazla varsa tam iade; ${s.fullRefundHours} saatten az, ${s.partialRefundHours} saatten fazla varsa %${s.partialRefundPercent} iade; ${s.partialRefundHours} saatten az kaldıysa iade yapılmaz.`],
-    ["Ders saatini değiştirebilir miyim?", `Evet. Dersten en az ${s.rescheduleMinHours} saat önce ders sayfasından yeni saat önerin; öğretmeniniz kabul ederse ders taşınır. Erteleme ücreti yoktur.`],
-    ["Online ders için ne gerekir?", "Kamerası ve mikrofonu olan bir bilgisayar, tablet ya da telefon ve internet bağlantısı. Program kurmanız gerekmez."],
-    ["Yüz yüze ders alabilir miyim?", "Evet, öğretmenin hizmet verdiği ilçelerde. Öğrencinin evinde ya da öğretmenin yerinde yapılabilir; adres yalnızca öğretmen dersi onaylarsa paylaşılır."],
-    ["Birden fazla çocuğum var, tek hesap yeter mi?", "Evet. Randevu alırken dersin hangi çocuğunuz için olduğunu seçersiniz; tüm dersler ve ödemeler aynı hesapta görünür."],
+    ["Üyelik ya da talep ücretli mi?", "Hayır. Öğretmenlere üye olmadan bakabilirsiniz; ders talebi göndermek ve takip için ücretsiz veli hesabı yeterli."],
+    ["Ders ücretini kime ödüyorum?", "Doğrudan öğretmene. Ücreti, ders saatini ve ödeme şeklini öğretmenle telefonda konuşursunuz; Pi Kampüs ödemeye aracılık etmez ve komisyon almaz."],
+    ["Aynı anda birkaç öğretmene talep gönderebilir miyim?", "Evet, farklı öğretmenlere gönderebilirsiniz. Aynı öğretmene, önceki talebiniz yanıtlanana kadar ikinci talep gönderilemez; günde en fazla 5 talep gönderilebilir."],
+    ["Öğretmen talebimi geri çevirirse?", "Size bildirim gelir. Listeden başka bir öğretmen seçebilir ya da listenin altındaki forma ihtiyacınızı yazıp size uygun öğretmeni bulmamızı isteyebilirsiniz."],
+    ["Koçum bölümünde neleri görürüm?", "Öğretmenin hazırladığı programı ve ödevleri, çözülen soru sayılarını, deneme sonuçlarını ve öğretmenin gönderdiği haftalık raporları. Öğretmen görüntülü ders açtığında katılım bağlantısı da burada görünür."],
+    ["Birden fazla çocuğum var, tek hesap yeter mi?", "Evet. Her talepte dersin hangi çocuğunuz için olduğunu yazarsınız; tüm çocuklarınızın takibi aynı hesapta görünür."],
   ];
 
   return (
@@ -97,13 +94,13 @@ export default async function PrivateLessonGuidePage() {
           <div>
             <p className="text-xs font-bold tracking-[0.12em] text-gold-400 uppercase">Özel ders · Veli ve öğrenci rehberi</p>
             <h1 className="mt-3.5 max-w-[16ch] text-4xl font-extrabold tracking-tight sm:text-6xl lg:text-7xl">
-              Doğru öğretmen, <span className="text-gold-400">güvenli ödeme</span>, evden ders.
+              Doğru öğretmen, <span className="text-gold-400">ücretsiz talep</span>, düzenli takip.
             </h1>
             <p className="mt-4 max-w-3xl text-lg text-ink-200">
-              Pi Kampüs&apos;te öğretmeni yorumlarına ve boş saatlerine bakarak seçersiniz; ödemeniz öğretmen onaylayana ve ders tamamlanana kadar güvencededir. Bu rehber, öğretmen bulmaktan derse katılmaya kadar her adımı gerçek ekranlar ve kısa videolarla anlatır.
+              Pi Kampüs&apos;te öğretmeni tanıtımına, derslerine ve fiyatına bakarak seçer, ücretsiz ders talebi gönderirsiniz. Kabul eden öğretmen sizi arar; ücreti doğrudan onunla konuşursunuz. Çocuğunuzun programını, ödevlerini ve deneme sonuçlarını hesabınızdan takip edersiniz. Bu rehber her adımı gerçek ekranlar ve kısa videolarla anlatır.
             </p>
             <div className="mt-6 flex flex-wrap gap-2.5">
-              {[["Onaylı", "öğretmenler"], ["Onay yoksa", "tam iade"], ["Program kurmadan", "sanal sınıf"], ["Ücretsiz", "tanışma görüşmesi"]].map(([b, t]) => (
+              {[["Onaylı", "öğretmenler"], ["Ücretsiz", "ders talebi"], ["Aracı", "komisyon yok"], ["Tek hesapta", "program ve deneme takibi"]].map(([b, t]) => (
                 <span key={t} className="rounded-full border border-white/20 px-3.5 py-1.5 text-sm">
                   <b className="text-gold-400">{b}</b> {t}
                 </span>
@@ -124,8 +121,8 @@ export default async function PrivateLessonGuidePage() {
         </div>
       </section>
 
-      <GuideSection id="adimlar" eyebrow="Beş adımda" title="Öğretmen bulmaktan derse kadar" lead="Her adımda ne olacağını önceden bilirsiniz; süreler ve iade kuralları baştan bellidir." className="border-t-0 pt-24">
-        <ol className="mt-8 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,200px),1fr))]">
+      <GuideSection id="adimlar" eyebrow="Dört adımda" title="Öğretmen bulmaktan düzenli takibe" lead="Her adımda ne olacağını önceden bilirsiniz; talep ücretsizdir, ücreti öğretmenle siz konuşursunuz." className="border-t-0 pt-24">
+        <ol className="mt-8 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))]">
           {steps.map(([title, text], i) => (
             <li key={title} className="grid content-start gap-2 rounded-2xl border border-ink-100 bg-white p-5">
               <span className="font-display text-4xl leading-none font-extrabold text-brand-600">{i + 1}</span>
@@ -144,85 +141,84 @@ export default async function PrivateLessonGuidePage() {
           shot={shot("02-liste", "pikampus.com/ogretmenler", "Öğretmen listesi ve süzgeçler", 1440, 900)}
           title="Öğretmen listesi"
           legend={[
-            ["Süzgeçler:", "kademe, ders, hizmet (özel ders, koçluk), online / yüz yüze, ücret, puan, müsaitlik; yalnızca onaylı ya da ücretsiz tanışma sunan öğretmenler."],
-            ["Sıralama:", "önerilen, fiyat, puan, yorum sayısı, en çok ders veren, en yeni."],
-            ["Öğretmen kartı:", "puan ve yorum sayısı, deneyim, ders şekli, saatlik ücret."],
+            ["Süzgeçler:", "kademe, ders, hizmet (özel ders, koçluk), online / yüz yüze, il ve ilçe, ücret, puan, uygun saatler; yalnızca onaylı öğretmenler."],
+            ["Sıralama:", "önerilen, fiyat, puan, yorum sayısı, en yeni."],
+            ["Öğretmen kartı:", "deneyim, ders şekli, verdiği dersler ve saatlik ücret."],
           ]}
         >
           <Tip title="Bulamadınız mı?">listenin altındaki forma ders ve uygun saatlerinizi bırakın; size uygun öğretmeni bulup dönelim.</Tip>
         </Feature>
       </GuideSection>
 
-      <GuideSection id="profil" eyebrow="Öğretmen profili" title="Karar vermeden önce her şeyi görün" lead="Profilde öğretmenin tanıtımı, eğitimi, verdiği dersler ve ücretleri, gerçek yorumlar ve boş saatleri bir arada.">
+      <GuideSection id="profil" eyebrow="Öğretmen profili" title="Karar vermeden önce her şeyi görün" lead="Profilde öğretmenin tanıtımı, eğitimi, verdiği dersler ve ücretleri, yorumlar ve ders talebi kutusu bir arada.">
         <Feature
-          shot={shot("03-profil", "pikampus.com/ogretmen/…", "Öğretmen profili ve randevu kutusu", 1440, 1000)}
+          shot={shot("03-profil", "pikampus.com/ogretmen/…", "Öğretmen profili ve ders talebi kutusu", 1440, 1000)}
           legend={[
-            ["Öğretmen bilgileri:", "deneyim, eğitim, verdiği ders sayısı, ortalama yanıt süresi, onaylı rozeti."],
-            ["Takvim:", "yeşil noktalı günlerde boş saat var; dolu saatler seçilemez."],
-            ["Randevu kutusu:", "hizmet, ders, süre ve ders şekli; ücret KDV dahil görünür."],
+            ["Öğretmen bilgileri:", "deneyim, eğitim, ders şekli, ortalama yanıt süresi, onaylı rozeti."],
+            ["Ders talebi kutusu:", "talep göndermek için ücretsiz veli hesabıyla giriş yapmanız yeterli."],
           ]}
         />
         <Pair>
           <Figure shot={shot("04-profil-alt", "pikampus.com/ogretmen/…", "Dersler, ücretler ve değerlendirmeler", 1440, 1400, true)}>
-            <b>Dersler ve değerlendirmeler:</b> kademe ve ders bazında ücretler ve yalnızca dersi tamamlanmış kişilerin yazabildiği yorumlar.
+            <b>Dersler ve ücretler:</b> kademe ve ders bazında öğretmenin saatlik ücreti. Ücret bilgi içindir; kesin tutarı öğretmenle konuşursunuz.
           </Figure>
           <Phones className="mt-0">
-            <Phone caption="Profil ve randevu telefonda da aynı kolaylıkta.">
-              <PhoneImage src={img("t1-profil-telefon")} alt="Telefonda randevu kutusu" width={780} height={2330} />
+            <Phone caption="Profil ve ders talebi telefonda da aynı kolaylıkta.">
+              <PhoneImage src={img("t1-profil-telefon")} alt="Telefonda ders talebi kutusu" width={780} height={3200} />
             </Phone>
           </Phones>
         </Pair>
       </GuideSection>
 
-      <GuideSection id="randevu" eyebrow="Randevu ve ödeme" title="Saati seçin, güvenle ödeyin" lead="Seçtiğiniz saat ödeme süresince sizin için ayrılır, başkası alamaz. Ödeme bankanızın 3D Secure sayfasında yapılır.">
+      <GuideSection id="talep" eyebrow="Ders talebi" title="İhtiyacınızı yazın, öğretmene iletelim" lead="Talep kutusu kısa bir formdur. Telefonunuz yalnızca öğretmen talebi kabul ederse görünür; o zamana kadar gizli kalır.">
         <Feature
-          shot={shot("05-rezervasyon", "pikampus.com/rezervasyon", "Randevu formu", 1440, 1100, true)}
-          title="Randevuyu tamamlama"
+          shot={shot("05-talep", "pikampus.com/ogretmen/…", "Ders talebi formu", 1440, 1100, true)}
+          title="Ders talebi formu"
           legend={[
-            ["Ders kimin için:", "kayıtlı çocuklarınızdan seçin ya da yeni ekleyin."],
-            ["Öğretmene not:", "hangi konularda destek istediğinizi yazın; öğretmen derse hazırlıklı gelir."],
-            ["Sözleşmeler:", "ön bilgilendirme formu, mesafeli satış sözleşmesi ve iptal-iade koşulları tek onayla."],
-            ["Ödemeye geç.", "Kart bilgileri yalnızca bankanın sayfasında girilir."],
+            ["Öğrenci:", "çocuğunuzun adı ve sınıfı."],
+            ["Ders ve ders şekli:", "öğretmenin verdiği derslerden biri; online, yüz yüze ya da fark etmez."],
+            ["Uygun saatler ve not:", "hangi gün ve saatlerin uygun olduğunu, hangi konularda destek istediğinizi yazın."],
+            ["Telefon ve onay:", "numaranızın yalnızca talebi kabul eden öğretmenle paylaşılmasını onaylarsınız."],
           ]}
         >
+          <Note>Talebiniz iletilince profilde &quot;Talebiniz iletildi&quot; yazar. Aynı öğretmene, bu talep yanıtlanana kadar ikinci talep gönderilemez.</Note>
         </Feature>
         <div className="mt-8">
-          <GuideVideo src={video("v2-randevu")} poster={img("05-rezervasyon")} title="Randevu alma ve ödeme" seconds={25} />
+          <GuideVideo src={video("v2-talep")} poster={img("05-talep")} title="Ders talebi gönderme" seconds={21} />
         </div>
       </GuideSection>
 
-      <GuideSection id="onay" eyebrow="Öğretmen onayı" title={`Öğretmen ${s.approvalWindowHours} saat içinde onaylar`} lead="Talep öğretmenin paneline düşer. Onaylanınca saat dolar, size onay ve takvim daveti gider. Reddedilirse ya da süresinde yanıt gelmezse ödemenin tamamı otomatik iade edilir.">
+      <GuideSection id="kabul" eyebrow="Öğretmenin yanıtı" title="Öğretmen kabul eder, sizi arar" lead="Talep öğretmenin panelindeki &quot;Ders talepleri&quot; sayfasına düşer. Kabul ederse telefonunuzu görür ve sizi arar; geri çevirirse size nazik bir bildirim gelir.">
         <Feature
-          shot={shot("12-talepler", "pikampus.com/ogretmen-paneli/talepler", "Öğretmen panelinde onay bekleyen talep", 1440, 900)}
+          shot={shot("12-ders-talepleri", "pikampus.com/ogretmen-paneli/ders-talepleri", "Öğretmen panelinde yanıt bekleyen ders talebi", 1440, 900)}
           title="Öğretmenin gördüğü ekran"
           legend={[
-            ["Talep:", "öğrenci, ders, saat, ders şekli ve velinin notu; yanıt için kalan süre."],
-            ["Onayla:", "saat dolar, veliye onay bildirimi ve takvim daveti gider."],
-            ["Reddet:", "gerekçe seçilir; ücretin tamamı iade edilir."],
+            ["Talep:", "öğrenci, sınıf, ders, ders şekli, uygun saatler ve velinin notu. Telefon kabul edilene kadar gizlidir."],
+            ["Kabul et:", "velinin telefonu görünür, veliye bildirim gider, öğrenci öğretmenin Pi Koç'una eklenir."],
+            ["Geri çevir:", "veliye nazik bir bildirim gider."],
           ]}
         />
         <Pair>
-          <GuideVideo src={video("v3-onay")} poster={img("12-talepler")} title="Öğretmen talebi onaylar" seconds={18} />
-          <Figure shot={shot("06-derslerim", "pikampus.com/hesabim/derslerim", "Velinin derslerim sayfası", 1440, 900)}>
-            <b>Derslerim:</b> yaklaşan, geçmiş ve iptal edilen dersler; her dersin durumu (onay bekleniyor, onaylandı, tamamlandı) tek listede.
+          <GuideVideo src={video("v3-kabul")} poster={img("16-kabul")} title="Öğretmen talebi kabul eder" seconds={21} />
+          <Figure shot={shot("16-kabul", "pikampus.com/ogretmen-paneli/ders-talepleri", "Kabul edilen talep: telefon ve Pi Koç bağlantısı", 1440, 900)}>
+            <b>Kabulden sonra:</b> velinin telefonu, tek tıkla arama ve WhatsApp bağlantısı; öğrencinin Pi Koç sayfasına geçiş.
           </Figure>
         </Pair>
       </GuideSection>
 
-      <GuideSection id="ders" eyebrow="Ders günü" title="Saatinde “Derse Katıl”, gerisi tarayıcıda" lead={`Online derslerde ders saatinden ${s.classroomOpensMinutesBefore} dakika önce ders sayfasında "Derse Katıl" düğmesi açılır. Dersten 24 saat ve 1 saat önce hatırlatma gelir.`}>
-        <Feature
-          shot={shot("07-ders", "pikampus.com/hesabim/derslerim/…", "Ders sayfası", 1440, 1100, true)}
-          title="Ders sayfası"
-          legend={[
-            ["Ders bilgileri:", "öğretmen, saat, süre, ders şekli; tek tıkla Google Takvim'e ya da telefonunuzun takvimine ekleyin."],
-            ["Ders saatini değiştir:", `dersten en az ${s.rescheduleMinHours} saat önce yeni saat önerin; öğretmen kabul ederse ders taşınır.`],
-            ["Randevuyu iptal et:", "kalan süreye göre iade tutarı önceden gösterilir."],
-          ]}
-        >
-          <Note>Ders bitince ders tamamlandı olarak işaretlenir; size puan ve yorum daveti gelir.</Note>
-        </Feature>
+      <GuideSection id="takip" eyebrow="Düzenli takip" title="Çocuğunuzun gelişimi hesabınızda" lead="Talebi kabul edilen öğrenci, öğretmenin Pi Koç hesabına eklenir ve sizin veli hesabınıza bağlanır. Öğretmenin girdiği her şeyi Koçum bölümünden görürsünüz.">
+        <Pair>
+          <Figure shot={shot("06-kocum", "pikampus.com/kocum", "Velinin Koçum sayfası", 1440, 900)}>
+            <b>Koçum:</b> öğretmenin hazırladığı program ve ödevler, soru takibi, deneme sonuçları ve haftalık raporlar.
+          </Figure>
+          <Phones className="mt-0">
+            <Phone caption="Takip telefondan da aynı hesapla.">
+              <PhoneImage src={img("t3-kocum-telefon")} alt="Telefonda Koçum sayfası" width={780} height={1688} />
+            </Phone>
+          </Phones>
+        </Pair>
         <div className="mt-10 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr))]">
-          {CLASSROOM.map(({ Icon, title, text }) => (
+          {TRACKING.map(({ Icon, title, text }) => (
             <div key={title} className="grid content-start gap-2 rounded-2xl border border-ink-100 bg-white p-5">
               <span className="inline-flex size-10 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
                 <Icon className="size-5" aria-hidden />
@@ -234,37 +230,7 @@ export default async function PrivateLessonGuidePage() {
         </div>
       </GuideSection>
 
-      <GuideSection id="paket" eyebrow="Paket ve düzenli ders" title="Düzenli çalışana daha uygun" lead="Aynı öğretmenden birden fazla dersi peşin ve indirimli alın, saatleri dilediğiniz zaman seçin. Ya da saat seçerken &quot;her hafta bu saatte tekrarla&quot; ile dönemi tek seferde planlayın.">
-        <Feature
-          shot={shot("08-paketlerim", "pikampus.com/hesabim/paketlerim", "Paketlerim sayfası", 1440, 900)}
-          title="Paketlerim"
-          legend={[
-            ["Paket:", "kalan ders sayısı ve geçerlilik; paketten alınan dersler tek tek listelenir."],
-            ["Saat seç:", "öğretmenin takviminden saat seçip ödeme yapmadan talep gönderin."],
-          ]}
-        >
-          <Note>Öğretmen paketten alınan bir dersi onaylamazsa ya da erken iptal ederseniz ders paketinize geri eklenir. Kullanmadığınız dersleri aynı sayfadan iade edebilirsiniz.</Note>
-        </Feature>
-      </GuideSection>
-
-      <GuideSection id="soru" eyebrow="Soru çözüm dersi" title="Dersin yanında 30 dakika soru çözümü" lead="Bazı öğretmenlerimiz, tamamlanan her dersin ardından 30 dakikalık ücretsiz soru çözüm dersi açıyor.">
-        <Note>Bu öğretmenlerin profilinde ve öğretmen kartında “Derse ek 30 dk soru çözümü” yazar. Dersiniz bittikten sonra öğretmeniniz uygun bir saat için dersi açar; size bildirim gelir ve ders Derslerim sayfasında görünür. Ayrı bir ücret ödemezsiniz.</Note>
-        {s.groupsEnabled ? (
-          <div className="mt-12 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-ink-100 bg-white p-6">
-            <div className="max-w-2xl">
-              <h3 className="text-xl font-bold">Grup dersleri</h3>
-              <p className="mt-1 text-[15px] text-ink-500">
-                {s.groupMinParticipants}–{s.groupMaxCapacity} kişilik online sınıflarda birebir dersten çok daha uygun fiyata ders alın. Ders, kayıt bitişinde en az katılımcı sayısına ulaşmazsa ödediğiniz ücretin tamamı iade edilir.
-              </p>
-            </div>
-            <Link href="/grup-dersleri" className={buttonClasses("outline", "md")}>
-              Grup derslerini gör
-            </Link>
-          </div>
-        ) : null}
-      </GuideSection>
-
-      <GuideSection id="guvence" eyebrow="Güvence" title="Paranız ve çocuğunuz güvende" lead="Pi Kampüs, veliyle öğretmen arasındaki her adımı kayıt altında tutar ve kuralları baştan yazar.">
+      <GuideSection id="guvence" eyebrow="Güvence" title="Numaranız ve çocuğunuz güvende" lead="Pi Kampüs öğretmenleri inceler, iletişim bilgilerinizi korur ve kuralları baştan yazar. Ders ücretine karışmaz.">
         <div className="mt-8 grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))]">
           {trust.map(({ Icon, title, text }) => (
             <div key={title} className="grid content-start gap-2 rounded-2xl border border-ink-100 bg-white p-5">
@@ -276,21 +242,19 @@ export default async function PrivateLessonGuidePage() {
             </div>
           ))}
         </div>
-        <Note className="mt-6">
-          Ayrıntılı kurallar:{" "}
-          <Link href="/sayfa/iptal-ve-iade-politikasi" className="font-semibold text-brand-700 underline">
-            İptal ve iade politikası
-          </Link>
-          .
-        </Note>
       </GuideSection>
 
-      <GuideSection id="ogretmen" eyebrow="Öğretmenler için" title="Bilginizi daha çok öğrenciye ulaştırın" lead={`Fiyatınızı ve takviminizi siz belirlersiniz; öğrenci bulma, ödeme tahsili, sanal sınıf ve hatırlatmalar Pi Kampüs'te. Platform hizmet bedeli oranı: %${commission}.`}>
+      <GuideSection
+        id="ogretmen"
+        eyebrow="Öğretmenler için"
+        title="Velilerden ders talebi alın, ücreti kendiniz alın"
+        lead={`Profil açmak ve ders talebi almak ücretsiz; ders ücretinizden kesinti yok. Kabul ettiğiniz öğrenciler Pi Koç hesabınıza düşer: ${s.piKocFreeStudents} öğrenciye kadar ücretsiz, daha fazlası için aylık paketler (${tierText}).`}
+      >
         <Feature
           shot={shot("13-ogretmen-ol", "pikampus.com/ogretmen-ol", "Öğretmen başvuru sayfası", 1440, 1000)}
           title="Başvuru"
           legend={[
-            ["Örnek kazanç:", "öğrencinin ödediği, hizmet bedeli ve elinize geçen tutar."],
+            ["Ne ödersiniz:", "profil ve talepler ücretsiz, Pi Koç paketleri ve ders ücretinizden kesinti olmadığı tek tabloda."],
             ["Başvuru formu:", "ders verdiğiniz kademe ve dersler; ekibimiz belgelerinizi inceleyip hesabınızı açar."],
           ]}
         />
@@ -299,22 +263,25 @@ export default async function PrivateLessonGuidePage() {
           shot={shot("11-panel", "pikampus.com/ogretmen-paneli", "Öğretmen paneli", 1440, 900)}
           title="Öğretmen paneli"
           legend={[
-            ["Menü:", "dersler ve talepler, ders bağlantıları, mesajlar, soru çözüm dersleri, grup dersleri, profil, takvim, kazançlar, yorumlar."],
-            ["Yaklaşan dersler", "ve onay bekleyen talepler tek bakışta."],
+            ["Menü:", "ders talepleri, Pi Koç öğrencileri, mesajlar, profil ve fiyatlar, müsaitlik takvimi, yorumlar."],
+            ["Özet:", "yanıt bekleyen ders talepleri ve Pi Koç'taki öğrenci sayınız tek bakışta."],
           ]}
         >
-          <Note>Kazancınız, ders tamamlanıp itiraz süresi ve ödeme kuruluşunun aktarım süresi dolunca kullanılabilir bakiyenize geçer ve IBAN&apos;ınıza ödenir.</Note>
+          <Note>Ücretli Pi Koç paketindeki öğretmenler aramada öne çıkar; PDF&apos;ten deneme aktarımı, konu analizi ve kendi adınızla otomatik haftalık veli raporu açılır.</Note>
         </Feature>
         <Gallery
           items={[
-            { shot: shot("14-takvim", "Müsaitlik takvimi", "Müsaitlik takvimi", 1440, 1100), caption: "Müsaitlik: haftalık şablon, izin günleri ve ek saatler; dersler arası tampon süre." },
-            { shot: shot("15-fiyatlar", "Dersler ve fiyatlar", "Dersler ve fiyatlar", 1440, 1100), caption: "Dersler ve fiyatlar: kademe ve derse göre ücret, ücretsiz tanışma görüşmesi, paket indirimleri." },
-            { shot: shot("17-kazanclar", "Kazançlarım", "Kazançlar", 1440, 1000), caption: "Kazançlarım: bekleyen, kullanılabilir ve ödenen tutarlar, hareketler ve ödeme bilgileri." },
+            { shot: shot("18-pikoc-ogrenci", "Pi Koç · öğrenci", "Pi Koç öğrenci sayfası", 1440, 1000), caption: "Pi Koç: talepten gelen öğrencinin programı, ödevleri, soru ve deneme takibi, veli raporu." },
+            { shot: shot("14-takvim", "Müsaitlik takvimi", "Müsaitlik takvimi", 1440, 1100), caption: "Müsaitlik: haftalık uygun saatleriniz; veliler aramada saate göre süzer." },
+            { shot: shot("15-fiyatlar", "Dersler ve fiyatlar", "Dersler ve fiyatlar", 1440, 900), caption: "Dersler ve fiyatlar: kademe ve derse göre saatlik ücretiniz; profilde bilgi olarak görünür." },
           ]}
         />
-        <div className="mt-8">
+        <div className="mt-8 flex flex-wrap gap-3">
           <Link href="/ogretmen-ol" className={buttonClasses("ink", "lg")}>
             Öğretmen olarak başvurun
+          </Link>
+          <Link href="/pi-koc" className={buttonClasses("outline", "lg")}>
+            Pi Koç&apos;u inceleyin
           </Link>
         </div>
       </GuideSection>
@@ -333,8 +300,8 @@ export default async function PrivateLessonGuidePage() {
       <section className="bg-ink-900 py-16 text-ink-50">
         <div className="mx-auto grid max-w-6xl gap-4 px-4">
           <p className="text-xs font-bold tracking-[0.12em] text-gold-400 uppercase">Pi Kampüs · Özel ders</p>
-          <h2 className="max-w-[20ch] text-3xl font-extrabold sm:text-4xl">Doğru öğretmen bir tık uzağınızda.</h2>
-          <p className="max-w-3xl text-lg text-ink-200">Öğretmenleri inceleyin, ücretsiz tanışın, ilk dersinizi bugün planlayın.</p>
+          <h2 className="max-w-[20ch] text-3xl font-extrabold sm:text-4xl">Doğru öğretmen bir talep uzağınızda.</h2>
+          <p className="max-w-3xl text-lg text-ink-200">Öğretmenleri inceleyin, ücretsiz ders talebi gönderin; kabul eden öğretmen sizi arasın.</p>
           <div className="mt-2 flex flex-wrap gap-3">
             <Link href="/ogretmenler" className={buttonClasses("primary", "lg")}>
               Öğretmen bul

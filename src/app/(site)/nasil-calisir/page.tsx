@@ -17,7 +17,7 @@ const CARDS = [
     Icon: GraduationCap,
     title: "Özel ders",
     audience: "Veliler, öğrenciler ve öğretmenler için",
-    text: "Öğretmen bulma, tanışma görüşmesi, randevu ve güvenli ödeme, sanal sınıf ve grup dersleri.",
+    text: "Öğretmen bulma, ücretsiz ders talebi, öğretmenin sizi araması ve Pi Koç ile program, ödev ve deneme takibi.",
     image: { src: "/tanitim/ozel-ders/01-ana-sayfa.jpg", width: 1440, height: 900 },
     tone: "bg-brand-50 text-brand-700",
   },

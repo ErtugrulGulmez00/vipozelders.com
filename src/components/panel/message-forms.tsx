@@ -14,7 +14,7 @@ export function MessageForm({ threadId }: { threadId: string }) {
       <input type="hidden" name="threadId" value={threadId} />
       <Textarea name="body" rows={3} maxLength={2000} required placeholder="Mesajınızı yazın…" aria-label="Mesaj" />
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs text-slate-500">Güvenliğiniz için telefon, e-posta ve adres bilgileri paylaşılamaz; dersler ve ödemeler site üzerinden yapılır.</p>
+        <p className="text-xs text-slate-500">Güvenliğiniz için mesajda telefon, e-posta ve adres paylaşılamaz; telefon numarası ders talebi kabul edilince paylaşılır.</p>
         <SubmitButton size="sm" pendingText="Gönderiliyor…">
           Gönder
         </SubmitButton>

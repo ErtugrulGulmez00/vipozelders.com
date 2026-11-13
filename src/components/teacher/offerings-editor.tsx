@@ -25,7 +25,8 @@ export type OfferingRow = {
 const DURATIONS = [45, 60];
 
 function Earnings({ priceTl, commissionBps }: { priceTl: number; commissionBps: number }) {
-  if (!priceTl || priceTl <= 0) return null;
+  // Komisyon yoksa (ödemeye aracılık edilmiyor) hesap kutusu gösterilmez
+  if (!priceTl || priceTl <= 0 || commissionBps <= 0) return null;
   const gross = Math.round(priceTl * 100);
   const net = gross - Math.round((gross * commissionBps) / 10000);
   return (

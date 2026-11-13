@@ -20,12 +20,15 @@ export function FilterPanel({
   districts,
   values,
   timeOptions,
+  bookingOpen = true,
 }: {
   catalog: Catalog;
   cities: { slug: string; name: string }[];
   districts: { slug: string; name: string }[];
   values: FilterValues;
   timeOptions: readonly Option[];
+  /** Randevu kapalıyken tanışma ve soru çözümü süzgeçleri gösterilmez */
+  bookingOpen?: boolean;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [open, setOpen] = useState(false);
@@ -177,8 +180,12 @@ export function FilterPanel({
           </Select>
         </div>
         <Checkbox name="verified" value="1" defaultChecked={values.verified === "1"} label="Yalnızca onaylı öğretmenler" />
-        <Checkbox name="intro" value="1" defaultChecked={values.intro === "1"} label="Ücretsiz tanışma görüşmesi sunanlar" />
-        <Checkbox name="soruCozum" value="1" defaultChecked={values.soruCozum === "1"} label="Dersle birlikte ücretsiz soru çözümü verenler" />
+        {bookingOpen ? (
+          <>
+            <Checkbox name="intro" value="1" defaultChecked={values.intro === "1"} label="Ücretsiz tanışma görüşmesi sunanlar" />
+            <Checkbox name="soruCozum" value="1" defaultChecked={values.soruCozum === "1"} label="Dersle birlikte ücretsiz soru çözümü verenler" />
+          </>
+        ) : null}
         <noscript>
           <button type="submit" className="w-full rounded-xl bg-brand-600 py-2 text-sm font-semibold text-white">
             Filtrele

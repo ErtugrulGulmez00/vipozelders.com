@@ -17,8 +17,8 @@ const GATES: Record<LoginGate, { eyebrow: string; title: ReactNode; points: { Ic
     ),
     points: [
       { Icon: ShieldCheck, text: "Belgeleri incelenmiş, onaylı öğretmenler" },
-      { Icon: Video, text: "Program indirmeden, sitedeki sanal sınıfta ders" },
-      { Icon: Star, text: "Gerçek öğrencilerin yorumları ve iade güvencesi" },
+      { Icon: Video, text: "Ücretsiz ders talebi; öğretmen kabul edince sizi arar" },
+      { Icon: Star, text: "Program, ödev ve deneme takibi tek hesapta" },
     ],
     foot: "Veliler, öğrenciler ve öğretmenler buradan girer.",
   },

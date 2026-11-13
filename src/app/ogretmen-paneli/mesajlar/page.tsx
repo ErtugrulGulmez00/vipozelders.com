@@ -11,7 +11,7 @@ export default async function TeacherMessagesPage() {
   const threads = await listThreads(user.id, "teacher");
   return (
     <>
-      <PageHeader title="Mesajlar" description="Velilerin ve öğrencilerin size yazdıkları. Hızlı cevap vermek ders talebine dönüşmeyi artırır. İletişim bilgileri gizlenir; ders ve ödeme site üzerinden yapılmalıdır." />
+      <PageHeader title="Mesajlar" description="Velilerin ve öğrencilerin size yazdıkları. Hızlı cevap vermek ders talebine dönüşmeyi artırır. Mesajda iletişim bilgileri gizlenir; velinin telefonunu ders talebini kabul edince görürsünüz." />
       <ThreadList threads={threads} viewer="teacher" basePath="/ogretmen-paneli/mesajlar" />
     </>
   );

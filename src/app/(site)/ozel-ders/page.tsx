@@ -10,6 +10,7 @@ import {
   GraduationCap,
   MessageSquareQuote,
   MonitorPlay,
+  PhoneCall,
   ShieldCheck,
   Target,
   Users,
@@ -55,6 +56,8 @@ function heroTiles(catalog: Catalog) {
 
 export default async function PrivateLessonsPage() {
   const [catalog, settings] = await Promise.all([getCatalog(), getSiteSettings()]);
+  // Randevu/ödeme kapalı: veli ders talebi gönderir, öğretmen arar; ücret aralarında
+  const bookingOpen = settings.lessonBookingEnabled;
   const groups = ["SCHOOL", "EXAM", "OTHER"].map((group) => ({ group, levels: catalog.levels.filter((l) => l.group === group) })).filter((g) => g.levels.length);
 
   return (
@@ -65,7 +68,7 @@ export default async function PrivateLessonsPage() {
           <div className="min-w-0">
             <p className="inline-flex items-start gap-2 rounded-2xl bg-gold-100 px-3.5 py-1.5 text-xs font-bold text-gold-700 sm:items-center sm:rounded-full sm:text-sm">
               <BadgeCheck className="mt-px size-4 shrink-0 sm:mt-0" aria-hidden />
-              <span>Onaylı öğretmenler · Güvenli ödeme · Ders olmazsa iade</span>
+              <span>{bookingOpen ? "Onaylı öğretmenler · Güvenli ödeme · Ders olmazsa iade" : "Onaylı öğretmenler · Ücretsiz ders talebi · Aracı komisyon yok"}</span>
             </p>
             <h1 className="mt-6 text-5xl font-extrabold leading-[0.98] tracking-tight text-ink-900 sm:text-6xl lg:text-7xl">
               Doğru öğretmen,
@@ -124,7 +127,7 @@ export default async function PrivateLessonsPage() {
             })}
           </div>
           <div className="mt-4">
-            {settings.groupsEnabled ? (
+            {bookingOpen && settings.groupsEnabled ? (
               <Link href="/grup-dersleri" className="group flex flex-col justify-between gap-4 rounded-[1.75rem] bg-ink-900 p-6 text-white sm:flex-row sm:items-center">
                 <span className="flex gap-4">
                   <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-gold-400">
@@ -175,7 +178,7 @@ export default async function PrivateLessonsPage() {
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h2 className="text-3xl font-extrabold tracking-tight text-ink-900 sm:text-4xl">Öne çıkan öğretmenler</h2>
-            <p className="mt-2 text-ink-600">Profilini, fiyatını ve boş saatlerini inceleyip hemen randevu alabileceğiniz öğretmenler.</p>
+            <p className="mt-2 text-ink-600">{bookingOpen ? "Profilini, fiyatını ve boş saatlerini inceleyip hemen randevu alabileceğiniz öğretmenler." : "Profilini ve fiyatını inceleyip ücretsiz ders talebi gönderebileceğiniz öğretmenler."}</p>
           </div>
           <LinkButton href="/ogretmenler" variant="outline">
             Tüm öğretmenler
@@ -192,12 +195,20 @@ export default async function PrivateLessonsPage() {
           <div>
             <h2 className="text-3xl font-extrabold tracking-tight text-ink-900 sm:text-4xl">4 adımda derstesiniz</h2>
             <ol className="mt-6 grid gap-3 sm:grid-cols-2">
-              {[
-                { icon: BookOpenCheck, tone: "bg-brand-600 text-white", title: "Öğretmenini seç", text: "Kademe, ders, fiyat ve yorumlara göre karşılaştır." },
-                { icon: CalendarCheck, tone: "bg-gold-400 text-ink-900", title: "Saati seç, öde", text: "Takvimdeki boş saatlerden birini seç; ödeme güvenle alınır." },
-                { icon: BadgeCheck, tone: "bg-iris-500 text-white", title: "Öğretmen onaylar", text: `${settings.approvalWindowHours} saat içinde onaylanmazsa ücretin tamamı iade edilir.` },
-                { icon: MonitorPlay, tone: "bg-mint-400 text-ink-950", title: "Derse katıl", text: "Online dersler sitemizdeki sanal sınıfta; kurulum gerekmez." },
-              ].map((step, index) => (
+              {(bookingOpen
+                ? [
+                    { icon: BookOpenCheck, tone: "bg-brand-600 text-white", title: "Öğretmenini seç", text: "Kademe, ders, fiyat ve yorumlara göre karşılaştır." },
+                    { icon: CalendarCheck, tone: "bg-gold-400 text-ink-900", title: "Saati seç, öde", text: "Takvimdeki boş saatlerden birini seç; ödeme güvenle alınır." },
+                    { icon: BadgeCheck, tone: "bg-iris-500 text-white", title: "Öğretmen onaylar", text: `${settings.approvalWindowHours} saat içinde onaylanmazsa ücretin tamamı iade edilir.` },
+                    { icon: MonitorPlay, tone: "bg-mint-400 text-ink-950", title: "Derse katıl", text: "Online dersler sitemizdeki sanal sınıfta; kurulum gerekmez." },
+                  ]
+                : [
+                    { icon: BookOpenCheck, tone: "bg-brand-600 text-white", title: "Öğretmenini seç", text: "Kademe, ders, fiyat ve yorumlara göre karşılaştır." },
+                    { icon: CalendarCheck, tone: "bg-gold-400 text-ink-900", title: "Ders talebi gönder", text: "Sınıfı, dersi ve uygun saatleri yazın. Talep göndermek ücretsizdir." },
+                    { icon: PhoneCall, tone: "bg-iris-500 text-white", title: "Öğretmen sizi arar", text: "Kabul eden öğretmen telefonunuzu görür; saati ve ücreti birlikte konuşursunuz." },
+                    { icon: MonitorPlay, tone: "bg-mint-400 text-ink-950", title: "Takip tek yerde", text: "Program, ödev, deneme sonuçları ve görüntülü ders hesabınızdaki Koçum bölümünde." },
+                  ]
+              ).map((step, index) => (
                 <li key={step.title} className="rounded-3xl bg-white p-5">
                   <span className={cn("inline-flex size-10 items-center justify-center rounded-full font-display text-base font-extrabold", step.tone)} aria-hidden>
                     {index + 1}
@@ -213,8 +224,12 @@ export default async function PrivateLessonsPage() {
         <div className="mt-4 grid gap-4 md:grid-cols-3">
           {[
             { icon: ShieldCheck, title: "Onaylı öğretmenler", text: "Kimlik ve diploma kontrolünden geçen öğretmenler “Onaylı” rozetiyle gösterilir." },
-            { icon: CreditCard, title: "Paranız güvende", text: `Ödeme ders gerçekleşip ${settings.disputeWindowHours} saatlik itiraz süresi dolana kadar öğretmene aktarılmaz.` },
-            { icon: MessageSquareQuote, title: "Gerçek yorumlar", text: "Yalnızca dersini tamamlamış öğrenciler ve veliler değerlendirme yapabilir." },
+            bookingOpen
+              ? { icon: CreditCard, title: "Paranız güvende", text: `Ödeme ders gerçekleşip ${settings.disputeWindowHours} saatlik itiraz süresi dolana kadar öğretmene aktarılmaz.` }
+              : { icon: CreditCard, title: "Aracı komisyon yok", text: "Ücreti öğretmenle doğrudan konuşursunuz; Pi Kampüs araya ücret eklemez." },
+            bookingOpen
+              ? { icon: MessageSquareQuote, title: "Gerçek yorumlar", text: "Yalnızca dersini tamamlamış öğrenciler ve veliler değerlendirme yapabilir." }
+              : { icon: MessageSquareQuote, title: "Numaranız korunur", text: "Telefonunuzu yalnızca talebinizi kabul eden öğretmen görür." },
           ].map((item) => (
             <div key={item.title} className="flex gap-4 rounded-3xl border-2 border-ink-50 bg-white p-5">
               <span className="inline-flex size-11 shrink-0 items-center justify-center rounded-2xl bg-mint-100 text-mint-800">
@@ -261,7 +276,7 @@ export default async function PrivateLessonsPage() {
               <GraduationCap className="size-3.5" aria-hidden /> Öğretmenler için
             </p>
             <h2 className="mt-4 text-3xl font-extrabold tracking-tight">Öğretmen misiniz?</h2>
-            <p className="mt-3 text-white/90">Kendi fiyatınızı ve takviminizi belirleyin, öğrencilere online veya yüz yüze ulaşın.</p>
+            <p className="mt-3 text-white/90">{bookingOpen ? "Kendi fiyatınızı ve takviminizi belirleyin, öğrencilere online veya yüz yüze ulaşın." : "Velilerden ders talebi alın, ücreti kendiniz belirleyip kendiniz alın. Öğrencilerinizi Pi Koç ile 3 öğrenciye kadar ücretsiz takip edin."}</p>
           </div>
           <LinkButton href="/ogretmen-ol" variant="ink" size="lg" className="mt-7 self-start">
             Bize katılın

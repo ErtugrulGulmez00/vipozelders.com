@@ -52,7 +52,7 @@ export default async function TeacherInquiriesPage() {
                   <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl bg-emerald-50 p-3 text-sm text-emerald-900">
                     <span className="mr-auto font-semibold">{q.name}</span>
                     <a href={`tel:${q.phone}`} className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 font-semibold ring-1 ring-emerald-200 hover:bg-emerald-100">
-                      <Phone className="size-4" aria-hidden /> {q.phone}
+                      <Phone className="size-4" aria-hidden /> {q.phone.replace(/^(\d{4})(\d{3})(\d{2})(\d{2})$/, "$1 $2 $3 $4")}
                     </a>
                     {wa ? (
                       <a href={`https://wa.me/${wa}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 rounded-full bg-[#25D366] px-3 py-1.5 font-semibold text-white hover:brightness-95">

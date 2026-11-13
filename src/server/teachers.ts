@@ -3,6 +3,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { coachPlan } from "@/lib/pi-koc";
 import { fullName, normalizeSearch } from "@/lib/text";
 import { db } from "./db";
+import { loadSettings } from "./settings";
 import { weightedRating } from "./pricing";
 import { uploadUrl } from "./storage";
 
@@ -86,6 +87,8 @@ function int(value: string | undefined): number | undefined {
 
 /** Vitrindeki öğretmen arama ve sıralama. */
 export async function searchTeachers(params: TeacherSearchParams) {
+  // Randevu kapalıyken tanışma görüşmesi ve derse ek soru çözümü vitrinde yok
+  const bookingOpen = (await loadSettings()).lessonBookingEnabled;
   const [level, subject, service, city] = await Promise.all([
     params.level ? db.level.findUnique({ where: { slug: params.level } }) : null,
     params.subject ? db.subject.findUnique({ where: { slug: params.subject } }) : null,
@@ -129,8 +132,8 @@ export async function searchTeachers(params: TeacherSearchParams) {
   const minRating = int(params.rating);
   if (minRating) and.push({ ratingAvg: { gte: minRating }, ratingCount: { gt: 0 } });
   if (params.verified === "1") and.push({ verificationStatus: "VERIFIED" });
-  if (params.intro === "1") and.push({ offersIntro: true, offersOnline: true });
-  if (params.soruCozum === "1") and.push({ offersQuestionSession: true });
+  if (bookingOpen && params.intro === "1") and.push({ offersIntro: true, offersOnline: true });
+  if (bookingOpen && params.soruCozum === "1") and.push({ offersQuestionSession: true });
   if (params.time === "hafta-ici-gunduz") and.push({ availabilityRules: { some: { weekday: { lte: 5 }, startMinute: { lt: 17 * 60 } } } });
   if (params.time === "hafta-ici-aksam") and.push({ availabilityRules: { some: { weekday: { lte: 5 }, endMinute: { gt: 17 * 60 } } } });
   if (params.time === "hafta-sonu") and.push({ availabilityRules: { some: { weekday: { gte: 6 } } } });
@@ -163,8 +166,8 @@ export async function searchTeachers(params: TeacherSearchParams) {
     cityName: row.city?.name ?? null,
     offersOnline: row.offersOnline,
     offersInPerson: row.offersInPerson,
-    offersIntro: row.offersIntro && row.offersOnline,
-    offersQuestionSession: row.offersQuestionSession,
+    offersIntro: bookingOpen && row.offersIntro && row.offersOnline,
+    offersQuestionSession: bookingOpen && row.offersQuestionSession,
     isNew: isNewTeacher(row),
     verified: row.verificationStatus === "VERIFIED",
     // Yönetimin seçtiği ya da ücretli Pi Koç paketi olan öğretmen
@@ -198,6 +201,7 @@ export async function searchTeachers(params: TeacherSearchParams) {
     page,
     pageCount,
     resolved: { level, subject, service, city, district },
+    bookingOpen,
   };
 }
 

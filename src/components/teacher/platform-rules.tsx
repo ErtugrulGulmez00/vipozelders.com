@@ -1,12 +1,15 @@
 import { ChevronDown, ShieldAlert } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-/** Öğretmenler için platform kuralı: kişisel bilgi paylaşımı ve öğrenciyi platform dışına yönlendirme yasaktır. */
-export const PLATFORM_RULES_TITLE = "Öğrenciyle kişisel iletişim ve platform dışı anlaşma yasaktır";
+/**
+ * Öğretmen kuralları. Özel derste ödemeye aracılık edilmez: velinin telefonu ders talebi kabul edilince görünür,
+ * ücreti öğretmen veliyle konuşup kendisi alır. Kabulden önce mesajda iletişim bilgisi paylaşılmaz.
+ */
+export const PLATFORM_RULES_TITLE = "Öğretmen kuralları";
 export const PLATFORM_RULES = [
-  "Öğrenciye ya da veliye telefon numarası, e-posta, sosyal medya hesabı, adres veya IBAN gibi kişisel/iletişim bilgisi verilemez ve istenemez.",
-  "Dersler, ödemeler ve yazışmalar yalnızca Pi Kampüs üzerinden yapılır; öğrenciyi platform dışında ders almaya ya da ödeme yapmaya yönlendirmek yasaktır.",
-  "Bu kurallara uymayan öğretmenin hesabı uyarı yapılmadan kalıcı olarak kapatılır (platformdan çıkarılır) ve bekleyen hakedişleri incelemeye alınır.",
+  "Velinin telefon numarası, ders talebini kabul ettiğinizde görünür. Kabulden önce mesajlarda telefon, e-posta, sosyal medya hesabı ya da adres istenemez ve verilemez.",
+  "Ders ücretini veliyle siz konuşur ve kendiniz alırsınız; Pi Kampüs ücrete karışmaz, komisyon almaz. Profilinizdeki fiyatlar veliye bilgi içindir; onlarla tutarlı olun.",
+  "Veliye ve öğrenciye saygılı davranın, profilinizdeki bilgiler doğru olsun. Şikâyet ve kurala aykırılık hâlinde hesabınız uyarı yapılmadan kapatılabilir.",
 ];
 
 /**
@@ -20,7 +23,7 @@ export function PlatformRules({ compact = false, collapsible = false, className 
         <summary className="flex cursor-pointer list-none items-center gap-2 [&::-webkit-details-marker]:hidden">
           <ShieldAlert className="size-4 shrink-0 text-amber-600" aria-hidden />
           <span className="flex-1">
-            <strong>Platform kuralı:</strong> Ders, ödeme ve yazışmalar yalnızca Pi Kampüs üzerinden.
+            <strong>Kurallar:</strong> Telefon, talep kabul edilince paylaşılır; ücreti veliyle siz konuşursunuz.
           </span>
           <ChevronDown className="size-4 shrink-0 transition group-open:rotate-180" aria-hidden />
         </summary>
@@ -37,7 +40,7 @@ export function PlatformRules({ compact = false, collapsible = false, className 
       <p className={cn("flex items-start gap-2 bg-rose-700 px-4 py-2 text-xs text-white", className)}>
         <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
         <span>
-          <strong>Hatırlatma:</strong> Öğrenciye/veliye telefon, e-posta, sosyal medya ya da IBAN vermek ve öğrenciyi platform dışına yönlendirmek yasaktır; tespit edilirse hesabınız kalıcı olarak kapatılır.
+          <strong>Hatırlatma:</strong> Ders sırasında öğrenciden kişisel bilgi istemek ve uygunsuz davranış yasaktır; şikâyet hâlinde hesabınız kalıcı olarak kapatılır.
         </span>
       </p>
     );

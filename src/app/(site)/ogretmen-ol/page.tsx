@@ -1,7 +1,8 @@
-import { BadgeCheck, CalendarClock, PenLine, ShieldCheck, Users, Wallet } from "lucide-react";
+import { BadgeCheck, CalendarClock, Inbox, PenLine, ShieldCheck, Users, Video, Wallet } from "lucide-react";
 import type { Metadata } from "next";
 import { Card } from "@/components/ui/primitives";
 import { formatMoney } from "@/lib/money";
+import { parseCoachTiers } from "@/lib/pi-koc";
 import { parsePayoutDays } from "@/server/pricing";
 import { getCities, getSiteSettings } from "@/server/site";
 import { ApplicationForm } from "./application-form";
@@ -9,7 +10,7 @@ import { ApplicationForm } from "./application-form";
 export const metadata: Metadata = {
   alternates: { canonical: "/ogretmen-ol" },
   title: "Öğretmen olarak katılın",
-  description: "Kendi fiyatınızı ve takviminizi belirleyin; öğrencilere online veya yüz yüze ulaşın. Ödemeniz güvencede.",
+  description: "Velilerden ders talebi alın, ücreti kendiniz belirleyip kendiniz alın. Öğrencilerinizi Pi Koç ile ücretsiz takip edin.",
 };
 
 export default async function BecomeTeacherPage() {
@@ -20,19 +21,40 @@ export default async function BecomeTeacherPage() {
   // Örnek: 60 dakikası 1.000 ₺ olan bir ders
   const examplePrice = 100_000;
   const exampleNet = Math.round(examplePrice * (1 - settings.commissionRateBps / 10_000));
-  const faq = [
+  const bookingOpen = settings.lessonBookingEnabled;
+  const tiers = parseCoachTiers(settings.piKocTiers);
+  const legacyFaq = [
     { q: "Öğrenci bulabilecek miyim?", a: "Veliler sizi kademe, ders ve fiyata göre aramada bulur; profiliniz ne kadar dolu (fotoğraf, tanıtım, uygun saatler) olursa o kadar üstte çıkarsınız. Ayrıca ücretsiz tanışma görüşmesi sunarak ilk öğrencilerinize daha hızlı ulaşırsınız." },
     { q: "Ders vermezsem ücret öder miyim?", a: `Hayır. Üyelik, aylık ücret ya da ilan bedeli yoktur. Hizmet bedeli (%${commission}) yalnızca tamamlanan derslerden kesilir.` },
     { q: "Dersin yanında soru çözümü vermek zorunda mıyım?", a: "Hayır, tamamen size bağlı. Panelinizden açarsanız profilinizde görünür; öğrenciniz dersini tamamladığında ona 30 dakikalık ücretsiz bir soru çözüm dersi açabilirsiniz. Bu ders için ücret ya da kesinti yoktur." },
     { q: "Vergi durumum ne olacak?", a: "Özel ders gelirinizin vergilendirilmesi kendi statünüze bağlıdır (serbest meslek, şahıs şirketi ya da esnaf muafiyeti gibi). Hakedişleriniz adınıza dekontla ödenir; kendi durumunuz için mali müşavirinize danışmanızı öneririz." },
     { q: "Devlet okulunda kadrolu öğretmenim, başvurabilir miyim?", a: "Kadrolu öğretmenlerin ücretli özel ders vermesi mevzuatla sınırlandırılmıştır. Başvuru sırasında statünüzü beyan edersiniz; mevzuatın size izin verdiğinden emin olmanız gerekir." },
   ];
-  const benefits = [
+  // Ödemeye aracılık yok: veli talep gönderir, öğretmen arar ve ücreti kendisi alır; gelir Pi Koç aboneliği
+  const faq = bookingOpen
+    ? legacyFaq
+    : [
+        { q: "Öğrenci bulabilecek miyim?", a: "Veliler sizi kademe, ders ve fiyata göre aramada bulur ve profilinizden ders talebi gönderir. Profiliniz ne kadar dolu (fotoğraf, tanıtım, uygun saatler) olursa o kadar üstte çıkarsınız; ücretli Pi Koç paketindeki öğretmenler aramada öne çıkar." },
+        { q: "Pi Kampüs ders ücretimden pay alıyor mu?", a: "Hayır. Ücreti veliyle siz konuşur, kendiniz alırsınız; komisyon ya da hizmet bedeli kesilmez. Ödediğiniz tek şey, isterseniz Pi Koç paketidir." },
+        { q: "Ne kadar ödemem gerekiyor?", a: `Profil açmak ve ders talebi almak ücretsizdir. Pi Koç ${settings.piKocFreeStudents} öğrenciye kadar ücretsizdir; daha fazla öğrenci ve ek özellikler için paketler aylık ${tiers.map((t) => `${t.students} öğrenci ${t.priceTl.toLocaleString("tr-TR")} ₺`).join(", ")}.` },
+        { q: "Talebi kabul edince ne oluyor?", a: "Velinin telefonu size görünür; arayıp saati ve ücreti konuşursunuz. Öğrenci Pi Koç hesabınıza eklenir, veli program, ödev ve deneme sonuçlarını kendi hesabından görür." },
+        { q: "Vergi durumum ne olacak?", a: "Özel ders gelirinizin vergilendirilmesi kendi statünüze bağlıdır (serbest meslek, şahıs şirketi ya da esnaf muafiyeti gibi). Ücreti doğrudan veliden aldığınız için kendi durumunuz için mali müşavirinize danışmanızı öneririz." },
+        legacyFaq[legacyFaq.length - 1],
+      ];
+  const legacyBenefits = [
     { Icon: Wallet, title: "Kendi fiyatınız", text: `Her ders ve kademe için ücreti siz belirlersiniz. Platform hizmet bedeli yalnızca tamamlanan derslerden %${commission}.` },
     { Icon: CalendarClock, title: "Kendi takviminiz", text: "Haftalık müsait saatlerinizi girin; veliler yalnızca boş saatlerinizden randevu alır, onayı siz verirsiniz." },
     { Icon: PenLine, title: "Site içi sanal sınıf", text: "Kamera, ekran paylaşımı, sohbet ve ortak beyaz tahta. Ek program ya da bağlantı paylaşmak gerekmez." },
     { Icon: ShieldCheck, title: "Ödemeniz güvencede", text: `Veli dersi önceden öder, para bizde güvende bekler. Ders yapıldıktan sonra kazancınız en geç ${settings.settlementDays} gün içinde ödenebilir bakiyenize geçer. ${payoutText}` },
   ];
+  const benefits = bookingOpen
+    ? legacyBenefits
+    : [
+        { Icon: Wallet, title: "Ücret sizin", text: "Ücreti veliyle siz konuşur, kendiniz alırsınız. Pi Kampüs komisyon almaz, ödemenize karışmaz." },
+        { Icon: Inbox, title: "Velilerden ders talebi", text: "Veliler sizi kademe, ders ve fiyata göre bulup talep gönderir. Kabul ettiğiniz velinin telefonunu görürsünüz." },
+        { Icon: PenLine, title: "Pi Koç ile takip", text: "Kabul ettiğiniz öğrenci Pi Koç hesabınıza düşer: program, ödev, soru ve deneme takibi, veli raporu." },
+        { Icon: Video, title: "Görüntülü ders", text: "Pi Koç'ta kamera, ekran paylaşımı ve beyaz tahtayla ders; ek program ya da bağlantı gerekmez." },
+      ];
   const steps = ["Formu doldurun", "Kısa görüşme ve belge kontrolü", "Öğretmen hesabınız açılır", "Profilinizi tamamlayıp ders vermeye başlayın"];
 
   return (
@@ -60,6 +82,7 @@ export default async function BecomeTeacherPage() {
               </Card>
             ))}
           </div>
+          {bookingOpen ? (
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
             <h2 className="font-semibold text-slate-900">Örnek kazanç</h2>
             <dl className="mt-3 space-y-1.5 text-sm text-slate-700">
@@ -78,6 +101,32 @@ export default async function BecomeTeacherPage() {
             </dl>
             <p className="mt-2 text-xs text-slate-500">Haftada 10 ders verirseniz ayda yaklaşık {formatMoney(exampleNet * 40)} kazanırsınız. Ücretinizi kendiniz belirlersiniz.</p>
           </div>
+          ) : (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+              <h2 className="font-semibold text-slate-900">Ne ödersiniz?</h2>
+              <dl className="mt-3 space-y-1.5 text-sm text-slate-700">
+                <div className="flex justify-between gap-3">
+                  <dt>Profil ve ders talepleri</dt>
+                  <dd className="font-semibold text-emerald-700">Ücretsiz</dd>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <dt>Pi Koç, {settings.piKocFreeStudents} öğrenciye kadar</dt>
+                  <dd className="font-semibold text-emerald-700">Ücretsiz</dd>
+                </div>
+                {tiers.map((t) => (
+                  <div key={t.students} className="flex justify-between gap-3">
+                    <dt>Pi Koç, {t.students} öğrenciye kadar</dt>
+                    <dd className="font-semibold">{t.priceTl.toLocaleString("tr-TR")} ₺ / ay</dd>
+                  </div>
+                ))}
+                <div className="flex justify-between gap-3 border-t border-emerald-200 pt-1.5">
+                  <dt>Ders ücretinizden kesinti</dt>
+                  <dd className="font-bold text-emerald-700">Yok</dd>
+                </div>
+              </dl>
+              <p className="mt-2 text-xs text-slate-500">Fiyatlara KDV dahildir. Ücretli paketlerde PDF&apos;ten deneme aktarımı, konu analizi, otomatik veli raporu ve aramada öne çıkma açılır.</p>
+            </div>
+          )}
           <div>
             <h2 className="text-lg font-bold text-slate-900">Süreç nasıl işliyor?</h2>
             <ol className="mt-4 space-y-3">

@@ -1,4 +1,4 @@
-import { CalendarDays, CheckCircle2, Circle, Clock, Inbox, Star, Wallet } from "lucide-react";
+import { CalendarDays, CheckCircle2, Circle, Clock, GraduationCap, Inbox, Star, Wallet } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
@@ -13,6 +13,8 @@ import { formatMoney } from "@/lib/money";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { teacherBalances } from "@/server/ledger";
+import { loadSettings } from "@/server/settings";
+import { pendingInquiryCount } from "@/server/teacher-inquiries";
 import { profileChecklist } from "@/server/teachers";
 import { PlatformRules } from "@/components/teacher/platform-rules";
 
@@ -22,7 +24,7 @@ export default async function TeacherDashboard() {
   const user = await requireRole("TEACHER");
   await connection();
   const now = new Date();
-  const [profile, checklist, balances, pending, upcoming, coachMembership] = await Promise.all([
+  const [profile, checklist, balances, pending, upcoming, coachMembership, inquiries, settings] = await Promise.all([
     db.teacherProfile.findUniqueOrThrow({ where: { userId: user.id } }),
     profileChecklist(user.id),
     teacherBalances(user.id),
@@ -32,8 +34,14 @@ export default async function TeacherDashboard() {
       orderBy: { startAt: "asc" },
       take: 5,
     }),
-    db.centerMember.findFirst({ where: { userId: user.id, isActive: true, center: { kind: "COACH" } }, select: { id: true } }),
+    db.centerMember.findFirst({ where: { userId: user.id, isActive: true, center: { kind: "COACH" } }, select: { centerId: true } }),
+    pendingInquiryCount(user.id),
+    loadSettings(),
   ]);
+  const coachStudents = coachMembership ? await db.centerStudent.count({ where: { centerId: coachMembership.centerId, status: "ACTIVE" } }) : 0;
+  // Randevu/ödeme kapalı: ders talepleri ve Pi Koç öne çıkar; bakiye yalnızca geçmişi olana
+  const bookingOpen = settings.lessonBookingEnabled;
+  const hasBalance = balances.available + balances.pending > 0;
   const status = TEACHER_STATUS[profile.status];
 
   return (
@@ -75,12 +83,32 @@ export default async function TeacherDashboard() {
         </Card>
       ) : null}
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        <StatCard label="Bekleyen talepler" value={pending.length} icon={<Inbox className="size-5" />} />
-        <StatCard label="Yaklaşan dersler" value={upcoming.length} icon={<CalendarDays className="size-5" />} />
+      <div className={`mb-6 grid grid-cols-2 gap-3 sm:gap-4 ${bookingOpen || hasBalance ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
+        {bookingOpen ? (
+          <>
+            <StatCard label="Bekleyen talepler" value={pending.length} icon={<Inbox className="size-5" />} />
+            <StatCard label="Yaklaşan dersler" value={upcoming.length} icon={<CalendarDays className="size-5" />} />
+          </>
+        ) : (
+          <>
+            <StatCard label="Bekleyen ders talepleri" value={inquiries} icon={<Inbox className="size-5" />} />
+            <StatCard label="Pi Koç öğrencileri" value={coachStudents} icon={<GraduationCap className="size-5" />} />
+          </>
+        )}
         <StatCard label="Ortalama puan" value={profile.ratingCount ? profile.ratingAvg.toLocaleString("tr-TR", { maximumFractionDigits: 1 }) : "—"} hint={`${profile.ratingCount} değerlendirme`} icon={<Star className="size-5" />} />
-        <StatCard label="Ödenebilir bakiye" value={formatMoney(balances.available)} hint={`Bekleyen: ${formatMoney(balances.pending)}`} icon={<Wallet className="size-5" />} />
+        {bookingOpen || hasBalance ? (
+          <StatCard label="Ödenebilir bakiye" value={formatMoney(balances.available)} hint={`Bekleyen: ${formatMoney(balances.pending)}`} icon={<Wallet className="size-5" />} />
+        ) : null}
       </div>
+
+      {inquiries ? (
+        <Alert tone="warning" title={`${inquiries} ders talebi yanıt bekliyor`} className="mb-6">
+          <p>Veliler profilinizden size ulaştı. Kabul ederseniz telefonları görünür ve öğrenci Pi Koç&apos;unuza eklenir.</p>
+          <Link href="/ogretmen-paneli/ders-talepleri" className="mt-2 inline-block font-semibold underline">
+            Ders taleplerine git
+          </Link>
+        </Alert>
+      ) : null}
 
       {pending.length ? (
         <Alert tone="warning" title="Yanıt bekleyen ders talepleriniz var" className="mb-6">
@@ -100,7 +128,7 @@ export default async function TeacherDashboard() {
           <CardBody className="flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
               <p className="font-semibold text-slate-900">Kendi öğrencilerinizi Pi Koç ile takip edin</p>
-              <p className="text-sm text-slate-600">Görüşme, program, soru ve deneme takibi grafiklerle; aynı hesapla, ücretsiz deneme.</p>
+              <p className="text-sm text-slate-600">Program, ödev, soru ve deneme takibi, görüntülü ders ve veli raporu. Aynı hesapla, 3 öğrenciye kadar ücretsiz.</p>
             </div>
             <div className="flex gap-2">
               <LinkButton href="/pi-koc" variant="ghost" size="sm">
@@ -114,6 +142,7 @@ export default async function TeacherDashboard() {
         </Card>
       )}
 
+      {!bookingOpen && !upcoming.length ? null : (
       <Card>
         <CardHeader title="Yaklaşan dersler" action={<Link href="/ogretmen-paneli/dersler" className="text-sm font-semibold text-brand-700 hover:underline">Tümü</Link>} />
         <CardBody className="space-y-3">
@@ -124,6 +153,7 @@ export default async function TeacherDashboard() {
           )}
         </CardBody>
       </Card>
+      )}
     </>
   );
 }

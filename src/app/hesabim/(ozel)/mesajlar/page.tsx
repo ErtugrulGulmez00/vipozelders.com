@@ -11,7 +11,7 @@ export default async function StudentMessagesPage() {
   const threads = await listThreads(user.id, "student");
   return (
     <>
-      <PageHeader title="Mesajlar" description="Öğretmenlerle yazışmalarınız. Güvenliğiniz için iletişim bilgileri gizlenir; dersler ve ödemeler site üzerinden yapılır." />
+      <PageHeader title="Mesajlar" description="Öğretmenlerle yazışmalarınız. Güvenliğiniz için iletişim bilgileri gizlenir; öğretmen ders talebinizi kabul edince telefonunuzu görür." />
       <ThreadList threads={threads} viewer="student" basePath="/hesabim/mesajlar" />
     </>
   );

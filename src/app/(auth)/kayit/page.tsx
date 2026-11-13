@@ -18,7 +18,7 @@ export default function RegisterPage() {
         <ArrowRight className="size-4 shrink-0" aria-hidden />
       </Link>
       <h1 className="text-2xl font-bold text-slate-900">Ücretsiz kayıt olun</h1>
-      <p className="mt-1 text-sm text-slate-500">Randevu almak, ödeme yapmak ve derslerinizi takip etmek için bir hesap oluşturun.</p>
+      <p className="mt-1 text-sm text-slate-500">Öğretmenlere ders talebi göndermek, mesajlaşmak ve çocuğunuzun programını, ödevlerini ve deneme sonuçlarını takip etmek için ücretsiz bir hesap oluşturun.</p>
       <div className="mt-6">
         <Suspense fallback={<Skeleton className="h-96" />}>
           <RegisterForm />

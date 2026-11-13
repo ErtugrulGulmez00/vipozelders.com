@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: PageProps<"/ozel-ders/[...slu
   return {
     alternates: { canonical: `/ozel-ders/${slug.slice(0, 2).join("/")}` },
     title: `${name} özel ders öğretmenleri`,
-    description: `${name} için online ve yüz yüze özel ders ve koçluk veren öğretmenleri karşılaştırın; puan ve yorumlara bakarak hemen randevu alın.`,
+    description: `${name} için online ve yüz yüze özel ders ve koçluk veren öğretmenleri karşılaştırın; puan ve yorumlara bakıp ücretsiz ders talebi gönderin.`,
   };
 }
 

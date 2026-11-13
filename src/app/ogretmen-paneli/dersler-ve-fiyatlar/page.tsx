@@ -26,24 +26,33 @@ export default async function OfferingsPage() {
     loadSettings(),
     db.groupCourse.findMany({ where: { teacherId: user.id, status: { in: ["OPEN", "CONFIRMED"] } }, orderBy: { enrollDeadline: "asc" }, select: { id: true, title: true, status: true } }),
   ]);
+  const bookingOpen = settings.lessonBookingEnabled;
   return (
     <>
       <SectionTabs tabs={TEACHER_PROFILE_TABS} active="/ogretmen-paneli/dersler-ve-fiyatlar" />
       <PageHeader title="Dersler ve fiyatlar" description="Verdiğiniz her kademe, ders ve hizmet için ayrı saatlik ücret belirleyebilirsiniz." />
-      <Alert tone="info" className="mb-6">
-        Girdiğiniz ücret velinin ödeyeceği, KDV dahil saatlik tutardır. Platform hizmet bedeli {formatBps(data.commissionBps)}; kalan tutar ders tamamlandıktan sonra hakedişinize eklenir. Süreye göre ücret otomatik hesaplanır (ör. 90 dk = 1,5 saat).
-      </Alert>
-      <Card className="mb-6">
-        <CardBody>
-          <IntroToggle on={profile.offersIntro} />
-        </CardBody>
-      </Card>
+      {bookingOpen ? (
+        <>
+          <Alert tone="info" className="mb-6">
+            Girdiğiniz ücret velinin ödeyeceği, KDV dahil saatlik tutardır. Platform hizmet bedeli {formatBps(data.commissionBps)}; kalan tutar ders tamamlandıktan sonra hakedişinize eklenir. Süreye göre ücret otomatik hesaplanır (ör. 90 dk = 1,5 saat).
+          </Alert>
+          <Card className="mb-6">
+            <CardBody>
+              <IntroToggle on={profile.offersIntro} />
+            </CardBody>
+          </Card>
+        </>
+      ) : (
+        <Alert tone="info" className="mb-6">
+          Fiyatlar profilinizde veliye bilgi olarak görünür ve aramada süzgeç olarak kullanılır. Ücreti veliyle siz konuşur, kendiniz alırsınız; Pi Kampüs ücretinize karışmaz ve komisyon almaz.
+        </Alert>
+      )}
       <Card>
         <CardBody className="p-6">
-          <OfferingsEditor teacherId={user.id} catalog={catalog} offerings={data.offerings} commissionBps={data.commissionBps} />
+          <OfferingsEditor teacherId={user.id} catalog={catalog} offerings={data.offerings} commissionBps={bookingOpen ? data.commissionBps : 0} />
         </CardBody>
       </Card>
-      {settings.groupsEnabled || groups.length ? (
+      {(bookingOpen && settings.groupsEnabled) || groups.length ? (
         <Card className="mt-6">
           <CardHeader
             title="Grup dersleri"
@@ -68,7 +77,7 @@ export default async function OfferingsPage() {
           ) : null}
         </Card>
       ) : null}
-      {settings.packagesEnabled ? (
+      {bookingOpen && settings.packagesEnabled ? (
         <Card className="mt-6">
           <CardHeader title="Paket indirimleri" description="Veliler birden fazla dersi peşin ve indirimli alabilir; dersleri sizin takviminizden seçer. İndirim sizin ücretinizden yapılır; düzenli öğrenci kazanmanın en kolay yolu." />
           <CardBody>

@@ -64,7 +64,7 @@ export async function TeacherListing({
   return (
     <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
       <aside className="lg:sticky lg:top-20 lg:self-start">
-        <FilterPanel catalog={catalog} cities={cities} districts={districts} values={params} timeOptions={TIME_OPTIONS} />
+        <FilterPanel catalog={catalog} cities={cities} districts={districts} values={params} timeOptions={TIME_OPTIONS} bookingOpen={result.bookingOpen} />
       </aside>
       <section>
         <div className="mb-5 flex flex-wrap items-end justify-between gap-3">

@@ -189,7 +189,7 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
           {teacher.offersInPerson ? (
             <p className="mt-4 flex items-start gap-2 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">
               <Home className="mt-0.5 size-4 shrink-0" aria-hidden />
-              Yüz yüze dersler {[teacher.inPersonAtStudentHome && "öğrencinin adresinde", teacher.inPersonAtTeacherPlace && "öğretmenin belirlediği yerde"].filter(Boolean).join(" veya ")} yapılır. Adres bilgisi yalnızca ders onaylandıktan sonra paylaşılır.
+              Yüz yüze dersler {[teacher.inPersonAtStudentHome && "öğrencinin adresinde", teacher.inPersonAtTeacherPlace && "öğretmenin belirlediği yerde"].filter(Boolean).join(" veya ")} yapılır.{bookingOpen ? " Adres bilgisi yalnızca ders onaylandıktan sonra paylaşılır." : " Adresi öğretmen talebinizi kabul edince birlikte konuşursunuz."}
             </p>
           ) : null}
         </Card>
