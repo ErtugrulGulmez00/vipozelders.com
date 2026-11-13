@@ -81,6 +81,25 @@ describe("görüşme kaydı ve sınır (veritabanı)", () => {
     expect(m.endedAt!.getTime() - m.startedAt.getTime()).toBe(min(40));
   });
 
+  it("ücretsizde sayfa yenilemek ya da kısa ara vermek görüşme süresini sıfırlamaz", async () => {
+    const { center, student, room } = await coachWithStudent(false);
+    const now = new Date();
+    // 30 dk önce başladı, ikisi de 5 dk önce çıktı (sayfa yenileme / kopma)
+    await handleCoachRoomEvent(room, "koc-kullanici", "participant_joined", new Date(now.getTime() - min(30)));
+    await handleCoachRoomEvent(room, "ogrenci-kullanici", "participant_joined", new Date(now.getTime() - min(29)));
+    await handleCoachRoomEvent(room, "ogrenci-kullanici", "participant_left", new Date(now.getTime() - min(6)));
+    await handleCoachRoomEvent(room, "koc-kullanici", "participant_left", new Date(now.getTime() - min(5)));
+    // Kalan süre görüşmenin başından sayılır: 40 - 30 = 10 dk
+    expect(await coachMeetingAllowance(student.id, now)).toMatchObject({ ok: true, minutes: 10 });
+    // Yeniden giriş yeni görüşme açmaz, aynısı devam eder
+    await handleCoachRoomEvent(room, "koc-kullanici", "participant_joined", now);
+    const meetings = await db.coachMeeting.findMany({ where: { centerId: center.id } });
+    expect(meetings).toHaveLength(1);
+    expect(meetings[0].endedAt).toBeNull();
+    // Süre dolunca girilemez
+    expect(await coachMeetingAllowance(student.id, new Date(now.getTime() + min(11)))).toMatchObject({ ok: false });
+  });
+
   it("ücretsizde aylık 12 saat dolunca görüşmeye girilemez; ücretlide girilir", async () => {
     const free = await coachWithStudent(false);
     const paid = await coachWithStudent(true);

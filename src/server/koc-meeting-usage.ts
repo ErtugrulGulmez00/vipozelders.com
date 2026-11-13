@@ -11,6 +11,20 @@ import { closeClassroom } from "./video";
 const STUDENT_ROOM = /^koc-(.+)$/;
 /** Olayı gelmeyen (kopan) görüşme en fazla bu kadar sayılır, sonra kapatılır */
 const STALE_MINUTES = 180;
+/**
+ * Bu süreden kısa ara verilip yeniden girilen görüşme aynı görüşme sayılır: sayfa yenilemek ya da ikisinin birden çıkıp
+ * girmesi ücretsiz paketin görüşme başına süresini sıfırlamaz.
+ */
+export const MEETING_RESUME_MINUTES = 10;
+
+/** Odada süren ya da kısa süre önce biten (devam ettirilebilecek) görüşme. */
+async function resumableMeeting(roomName: string, now: Date) {
+  return db.coachMeeting.findFirst({
+    where: { roomName, OR: [{ endedAt: null }, { endedAt: { gt: new Date(now.getTime() - MEETING_RESUME_MINUTES * 60_000) } }] },
+    orderBy: { startedAt: "desc" },
+    select: { id: true, startedAt: true, endedAt: true, free: true },
+  });
+}
 
 /** İstanbul saatine göre ayın ilk anı. */
 export function monthStartOf(now: Date): Date {
@@ -47,8 +61,16 @@ export async function coachMeetingStatus(centerId: string, now = new Date()): Pr
 export async function coachMeetingAllowance(studentId: string, now = new Date()): Promise<MeetingAllowance> {
   const student = await db.centerStudent.findUnique({ where: { id: studentId }, select: { centerId: true } });
   if (!student) return { ok: false, reason: "Görüşme odası bulunamadı." };
-  const { policy, usedMinutes } = await coachMeetingStatus(student.centerId, now);
-  return meetingAllowance(policy, usedMinutes);
+  const [{ policy, usedMinutes }, current] = await Promise.all([coachMeetingStatus(student.centerId, now), resumableMeeting(`koc-${studentId}`, now)]);
+  const allowance = meetingAllowance(policy, usedMinutes);
+  // Ücretsiz pakette görüşme başına süre, görüşmenin başladığı andan sayılır (yeniden girişte sıfırlanmaz)
+  if (!allowance.ok || !current?.free) return allowance;
+  const perMeeting = policy.maxMeetingMinutes ?? (await loadSettings()).piKocFreeMeetingMinutes;
+  const left = Math.floor(perMeeting - (now.getTime() - current.startedAt.getTime()) / 60_000);
+  if (left < 1) {
+    return { ok: false, reason: `Bu görüşmenin ücretsiz paketteki süresi (${perMeeting} dk) doldu. ${MEETING_RESUME_MINUTES} dakika sonra yeni görüşme başlatabilir ya da ücretli pakete geçerek süre sınırını kaldırabilirsiniz.` };
+  }
+  return { ...allowance, minutes: Math.min(allowance.minutes, left) };
 }
 
 /** LiveKit katılım olayı (koc-<öğrenci> odası). Veli izleyici sayılmaz. */
@@ -60,6 +82,14 @@ export async function handleCoachRoomEvent(roomName: string, identity: string, e
     await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtext(${`koc-meeting:${roomName}`}))`;
     const open = await tx.coachMeeting.findFirst({ where: { roomName, endedAt: null }, orderBy: { startedAt: "desc" } });
     if (event === "participant_joined") {
+      // Kısa ara sonrası yeniden giriş: biten görüşme devam ettirilir (süre baştan başlamaz)
+      if (!open) {
+        const recent = await tx.coachMeeting.findFirst({ where: { roomName, endedAt: { gt: new Date(now.getTime() - MEETING_RESUME_MINUTES * 60_000) } }, orderBy: { startedAt: "desc" } });
+        if (recent) {
+          await tx.coachMeeting.update({ where: { id: recent.id }, data: { endedAt: null, activeCount: 1 } });
+          return;
+        }
+      }
       if (open) {
         await tx.coachMeeting.update({ where: { id: open.id }, data: { activeCount: { increment: 1 }, peakCount: Math.max(open.peakCount, open.activeCount + 1) } });
         return;
