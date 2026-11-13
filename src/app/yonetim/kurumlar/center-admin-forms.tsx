@@ -124,12 +124,16 @@ export function CreateCenterForm({ cities, trialDays, prefill = {} }: { cities: 
 
 const toInputDate = (iso: string | null) => (iso ? iso.slice(0, 10) : "");
 
-export function CenterAdminForm({ center }: { center: { id: string; name: string; kind: string; plan: string; status: string; studentLimit: number; trialEndsAt: string | null; paidUntil: string | null } }) {
+type CoachTierOption = { students: number; name: string; priceTl: number };
+
+/** coachTiers verilirse (Pi Koç hesabı) kurum kademesi yerine Pi Koç paketi seçilir. */
+export function CenterAdminForm({ center, coachTiers }: { center: { id: string; name: string; kind: string; plan: string; status: string; studentLimit: number; trialEndsAt: string | null; paidUntil: string | null }; coachTiers?: CoachTierOption[] }) {
+  const coach = Boolean(coachTiers);
   return (
     <ActionForm action={updateCenterAdminAction} className="space-y-3">
       <input type="hidden" name="centerId" value={center.id} />
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Kurum adı" className="sm:col-span-2">
+        <Field label={coach ? "Hesap adı" : "Kurum adı"} className="sm:col-span-2">
           <Input name="name" defaultValue={center.name} required />
         </Field>
         <Field label="Tür">
@@ -150,21 +154,43 @@ export function CenterAdminForm({ center }: { center: { id: string; name: string
             ))}
           </Select>
         </Field>
-        <Field label="Öğrenci kademesi">
-          <Select name="plan" defaultValue={center.plan}>
-            {Object.entries(CENTER_PLAN_LABEL).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field label="Öğrenci sınırı">
-          <Input name="studentLimit" type="number" min={1} defaultValue={center.studentLimit} />
-        </Field>
-        <Field label="Deneme bitişi">
-          <DateInput name="trialEndsAt" defaultValue={toInputDate(center.trialEndsAt)} />
-        </Field>
+        {coachTiers ? (
+          <>
+            <input type="hidden" name="plan" value={center.plan} />
+            <Field label="Ücretli paket" hint="Abonelik süresi içindeyken geçerlidir; süre bitince ücretsiz pakete döner." className="sm:col-span-2">
+              <Select name="studentLimit" defaultValue={String(center.studentLimit)}>
+                {coachTiers.some((t) => t.students === center.studentLimit) ? null : <option value={center.studentLimit}>{center.studentLimit} öğrenci (özel)</option>}
+                {coachTiers.map((t) => (
+                  <option key={t.students} value={t.students}>
+                    {t.name} · {t.students} öğrenci · {t.priceTl.toLocaleString("tr-TR")} ₺/ay
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          </>
+        ) : (
+          <>
+            <Field label="Öğrenci kademesi">
+              <Select name="plan" defaultValue={center.plan}>
+                {Object.entries(CENTER_PLAN_LABEL).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+            <Field label="Öğrenci sınırı">
+              <Input name="studentLimit" type="number" min={1} defaultValue={center.studentLimit} />
+            </Field>
+          </>
+        )}
+        {coach && !center.trialEndsAt ? (
+          <input type="hidden" name="trialEndsAt" value="" />
+        ) : (
+          <Field label="Deneme bitişi">
+            <DateInput name="trialEndsAt" defaultValue={toInputDate(center.trialEndsAt)} />
+          </Field>
+        )}
         <Field label="Abonelik bitişi">
           <DateInput name="paidUntil" defaultValue={toInputDate(center.paidUntil)} />
         </Field>
@@ -174,7 +200,7 @@ export function CenterAdminForm({ center }: { center: { id: string; name: string
   );
 }
 
-export function SubscriptionPaymentForm({ centerId, plan, monthlyPrice }: { centerId: string; plan: string; monthlyPrice: number | null }) {
+export function SubscriptionPaymentForm({ centerId, plan, monthlyPrice, coachTiers, coachStudents }: { centerId: string; plan: string; monthlyPrice: number | null; coachTiers?: CoachTierOption[]; coachStudents?: number }) {
   return (
     <ActionForm action={recordSubscriptionPaymentAction} resetOnSuccess className="space-y-3">
       <input type="hidden" name="centerId" value={centerId} />
@@ -193,15 +219,27 @@ export function SubscriptionPaymentForm({ centerId, plan, monthlyPrice }: { cent
             <option>Nakit</option>
           </Select>
         </Field>
-        <Field label="Öğrenci kademesi">
-          <Select name="plan" defaultValue={plan}>
-            {Object.entries(CENTER_PLAN_LABEL).map(([value, label]) => (
-              <option key={value} value={value}>
-                {label}
-              </option>
-            ))}
-          </Select>
-        </Field>
+        {coachTiers ? (
+          <Field label="Pi Koç paketi">
+            <Select name="coachStudents" defaultValue={String(coachStudents ?? coachTiers[0]?.students ?? "")}>
+              {coachTiers.map((t) => (
+                <option key={t.students} value={t.students}>
+                  {t.name} · {t.students} öğrenci · {t.priceTl.toLocaleString("tr-TR")} ₺/ay
+                </option>
+              ))}
+            </Select>
+          </Field>
+        ) : (
+          <Field label="Öğrenci kademesi">
+            <Select name="plan" defaultValue={plan}>
+              {Object.entries(CENTER_PLAN_LABEL).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
         <Field label="Dekont / açıklama" className="sm:col-span-2">
           <Input name="reference" placeholder="Dekont no, banka" />
         </Field>
@@ -239,20 +277,21 @@ export function AddOwnerForm({ centerId }: { centerId: string }) {
   );
 }
 
-export function DeleteCenterForm({ centerId, name, students }: { centerId: string; name: string; students: number }) {
+export function DeleteCenterForm({ centerId, name, students, coach = false }: { centerId: string; name: string; students: number; coach?: boolean }) {
   return (
     <ActionForm action={deleteCenterAction} className="space-y-3">
       <input type="hidden" name="centerId" value={centerId} />
       <p className="text-sm text-slate-600">
-        Kurum; {students} öğrenci kaydı, veli kayıtları, yoklama, deneme, ödeme ve mesaj geçmişiyle birlikte kalıcı olarak silinir, geri alınamaz. Yalnızca bu kurum için açılmış
-        personel hesapları da silinir; veli ve öğrencilerin sitedeki kendi hesapları kalır.
+        {coach
+          ? `Pi Koç hesabı; ${students} öğrenci kaydı, program, deneme, görüşme ve rapor geçmişiyle birlikte kalıcı olarak silinir, geri alınamaz. Koçun ve velilerin sitedeki kendi hesapları kalır.`
+          : `Kurum; ${students} öğrenci kaydı, veli kayıtları, yoklama, deneme, ödeme ve mesaj geçmişiyle birlikte kalıcı olarak silinir, geri alınamaz. Yalnızca bu kurum için açılmış personel hesapları da silinir; veli ve öğrencilerin sitedeki kendi hesapları kalır.`}
       </p>
-      <Field label={`Onaylamak için kurum adını yazın: ${name}`}>
+      <Field label={`Onaylamak için ${coach ? "hesap" : "kurum"} adını yazın: ${name}`}>
         <Input name="confirmName" required autoComplete="off" />
         <FieldError name="confirmName" />
       </Field>
-      <SubmitButton size="sm" variant="danger" confirmMessage="Kurum kalıcı olarak silinsin mi? Bu işlem geri alınamaz." pendingText="Siliniyor…">
-        Kurumu kalıcı olarak sil
+      <SubmitButton size="sm" variant="danger" confirmMessage={coach ? "Pi Koç hesabı kalıcı olarak silinsin mi? Bu işlem geri alınamaz." : "Kurum kalıcı olarak silinsin mi? Bu işlem geri alınamaz."} pendingText="Siliniyor…">
+        {coach ? "Pi Koç hesabını kalıcı olarak sil" : "Kurumu kalıcı olarak sil"}
       </SubmitButton>
     </ActionForm>
   );

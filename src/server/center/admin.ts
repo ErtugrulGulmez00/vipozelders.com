@@ -129,7 +129,7 @@ export async function adminDeleteCenter(adminId: string, centerId: string, confi
 }
 
 /** Havale/EFT ile gelen abonelik ödemesini kaydeder; süre uzar, kurum aktif olur. */
-export async function adminRecordSubscriptionPayment(adminId: string, centerId: string, input: { amount: number; months: number; method: string; reference: string | null; plan: CenterPlanName | null }) {
+export async function adminRecordSubscriptionPayment(adminId: string, centerId: string, input: { amount: number; months: number; method: string; reference: string | null; plan: CenterPlanName | null; coachStudents?: number | null }) {
   const center = await db.center.findUnique({ where: { id: centerId } });
   if (!center) throw new CenterError("Kurum bulunamadı.");
   if (input.months < 1 || input.months > 36) throw new CenterError("Süre 1-36 ay olmalı.");
@@ -141,10 +141,23 @@ export async function adminRecordSubscriptionPayment(adminId: string, centerId: 
     db.centerSubscriptionPayment.create({ data: { centerId, amount: input.amount, months: input.months, periodStart, periodEnd, method: input.method, reference: input.reference, createdById: adminId } }),
     db.center.update({
       where: { id: centerId },
-      data: { status: "ACTIVE", paidUntil: periodEnd, expiryNoticeDays: null, plan, studentLimit: plan === center.plan || center.kind === "COACH" ? center.studentLimit : planStudentLimit(plan, settings, center.studentLimit) },
+      data: {
+        status: "ACTIVE",
+        paidUntil: periodEnd,
+        expiryNoticeDays: null,
+        plan,
+        studentLimit:
+          center.kind === "COACH"
+            ? input.coachStudents && input.coachStudents > 0 && input.coachStudents <= 1000
+              ? input.coachStudents
+              : center.studentLimit
+            : plan === center.plan
+              ? center.studentLimit
+              : planStudentLimit(plan, settings, center.studentLimit),
+      },
     }),
   ]);
-  await notifyCenterManagers(centerId, { type: "center.subscription", title: "Aboneliğiniz uzatıldı", body: `${input.months} aylık ödemeniz kaydedildi. Yeni bitiş: ${periodEnd.toLocaleDateString("tr-TR")}`, link: "/kurum/abonelik" });
+  await notifyCenterManagers(centerId, { type: "center.subscription", title: "Aboneliğiniz uzatıldı", body: `${input.months} aylık ödemeniz kaydedildi. Yeni bitiş: ${periodEnd.toLocaleDateString("tr-TR")}`, link: center.kind === "COACH" ? "/koc/abonelik" : "/kurum/abonelik" });
   await audit({ actorId: adminId, action: "center.subscription_payment", entityType: "Center", entityId: centerId, details: { amount: input.amount, months: input.months } });
   return periodEnd;
 }

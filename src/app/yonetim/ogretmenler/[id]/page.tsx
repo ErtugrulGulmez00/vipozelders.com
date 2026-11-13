@@ -43,6 +43,7 @@ export default async function AdminTeacherPage({ params, searchParams }: PagePro
   const user = await db.user.findUnique({ where: { id }, include: { teacherProfile: true } });
   if (!user?.teacherProfile) notFound();
   const teacher = user.teacherProfile;
+  const coachCenter = await db.centerMember.findFirst({ where: { userId: id, role: "OWNER", center: { kind: "COACH" } }, select: { centerId: true } });
   const [checklist, settings, pendingDocuments, activeGroups, legacyCounts] = await Promise.all([
     profileChecklist(id),
     loadSettings(),
@@ -66,6 +67,11 @@ export default async function AdminTeacherPage({ params, searchParams }: PagePro
         </h1>
         <Badge tone={TEACHER_STATUS[teacher.status].tone}>{TEACHER_STATUS[teacher.status].label}</Badge>
         <Badge tone={VERIFICATION_STATUS[teacher.verificationStatus].tone}>{VERIFICATION_STATUS[teacher.verificationStatus].label}</Badge>
+        {coachCenter ? (
+          <Link href={`/yonetim/kurumlar/${coachCenter.centerId}`} className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline">
+            Pi Koç hesabı
+          </Link>
+        ) : null}
         {teacher.status === "PUBLISHED" ? (
           <Link href={`/ogretmen/${teacher.slug}`} target="_blank" className="inline-flex items-center gap-1 text-sm font-medium text-brand-700 hover:underline">
             Profil sayfası <ExternalLink className="size-3.5" aria-hidden />

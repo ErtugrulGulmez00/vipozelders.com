@@ -1,4 +1,4 @@
-import { BarChart3, MessageCircle, Inbox, PhoneCall, Newspaper, Bell, Bug, Building2, CreditCard, CalendarDays, FileText, FolderTree, GraduationCap, History, LayoutDashboard, Mail, MessageCircleWarning, MessageSquareQuote, Settings, ShieldAlert, ShieldCheck, UserPlus, Users, Wallet } from "lucide-react";
+import { BarChart3, HeartHandshake, MessageCircle, Inbox, PhoneCall, Newspaper, Bell, Bug, Building2, CreditCard, CalendarDays, FileText, FolderTree, GraduationCap, History, LayoutDashboard, Mail, MessageCircleWarning, MessageSquareQuote, Settings, ShieldAlert, ShieldCheck, UserPlus, Users, Wallet } from "lucide-react";
 import { PanelShell } from "@/components/panel/panel-shell";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
@@ -40,6 +40,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         { href: "/yonetim/talepler", label: "Öğretmen bulma istekleri", icon: <Inbox />, badge: lessonRequests || undefined },
         { href: "/yonetim/ogrenciler", label: "Öğrenciler / Veliler", icon: <Users /> },
         { href: "/yonetim/kurumlar", label: "Kurumlar", icon: <Building2 />, badge: centerApplications || undefined },
+        { href: "/yonetim/pi-koc", label: "Pi Koç hesapları", icon: <HeartHandshake /> },
         ...(show(legacy.bookings > 0) ? [{ href: "/yonetim/randevular", label: "Randevular", icon: <CalendarDays />, badge: disputes || undefined }] : []),
         { href: "/yonetim/mesajlar", label: "Mesaj denetimi", icon: <MessageCircleWarning />, badge: messagesToReview || undefined },
         ...(show(legacy.reports > 0) ? [{ href: "/yonetim/ders-bildirimleri", label: "Ders bildirimleri", icon: <ShieldAlert />, badge: openReports || undefined }] : []),

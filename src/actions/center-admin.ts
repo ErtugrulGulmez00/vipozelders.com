@@ -108,6 +108,8 @@ export async function recordSubscriptionPaymentAction(_: ActionState, formData: 
       method: str(formData, "method", 30) || "Havale/EFT",
       reference: opt(formData, "reference", 120),
       plan: newPlan,
+      // Pi Koç hesabında ödenen paketin öğrenci sınırı
+      coachStudents: Number(str(formData, "coachStudents")) || null,
     });
     updateTag(CENTERS_CACHE_TAG);
     refresh();

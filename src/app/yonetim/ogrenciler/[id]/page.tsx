@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { BookingRow } from "@/components/panel/booking-ui";
-import { Card, CardBody, CardHeader, DescriptionList, EmptyState } from "@/components/ui/primitives";
+import { Badge, Card, CardBody, CardHeader, DescriptionList, EmptyState } from "@/components/ui/primitives";
 import { formatCompact } from "@/lib/dates";
 import { ACCOUNT_TYPE_LABEL } from "@/lib/labels";
 import { fullName } from "@/lib/text";
@@ -25,6 +25,8 @@ export default async function AdminStudentPage({ params }: PageProps<"/yonetim/o
         take: 30,
         include: { teacher: { select: { user: { select: { firstName: true, lastName: true } } } } },
       },
+      sentInquiries: { orderBy: { createdAt: "desc" }, take: 30, include: { teacher: { select: { id: true, firstName: true, lastName: true } } } },
+      guardianLinks: { include: { student: { select: { firstName: true, lastName: true, center: { select: { id: true, name: true, kind: true } } } } } },
     },
   });
   if (!user || user.role !== "STUDENT") notFound();
@@ -56,8 +58,52 @@ export default async function AdminStudentPage({ params }: PageProps<"/yonetim/o
             />
           </CardBody>
         </Card>
+        <div className="space-y-6">
         <Card>
-          <CardHeader title="Randevular" />
+          <CardHeader title="Ders talepleri" />
+          <CardBody className="space-y-2">
+            {user.sentInquiries.length === 0 ? <EmptyState title="Ders talebi yok" /> : null}
+            {user.sentInquiries.map((q) => (
+              <div key={q.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm">
+                <span className="min-w-0">
+                  <Link href={`/yonetim/ogretmenler/${q.teacher.id}`} className="font-semibold text-brand-700 hover:underline">
+                    {q.teacher.firstName} {q.teacher.lastName}
+                  </Link>
+                  <span className="text-slate-500">
+                    {" "}
+                    · {q.lessonName ?? "Ders belirtilmedi"}
+                    {q.studentName ? ` · ${q.studentName}` : ""} · {formatCompact(q.createdAt)}
+                  </span>
+                </span>
+                <Badge tone={q.status === "ACCEPTED" ? "green" : q.status === "PENDING" ? "amber" : "slate"}>{q.status === "ACCEPTED" ? "Kabul edildi" : q.status === "PENDING" ? "Yanıt bekliyor" : "Geri çevrildi"}</Badge>
+              </div>
+            ))}
+          </CardBody>
+        </Card>
+        {user.guardianLinks.length ? (
+          <Card>
+            <CardHeader title="Bağlı öğrenciler (Pi Koç ve kurum)" />
+            <CardBody className="space-y-2">
+              {user.guardianLinks.map((g) => (
+                <div key={g.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm">
+                  <span>
+                    <span className="font-semibold text-slate-900">
+                      {g.student.firstName} {g.student.lastName}
+                    </span>
+                    <span className="text-slate-500"> · {g.relation ?? "Veli"}</span>
+                  </span>
+                  <Link href={`/yonetim/kurumlar/${g.student.center.id}`} className="font-semibold text-brand-700 hover:underline">
+                    {g.student.center.kind === "COACH" ? "Pi Koç · " : ""}
+                    {g.student.center.name}
+                  </Link>
+                </div>
+              ))}
+            </CardBody>
+          </Card>
+        ) : null}
+        {user.bookingsAsStudent.length ? (
+        <Card>
+          <CardHeader title="Randevular (eski model)" />
           <CardBody className="space-y-2">
             {user.bookingsAsStudent.length === 0 ? <EmptyState title="Randevu yok" /> : null}
             {user.bookingsAsStudent.map((b) => (
@@ -65,6 +111,8 @@ export default async function AdminStudentPage({ params }: PageProps<"/yonetim/o
             ))}
           </CardBody>
         </Card>
+        ) : null}
+        </div>
       </div>
     </>
   );

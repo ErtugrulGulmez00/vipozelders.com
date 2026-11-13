@@ -20,7 +20,7 @@ export default async function AdminStudentsPage({ searchParams }: PageProps<"/yo
         ? { OR: [{ firstName: { contains: q, mode: "insensitive" } }, { lastName: { contains: q, mode: "insensitive" } }, { email: { contains: q.toLowerCase() } }, { phone: { contains: q } }] }
         : {}),
     },
-    include: { studentProfile: true, _count: { select: { bookingsAsStudent: { where: { status: { in: ["COMPLETED", "CONFIRMED", "PENDING_APPROVAL"] } } } } } },
+    include: { studentProfile: true, _count: { select: { bookingsAsStudent: { where: { status: { in: ["COMPLETED", "CONFIRMED", "PENDING_APPROVAL"] } } }, sentInquiries: true } } },
     orderBy: { createdAt: "desc" },
     take: 200,
   });
@@ -41,6 +41,7 @@ export default async function AdminStudentsPage({ searchParams }: PageProps<"/yo
               <Th>E-posta</Th>
               <Th>Telefon</Th>
               <Th>Tip</Th>
+              <Th>Talep</Th>
               <Th>Ders</Th>
               <Th>Kayıt</Th>
             </tr>
@@ -59,6 +60,7 @@ export default async function AdminStudentsPage({ searchParams }: PageProps<"/yo
                 </Td>
                 <Td className="text-xs">{s.phone ?? "—"}</Td>
                 <Td className="text-xs">{s.studentProfile ? ACCOUNT_TYPE_LABEL[s.studentProfile.accountType] : "—"}</Td>
+                <Td>{s._count.sentInquiries}</Td>
                 <Td>{s._count.bookingsAsStudent}</Td>
                 <Td className="whitespace-nowrap text-xs">{formatDate(s.createdAt)}</Td>
               </tr>

@@ -23,7 +23,8 @@ export default async function AdminCentersPage({ searchParams }: PageProps<"/yon
   const applicationId = String(sp.basvuru ?? "") || null;
   const [centers, cities, settings, application, newApplications, revenue] = await Promise.all([
     db.center.findMany({
-      where: q ? { OR: [{ name: { contains: q, mode: "insensitive" } }, { slug: { contains: q.toLowerCase() } }] } : {},
+      // Pi Koç hesapları ayrı sayfada (/yonetim/pi-koc)
+      where: { kind: { not: "COACH" }, ...(q ? { OR: [{ name: { contains: q, mode: "insensitive" as const } }, { slug: { contains: q.toLowerCase() } }] } : {}) },
       include: {
         city: { select: { name: true } },
         _count: { select: { students: { where: { status: "ACTIVE" } }, members: { where: { isActive: true } } } },
@@ -35,7 +36,7 @@ export default async function AdminCentersPage({ searchParams }: PageProps<"/yon
     getSiteSettings(),
     applicationId ? db.centerApplication.findUnique({ where: { id: applicationId } }) : null,
     db.centerApplication.count({ where: { status: "NEW" } }),
-    db.centerSubscriptionPayment.aggregate({ _sum: { amount: true } }),
+    db.centerSubscriptionPayment.aggregate({ where: { center: { kind: { not: "COACH" } } }, _sum: { amount: true } }),
   ]);
   const prefill: CenterPrefill | undefined = application
     ? {
@@ -55,11 +56,16 @@ export default async function AdminCentersPage({ searchParams }: PageProps<"/yon
     <>
       <PageHeader
         title="Kurumlar"
-        description="Kurum paneli aboneleri: etüt merkezleri"
+        description="Kurum paneli aboneleri: etüt merkezleri ve kurslar. Bireysel koçlar ve öğretmenlerin Pi Koç hesapları ayrı sayfada."
         actions={
-          <Link href="/yonetim/kurum-basvurulari" className={buttonClasses("outline", "sm")}>
-            Başvurular {newApplications ? <Badge tone="amber">{newApplications}</Badge> : null}
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/yonetim/pi-koc" className={buttonClasses("ghost", "sm")}>
+              Pi Koç hesapları
+            </Link>
+            <Link href="/yonetim/kurum-basvurulari" className={buttonClasses("outline", "sm")}>
+              Başvurular {newApplications ? <Badge tone="amber">{newApplications}</Badge> : null}
+            </Link>
+          </div>
         }
       />
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
