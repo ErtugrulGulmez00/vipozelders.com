@@ -91,7 +91,7 @@ export default async function TeacherDashboard() {
         </Card>
       ) : null}
 
-      <div className={`mb-6 grid grid-cols-2 gap-3 sm:gap-4 ${bookingOpen || hasBalance ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
+      <div className={`mb-6 grid grid-cols-2 gap-3 sm:gap-4 ${bookingOpen ? "lg:grid-cols-4" : "lg:grid-cols-3"}`}>
         {bookingOpen ? (
           <>
             <StatCard label="Bekleyen talepler" value={pending.length} icon={<Inbox className="size-5" />} />
@@ -104,7 +104,7 @@ export default async function TeacherDashboard() {
           </>
         )}
         <StatCard label="Ortalama puan" value={profile.ratingCount ? profile.ratingAvg.toLocaleString("tr-TR", { maximumFractionDigits: 1 }) : "—"} hint={`${profile.ratingCount} değerlendirme`} icon={<Star className="size-5" />} />
-        {bookingOpen || hasBalance ? (
+        {bookingOpen ? (
           <StatCard label="Ödenebilir bakiye" value={formatMoney(balances.available)} hint={`Bekleyen: ${formatMoney(balances.pending)}`} icon={<Wallet className="size-5" />} />
         ) : null}
       </div>
@@ -175,7 +175,7 @@ export default async function TeacherDashboard() {
         </Card>
       ) : null}
 
-      {!bookingOpen && !upcoming.length ? null : (
+      {!bookingOpen ? null : (
       <Card>
         <CardHeader title="Yaklaşan dersler" action={<Link href="/ogretmen-paneli/dersler" className="text-sm font-semibold text-brand-700 hover:underline">Tümü</Link>} />
         <CardBody className="space-y-3">

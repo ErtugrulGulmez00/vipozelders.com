@@ -22,8 +22,8 @@ export default async function StudentLayout({ children }: { children: React.Reac
     loadSettings(),
     studentLegacyUsage(user.id),
   ]);
-  // Randevu ve ödeme kapalıyken eski modelin bölümleri yalnızca içinde kaydı olana görünür
-  const show = (used: boolean) => settings.lessonBookingEnabled || used;
+  // Randevu ve ödeme kapalıyken eski modelin bölümleri gösterilmez (eski kaydı olan hesapta da)
+  const show = (_used: boolean) => settings.lessonBookingEnabled;
   return (
     <PanelShell
       user={user}
@@ -35,7 +35,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
         ...(facts.kocStudent ? [{ href: "/kocum", label: "Koçum", icon: <GraduationCap /> }] : []),
         ...(show(legacy.bookings > 0 || legacy.packages > 0) ? [{ href: "/hesabim/derslerim", label: "Derslerim", icon: <CalendarDays />, also: ["/hesabim/paketlerim"] }] : []),
         { href: "/hesabim/mesajlar", label: "Mesajlar", icon: <MessageCircle />, badge: unreadMessages || undefined },
-        ...(show(legacy.groups > 0) && (settings.groupsEnabled || legacy.groups > 0) ? [{ href: "/hesabim/grup-derslerim", label: "Grup derslerim", icon: <Users /> }] : []),
+        ...(show(legacy.groups > 0) && settings.groupsEnabled ? [{ href: "/hesabim/grup-derslerim", label: "Grup derslerim", icon: <Users /> }] : []),
         { href: "/hesabim/favoriler", label: "Favori öğretmenler", icon: <Heart /> },
         ...(show(legacy.payments > 0) ? [{ href: "/hesabim/odemeler", label: "Ödemelerim", icon: <CreditCard /> }] : []),
         { href: "/hesabim/bildirimler", label: "Bildirimler", icon: <Bell />, badge: unread || undefined },

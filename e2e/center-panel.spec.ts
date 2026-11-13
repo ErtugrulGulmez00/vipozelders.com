@@ -261,7 +261,7 @@ test("öğrenci hesabı → fotoğrafla soru → öğretmen çözümü; yanlış
     await expect(page.getByRole("link", { name: "Derslerim" })).toHaveCount(0);
     await page.getByRole("link", { name: "Özel ders tarafına geç" }).first().click();
     await expect(page).toHaveURL(/\/hesabim$/);
-    await expect(page.getByRole("link", { name: "Derslerim" }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: "Ders taleplerim" }).first()).toBeVisible();
 
     // Kurum öğrenci giriş hesabı açar
     await login(page, "kurum@demo.vipozelders.local", "Kurum12345");

@@ -81,7 +81,7 @@ export default async function StudentHomePage() {
         </Alert>
       ) : null}
 
-      {toReview.length ? (
+      {bookingOpen && toReview.length ? (
         <Card className="mb-6 border-gold-300 bg-gold-50">
           <CardBody className="flex flex-wrap items-center justify-between gap-3">
             <p className="flex items-center gap-2 text-sm text-slate-800">
@@ -131,7 +131,7 @@ export default async function StudentHomePage() {
         </Card>
       </div>
 
-      {!bookingOpen && !upcoming.length ? null : (
+      {!bookingOpen ? null : (
       <Card>
         <CardHeader title="Yaklaşan dersler" action={<Link href="/hesabim/derslerim" className="text-sm font-semibold text-brand-700 hover:underline">Tümü</Link>} />
         <CardBody className="space-y-3">

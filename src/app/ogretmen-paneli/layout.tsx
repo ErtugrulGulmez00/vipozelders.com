@@ -26,9 +26,9 @@ export default async function TeacherLayout({ children }: { children: React.Reac
     loadSettings(),
     legacyUsage(user.id),
   ]);
-  // Randevu ve ödeme kapalıyken eski modelin menüleri yalnızca içinde kaydı olan öğretmene görünür
   const open = settings.lessonBookingEnabled;
-  const show = (used: boolean) => open || used;
+  // Randevu ve ödeme kapalıyken eski modelin bölümleri gösterilmez (eski kaydı olan hesapta da)
+  const show = (_used: boolean) => open;
   return (
     <PanelShell
       user={user}
@@ -43,7 +43,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
         ...(show(legacy.bookings > 0 || pending > 0) ? [{ href: pending ? "/ogretmen-paneli/talepler" : "/ogretmen-paneli/dersler", label: "Derslerim", icon: <CalendarDays />, badge: pending || undefined, also: ["/ogretmen-paneli/talepler", "/ogretmen-paneli/dersler"] }] : []),
         ...(show(legacy.links > 0) ? [{ href: "/ogretmen-paneli/ders-baglantilari", label: "Ders bağlantıları", icon: <Link2 /> }] : []),
         ...(show(questionRights > 0) ? [{ href: "/ogretmen-paneli/soru-cozum", label: "Soru çözüm dersleri", icon: <MessageCircleQuestion />, badge: questionRights || undefined }] : []),
-        ...((open && settings.groupsEnabled) || legacy.groups > 0 ? [{ href: "/ogretmen-paneli/grup-dersleri", label: "Grup dersleri", icon: <Users /> }] : []),
+        ...(open && settings.groupsEnabled ? [{ href: "/ogretmen-paneli/grup-dersleri", label: "Grup dersleri", icon: <Users /> }] : []),
         { href: "/ogretmen-paneli/profil", label: "Profilim", icon: <UserRound />, also: ["/ogretmen-paneli/dersler-ve-fiyatlar", "/ogretmen-paneli/belgeler"] },
         // Takvim aramadaki saat süzgecini ve profildeki uygun saatleri besler; her modelde kalır
         { href: "/ogretmen-paneli/takvim", label: "Müsaitlik takvimi", icon: <CalendarClock /> },
