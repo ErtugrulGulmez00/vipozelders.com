@@ -556,7 +556,7 @@ export default async function EtudGuidePage() {
         </div>
       </GuideSection>
 
-      <GuideSection id="fiyat" eyebrow="Fiyat" title="Etüt Merkezi paketi" lead="Fiyat aktif öğrenci sayınıza göre belirlenir; pasif ve ayrılan öğrenciler sayılmaz. Tüm kademelerde bütün modüller, sınırsız personel ve veli portalı dahildir. Fiyatlara KDV dahildir.">
+      <GuideSection id="fiyat" eyebrow="Fiyat" title="Etüt Merkezi paketi" lead="Fiyat aktif öğrenci sayınıza göre belirlenir; pasif ve ayrılan öğrenciler sayılmaz. Tüm kademelerde bütün modüller, sınırsız personel ve veli portalı dahildir. Fiyatlara KDV eklenir.">
         <div className="mt-8">
           <TierCards plans={plans} />
         </div>
@@ -605,7 +605,7 @@ export default async function EtudGuidePage() {
         </div>
       </section>
       <p className="mx-auto max-w-6xl px-4 py-6 text-[13.5px] text-ink-500">
-        Ekran görüntüleri ve videolar örnek bir etüt merkezinin (Başarı Etüt Merkezi) gerçek panelinden alınmıştır; kişi ve kurum bilgileri örnektir. Fiyatlara KDV dahildir.
+        Ekran görüntüleri ve videolar örnek bir etüt merkezinin (Başarı Etüt Merkezi) gerçek panelinden alınmıştır; kişi ve kurum bilgileri örnektir.
       </p>
     </>
   );

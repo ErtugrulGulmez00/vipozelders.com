@@ -25,11 +25,13 @@ describe("Pi Koç", () => {
 describe("Paket fiyatları", () => {
   const settings = settingsSchema.parse({});
 
-  it("20'lik yalnızca aylık; 100'lük yıllık, 20'liği aylık ödemekle aynı fiyata 5 kat kapasite", () => {
+  it("50 / 100 (öne çıkan, az farkla 2 kat) / 200 / 200+ teklif", () => {
     const plans = centerPlans(settings);
     expect(plans.map((p) => p.plan)).toEqual(["STARTER", "PRO", "BUSINESS", "ENTERPRISE"]);
-    expect(plans[0]).toMatchObject({ priceTl: 3749, yearlyPriceTl: null });
-    expect(plans[1]).toMatchObject({ priceTl: 4999, yearlyPriceTl: 44999, highlight: true, upsell: { ratio: 5 } });
+    expect(plans[0]).toMatchObject({ students: 50, priceTl: 3799, yearlyPriceTl: 32999, upsell: null, quote: false });
+    expect(plans[1]).toMatchObject({ students: 100, priceTl: 3999, yearlyPriceTl: 35999, highlight: true, upsell: { ratio: 2, diffTl: 3000, yearly: true } });
+    expect(plans[2]).toMatchObject({ students: 200, upsell: null });
+    expect(plans[3]).toMatchObject({ students: null, quote: true, name: "200'den fazla öğrenci" });
     expect(plans.filter((p) => p.highlight)).toHaveLength(1);
   });
 });

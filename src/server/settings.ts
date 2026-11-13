@@ -94,19 +94,20 @@ export const settingsSchema = z.object({
   // Kurum kapasite kademeleri: öğrenci sınırları. Yıllık 0 = yalnızca aylık.
   // Merdiven: bir kademenin yıllık fiyatı bir alttakini aylık ödemeye denk → "aynı paraya daha çok kapasite".
   // Kurumsal (200+) kademede öğrenci sınırı yeni kurum için başlangıç değeridir; yönetici kuruma göre değiştirir.
-  centerTier20Students: z.number().int().min(1).max(100_000).default(20),
+  centerTier20Students: z.number().int().min(1).max(100_000).default(50),
   centerTier100Students: z.number().int().min(1).max(100_000).default(100),
   centerTier200Students: z.number().int().min(1).max(100_000).default(200),
   centerTierPlusStudents: z.number().int().min(1).max(100_000).default(1000),
   // Kurum paneli fiyatları, öğrenci kademesine göre
-  centerEtut20PriceTl: z.number().int().min(0).max(1_000_000).default(3749),
-  centerEtut20YearlyTl: z.number().int().min(0).max(10_000_000).default(0),
-  centerEtut100PriceTl: z.number().int().min(0).max(1_000_000).default(4999),
-  centerEtut100YearlyTl: z.number().int().min(0).max(10_000_000).default(44999),
-  centerEtut200PriceTl: z.number().int().min(0).max(1_000_000).default(6499),
-  centerEtut200YearlyTl: z.number().int().min(0).max(10_000_000).default(64990),
-  centerEtutPlusPriceTl: z.number().int().min(0).max(1_000_000).default(8999),
-  centerEtutPlusYearlyTl: z.number().int().min(0).max(10_000_000).default(89990),
+  // Fiyatlar KDV hariç (vitrinde "Fiyatlara KDV eklenir"); 0 = teklif (Kurumsal kademe)
+  centerEtut20PriceTl: z.number().int().min(0).max(1_000_000).default(3799),
+  centerEtut20YearlyTl: z.number().int().min(0).max(10_000_000).default(32999),
+  centerEtut100PriceTl: z.number().int().min(0).max(1_000_000).default(3999),
+  centerEtut100YearlyTl: z.number().int().min(0).max(10_000_000).default(35999),
+  centerEtut200PriceTl: z.number().int().min(0).max(1_000_000).default(5999),
+  centerEtut200YearlyTl: z.number().int().min(0).max(10_000_000).default(54999),
+  centerEtutPlusPriceTl: z.number().int().min(0).max(1_000_000).default(0),
+  centerEtutPlusYearlyTl: z.number().int().min(0).max(10_000_000).default(0),
   // Havale/EFT ile abonelik ödemesi için banka bilgisi (kurumun abonelik sayfasında görünür)
   centerBankInfo: z.string().default(""),
 

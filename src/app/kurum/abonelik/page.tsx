@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { RedeemPromoForm } from "@/components/koc/promo-forms";
 import { OVER_LIMIT_GRACE_DAYS } from "@/server/koc-promo";
 import { RateBar } from "@/components/center/center-ui";
-import { PackageCard, TierCards } from "@/components/center/pricing";
+import { PackageCard, TierCards, whatsappLink } from "@/components/center/pricing";
+import { toWhatsAppNumber } from "@/server/whatsapp";
+import { MessageCircle } from "lucide-react";
 import { Badge, Card, CardBody, CardHeader, DescriptionList, PageHeader, Table, Td, Th } from "@/components/ui/primitives";
 import { CENTER_ACCESS_LABEL } from "@/lib/center/labels";
 import { formatDate } from "@/lib/dates";
@@ -34,6 +36,7 @@ export default async function SubscriptionPage() {
   const plans = centerPlans(settings);
   const coach = ctx.center.kind === "COACH";
   const usage = activeStudents / Math.max(ctx.center.studentLimit, 1);
+  const whatsapp = toWhatsAppNumber(settings.contactPhone);
   return (
     <>
       <PageHeader title="Abonelik" description={coach ? "Pi Koç planınız ve ödemeleriniz" : `${settings.siteName} kurum paneli planınız ve ödemeleriniz`} />
@@ -99,7 +102,7 @@ export default async function SubscriptionPage() {
       {coach ? (
         <>
           <h2 className="mb-1 mt-8 text-2xl font-extrabold tracking-tight text-slate-900">Pi Koç paketleri</h2>
-          <p className="mb-5 text-sm text-slate-500">Paket değiştirmek için ödeme açıklamasına yeni paketin adını yazın ya da bizimle iletişime geçin. Ücretli paketin süresi biterse hesabınız ücretsiz pakete döner; kayıtlarınız silinmez.</p>
+          <p className="mb-5 text-sm text-slate-500">Paket almak ya da değiştirmek için WhatsApp’tan yazın ya da ödeme açıklamasına yeni paketin adını yazın. Ücretli paketin süresi biterse hesabınız ücretsiz pakete döner; kayıtlarınız silinmez.</p>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
             {settings.piKocFreeStudents > 0 ? (
               <div className={cn("relative rounded-3xl border bg-white p-5", ctx.coach?.state === "free" ? "border-slate-400 ring-2 ring-slate-200" : "border-slate-200")}>
@@ -117,7 +120,7 @@ export default async function SubscriptionPage() {
                 <div
                   key={t.students}
                   className={cn(
-                    "relative rounded-3xl border p-5 transition hover:-translate-y-0.5 hover:shadow-md",
+                    "relative flex flex-col rounded-3xl border p-5 transition hover:-translate-y-0.5 hover:shadow-md",
                     popular ? "border-transparent bg-ink-950 text-white shadow-lg" : "border-slate-200 bg-white",
                     current && "ring-2 ring-brand-400",
                   )}
@@ -133,6 +136,17 @@ export default async function SubscriptionPage() {
                   <p className={cn("mt-3 text-2xl font-black", popular ? "text-gold-300" : "text-slate-900")}>
                     {formatMoney(t.priceTl * 100)} <span className={cn("text-sm font-semibold", popular ? "text-ink-200" : "text-slate-500")}>/ ay</span>
                   </p>
+                  <p className={cn("text-xs", popular ? "text-ink-200" : "text-slate-500")}>KDV dahil</p>
+                  {whatsapp && !current ? (
+                    <a
+                      href={whatsappLink(whatsapp, `Merhaba, Pi Koç ${t.name} paketini (${t.students} öğrenci, aylık ${formatMoney(t.priceTl * 100)}) almak istiyorum. Hesabım: ${ctx.center.name}`)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn("mt-4 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl text-sm font-bold", popular ? "bg-gold-400 text-ink-950 hover:bg-gold-300" : "border border-emerald-300 text-emerald-800 hover:bg-emerald-50")}
+                    >
+                      <MessageCircle className="size-4" aria-hidden /> WhatsApp’tan satın al
+                    </a>
+                  ) : null}
                 </div>
               );
             })}
@@ -159,7 +173,7 @@ export default async function SubscriptionPage() {
           <PackageCard current />
           <h2 className="mb-1 mt-8 text-lg font-bold text-slate-900">Öğrenci sayısına göre fiyat</h2>
           <p className="mb-4 text-sm text-slate-500">Kademe değiştirmek için bizimle iletişime geçin; ödemeniz kaydedilince yeni paketiniz hemen açılır.</p>
-          <TierCards plans={plans} current={ctx.center.plan} />
+          <TierCards plans={plans} current={ctx.center.plan} whatsapp={whatsapp} />
         </>
       )}
       {payments.length ? (

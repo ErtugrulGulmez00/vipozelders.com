@@ -3,7 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 import pg from "pg";
 
 /**
- * Tek paket: yönetici 20 öğrenci kademesiyle kurum açar → kurum sahibi ilk girişte şifresini belirler, bütün bölümleri
+ * Tek paket: yönetici 50 öğrenci kademesiyle kurum açar → kurum sahibi ilk girişte şifresini belirler, bütün bölümleri
  * görür → yönetici ödeme kaydeder (kademe 100 öğrenci) → abonelik sayfasında yeni kademe yazar.
  */
 
@@ -41,7 +41,7 @@ test.afterAll(async () => {
 test("yeni kurum bütün bölümleri görür; ödemeyle kademe yükselir", async ({ page }) => {
   test.setTimeout(180_000);
 
-  // 1) Yönetici 20 öğrenci kademesiyle kurum açar
+  // 1) Yönetici 50 öğrenci kademesiyle kurum açar
   await login(page, "admin", "Yonetici123");
   await page.goto("/yonetim/kurumlar");
   const form = page.locator("form", { has: page.getByRole("button", { name: "Kurumu aç" }) });
@@ -56,7 +56,7 @@ test("yeni kurum bütün bölümleri görür; ödemeyle kademe yükselir", async
   const username = (await page.getByTestId("new-username").innerText()).trim();
   const password = (await page.getByTestId("new-password").innerText()).trim();
   const [center] = await sql<{ id: string; plan: string; studentLimit: number }>(`SELECT id, plan, "studentLimit" FROM "Center" WHERE name = $1`, [centerName]);
-  expect(center).toMatchObject({ plan: "STARTER", studentLimit: 20 });
+  expect(center).toMatchObject({ plan: "STARTER", studentLimit: 50 });
   // Kurum sahibine hoş geldin e-postası kuyruğa girdi
   expect((await sql(`SELECT 1 FROM "EmailMessage" WHERE "to" = $1`, [ownerEmail])).length).toBeGreaterThan(0);
 
@@ -72,7 +72,7 @@ test("yeni kurum bütün bölümleri görür; ödemeyle kademe yükselir", async
   // Etüt merkezinde dershane bölümleri (sınıf programı ve yoklaması, defter, derslik, rapor) yok
   for (const label of ["Ders programı", "Sınıf yoklaması", "Sınıf defteri", "Derslikler", "Raporlar"]) await expect(nav(page).getByRole("link", { name: label, exact: true })).toHaveCount(0);
   await page.goto("/kurum/abonelik");
-  await expect(page.getByText("Etüt Merkezi · 20 öğrenciye kadar")).toBeVisible();
+  await expect(page.getByText("Etüt Merkezi · 50 öğrenciye kadar")).toBeVisible();
 
   // 3) Yönetici yıllık ödemeyi 100 öğrenci kademesiyle kaydeder
   await login(page, "admin", "Yonetici123");

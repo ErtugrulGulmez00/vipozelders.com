@@ -19,6 +19,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { PackageCard, TierCards } from "@/components/center/pricing";
+import { toWhatsAppNumber } from "@/server/whatsapp";
 import { buttonClasses } from "@/components/ui/button";
 import { Card } from "@/components/ui/primitives";
 import { centerPlans } from "@/server/center/plans";
@@ -60,7 +61,8 @@ const faq = (trialDays: number) => [
 export default async function ForCentersPage() {
   const settings = await getSiteSettings();
   const plans = centerPlans(settings);
-  const fromPrice = Math.min(...plans.map((p) => p.priceTl));
+  const fromPrice = Math.min(...plans.filter((p) => p.priceTl > 0).map((p) => p.priceTl));
+  const whatsapp = toWhatsAppNumber(settings.contactPhone);
   const trialDays = settings.centerTrialDays;
   return (
     <>
@@ -201,8 +203,8 @@ export default async function ForCentersPage() {
           <PackageCard cta={trialDays > 0 ? "Ücretsiz deneyin" : "Başvurun"} fromPrice={fromPrice} />
         </div>
         <h3 className="mt-12 text-xl font-bold text-slate-900">Öğrenci sayısına göre fiyat</h3>
-        <p className="mt-1 mb-5 text-sm text-slate-600">Yıllık peşin ödemede büyük paket, küçük paketi aylık ödemekle aynı fiyata gelir.</p>
-        <TierCards plans={plans} cta="Bu kademeyle başvur" />
+        <p className="mt-1 mb-5 text-sm text-slate-600">Fiyatı aktif öğrenci sayınız belirler; yıllık peşin ödemede yaklaşık üç ay sizden. Satın almak ya da teklif almak için WhatsApp’tan yazın.</p>
+        <TierCards plans={plans} cta="Önce ücretsiz deneyin" whatsapp={whatsapp} />
       </section>
 
       <section className="bg-white py-16">

@@ -10,7 +10,7 @@ export const CENTER_KIND_LABEL: Record<string, string> = {
 };
 
 /** Başvuru formundaki öğrenci sayısı seçenekleri; ana sayfadaki çubuk da aynı değerleri gönderir. */
-export const CENTER_STUDENT_COUNT_OPTIONS = ["20’ye kadar", "21-100", "101-200", "200’den fazla"];
+export const CENTER_STUDENT_COUNT_OPTIONS = ["50’ye kadar", "51-100", "101-200", "200’den fazla"];
 
 export const CENTER_STATUS: Record<string, { label: string; tone: Tone }> = {
   TRIAL: { label: "Deneme sürümü", tone: "sky" },

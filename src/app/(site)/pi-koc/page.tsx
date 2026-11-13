@@ -9,6 +9,8 @@ import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/money";
 import { COACH_FREE_NAME, parseCoachTiers } from "@/lib/pi-koc";
 import { getSiteSettings } from "@/server/site";
+import { toWhatsAppNumber } from "@/server/whatsapp";
+import { whatsappLink } from "@/components/center/pricing";
 import { KocSignupForm } from "@/components/koc/signup-form";
 import { CoachPlanCompare } from "@/components/koc/locked-feature";
 
@@ -39,6 +41,7 @@ export default async function PiKocPage() {
   const settings = await getSiteSettings();
   const freeStudents = settings.piKocFreeStudents;
   const tiers = parseCoachTiers(settings.piKocTiers);
+  const whatsapp = toWhatsAppNumber(settings.contactPhone);
   const cta = "Ücretsiz başla";
 
   return (
@@ -116,6 +119,16 @@ export default async function PiKocPage() {
                 <Link href={`/pi-koc/kayit?ogrenci=${tier.students}`} className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl border-2 border-ink-100 font-bold text-ink-900 hover:bg-ink-50">
                   Bu paketi seç
                 </Link>
+                {whatsapp ? (
+                  <a
+                    href={whatsappLink(whatsapp, `Merhaba, Pi Koç ${tier.name} paketini (${tier.students} öğrenci, aylık ${formatMoney(tier.priceTl * 100)}) almak istiyorum.`)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2 text-center text-sm font-bold text-emerald-700 hover:underline"
+                  >
+                    WhatsApp’tan satın al
+                  </a>
+                ) : null}
               </div>
             ))}
           </div>
