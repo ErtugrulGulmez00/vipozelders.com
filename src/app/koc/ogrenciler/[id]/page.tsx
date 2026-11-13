@@ -1,4 +1,5 @@
 import { CalendarClock, ChevronLeft, FileText, Phone, School, Video } from "lucide-react";
+import { MeetingHistory } from "@/components/koc/meeting-history";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -105,7 +106,10 @@ export default async function KocStudentPage({ params, searchParams }: PageProps
       {tab === "program" ? (
         <ProgramTab centerId={centerId} studentId={id} week={typeof sp.hafta === "string" ? sp.hafta : undefined} topicLocked={!coachFeatureOpen(ctx.coach, "topicAnalysis")} />
       ) : tab === "gorusmeler" ? (
-        <CoachingView centerId={centerId} studentId={id} mode="staff" canWrite={ctx.access.writable} memberId={ctx.member.id} isManager />
+        <>
+          <MeetingHistory studentId={id} />
+          <CoachingView centerId={centerId} studentId={id} mode="staff" canWrite={ctx.access.writable} memberId={ctx.member.id} isManager />
+        </>
       ) : tab === "sorular" ? (
         <QuestionsTab centerId={centerId} studentId={id} today={today} />
       ) : tab === "denemeler" ? (

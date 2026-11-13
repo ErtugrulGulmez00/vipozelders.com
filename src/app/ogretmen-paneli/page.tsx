@@ -10,7 +10,8 @@ import { Alert, Badge, Card, CardBody, CardHeader, EmptyState, PageHeader, StatC
 import { formatDuration } from "@/lib/dates";
 import { TEACHER_STATUS } from "@/lib/labels";
 import { formatMoney } from "@/lib/money";
-import { COACH_FEATURES, coachPlan, coachPlanLabel } from "@/lib/pi-koc";
+import { COACH_FEATURES, coachPlan, coachPlanLabel, parseCoachTiers } from "@/lib/pi-koc";
+import { UpgradeShowcase } from "@/components/koc/premium";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { teacherBalances } from "@/server/ledger";
@@ -47,6 +48,7 @@ export default async function TeacherDashboard() {
   const bookingOpen = settings.lessonBookingEnabled;
   const plan = coachMembership ? coachPlan(coachMembership.center, settings.piKocFreeStudents, now) : null;
   const freeHours = settings.piKocFreeStudents * settings.piKocHoursPerStudent;
+  const tiers = parseCoachTiers(settings.piKocTiers);
   const hasBalance = balances.available + balances.pending > 0;
   const status = TEACHER_STATUS[profile.status];
 
@@ -129,7 +131,10 @@ export default async function TeacherDashboard() {
         </Alert>
       ) : null}
 
-      {plan ? (
+      {plan && !plan.paid ? (
+        <UpgradeShowcase next={tiers[0] ?? null} used={coachStudents} limit={plan.studentLimit} meetingMinutes={settings.piKocFreeMeetingMinutes} monthlyHours={freeHours} />
+      ) : null}
+      {plan?.paid ? (
         <Card className="mb-6">
           <CardHeader
             title="Pi Koç paketiniz"

@@ -1,4 +1,5 @@
 import { AlertTriangle, BookMarked, ChartColumn, HeartHandshake, NotebookPen, UserRound } from "lucide-react";
+import { TierIcon } from "@/components/koc/premium";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -6,7 +7,7 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
 import { formatMoney } from "@/lib/money";
-import { parseCoachTiers } from "@/lib/pi-koc";
+import { COACH_FREE_NAME, parseCoachTiers } from "@/lib/pi-koc";
 import { getSiteSettings } from "@/server/site";
 import { KocSignupForm } from "@/components/koc/signup-form";
 import { CoachPlanCompare } from "@/components/koc/locked-feature";
@@ -91,7 +92,9 @@ export default async function PiKocPage() {
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {freeStudents > 0 ? (
               <div className="flex flex-col rounded-3xl border-2 border-brand-600 bg-brand-50/40 p-6">
-                <p className="font-bold text-ink-900">{freeStudents} öğrenciye kadar</p>
+                <TierIcon students={0} />
+                <p className="mt-4 text-xl font-extrabold text-ink-900">{COACH_FREE_NAME}</p>
+                <p className="font-semibold text-ink-500">{freeStudents} öğrenciye kadar</p>
                 <p className="mt-2 font-display text-4xl font-extrabold text-ink-900">Ücretsiz</p>
                 <p className="mt-1 text-sm text-ink-500">Süresiz · kart bilgisi istenmez</p>
                 <Link href="/pi-koc/kayit" className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-600 font-bold text-white hover:bg-brand-700">
@@ -99,9 +102,12 @@ export default async function PiKocPage() {
                 </Link>
               </div>
             ) : null}
-            {tiers.map((tier) => (
-              <div key={tier.students} className="flex flex-col rounded-3xl border-2 border-ink-100 p-6">
-                <p className="font-bold text-ink-900">{tier.students} öğrenciye kadar</p>
+            {tiers.map((tier, i) => (
+              <div key={tier.students} className={i === 1 ? "relative flex flex-col rounded-3xl border-2 border-gold-400 bg-gold-50/60 p-6" : "flex flex-col rounded-3xl border-2 border-ink-100 p-6"}>
+                {i === 1 ? <span className="absolute right-5 top-5 rounded-full bg-gold-400 px-2.5 py-0.5 text-xs font-extrabold text-ink-950">En çok seçilen</span> : null}
+                <TierIcon students={tier.students} />
+                <p className="mt-4 text-xl font-extrabold text-ink-900">{tier.name}</p>
+                <p className="font-semibold text-ink-500">{tier.students} öğrenciye kadar</p>
                 <p className="mt-2 font-display text-4xl font-extrabold text-ink-900">
                   {formatMoney(tier.priceTl * 100)}
                   <span className="text-base font-semibold text-ink-500"> / ay</span>

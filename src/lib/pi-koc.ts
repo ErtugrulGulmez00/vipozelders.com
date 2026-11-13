@@ -1,6 +1,14 @@
 // Pi Koç: bireysel koçların öğrenci takip paneli. Kademeler site ayarından gelir: "öğrenci:aylık TL", virgülle ayrılmış.
 
-export type CoachTier = { students: number; priceTl: number };
+export type CoachTier = { students: number; priceTl: number; name: string };
+
+/** Paket adları (öğrenci sınırına göre); listede olmayan sınır "N öğrenci paketi" olur. */
+export const COACH_FREE_NAME = "Karalama Defteri";
+const COACH_TIER_NAMES: Record<number, string> = { 5: "Net Avcısı", 10: "Soru Canavarı", 20: "Deneme Ustası", 50: "Derece Fabrikası" };
+
+export function coachTierName(students: number): string {
+  return COACH_TIER_NAMES[students] ?? `${students} öğrenci paketi`;
+}
 
 /** "3:299,5:449" → [{ students: 3, priceTl: 299 }, …]. Hatalı parçalar atlanır, aynı öğrenci sayısının sonuncusu geçerlidir. */
 export function parseCoachTiers(text: string): CoachTier[] {
@@ -8,7 +16,7 @@ export function parseCoachTiers(text: string): CoachTier[] {
     .split(/[,\n]+/)
     .map((part) => part.trim().split(":").map((n) => Number(n.trim())))
     .filter(([students, price]) => Number.isInteger(students) && students > 0 && students <= 1000 && Number.isInteger(price) && price > 0 && price <= 1_000_000)
-    .map(([students, priceTl]) => ({ students, priceTl }));
+    .map(([students, priceTl]) => ({ students, priceTl, name: coachTierName(students) }));
   const unique = new Map(tiers.map((t) => [t.students, t]));
   return [...unique.values()].sort((a, b) => a.students - b.students);
 }
@@ -61,8 +69,8 @@ export function coachPlan(
 
 /** Paketin kısa adı: "Ücretsiz paket · 3 öğrenci" / "10 öğrenci paketi". */
 export function coachPlanLabel(plan: CoachPlan): string {
-  if (plan.state === "free") return `Ücretsiz paket · ${plan.studentLimit} öğrenciye kadar`;
-  return `${plan.studentLimit} öğrenci paketi${plan.state === "trial" ? " (deneme; bitince ücretsiz pakete geçer)" : ""}`;
+  if (plan.state === "free") return `${COACH_FREE_NAME} · ücretsiz, ${plan.studentLimit} öğrenciye kadar`;
+  return `${coachTierName(plan.studentLimit)} · ${plan.studentLimit} öğrenciye kadar${plan.state === "trial" ? " (deneme; bitince ücretsiz pakete geçer)" : ""}`;
 }
 
 // ——— Ücretli özellikler ———

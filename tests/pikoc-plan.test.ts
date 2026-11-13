@@ -13,7 +13,7 @@ describe("Pi Koç paketi", () => {
   it("ödemesi olmayan hesap ücretsiz pakettedir; seçtiği paket ödeme gelince açılır", () => {
     const plan = coachPlan({ status: "ACTIVE", trialEndsAt: null, paidUntil: null, studentLimit: 10 }, 3, NOW);
     expect(plan).toMatchObject({ state: "free", paid: false, studentLimit: 3, paidLimit: 10 });
-    expect(coachPlanLabel(plan)).toBe("Ücretsiz paket · 3 öğrenciye kadar");
+    expect(coachPlanLabel(plan)).toBe("Karalama Defteri · ücretsiz, 3 öğrenciye kadar");
   });
 
   it("ödemesi süren hesap ücretli pakettedir; süre bitince 7 gün daha açık kalır, sonra ücretsize döner", () => {

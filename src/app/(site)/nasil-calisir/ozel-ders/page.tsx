@@ -56,7 +56,7 @@ const TRACKING = [
 export default async function PrivateLessonGuidePage() {
   const s = await getSiteSettings();
   const tiers = parseCoachTiers(s.piKocTiers);
-  const tierText = tiers.map((t) => `${t.students} öğrenci ${t.priceTl.toLocaleString("tr-TR")} ₺`).join(", ");
+  const tierText = tiers.map((t) => `${t.name} ${t.students} öğrenci ${t.priceTl.toLocaleString("tr-TR")} ₺`).join(", ");
 
   const steps = [
     ["Öğretmeni bulun", "Kademe, ders, ders şekli, il/ilçe ve fiyata göre süzün; onaylı rozetine, tanıtımına ve yorumlara bakın."],

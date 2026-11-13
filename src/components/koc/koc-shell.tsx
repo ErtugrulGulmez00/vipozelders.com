@@ -32,6 +32,7 @@ export function KocShell({
   switchLinks = [],
   mode = "coach",
   roleLabel,
+  upgrade,
   children,
 }: {
   user: SessionUser;
@@ -46,6 +47,8 @@ export function KocShell({
   mode?: "coach" | "student";
   /** Kartta adın altındaki görev (ör. Öğrenci, Veli) */
   roleLabel?: string;
+  /** Menünün altındaki yükseltme kutusu (ücretsiz pakette) */
+  upgrade?: ReactNode;
   children: ReactNode;
 }) {
   const coach = mode === "coach";
@@ -61,6 +64,7 @@ export function KocShell({
         <div className="relative flex-1 overflow-y-auto px-3">
           <SideNav items={nav} />
         </div>
+        {upgrade ? <div className="relative pt-3">{upgrade}</div> : null}
         <div className="relative m-3 rounded-2xl bg-white/5 p-4 ring-1 ring-white/10">
           <Link href={`${home}/hesap`} className="flex items-center gap-3">
             <span className="inline-flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-brand-700 text-xs font-bold text-white">{initials(user)}</span>

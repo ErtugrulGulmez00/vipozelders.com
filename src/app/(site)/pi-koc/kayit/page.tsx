@@ -66,7 +66,7 @@ export default function KocSignupPage({ searchParams }: PageProps<"/pi-koc/kayit
 async function SignupCard({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const [sp, user, settings] = await Promise.all([searchParams, getCurrentUser(), getSiteSettings()]);
   if (user && !user.mustChangePassword && kocHome(await sideFacts(user.id, user.role))) redirect("/koc");
-  const tiers = parseCoachTiers(settings.piKocTiers).map((t) => ({ students: t.students, label: `${t.students} öğrenciye kadar · aylık ${t.priceTl.toLocaleString("tr-TR")} TL` }));
+  const tiers = parseCoachTiers(settings.piKocTiers).map((t) => ({ students: t.students, label: `${t.name} · ${t.students} öğrenciye kadar · aylık ${t.priceTl.toLocaleString("tr-TR")} TL` }));
   const asked = Number(sp.ogrenci);
   const chosen = tiers.some((t) => t.students === asked) ? asked : null;
   const freeStudents = settings.piKocFreeStudents;

@@ -2,7 +2,7 @@ import { BadgeCheck, CalendarClock, Inbox, PenLine, ShieldCheck, Users, Video, W
 import type { Metadata } from "next";
 import { Card } from "@/components/ui/primitives";
 import { formatMoney } from "@/lib/money";
-import { parseCoachTiers } from "@/lib/pi-koc";
+import { COACH_FREE_NAME, parseCoachTiers } from "@/lib/pi-koc";
 import { parsePayoutDays } from "@/server/pricing";
 import { getCities, getSiteSettings } from "@/server/site";
 import { ApplicationForm } from "./application-form";
@@ -36,7 +36,7 @@ export default async function BecomeTeacherPage() {
     : [
         { q: "Öğrenci bulabilecek miyim?", a: "Veliler sizi kademe, ders ve fiyata göre aramada bulur ve profilinizden ders talebi gönderir. Profiliniz ne kadar dolu (fotoğraf, tanıtım, uygun saatler) olursa o kadar üstte çıkarsınız; ücretli Pi Koç paketindeki öğretmenler aramada öne çıkar." },
         { q: "Pi Kampüs ders ücretimden pay alıyor mu?", a: "Hayır. Ücreti veliyle siz konuşur, kendiniz alırsınız; komisyon ya da hizmet bedeli kesilmez. Ödediğiniz tek şey, isterseniz Pi Koç paketidir." },
-        { q: "Ne kadar ödemem gerekiyor?", a: `Profil açmak ve ders talebi almak ücretsizdir. Pi Koç ${settings.piKocFreeStudents} öğrenciye kadar ücretsizdir; daha fazla öğrenci ve ek özellikler için paketler aylık ${tiers.map((t) => `${t.students} öğrenci ${t.priceTl.toLocaleString("tr-TR")} ₺`).join(", ")}.` },
+        { q: "Ne kadar ödemem gerekiyor?", a: `Profil açmak ve ders talebi almak ücretsizdir. Pi Koç ${settings.piKocFreeStudents} öğrenciye kadar ücretsizdir; daha fazla öğrenci ve ek özellikler için paketler aylık ${tiers.map((t) => `${t.name} (${t.students} öğrenci) ${t.priceTl.toLocaleString("tr-TR")} ₺`).join(", ")}.` },
         { q: "Talebi kabul edince ne oluyor?", a: "Velinin telefonu size görünür; arayıp saati ve ücreti konuşursunuz. Öğrenci Pi Koç hesabınıza eklenir, veli program, ödev ve deneme sonuçlarını kendi hesabından görür." },
         { q: "Vergi durumum ne olacak?", a: "Özel ders gelirinizin vergilendirilmesi kendi statünüze bağlıdır (serbest meslek, şahıs şirketi ya da esnaf muafiyeti gibi). Ücreti doğrudan veliden aldığınız için kendi durumunuz için mali müşavirinize danışmanızı öneririz." },
         legacyFaq[legacyFaq.length - 1],
@@ -110,12 +110,12 @@ export default async function BecomeTeacherPage() {
                   <dd className="font-semibold text-emerald-700">Ücretsiz</dd>
                 </div>
                 <div className="flex justify-between gap-3">
-                  <dt>Pi Koç, {settings.piKocFreeStudents} öğrenciye kadar</dt>
+                  <dt>Pi Koç {COACH_FREE_NAME}, {settings.piKocFreeStudents} öğrenciye kadar</dt>
                   <dd className="font-semibold text-emerald-700">Ücretsiz</dd>
                 </div>
                 {tiers.map((t) => (
                   <div key={t.students} className="flex justify-between gap-3">
-                    <dt>Pi Koç, {t.students} öğrenciye kadar</dt>
+                    <dt>Pi Koç {t.name}, {t.students} öğrenciye kadar</dt>
                     <dd className="font-semibold">{t.priceTl.toLocaleString("tr-TR")} ₺ / ay</dd>
                   </div>
                 ))}

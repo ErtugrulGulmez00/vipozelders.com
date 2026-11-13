@@ -1,7 +1,10 @@
-import { BookMarked, BookOpenCheck, CalendarHeart, LayoutDashboard, UserCog, Users, Wallet } from "lucide-react";
+import { BookMarked, BookOpenCheck, CalendarHeart, Crown, FileUp, LayoutDashboard, Map as MapIcon, Send, Sparkles, UserCog, Users, Wallet } from "lucide-react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { CoachPlanBanner } from "@/components/koc/plan-banner";
+import { SidebarUpgrade } from "@/components/koc/premium";
+import { coachFeatureOpen, parseCoachTiers } from "@/lib/pi-koc";
+import { getSiteSettings } from "@/server/site";
 import { KocShell } from "@/components/koc/koc-shell";
 import type { PanelNavItem } from "@/components/panel/nav-links";
 import { notificationScope, notificationScopeWhere, sideSwitches } from "@/lib/sides";
@@ -23,17 +26,30 @@ export default async function KocLayout({ children }: { children: React.ReactNod
     db.notification.count({ where: { userId: ctx.user.id, readAt: null, ...notificationScopeWhere(notificationScope(facts, "kurum")) } }),
     db.centerStudent.count({ where: { centerId: ctx.center.id, status: "ACTIVE" } }),
   ]);
+  const freePlan = Boolean(ctx.coach && !ctx.coach.paid);
+  const nextTier = freePlan ? (parseCoachTiers((await getSiteSettings()).piKocTiers)[0] ?? null) : null;
   const nav: PanelNavItem[] = [
     { href: "/koc", label: "Genel bakış", icon: <LayoutDashboard />, exact: true },
     { href: "/koc/ogrenciler", label: "Öğrencilerim", icon: <Users /> },
     { href: "/koc/hafta", label: "Haftalık görüşmeler", icon: <CalendarHeart /> },
     { href: "/koc/denemeler", label: "Denemeler", icon: <BookOpenCheck /> },
     { href: "/koc/kaynaklar", label: "Kaynak kütüphanesi", icon: <BookMarked /> },
-    { href: "/koc/tahsilat", label: "Tahsilat", icon: <Wallet /> },
-    { href: "/koc/hesap", label: "Hesap ve abonelik", icon: <UserCog />, also: ["/koc/abonelik", "/koc/bildirimler"] },
+    // Ücretsiz pakette kilitli bölümler gizlenmez, kilit simgesiyle görünür
+    { href: "/koc/tahsilat", label: "Tahsilat", icon: <Wallet />, locked: !coachFeatureOpen(ctx.coach, "fees") },
+    { href: "/koc/abonelik", label: "Paketler", icon: <Crown />, accent: true, tag: freePlan ? "Yükselt" : undefined },
+    { href: "/koc/hesap", label: "Hesap", icon: <UserCog />, also: ["/koc/bildirimler"] },
+    // Ücretsiz pakette kapalı özellikler: tıklayınca paketler sayfası
+    ...(freePlan
+      ? [
+          { href: "/koc/abonelik#pdf", label: "PDF'ten deneme aktarımı", icon: <FileUp />, locked: true, group: "Ücretli pakette" },
+          { href: "/koc/abonelik#konu", label: "Konu eksik haritası", icon: <MapIcon />, locked: true, group: "Ücretli pakette" },
+          { href: "/koc/abonelik#yz", label: "Yapay zekâ taslakları", icon: <Sparkles />, locked: true, group: "Ücretli pakette" },
+          { href: "/koc/abonelik#rapor", label: "Otomatik veli raporu", icon: <Send />, locked: true, group: "Ücretli pakette" },
+        ]
+      : []),
   ];
   return (
-    <KocShell user={ctx.user} nav={nav} switchLinks={sideSwitches(facts, "koc")} unread={unread} usage={{ active, limit: ctx.center.studentLimit }} banner={ctx.coach ? <CoachPlanBanner plan={ctx.coach} active={active} /> : null}>
+    <KocShell user={ctx.user} nav={nav} switchLinks={sideSwitches(facts, "koc")} unread={unread} usage={{ active, limit: ctx.center.studentLimit }} banner={ctx.coach ? <CoachPlanBanner plan={ctx.coach} active={active} /> : null} upgrade={freePlan ? <SidebarUpgrade next={nextTier} /> : undefined}>
       {children}
     </KocShell>
   );

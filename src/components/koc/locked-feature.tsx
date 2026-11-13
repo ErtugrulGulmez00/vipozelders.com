@@ -9,7 +9,7 @@ import { getSiteSettings } from "@/server/site";
 export async function LockedFeature({ feature, className, compact }: { feature: CoachFeature; className?: string; compact?: boolean }) {
   const tier = parseCoachTiers((await getSiteSettings()).piKocTiers)[0];
   const info = COACH_FEATURES[feature];
-  const unlock = tier ? `${tier.students} öğrenci paketinde açılır · ayda ${tier.priceTl.toLocaleString("tr-TR")} ₺` : "Ücretli pakette açılır";
+  const unlock = tier ? `${tier.name} paketinde açılır (${tier.students} öğrenci) · ayda ${tier.priceTl.toLocaleString("tr-TR")} ₺` : "Ücretli pakette açılır";
   return (
     <div className={cn("rounded-3xl border border-dashed border-ink-200 bg-slate-50/70 p-5", className)} data-locked={feature}>
       <div className="flex items-start gap-3">

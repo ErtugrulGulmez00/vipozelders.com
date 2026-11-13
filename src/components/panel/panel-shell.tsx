@@ -1,4 +1,5 @@
 import { ArrowLeftRight, ExternalLink, LogOut } from "lucide-react";
+import { cn } from "@/lib/cn";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { logoutAction } from "@/actions/auth";
@@ -68,25 +69,26 @@ export function PanelShell({
         <header className="sticky top-0 z-20 flex h-14 items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur">
           <div className="flex items-center gap-2 lg:hidden">
             <Logo className="[&>span:last-child]:hidden sm:[&>span:last-child]:inline" />
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">{title}</span>
+            {/* Telefonda iki geçiş düğmesi varsa (ör. kurum + Pi Koç) başlık yer açmak için gizlenir */}
+            <span className={cn("text-xs font-semibold uppercase tracking-wide text-slate-500", switchLinks.length > 1 && "hidden sm:inline")}>{title}</span>
           </div>
           <div className="hidden min-w-0 flex-1 lg:block">{headerSlot}</div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 sm:gap-1">
             {headerActions}
             {switchLinks.map((link) => (
               // Üst çubukta her ekranda görünür; telefonda kısa ad
-              <Link key={link.href} href={link.href} aria-label={link.label} className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-50">
+              <Link key={link.href} href={link.href} aria-label={link.label} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-2 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-50 sm:gap-1.5 sm:px-3">
                 <ArrowLeftRight className="size-4" aria-hidden /> <span className="sm:hidden">{link.short}</span>
                 <span className="hidden sm:inline">{link.label}</span>
               </Link>
             ))}
             {hideSiteLink ? null : (
-              <Link href="/" className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-slate-600 hover:bg-slate-100">
+              <Link href="/" className="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm text-slate-600 hover:bg-slate-100 sm:px-3">
                 <ExternalLink className="size-4" aria-hidden /> <span className="hidden sm:inline">Siteye git</span>
               </Link>
             )}
             <form action={logoutAction}>
-              <button type="submit" className="inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm text-rose-600 hover:bg-rose-50">
+              <button type="submit" className="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm text-rose-600 hover:bg-rose-50 sm:px-3">
                 <LogOut className="size-4" aria-hidden /> <span className="hidden sm:inline">Çıkış</span>
               </button>
             </form>
