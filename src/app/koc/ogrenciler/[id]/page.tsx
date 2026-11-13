@@ -23,6 +23,8 @@ import { GoalCard } from "@/components/koc/goal-card";
 import { DeleteStudyButton, StudyEntryForm } from "@/components/koc/koc-tools";
 import { formatMinutes, studyStats } from "@/server/koc-extra";
 import { TopicMapCard } from "@/components/koc/topic-map";
+import { LockedFeature } from "@/components/koc/locked-feature";
+import { coachFeatureOpen } from "@/lib/pi-koc";
 import { planTemplates, resourceForecast } from "@/server/koc-plan";
 
 export const metadata: Metadata = { title: "Öğrenci" };
@@ -101,7 +103,7 @@ export default async function KocStudentPage({ params, searchParams }: PageProps
       <CenterFlash code={sp.durum} />
       <Tabs tabs={tabs} active={tab} />
       {tab === "program" ? (
-        <ProgramTab centerId={centerId} studentId={id} week={typeof sp.hafta === "string" ? sp.hafta : undefined} />
+        <ProgramTab centerId={centerId} studentId={id} week={typeof sp.hafta === "string" ? sp.hafta : undefined} topicLocked={!coachFeatureOpen(ctx.coach, "topicAnalysis")} />
       ) : tab === "gorusmeler" ? (
         <CoachingView centerId={centerId} studentId={id} mode="staff" canWrite={ctx.access.writable} memberId={ctx.member.id} isManager />
       ) : tab === "sorular" ? (
@@ -315,7 +317,7 @@ function EmptyLine({ text, href }: { text: string; href: string }) {
   );
 }
 
-async function ProgramTab({ centerId, studentId, week }: { centerId: string; studentId: string; week?: string }) {
+async function ProgramTab({ centerId, studentId, week, topicLocked }: { centerId: string; studentId: string; week?: string; topicLocked: boolean }) {
   const today = toLocalDateString(new Date());
   const weekStart = weekStartOf(week && isDateString(week) ? week : today);
   const [library, assigned, templates] = await Promise.all([
@@ -362,7 +364,7 @@ async function ProgramTab({ centerId, studentId, week }: { centerId: string; stu
         </CardBody>
       </Card>
       </div>
-      <TopicMapCard centerId={centerId} studentId={studentId} today={today} />
+      {topicLocked ? <LockedFeature feature="topicAnalysis" /> : <TopicMapCard centerId={centerId} studentId={studentId} today={today} />}
     </div>
   );
 }

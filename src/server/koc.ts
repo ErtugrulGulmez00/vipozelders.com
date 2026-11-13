@@ -13,7 +13,7 @@ import { db } from "./db";
 export const KOC_EXAM_KINDS: ExamKindName[] = ["LGS", "TYT", "AYT_SAY", "AYT_EA", "AYT_SOZ", "YDT"];
 
 /** Koçun öğrencisi mi? (yalnızca kendi hesabındaki öğrenci) */
-export async function kocStudentOrThrow(ctx: CenterContext, studentId: string) {
+export async function kocStudentOrThrow(ctx: { center: { id: string } }, studentId: string) {
   const student = await db.centerStudent.findFirst({ where: { id: studentId, centerId: ctx.center.id } });
   if (!student) throw new CenterError("Öğrenci bulunamadı.");
   return student;

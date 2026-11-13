@@ -71,6 +71,15 @@ test("Pi Koç sayfası ücretsiz paketi ve fiyatları gösterir; koç kendi kayd
   expect(center).toMatchObject({ kind: "COACH", status: "ACTIVE", studentLimit: 10 });
   await page.goto("/koc/abonelik");
   await expect(page.getByText("Pi Koç · Ücretsiz paket · 3 öğrenciye kadar")).toBeVisible();
+  await expect(page.getByText("Ücretli pakette ek olarak")).toBeVisible();
+
+  // Ücretli özellikler gizlenmez, kilitli görünür
+  await page.goto("/koc/denemeler");
+  await expect(page.locator("[data-locked='pdfImport']")).toContainText("5 öğrenci paketinde açılır");
+  await page.goto("/koc/tahsilat");
+  await expect(page.locator("[data-locked='fees']")).toBeVisible();
+  await page.goto("/koc/hesap");
+  await expect(page.locator("[data-locked='autoReport']")).toBeVisible();
 
   // Aynı e-postayla ikinci kayıt reddedilir
   await page.context().clearCookies();

@@ -11,6 +11,7 @@ import { requireCenter } from "@/server/center/context";
 import { centerPlans, subscriptionLabel } from "@/server/center/plans";
 import { db } from "@/server/db";
 import { getSiteSettings } from "@/server/site";
+import { CoachPlanCompare } from "@/components/koc/locked-feature";
 
 export const metadata: Metadata = { title: "Abonelik" };
 
@@ -90,6 +91,7 @@ export default async function SubscriptionPage() {
               </div>
             ))}
           </div>
+          {settings.piKocFreeStudents > 0 ? <CoachPlanCompare freeStudents={settings.piKocFreeStudents} freeMinutes={settings.piKocFreeMeetingMinutes} freeAi={settings.piKocFreeAiPerMonth} /> : null}
         </>
       ) : (
         <>

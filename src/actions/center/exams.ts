@@ -4,7 +4,7 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { failure, success, type ActionState } from "@/lib/action-state";
 import { EXAM_PRESETS, PENALTY_OPTIONS, type ExamKindName } from "@/lib/center/exams";
-import { centerAction, centerAudit } from "@/server/center/context";
+import { centerAction, centerAudit, coachFeatureLocked } from "@/server/center/context";
 import { CenterError } from "@/server/center/errors";
 import {
   createExam,
@@ -223,6 +223,8 @@ export async function importOpticAction(_: ActionState, formData: FormData): Pro
 export async function uploadExamPdfAction(_: ActionState, formData: FormData): Promise<ActionState> {
   const auth = await centerAction("exams.manage");
   if (!auth.ok) return auth.state;
+  const locked = coachFeatureLocked(auth.ctx, "pdfImport");
+  if (locked) return locked;
   let draftId = "";
   const result = await guard(async () => {
     draftId = await createPdfImport(auth.ctx, formData.get("file") as File | null);
@@ -236,6 +238,8 @@ export async function uploadExamPdfAction(_: ActionState, formData: FormData): P
 export async function confirmExamPdfAction(_: ActionState, formData: FormData): Promise<ActionState> {
   const auth = await centerAction("exams.manage");
   if (!auth.ok) return auth.state;
+  const locked = coachFeatureLocked(auth.ctx, "pdfImport");
+  if (locked) return locked;
   let target = "";
   const result = await guard(async () => {
     const draftId = str(formData, "draftId");

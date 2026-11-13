@@ -1,5 +1,6 @@
 import { cacheLife, cacheTag } from "next/cache";
 import type { Prisma } from "@/generated/prisma/client";
+import { coachPlan } from "@/lib/pi-koc";
 import { fullName, normalizeSearch } from "@/lib/text";
 import { db } from "./db";
 import { weightedRating } from "./pricing";
@@ -148,6 +149,7 @@ export async function searchTeachers(params: TeacherSearchParams) {
     },
   });
 
+  const paidCoaches = await paidCoachUserIds(rows.map((r) => r.userId));
   const cards: TeacherCard[] = rows.map((row) => ({
     userId: row.userId,
     slug: row.slug,
@@ -165,7 +167,8 @@ export async function searchTeachers(params: TeacherSearchParams) {
     offersQuestionSession: row.offersQuestionSession,
     isNew: isNewTeacher(row),
     verified: row.verificationStatus === "VERIFIED",
-    featured: row.isFeatured,
+    // Yönetimin seçtiği ya da ücretli Pi Koç paketi olan öğretmen
+    featured: row.isFeatured || paidCoaches.has(row.userId),
     minHourlyPrice: Math.min(...row.offerings.map((o) => o.hourlyPrice)),
     subjects: [...new Set(row.offerings.map((o) => o.subject.name))].slice(0, 4),
     avgResponseMinutes: row.avgResponseMinutes,
@@ -196,6 +199,16 @@ export async function searchTeachers(params: TeacherSearchParams) {
     pageCount,
     resolved: { level, subject, service, city, district },
   };
+}
+
+/** Ücretli Pi Koç paketi süren (sahibi olduğu koç hesabı) öğretmenler: vitrinde öne çıkar. */
+async function paidCoachUserIds(userIds: string[]): Promise<Set<string>> {
+  if (!userIds.length) return new Set();
+  const owners = await db.centerMember.findMany({
+    where: { userId: { in: userIds }, role: "OWNER", isActive: true, center: { kind: "COACH", status: { not: "SUSPENDED" } } },
+    select: { userId: true, center: { select: { status: true, trialEndsAt: true, paidUntil: true, studentLimit: true } } },
+  });
+  return new Set(owners.filter((o) => coachPlan(o.center, 0).paid).map((o) => o.userId));
 }
 
 export async function featuredTeachers(limit = 6): Promise<TeacherCard[]> {

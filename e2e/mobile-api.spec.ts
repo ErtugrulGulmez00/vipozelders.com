@@ -1,5 +1,10 @@
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import pg from "pg";
+import { setLessonBooking } from "./lesson-booking";
+
+// Vitrinden randevu canlıda kapalı; bu akışın testi için açılır
+test.beforeAll(() => setLessonBooking(true));
+test.afterAll(() => setLessonBooking(false));
 
 /** Mobil API (Flutter uygulamasının kullanacağı): uygulamanın yaptığı istekler sırayla denenir. */
 

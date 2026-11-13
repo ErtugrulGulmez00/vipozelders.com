@@ -8,6 +8,8 @@ import { StudentAvatar } from "@/components/koc/student-card";
 import { Alert, Badge, Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/components/ui/primitives";
 import { formatDate, toLocalDateString } from "@/lib/dates";
 import { formatMoney } from "@/lib/money";
+import { LockedFeature } from "@/components/koc/locked-feature";
+import { coachFeatureOpen } from "@/lib/pi-koc";
 import { requireCenter } from "@/server/center/context";
 import { coachFeeOverview, isPeriod, periodLabel, shiftPeriod } from "@/server/koc-extra";
 
@@ -18,6 +20,14 @@ export default async function KocFeesPage({ searchParams }: PageProps<"/koc/tahs
   await connection();
   const ctx = await requireCenter("students.edit");
   const sp = await searchParams;
+  if (!coachFeatureOpen(ctx.coach, "fees")) {
+    return (
+      <>
+        <PageHeader title="Tahsilat" description="Öğrencilerinizden aldığınız aylık ücretin takibi. Yalnızca siz görürsünüz." />
+        <LockedFeature feature="fees" className="max-w-xl" />
+      </>
+    );
+  }
   const current = toLocalDateString(new Date()).slice(0, 7);
   const period = isPeriod(sp.ay) ? sp.ay : current;
   const data = await coachFeeOverview(ctx.center.id, period);

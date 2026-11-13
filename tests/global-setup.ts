@@ -17,8 +17,12 @@ export default async function setup() {
   await client.query(`ALTER DATABASE "${TEST_DATABASE}" SET timezone TO 'UTC'`);
   await client.end();
 
-  execSync("npx prisma migrate deploy", {
-    stdio: "ignore",
-    env: { ...process.env, DATABASE_URL: ADMIN_URL.replace(/\/postgres$/, `/${TEST_DATABASE}`) },
-  });
+  const testUrl = ADMIN_URL.replace(/\/postgres$/, `/${TEST_DATABASE}`);
+  execSync("npx prisma migrate deploy", { stdio: "ignore", env: { ...process.env, DATABASE_URL: testUrl } });
+
+  // Randevu, paket ve grup dersi akışlarının testleri: vitrinden satış açıkmış gibi (canlıda varsayılan kapalı)
+  const db = new pg.Client({ connectionString: testUrl });
+  await db.connect();
+  await db.query(`INSERT INTO "SiteSetting" ("key", "value", "updatedAt") VALUES ('lessonBookingEnabled', 'true'::jsonb, now()) ON CONFLICT ("key") DO UPDATE SET "value" = 'true'::jsonb`);
+  await db.end();
 }

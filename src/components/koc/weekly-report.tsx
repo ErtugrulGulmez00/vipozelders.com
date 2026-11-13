@@ -9,8 +9,11 @@ import { BarChart, HBarList, Ring } from "./charts";
 const dmy = (d: string) => d.split("-").reverse().join(".");
 const pct = (v: number | null) => (v === null ? "—" : `%${Math.round(v * 100)}`);
 
-/** Haftalık koçluk raporu (koç önizlemesi ve velinin açtığı bağlantı aynı görünümü kullanır; yazdırmaya uygundur). */
-export function WeeklyReport({ data, note }: { data: WeeklyReportData; note: string | null }) {
+/**
+ * Haftalık koçluk raporu (koç önizlemesi ve velinin açtığı bağlantı aynı görünümü kullanır; yazdırmaya uygundur).
+ * branded: ücretsiz pakette Pi Koç imzası; ücretli pakette rapor yalnızca koçun adıyla çıkar.
+ */
+export function WeeklyReport({ data, note, branded = true }: { data: WeeklyReportData; note: string | null; branded?: boolean }) {
   const { student } = data;
   const diff = data.solved - data.previousSolved;
   const planRate = data.plan.total ? data.plan.done / data.plan.total : null;
@@ -31,11 +34,11 @@ export function WeeklyReport({ data, note }: { data: WeeklyReportData; note: str
           </div>
           <div className="flex items-center gap-2.5">
             <span className="inline-flex size-10 -rotate-6 items-center justify-center rounded-2xl bg-brand-600 text-white">
-              <PiMark className="size-6" />
+              {branded ? <PiMark className="size-6" /> : <span className="font-display text-lg font-extrabold">{student.center.name.trim().charAt(0).toLocaleUpperCase("tr-TR")}</span>}
             </span>
             <span className="text-right leading-tight">
               <span className="block text-sm font-bold">{student.center.name}</span>
-              <span className="block text-xs text-ink-300">Pi Koç</span>
+              {branded ? <span className="block text-xs text-ink-300">Pi Koç</span> : null}
             </span>
           </div>
         </div>
@@ -161,7 +164,7 @@ export function WeeklyReport({ data, note }: { data: WeeklyReportData; note: str
             {data.meeting ? `Koç görüşmesi ${data.meeting}` : "Görüşme günü belirlenmedi"}
             {student.center.phone ? ` · ${student.center.phone}` : ""}
           </span>
-          <span>Pi Koç ile hazırlandı · pikampus.com</span>
+          {branded ? <span>Pi Koç ile hazırlandı · pikampus.com</span> : null}
         </footer>
       </div>
     </article>

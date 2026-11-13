@@ -1,6 +1,11 @@
 import { gateLogin } from "./gate-login";
 import { expect, test, type Browser, type BrowserContext, type Page } from "@playwright/test";
 import pg from "pg";
+import { setLessonBooking } from "./lesson-booking";
+
+// Vitrinden randevu canlıda kapalı; bu akışın testi için açılır
+test.beforeAll(() => setLessonBooking(true));
+test.afterAll(() => setLessonBooking(false));
 
 /**
  * İki tarayıcıda uçtan uca ders: yeni bir veli kayıt olur, demo öğretmen Ayşe Yılmaz'dan ders alıp (test ödemesiyle)

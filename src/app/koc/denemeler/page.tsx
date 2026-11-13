@@ -7,6 +7,8 @@ import { Badge, Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/com
 import { PdfUploadForm } from "@/app/kurum/denemeler/pdf-aktar/pdf-forms";
 import { EXAM_PRESETS, formatNet, type ExamKindName } from "@/lib/center/exams";
 import { dbDateToString } from "@/lib/dates";
+import { coachFeatureOpen } from "@/lib/pi-koc";
+import { LockedFeature } from "@/components/koc/locked-feature";
 import { requireCenter } from "@/server/center/context";
 import { db } from "@/server/db";
 
@@ -18,6 +20,7 @@ const dmy = (d: string) => d.split("-").reverse().join(".");
 export default async function KocExamsPage({ searchParams }: PageProps<"/koc/denemeler">) {
   const ctx = await requireCenter("exams.manage");
   const sp = await searchParams;
+  const locked = !coachFeatureOpen(ctx.coach, "pdfImport");
   const exams = await db.centerExam.findMany({
     where: { centerId: ctx.center.id },
     orderBy: { date: "desc" },
@@ -26,9 +29,12 @@ export default async function KocExamsPage({ searchParams }: PageProps<"/koc/den
   });
   return (
     <>
-      <PageHeader title="Denemeler" description="Yayınevinin sonuç PDF'ini yükleyin; öğrencilerinizin netleri, cevapları ve konu analizi kendiliğinden girilir. Tek öğrencinin sonucunu öğrenci sayfasından da girebilirsiniz." />
+      <PageHeader title="Denemeler" description={locked ? "Öğrencilerinizin deneme sonuçlarını öğrenci sayfasındaki Denemeler sekmesinden girersiniz; net grafiği kendiliğinden çıkar." : "Yayınevinin sonuç PDF'ini yükleyin; öğrencilerinizin netleri, cevapları ve konu analizi kendiliğinden girilir. Tek öğrencinin sonucunu öğrenci sayfasından da girebilirsiniz."} />
       <CenterFlash code={sp.durum} />
       <div className="grid gap-6 lg:grid-cols-[1fr_1.4fr] lg:items-start">
+        {locked ? (
+          <LockedFeature feature="pdfImport" />
+        ) : (
         <Card>
           <CardHeader title="Yayınevi PDF'inden aktar" description="En fazla 25 MB" />
           <CardBody className="space-y-4">
@@ -40,6 +46,7 @@ export default async function KocExamsPage({ searchParams }: PageProps<"/koc/den
             </ol>
           </CardBody>
         </Card>
+        )}
         {exams.length ? (
           <div className="space-y-3">
             {exams.map((e) => (

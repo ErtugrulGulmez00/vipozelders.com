@@ -9,6 +9,7 @@ import { formatMoney } from "@/lib/money";
 import { parseCoachTiers } from "@/lib/pi-koc";
 import { getSiteSettings } from "@/server/site";
 import { KocSignupForm } from "@/components/koc/signup-form";
+import { CoachPlanCompare } from "@/components/koc/locked-feature";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/pi-koc" },
@@ -112,6 +113,7 @@ export default async function PiKocPage() {
               </div>
             ))}
           </div>
+          {freeStudents > 0 ? <CoachPlanCompare freeStudents={freeStudents} freeMinutes={settings.piKocFreeMeetingMinutes} freeAi={settings.piKocFreeAiPerMonth} /> : null}
           <p className="mt-5 text-sm text-ink-500">Ücretli paket ödemesini şimdilik havale ya da EFT ile alıyoruz; ödemeniz kaydedilene kadar ücretsiz paketle çalışırsınız. Ücretli paketin süresi biterse kayıtlarınız silinmez.</p>
         </div>
       </section>

@@ -124,6 +124,12 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
         <NumberField name="groupMaxPriceTl" label="En yüksek kişi başı ücret" value={settings.groupMaxPriceTl} suffix="TL" />
       </Section>
 
+      <Section title="Vitrinden randevu" description="Kapalıyken öğretmen profilinde randevu ve ödeme yerine “Ders talebi gönder” görünür; ödeme öğretmenle veli arasında olur. Satın alınmış paketlerin dersleri kullanılmaya devam eder.">
+        <div className="sm:col-span-2">
+          <Checkbox name="lessonBookingEnabled" defaultChecked={settings.lessonBookingEnabled} label="Vitrinden randevu ve ödeme açık (tanışma görüşmesi, ders, paket, grup dersi satışı)" />
+        </div>
+      </Section>
+
       <Section title="Paket ders, düzenli ders ve erteleme" description="Öğretmen paket indirimlerini kendisi belirler (en fazla aşağıdaki yüzde). Düzenli ders, haftalık randevuları otomatik oluşturan bir pakettir. Erteleme: taraflardan biri yeni saat önerir, diğeri kabul eder.">
         <div className="sm:col-span-2">
           <Checkbox name="packagesEnabled" defaultChecked={settings.packagesEnabled} label="Paket ders ve düzenli ders açık" />
@@ -178,6 +184,7 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
         </Field>
         <NumberField name="piKocHoursPerStudent" label="Görüşme havuzu (öğrenci başına)" value={settings.piKocHoursPerStudent} suffix="saat / ay" />
         <NumberField name="piKocFreeMeetingMinutes" label="Ücretsiz pakette görüşme başına" value={settings.piKocFreeMeetingMinutes} suffix="dakika" />
+        <NumberField name="piKocFreeAiPerMonth" label="Ücretsiz pakette yapay zekâ taslağı" value={settings.piKocFreeAiPerMonth} suffix="adet / ay" />
       </Section>
 
       <Section title="Bakım modu">

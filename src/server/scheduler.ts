@@ -26,6 +26,7 @@ import { expirePackages } from "./packages";
 import { expireRescheduleRequests } from "./reschedule";
 import { sendCoachDigests, sendPlanNudges } from "./koc-plan";
 import { enforceCoachMeetings } from "./koc-meeting-usage";
+import { sendCoachAutoReports } from "./koc-report";
 
 const HOLDER = `${hostname()}-${process.pid}-${randomUUID().slice(0, 8)}`;
 
@@ -68,6 +69,8 @@ const TASKS = {
   kocPlanNudges: sendPlanNudges,
   // Pi Koç görüntülü görüşme: ücretsiz pakette süresi dolan oda kapanır, ücretli pakette havuz aşımı bildirilir
   kocMeetings: enforceCoachMeetings,
+  // Pi Koç ücretli paket: pazar akşamı otomatik veli raporu
+  kocAutoReports: sendCoachAutoReports,
   centerMessages: () => processCenterMessages(),
   emails: () => sendPendingEmails(),
   pushes: sendPendingPushes,

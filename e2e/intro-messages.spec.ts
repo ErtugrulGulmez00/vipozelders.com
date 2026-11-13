@@ -1,6 +1,11 @@
 import { gateLogin } from "./gate-login";
 import { expect, test, type Page } from "@playwright/test";
 import pg from "pg";
+import { setLessonBooking } from "./lesson-booking";
+
+// Vitrinden randevu canlıda kapalı; bu akışın testi için açılır
+test.beforeAll(() => setLessonBooking(true));
+test.afterAll(() => setLessonBooking(false));
 
 /**
  * Ücretsiz tanışma görüşmesi ve mesajlaşma: veli demo öğretmen ayse.yilmaz'ın profilinden 15 dk tanışma ister ve mesaj

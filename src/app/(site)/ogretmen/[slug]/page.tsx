@@ -7,6 +7,7 @@ import { Suspense } from "react";
 import { toggleFavoriteAction } from "@/actions/student";
 import { MessageTeacherBox } from "@/components/panel/message-forms";
 import { BookingWidget } from "@/components/site/booking-widget";
+import { InquiryForm } from "@/components/site/inquiry-form";
 import { salesOpen } from "@/server/payments/service";
 import { buttonClasses } from "@/components/ui/button";
 import { PhotoZoom } from "@/components/site/photo-zoom";
@@ -67,6 +68,9 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
   // Paket indirimleri, izleyicinin bu öğretmendeki paketleri, tekrarlayan ders sınırı
   const [viewerUser, pkgSettings, discountRow] = await Promise.all([getCurrentUser(), loadSettings(), db.teacherProfile.findUnique({ where: { userId: teacher.userId }, select: { packageDiscounts: true } })]);
   const packageOffers = pkgSettings.packagesEnabled ? parsePackageDiscounts(discountRow?.packageDiscounts ?? "", pkgSettings.packageMaxLessons, pkgSettings.packageMaxDiscountPercent) : [];
+  // Vitrinden randevu kapalıyken (2026-11-12 modeli) veli öğretmene ders talebi gönderir
+  const bookingOpen = pkgSettings.lessonBookingEnabled;
+  const myInquiry = !bookingOpen && viewerUser?.role === "STUDENT" ? await db.teacherInquiry.findFirst({ where: { teacherId: teacher.userId, requesterId: viewerUser.id }, orderBy: { createdAt: "desc" }, select: { status: true } }) : null;
   const myPackages = viewerUser?.role === "STUDENT" ? (await activePackages(viewerUser.id, teacher.userId)).map((p) => ({ id: p.id, code: p.code, offeringId: p.offeringId, durationMinutes: p.durationMinutes, left: p.left })) : [];
   const name = fullName(teacher.user);
   const video = youtubeId(teacher.videoUrl);
@@ -80,7 +84,7 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
     <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
       {preview ? (
         <Alert tone="warning" title="Önizleme" className="lg:col-span-2">
-          Bu profil henüz yayında değil; şu an yalnızca siz ve yöneticiler görebilirsiniz. Yönetici yayına aldığında veliler bu sayfayı görüp randevu alabilecek.
+          Bu profil henüz yayında değil; şu an yalnızca siz ve yöneticiler görebilirsiniz. Yönetici yayına aldığında veliler bu sayfayı görüp {bookingOpen ? "randevu alabilecek" : "size ders talebi gönderebilecek"}.
         </Alert>
       ) : null}
       <div className="space-y-6">
@@ -114,12 +118,12 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
                     <Monitor className="size-4 text-slate-400" aria-hidden /> Online ders
                   </li>
                 ) : null}
-                {teacher.offersIntro && teacher.offersOnline ? (
+                {bookingOpen && teacher.offersIntro && teacher.offersOnline ? (
                   <li className="flex items-center gap-2 font-medium text-emerald-700">
                     <Sparkles className="size-4" aria-hidden /> Ücretsiz 15 dk tanışma görüşmesi
                   </li>
                 ) : null}
-                {teacher.offersQuestionSession ? (
+                {bookingOpen && teacher.offersQuestionSession ? (
                   <li className="flex items-center gap-2 font-medium text-emerald-700 sm:col-span-2">
                     <MessageCircleQuestion className="size-4" aria-hidden /> Tamamlanan her dersin ardından 30 dakika ücretsiz soru çözümü
                   </li>
@@ -190,9 +194,11 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
           ) : null}
         </Card>
 
-        <Suspense fallback={null}>
-          <GroupCourses teacherId={teacher.userId} />
-        </Suspense>
+        {bookingOpen ? (
+          <Suspense fallback={null}>
+            <GroupCourses teacherId={teacher.userId} />
+          </Suspense>
+        ) : null}
 
         <Reviews teacher={teacher} />
       </div>
@@ -200,10 +206,44 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
       <aside id="randevu" className="scroll-mt-20 lg:sticky lg:top-20 lg:self-start">
         <Card className="p-5">
           <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-slate-900">
-            <BookOpen className="size-5 text-brand-600" aria-hidden /> Randevu al
+            <BookOpen className="size-5 text-brand-600" aria-hidden /> {bookingOpen ? "Randevu al" : "Ders talebi gönder"}
           </h2>
           {preview ? (
-            <p className="text-sm text-slate-500">Profil yayına alınınca boş saatleriniz burada görünecek ve veliler randevu alabilecek.</p>
+            <p className="text-sm text-slate-500">{bookingOpen ? "Profil yayına alınınca boş saatleriniz burada görünecek ve veliler randevu alabilecek." : "Profil yayına alınınca veliler buradan size ders talebi gönderebilecek."}</p>
+          ) : !bookingOpen ? (
+            <>
+              <p className="mb-4 text-sm text-slate-600">
+                Talebinizi {teacher.user.firstName} öğretmen görür; kabul ederse sizi arar. Ders saatini ve ücreti öğretmenle birlikte belirlersiniz, ödemeyi doğrudan öğretmene yaparsınız.
+              </p>
+              {myInquiry?.status === "PENDING" ? (
+                <Alert tone="info" title="Talebiniz iletildi">Öğretmen yanıtlayınca size haber vereceğiz.</Alert>
+              ) : myInquiry?.status === "ACCEPTED" ? (
+                <Alert tone="success" title="Talebiniz kabul edildi">Öğretmen sizi verdiğiniz numaradan arayacak.</Alert>
+              ) : viewerUser?.role === "STUDENT" ? (
+                <InquiryForm
+                  teacherId={teacher.userId}
+                  teacherFirstName={teacher.user.firstName}
+                  online={teacher.offersOnline}
+                  inPerson={teacher.offersInPerson}
+                  offerings={teacher.offerings.map((o) => ({ id: o.id, label: `${o.level.name} · ${o.subject.name}` }))}
+                  defaults={{ name: `${viewerUser.firstName} ${viewerUser.lastName}`.trim(), phone: viewerUser.phone ?? "" }}
+                />
+              ) : viewerUser ? (
+                <p className="text-sm text-slate-500">Ders talebi veli ya da öğrenci hesabıyla gönderilir.</p>
+              ) : (
+                <div className="grid gap-2">
+                  <Link href={`/giris?next=${encodeURIComponent(`/ogretmen/${teacher.slug}#randevu`)}`} className={buttonClasses("primary", "md", "w-full")}>
+                    Giriş yapıp talep gönder
+                  </Link>
+                  <Link href="/kayit" className={buttonClasses("outline", "md", "w-full")}>
+                    Ücretsiz üye ol
+                  </Link>
+                </div>
+              )}
+              <div className="mt-4 border-t border-slate-100 pt-4">
+                <MessageTeacherBox teacherId={teacher.userId} teacherFirstName={teacher.user.firstName} />
+              </div>
+            </>
           ) : (
           <>
           {salesOpen() ? null : (
@@ -246,7 +286,7 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
             </span>
           </p>
           <a href="#randevu" className={buttonClasses("primary", "md")}>
-            Randevu al
+            {bookingOpen ? "Randevu al" : "Ders talebi gönder"}
           </a>
         </div>
       ) : null}

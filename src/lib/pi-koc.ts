@@ -65,6 +65,25 @@ export function coachPlanLabel(plan: CoachPlan): string {
   return `${plan.studentLimit} öğrenci paketi${plan.state === "trial" ? " (deneme)" : ""}`;
 }
 
+// ——— Ücretli özellikler ———
+// Ücretsiz pakette gizlenmez, kilitli gösterilir. Kurum hesaplarında (plan null) hepsi açıktır.
+
+export type CoachFeature = "pdfImport" | "topicAnalysis" | "ai" | "autoReport" | "fees" | "featured";
+
+export const COACH_FEATURES: Record<CoachFeature, { title: string; text: string }> = {
+  pdfImport: { title: "PDF'ten deneme aktarımı", text: "Yayınevinin sonuç PDF'ini yükleyin; bütün öğrencilerinizin netleri, cevapları ve konu analizi tek seferde girilsin." },
+  topicAnalysis: { title: "Konu eksik haritası", text: "Kaynak ve denemelerden konu konu başarı; zayıf konular renkli görünür, tek tıkla programa eklenir." },
+  ai: { title: "Yapay zekâ taslakları", text: "Haftalık veli değerlendirmesini yapay zekâ verilerden yazar; siz okuyup düzeltirsiniz." },
+  autoReport: { title: "Otomatik haftalık veli raporu", text: "Rapor her pazar akşamı sizin adınızla velilere kendiliğinden gider; altında Pi Koç yazısı olmaz." },
+  fees: { title: "Tahsilat takibi", text: "Öğrenci başına aylık ücret, kim ödedi, kim bekliyor ve son 6 ayın tahsilatı." },
+  featured: { title: "Vitrinde öne çıkma", text: "Özel ders vitrininde üst sıralarda ve “Öne çıkan” etiketiyle görünürsünüz." },
+};
+
+/** Özellik açık mı: kurum hesabında her zaman, Pi Koç'ta ücretli pakette. */
+export function coachFeatureOpen(plan: CoachPlan | null, _feature: CoachFeature): boolean {
+  return !plan || plan.paid;
+}
+
 // ——— Görüntülü görüşme sınırı ———
 // Aylık havuz = paket öğrenci sayısı × saat (ayar). Ücretsiz pakette sert: görüşme başına dakika sınırı ve havuz dolunca
 // yeni görüşme açılmaz. Ücretli pakette yumuşak: süre serbest, havuz aşılınca yalnızca uyarı ve bildirim.

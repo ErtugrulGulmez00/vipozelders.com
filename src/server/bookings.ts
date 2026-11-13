@@ -184,6 +184,8 @@ export async function createBookingHold(input: CreateBookingInput, now = new Dat
   }
   if (!intro && !pkg && !salesOpen()) throw new BookingError("Online ödeme altyapımız çok yakında açılıyor; şu an ders satışı yapılamıyor.");
   const settings = await loadSettings();
+  // Vitrinden randevu kapalı (2026-11-12 modeli): satın alınmış paketin dersleri dışında yeni randevu açılmaz
+  if (!pkg && !settings.lessonBookingEnabled) throw new BookingError("Şu an siteden randevu alınmıyor. Öğretmenin profilinden ders talebi gönderin; öğretmen sizi arayacak.");
   const offering = await db.teacherOffering.findUnique({
     where: { id: input.offeringId },
     include: {

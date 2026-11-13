@@ -33,9 +33,10 @@ import {
   portalDeleteStudyAction,
   kocRecordPaymentAction,
   kocDeletePaymentAction,
+  kocSaveAutoReportAction,
 } from "@/actions/koc";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
-import { Field, Input, Select, Textarea } from "@/components/ui/form";
+import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { EXAM_PRESETS, type ExamKindName } from "@/lib/center/exams";
 import { WEEKDAY_NAMES } from "@/lib/dates";
@@ -306,6 +307,17 @@ export function KocSettingsForm({ values }: { values: { name: string; phone: str
   );
 }
 
+/** Ücretli paket: haftalık veli raporunun pazar akşamı kendiliğinden gönderilmesi. */
+export function AutoReportForm({ enabled }: { enabled: boolean }) {
+  return (
+    <ActionForm action={kocSaveAutoReportAction} className="space-y-3">
+      <Checkbox name="autoReport" defaultChecked={enabled} label="Haftalık raporu her pazar 18:00'den sonra velilere kendiliğinden gönder" />
+      <p className="text-xs text-slate-500">O hafta kaydı olan ve velisinin e-postası kayıtlı öğrencilere gider; yazdığınız değerlendirme de rapora eklenir. Daha önce elle gönderdiğiniz rapor yeniden gönderilmez.</p>
+      <SubmitButton variant="outline">Kaydet</SubmitButton>
+    </ActionForm>
+  );
+}
+
 export function ReportNoteForm({ studentId, weekStart, note, aiEnabled }: { studentId: string; weekStart: string; note: string | null; aiEnabled: boolean }) {
   const [text, setText] = useState(note ?? "");
   const [info, setInfo] = useState<string | null>(null);
@@ -318,7 +330,7 @@ export function ReportNoteForm({ studentId, weekStart, note, aiEnabled }: { stud
       const result = await kocDraftReportAction(studentId, weekStart);
       if (!result.ok) return setInfo(result.error);
       setText(result.text);
-      setInfo(result.source === "ai" ? "Yapay zekâ taslağı: okuyup düzeltin, sonra kaydedin." : "Haftanın verilerinden özet: düzenleyip kaydedin.");
+      setInfo([result.source === "ai" ? "Yapay zekâ taslağı: okuyup düzeltin, sonra kaydedin." : "Haftanın verilerinden özet: düzenleyip kaydedin.", result.notice].filter(Boolean).join(" "));
     });
   }
 

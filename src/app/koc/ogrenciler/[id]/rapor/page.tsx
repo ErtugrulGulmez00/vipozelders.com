@@ -13,7 +13,9 @@ import { requireCenter } from "@/server/center/context";
 import { db } from "@/server/db";
 import { aiConfigured } from "@/server/ai";
 import { appUrl } from "@/server/email";
-import { getReport, reportWeek, weeklyReportData } from "@/server/koc-report";
+import { freeAiLeft, getReport, reportWeek, weeklyReportData } from "@/server/koc-report";
+import { LockedFeature } from "@/components/koc/locked-feature";
+import { coachFeatureOpen } from "@/lib/pi-koc";
 import { toWhatsAppNumber } from "@/server/whatsapp";
 
 export const metadata: Metadata = { title: "Haftalık rapor" };
@@ -29,7 +31,8 @@ export default async function KocReportPage({ params, searchParams }: PageProps<
   if (!student) notFound();
   const today = toLocalDateString(new Date());
   const weekStart = reportWeek(sp.hafta, today);
-  const [data, report] = await Promise.all([weeklyReportData(ctx.center.id, id, weekStart), getReport(id, weekStart)]);
+  const [data, report, aiLeft] = await Promise.all([weeklyReportData(ctx.center.id, id, weekStart), getReport(id, weekStart), freeAiLeft(ctx)]);
+  const paid = coachFeatureOpen(ctx.coach, "autoReport");
   const base = `/koc/ogrenciler/${id}/rapor`;
   const nextWeek = addDaysToDateString(weekStart, 7);
   const url = report ? appUrl(`/rapor/${report.token}`) : null;
@@ -60,16 +63,24 @@ export default async function KocReportPage({ params, searchParams }: PageProps<
             )}
           </div>
         </div>
-        <WeeklyReport data={data} note={report?.note ?? null} />
+        <WeeklyReport data={data} note={report?.note ?? null} branded={!paid} />
       </div>
 
       <aside className="space-y-4 lg:sticky lg:top-24 print:hidden">
         <Card>
           <CardHeader title="Değerlendirmeniz" />
           <CardBody>
-            <ReportNoteForm studentId={id} weekStart={weekStart} note={report?.note ?? null} aiEnabled={aiConfigured()} />
+            <ReportNoteForm studentId={id} weekStart={weekStart} note={report?.note ?? null} aiEnabled={aiConfigured() && aiLeft !== 0} />
+            {aiLeft !== null && aiConfigured() ? (
+              <p className="mt-2 text-xs text-slate-500">{aiLeft ? `Ücretsiz pakette bu ay ${aiLeft} yapay zekâ taslağı hakkınız var.` : "Ücretsiz paketteki bu ayki yapay zekâ hakkınız kullanıldı; taslak verilerden yazılır."}</p>
+            ) : null}
           </CardBody>
         </Card>
+        {paid ? (
+          <p className="px-1 text-xs text-slate-500">{ctx.center.name} adıyla gider; Pi Koç imzası olmaz. Otomatik gönderimi Hesap sayfasından açarsınız.</p>
+        ) : (
+          <LockedFeature feature="autoReport" compact />
+        )}
         <Card>
           <CardHeader title="Veliyle paylaş" description={url ? `Bağlantı ${report ? formatDate(report.expiresAt) : ""} tarihine kadar açık.` : "Değerlendirmeyi kaydedince ya da gönderince bağlantı oluşur."} />
           <CardBody className="space-y-3">

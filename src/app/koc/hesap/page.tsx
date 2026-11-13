@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { RateBar } from "@/components/center/center-ui";
-import { KocSettingsForm } from "@/components/koc/koc-forms";
+import { AutoReportForm, KocSettingsForm } from "@/components/koc/koc-forms";
+import { LockedFeature } from "@/components/koc/locked-feature";
 import { PasswordForm } from "@/components/panel/password-form";
 import { Badge, Card, CardBody, CardHeader, DescriptionList, PageHeader } from "@/components/ui/primitives";
 import { CENTER_ACCESS_LABEL } from "@/lib/center/labels";
 import { formatDate } from "@/lib/dates";
 import { requireCenter } from "@/server/center/context";
-import { coachPlanLabel, formatHours } from "@/lib/pi-koc";
+import { coachFeatureOpen, coachPlanLabel, formatHours } from "@/lib/pi-koc";
 import { coachMeetingStatus } from "@/server/koc-meeting-usage";
 import { db } from "@/server/db";
 
@@ -15,7 +16,12 @@ export const metadata: Metadata = { title: "Hesap ve abonelik" };
 
 export default async function KocAccountPage() {
   const ctx = await requireCenter();
-  const [active, meetings] = await Promise.all([db.centerStudent.count({ where: { centerId: ctx.center.id, status: "ACTIVE" } }), coachMeetingStatus(ctx.center.id)]);
+  const [active, meetings, center] = await Promise.all([
+    db.centerStudent.count({ where: { centerId: ctx.center.id, status: "ACTIVE" } }),
+    coachMeetingStatus(ctx.center.id),
+    db.center.findUniqueOrThrow({ where: { id: ctx.center.id }, select: { coachAutoReport: true } }),
+  ]);
+  const autoOpen = coachFeatureOpen(ctx.coach, "autoReport");
   const meetingRatio = meetings.usedMinutes / Math.max(meetings.policy.poolMinutes, 1);
   const access = CENTER_ACCESS_LABEL[ctx.access.state];
   return (
@@ -60,6 +66,16 @@ export default async function KocAccountPage() {
             <KocSettingsForm values={{ name: ctx.center.name, phone: ctx.center.phone, email: ctx.center.email }} />
           </CardBody>
         </Card>
+        {autoOpen ? (
+          <Card>
+            <CardHeader title="Otomatik veli raporu" description="Rapor sizin adınızla gider; Pi Koç imzası olmaz." />
+            <CardBody>
+              <AutoReportForm enabled={center.coachAutoReport} />
+            </CardBody>
+          </Card>
+        ) : (
+          <LockedFeature feature="autoReport" />
+        )}
         <Card>
           <CardHeader title="Şifre değiştir" />
           <CardBody>

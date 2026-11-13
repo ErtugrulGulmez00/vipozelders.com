@@ -1,6 +1,7 @@
 import "server-only";
 import { EXAM_PRESETS, round2, type ExamKindName } from "@/lib/center/exams";
-import { addDaysToDateString, dateStringToDbDate, dbDateToString, isDateString, minutesToTime, WEEKDAY_NAMES } from "@/lib/dates";
+import { addDaysToDateString, dateStringToDbDate, dbDateToString, isDateString, isoWeekday, minutesToTime, toLocalDateString, toLocalMinutes, WEEKDAY_NAMES } from "@/lib/dates";
+import { coachPlan } from "@/lib/pi-koc";
 import { ruleBasedSummary, summaryFacts } from "@/lib/koc-summary";
 import { aiConfigured, aiText } from "./ai";
 import { randomToken } from "./auth/password";
@@ -11,6 +12,8 @@ import { messageGuardians } from "./center/messages";
 import { weekStartOf } from "./center/resources";
 import { db } from "./db";
 import { kocStudentOrThrow, studentGoals } from "./koc";
+import { monthStartOf } from "./koc-meeting-usage";
+import { loadSettings } from "./settings";
 
 // Pi Koç haftalık veli raporu: haftanın soru, doğruluk, program ve deneme özeti + koçun değerlendirmesi.
 // Rapor her açılışta güncel veriden hesaplanır; kaydedilen yalnızca koçun notu ve paylaşım bağlantısıdır.
@@ -113,7 +116,10 @@ export async function getReport(studentId: string, weekStart: string) {
 }
 
 /** Koçun notunu kaydeder; rapor yoksa paylaşım bağlantısıyla oluşturur. */
-export async function saveReport(ctx: CenterContext, studentId: string, weekStart: string, note: string | null) {
+/** Rapor işlemleri için yeterli kurum bilgisi (zamanlayıcı da çağırır) */
+type ReportCenter = { center: { id: string; name: string } };
+
+export async function saveReport(ctx: ReportCenter, studentId: string, weekStart: string, note: string | null) {
   await kocStudentOrThrow(ctx, studentId);
   const expiresAt = new Date(Date.now() + REPORT_LINK_DAYS * 86_400_000);
   return db.centerWeeklyReport.upsert({
@@ -124,7 +130,7 @@ export async function saveReport(ctx: CenterContext, studentId: string, weekStar
 }
 
 /** Raporu (kayıtlı notuyla) velilere gönderir: bildirim kanalına göre e-posta / WhatsApp; mesaj geçmişine yazılır. */
-export async function sendReport(ctx: CenterContext, studentId: string, weekStart: string) {
+export async function sendReport(ctx: ReportCenter, studentId: string, weekStart: string) {
   const existing = await getReport(studentId, weekStart);
   const report = await saveReport(ctx, studentId, weekStart, existing?.note ?? null);
   const student = await kocStudentOrThrow(ctx, studentId);
@@ -154,10 +160,53 @@ export async function sendReport(ctx: CenterContext, studentId: string, weekStar
   return { counts, token: report.token };
 }
 
+/**
+ * Otomatik haftalık veli raporu (ücretli Pi Koç, ayar açık): pazar 18:00'den sonra haftada bir kez, o haftada
+ * kaydı olan ve velisine e-postayla ulaşılabilen her aktif öğrencinin raporu koçun yazdığı notla gönderilir.
+ */
+export async function sendCoachAutoReports(now = new Date()): Promise<number> {
+  const today = toLocalDateString(now);
+  if (isoWeekday(today) !== 7 || toLocalMinutes(now) < 18 * 60) return 0;
+  const weekStart = weekStartOf(today);
+  const week = dateStringToDbDate(weekStart);
+  const centers = await db.center.findMany({
+    where: { kind: "COACH", status: { not: "SUSPENDED" }, coachAutoReport: true, OR: [{ coachAutoReportWeek: null }, { coachAutoReportWeek: { lt: week } }] },
+    select: { id: true, name: true, status: true, trialEndsAt: true, paidUntil: true, studentLimit: true },
+    take: 100,
+  });
+  let sent = 0;
+  for (const center of centers) {
+    // Önce işaretle: hata olsa da aynı hafta ikinci kez gitmez
+    await db.center.update({ where: { id: center.id }, data: { coachAutoReportWeek: week } });
+    if (!coachPlan(center, 0, now).paid) continue;
+    const students = await db.centerStudent.findMany({
+      where: {
+        centerId: center.id,
+        status: "ACTIVE",
+        guardians: { some: { isStudentAccount: false, OR: [{ email: { not: null } }, { userId: { not: null } }] } },
+        weeklyReports: { none: { weekStart: week, sentAt: { not: null } } },
+      },
+      select: { id: true },
+    });
+    for (const s of students) {
+      const data = await weeklyReportData(center.id, s.id, weekStart);
+      // Boş hafta raporu gönderilmez
+      if (!data.solved && !data.plan.total && !data.studyMinutes && !data.exam?.inWeek) continue;
+      try {
+        await sendReport({ center }, s.id, weekStart);
+        sent++;
+      } catch (error) {
+        if (!(error instanceof CenterError)) throw error;
+      }
+    }
+  }
+  return sent;
+}
+
 /** Herkese açık rapor sayfası: süresi dolmamış, kurumu askıda olmayan Pi Koç raporu. */
 export async function reportByToken(token: string) {
   if (!/^[A-Za-z0-9_-]{16,80}$/.test(token)) return null;
-  const report = await db.centerWeeklyReport.findUnique({ where: { token }, include: { center: { select: { kind: true, status: true, name: true } } } });
+  const report = await db.centerWeeklyReport.findUnique({ where: { token }, include: { center: { select: { kind: true, status: true, name: true, trialEndsAt: true, paidUntil: true, studentLimit: true } } } });
   if (!report || report.expiresAt < new Date() || report.center.status === "SUSPENDED" || report.center.kind !== "COACH") return null;
   return report;
 }
@@ -174,12 +223,26 @@ const AI_SYSTEM = [
 ].join(" ");
 
 /** Değerlendirme taslağı: yapay zekâ varsa onunla, yoksa (ya da yanıt gelmezse) kurallı özetle. Kaydetmez. */
-export async function draftReportNote(ctx: CenterContext, studentId: string, weekStart: string): Promise<{ text: string; source: "ai" | "rule" }> {
+export type ReportDraft = { text: string; source: "ai" | "rule"; notice?: string };
+
+/** Ücretsiz pakette bu ay kalan yapay zekâ taslağı hakkı (ücretli pakette ve kurumda null: kota günlük sınırdır). */
+export async function freeAiLeft(ctx: CenterContext, now = new Date()): Promise<number | null> {
+  if (!ctx.coach || ctx.coach.paid) return null;
+  const { piKocFreeAiPerMonth } = await loadSettings();
+  const used = await countRecentAttempts(`ai-free:${ctx.center.id}`, now.getTime() - monthStartOf(now).getTime());
+  return Math.max(0, piKocFreeAiPerMonth - used);
+}
+
+export async function draftReportNote(ctx: CenterContext, studentId: string, weekStart: string): Promise<ReportDraft> {
   await kocStudentOrThrow(ctx, studentId);
   const data = await weeklyReportData(ctx.center.id, studentId, weekStart);
   const input = { ...data, priorityTopics: [...new Set(data.sessions.flatMap((s) => s.priorityTopics))] };
   const rule = ruleBasedSummary(input);
   if (!aiConfigured() || (data.solved === 0 && !data.plan.total && !data.studyMinutes && !data.exam)) return { text: rule, source: "rule" };
+
+  // Ücretsiz paket: ayda sınırlı hak; hak yalnızca yapay zekâ metni döndürünce düşer
+  const freeLeft = await freeAiLeft(ctx);
+  if (freeLeft === 0) return { text: rule, source: "rule", notice: "Ücretsiz paketteki bu ayki yapay zekâ hakkınız kullanıldı; verilerden özet yazıldı. Ücretli pakette yapay zekâ her hafta kullanılabilir." };
 
   const limitKey = `ai-draft:${ctx.center.id}`;
   if ((await countRecentAttempts(limitKey, 86_400_000)) >= AI_DRAFTS_PER_DAY) return { text: rule, source: "rule" };
@@ -188,5 +251,7 @@ export async function draftReportNote(ctx: CenterContext, studentId: string, wee
   const text = await aiText({ system: AI_SYSTEM, prompt: summaryFacts(input, data.student.gradeName) });
   // Model yanlışlıkla düşünme ya da madde işareti döndürürse sade metne indir
   const clean = text?.replace(/<think>[\s\S]*?<\/think>/g, "").replace(/^[-*•]\s+/gm, "").replace(/\n{2,}/g, "\n\n").trim().slice(0, 3000);
-  return clean ? { text: clean, source: "ai" } : { text: rule, source: "rule" };
+  if (!clean) return { text: rule, source: "rule" };
+  if (freeLeft !== null) await recordLoginAttempt(`ai-free:${ctx.center.id}`, null, false);
+  return { text: clean, source: "ai", ...(freeLeft === 1 ? { notice: "Ücretsiz paketteki bu ayki yapay zekâ hakkınızı kullandınız." } : {}) };
 }

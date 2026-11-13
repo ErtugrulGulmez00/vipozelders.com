@@ -4,14 +4,14 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { failure, success, type ActionState } from "@/lib/action-state";
 import { EXAM_PRESETS, type ExamKindName } from "@/lib/center/exams";
-import { centerAction, centerAudit } from "@/server/center/context";
+import { centerAction, centerAudit, coachFeatureLocked } from "@/server/center/context";
 import { CenterError } from "@/server/center/errors";
 import { date, email, guard, int, money, opt, phone, requiredText, str, time } from "@/server/center/form";
 import { assignResource } from "@/server/center/resources";
 import { createStudent } from "@/server/center/students";
 import { db } from "@/server/db";
 import { actionUser } from "@/server/auth/current-user";
-import { draftReportNote, saveReport, sendReport } from "@/server/koc-report";
+import { draftReportNote, saveReport, sendReport, type ReportDraft } from "@/server/koc-report";
 import { isDateString } from "@/lib/dates";
 import { addPortalStudySession, addStudySession, deleteCoachPayment, deleteStudySession, recordCoachPayment } from "@/server/koc-extra";
 import { addTopicToPlan, applyTemplate, deleteTemplate, saveWeekAsTemplate } from "@/server/koc-plan";
@@ -208,6 +208,21 @@ export async function kocSaveSettingsAction(_: ActionState, formData: FormData):
 // Haftalık veli raporu
 // ---------------------------------------------------------------------------
 
+/** Otomatik haftalık veli raporu (ücretli pakette). */
+export async function kocSaveAutoReportAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const auth = await coachAuth("settings.manage");
+  if (!auth.ok) return auth.state;
+  const on = formData.get("autoReport") === "on";
+  if (on) {
+    const locked = coachFeatureLocked(auth.ctx, "autoReport");
+    if (locked) return locked;
+  }
+  await db.center.update({ where: { id: auth.ctx.center.id }, data: { coachAutoReport: on } });
+  await centerAudit(auth.ctx, "settings.auto_report", "Center", auth.ctx.center.id, { on });
+  refresh();
+  return success(on ? "Otomatik rapor açık: her pazar akşamı velilere gider." : "Otomatik rapor kapatıldı.");
+}
+
 export async function kocSaveReportAction(_: ActionState, formData: FormData): Promise<ActionState> {
   const auth = await coachAuth("students.edit");
   if (!auth.ok) return auth.state;
@@ -219,7 +234,7 @@ export async function kocSaveReportAction(_: ActionState, formData: FormData): P
 }
 
 /** Değerlendirme taslağı (yapay zekâ ya da kurallı özet); kaydetmez, metni forma döndürür. */
-export async function kocDraftReportAction(studentId: string, weekStart: string): Promise<{ ok: true; text: string; source: "ai" | "rule" } | { ok: false; error: string }> {
+export async function kocDraftReportAction(studentId: string, weekStart: string): Promise<({ ok: true } & ReportDraft) | { ok: false; error: string }> {
   const auth = await coachAuth("students.edit");
   if (!auth.ok) return { ok: false, error: auth.state.error ?? "Yetkiniz yok." };
   if (typeof studentId !== "string" || typeof weekStart !== "string" || !isDateString(weekStart)) return { ok: false, error: "Geçersiz istek." };
@@ -420,6 +435,8 @@ export async function portalDeleteStudyAction(_: ActionState, formData: FormData
 export async function kocRecordPaymentAction(_: ActionState, formData: FormData): Promise<ActionState> {
   const auth = await coachAuth("students.edit");
   if (!auth.ok) return auth.state;
+  const locked = coachFeatureLocked(auth.ctx, "fees");
+  if (locked) return locked;
   return guard(async () => {
     const studentId = str(formData, "studentId");
     await recordCoachPayment(auth.ctx, studentId, { period: str(formData, "period", 7), amount: money(formData, "amount", "Tutar"), method: opt(formData, "method", 30), note: opt(formData, "note", 200) });
@@ -432,6 +449,8 @@ export async function kocRecordPaymentAction(_: ActionState, formData: FormData)
 export async function kocDeletePaymentAction(_: ActionState, formData: FormData): Promise<ActionState> {
   const auth = await coachAuth("students.edit");
   if (!auth.ok) return auth.state;
+  const locked = coachFeatureLocked(auth.ctx, "fees");
+  if (locked) return locked;
   return guard(async () => {
     await deleteCoachPayment(auth.ctx, str(formData, "paymentId"));
     refresh();

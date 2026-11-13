@@ -199,6 +199,7 @@ export async function enrollInGroup(studentId: string, courseId: string, learner
   if (!salesOpen()) throw new GroupError("Online ödeme altyapımız çok yakında açılıyor; şu an grup dersi satışı yapılamıyor.");
   const settings = await loadSettings();
   if (!settings.groupsEnabled) throw new GroupError("Grup dersi şu an kapalı.");
+  if (!settings.lessonBookingEnabled) throw new GroupError("Şu an siteden grup dersi satışı yapılmıyor.");
   const student = await db.user.findUnique({ where: { id: studentId }, select: { role: true, email: true } });
   if (student?.role !== "STUDENT") throw new GroupError("Grup dersine yalnızca veli/öğrenci hesabıyla kayıt olunabilir.");
   if (!student.email) throw new GroupError("Ödeme için hesabınızda e-posta adresi olmalı.");

@@ -6,7 +6,7 @@ import { moduleEnabled, sectionAllowed, type CenterModuleKey } from "@/lib/cente
 import { failure, type ActionState } from "@/lib/action-state";
 import { centerAccess, type CenterAccess } from "@/lib/center/subscription";
 import { centerCan, type CenterPermission, type CenterRoleName } from "@/lib/center/permissions";
-import { coachPlan, type CoachPlan } from "@/lib/pi-koc";
+import { COACH_FEATURES, coachFeatureOpen, coachPlan, type CoachFeature, type CoachPlan } from "@/lib/pi-koc";
 import { getCurrentUser, type SessionUser } from "../auth/current-user";
 import { requestMeta, secureCookies } from "../auth/session";
 import { audit } from "../audit";
@@ -172,6 +172,12 @@ export async function centerAction(
     }
   }
   return { ok: true, ctx };
+}
+
+/** Pi Koç ücretsiz paketinde kilitli özelliğin işlemi: kilitliyse hata durumu, açıksa null. */
+export function coachFeatureLocked(ctx: CenterContext, feature: CoachFeature): ActionState | null {
+  if (coachFeatureOpen(ctx.coach, feature)) return null;
+  return failure(`${COACH_FEATURES[feature].title} ücretli pakette açılır. Hesap ve abonelik sayfasından paketinizi seçebilirsiniz.`);
 }
 
 /** Kurum içindeki işlemler: hem genel işlem kaydına hem kuruma bağlı olarak yazılır. */

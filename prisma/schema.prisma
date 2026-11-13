@@ -92,6 +92,8 @@ model User {
   questionSubscriptions QuestionSubscription[]
   groupEnrollments  GroupEnrollment[]
   lessonRequests    LessonRequest[]
+  teacherInquiries  TeacherInquiry[] @relation("InquiryTeacher")
+  sentInquiries     TeacherInquiry[] @relation("InquiryRequester")
   referrals         User[]             @relation("Referrals")
   couponRedemptions CouponRedemption[]
   lessonPackages    LessonPackage[]
@@ -1094,6 +1096,10 @@ model Center {
   showTeacherSuggestions Boolean      @default(false)
   // Kurumun kapattığı modüller (menüde görünmez): ör. calisma-salonu, kocluk, kaynaklar
   disabledModules        String[]     @default([])
+  // Pi Koç (ücretli paket): haftalık veli raporu pazar akşamı kendiliğinden gönderilir
+  coachAutoReport        Boolean      @default(false)
+  // Otomatik raporun en son gönderildiği haftanın pazartesisi (haftada bir kez)
+  coachAutoReportWeek    DateTime?    @db.Date
   // Abonelik bitiş hatırlatması: en son gönderilen eşik (7, 3, 1, 0 gün); süre uzayınca sıfırlanır
   expiryNoticeDays       Int?
   nextReceiptNo          Int          @default(1)
@@ -2391,6 +2397,42 @@ model GroupEnrollment {
 // Öğretmen talebi: aradığı öğretmeni bulamayan veli ders, kademe ve uygun saatlerini bırakır; yönetici ve
 // o derste ders veren öğretmenler bilgilendirilir. İletişim bilgisi öğretmenlere gösterilmez.
 // ---------------------------------------------------------------------------
+
+// Vitrinden öğretmene doğrudan ders talebi: ödeme platformdan geçmez; öğretmen kabul edince veliyle kendisi iletişime geçer.
+enum TeacherInquiryStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+model TeacherInquiry {
+  id             String               @id @default(cuid())
+  teacherId      String
+  teacher        User                 @relation("InquiryTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  requesterId    String?
+  requester      User?                @relation("InquiryRequester", fields: [requesterId], references: [id], onDelete: SetNull)
+  name           String
+  phone          String
+  email          String?
+  studentName    String?
+  gradeName      String?
+  offeringId     String?
+  lessonName     String?
+  // online | yuz-yuze | farketmez
+  mode           String
+  preferredTimes String?
+  note           String?
+  status         TeacherInquiryStatus @default(PENDING)
+  respondedAt    DateTime?
+  // Kabul edilince öğretmenin Pi Koç'una eklenen öğrenci (adım 5)
+  centerStudentId String?
+  ipAddress      String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@index([teacherId, status, createdAt])
+  @@index([requesterId, createdAt])
+}
 
 enum LessonRequestStatus {
   NEW

@@ -65,6 +65,9 @@ export const settingsSchema = z.object({
   referralEnabled: z.boolean().default(true),
   referralDiscountPercent: z.number().int().min(0).max(50).default(10),
 
+  // Vitrinden randevu ve ödeme (2026-11-12: kapalı; veli öğretmene ders talebi gönderir, ödemeyi öğretmenle kendisi yapar)
+  lessonBookingEnabled: z.boolean().default(false),
+
   // Paket ders ve tekrarlayan ders
   packagesEnabled: z.boolean().default(true),
   packageMaxLessons: z.number().int().min(2).max(50).default(20),
@@ -85,6 +88,8 @@ export const settingsSchema = z.object({
   // Görüntülü görüşme: aylık havuz = paket öğrenci sayısı × bu saat; ücretsiz pakette görüşme başına dakika sınırı
   piKocHoursPerStudent: z.number().int().min(1).max(100).default(4),
   piKocFreeMeetingMinutes: z.number().int().min(10).max(240).default(40),
+  // Ücretsiz pakette ayda kaç yapay zekâ taslağı
+  piKocFreeAiPerMonth: z.number().int().min(0).max(50).default(1),
   centerTrialDays: z.number().int().min(0).max(90).default(14),
   // Kurum kapasite kademeleri: öğrenci sınırları. Yıllık 0 = yalnızca aylık.
   // Merdiven: bir kademenin yıllık fiyatı bir alttakini aylık ödemeye denk → "aynı paraya daha çok kapasite".

@@ -57,6 +57,7 @@ export async function createLessonPackage(studentId: string, input: { offeringId
   if (!salesOpen()) throw new PackageError("Online ödeme altyapımız çok yakında açılıyor; şu an paket satışı yapılamıyor.");
   const settings = await loadSettings();
   if (!settings.packagesEnabled) throw new PackageError("Paket ders şu an kapalı.");
+  if (!settings.lessonBookingEnabled) throw new PackageError("Şu an siteden paket satışı yapılmıyor. Öğretmenin profilinden ders talebi gönderin.");
   const offering = await db.teacherOffering.findUnique({ where: { id: input.offeringId }, include: { level: true, subject: true, serviceType: true, teacher: { include: { user: true } } } });
   if (!offering || !offering.isActive) throw new PackageError("Bu ders artık sunulmuyor.");
   const teacher = offering.teacher;
