@@ -1,4 +1,4 @@
-import { ArrowRight, ClipboardCheck, GraduationCap } from "lucide-react";
+import { ArrowRight, ClipboardCheck, GraduationCap, HeartHandshake } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -7,10 +7,10 @@ import { cn } from "@/lib/cn";
 export const metadata: Metadata = {
   alternates: { canonical: "/nasil-calisir" },
   title: "Nasıl çalışır?",
-  description: "Özel ders ve etüt merkezi için Pi Kampüs'ün nasıl çalıştığını ekran görüntüleri ve videolarla anlatan rehberler.",
+  description: "Özel ders, etüt merkezi ve Pi Koç için Pi Kampüs'ün nasıl çalıştığını ekran görüntüleri ve videolarla anlatan rehberler.",
 };
 
-// İki rehbere giriş: özel ders (veli, öğrenci, öğretmen) ve etüt merkezi (kurum paneli)
+// Rehberlere giriş: özel ders (veli, öğrenci, öğretmen), etüt merkezi (kurum paneli) ve Pi Koç (koçlar, öğretmenler)
 const CARDS = [
   {
     href: "/nasil-calisir/ozel-ders",
@@ -30,6 +30,16 @@ const CARDS = [
     image: { src: "/tanitim/etut-merkezi/02-ozet.jpg", width: 1440, height: 900 },
     tone: "bg-gold-50 text-gold-700",
   },
+  {
+    href: "/pi-koc",
+    Icon: HeartHandshake,
+    title: "Pi Koç",
+    audience: "Koçlar ve özel ders öğretmenleri için",
+    text: "Öğrencilerinizin programı, ödevi, soru ve deneme takibi, görüntülü ders ve veli raporu tek panelde. 3 öğrenciye kadar ücretsiz.",
+    image: { src: "/tanitim/ozel-ders/18-pikoc-ogrenci.jpg", width: 1440, height: 1000 },
+    tone: "bg-emerald-50 text-emerald-700",
+    cta: "Tanıtımı aç",
+  },
 ];
 
 export default function HowItWorksPage() {
@@ -43,7 +53,7 @@ export default function HowItWorksPage() {
         </div>
       </section>
       <div className="mx-auto grid max-w-6xl gap-5 px-4 py-12 md:grid-cols-3">
-        {CARDS.map(({ href, Icon, title, audience, text, image, tone }) => (
+        {CARDS.map(({ href, Icon, title, audience, text, image, tone, cta }) => (
           <Link key={href} href={href} className="group flex flex-col overflow-hidden rounded-3xl border border-ink-100 bg-white shadow-xs transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-md">
             <div className="aspect-[16/10] overflow-hidden border-b border-ink-100 bg-ink-50">
               <Image src={image.src} alt="" width={image.width} height={image.height} sizes="(min-width: 768px) 360px, 100vw" className="h-full w-full object-cover object-top transition group-hover:scale-[1.02]" />
@@ -56,7 +66,7 @@ export default function HowItWorksPage() {
               <p className="mt-1 text-sm font-semibold text-ink-500">{audience}</p>
               <p className="mt-3 flex-1 text-[15px] leading-relaxed text-ink-600">{text}</p>
               <span className="mt-5 inline-flex items-center gap-1.5 font-bold text-brand-700 group-hover:gap-2.5">
-                Rehberi aç <ArrowRight className="size-4" aria-hidden />
+                {cta ?? "Rehberi aç"} <ArrowRight className="size-4" aria-hidden />
               </span>
             </div>
           </Link>

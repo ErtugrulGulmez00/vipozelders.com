@@ -230,13 +230,13 @@ async function OfferingsSection({ teacherId }: { teacherId: string }) {
 }
 
 async function AvailabilitySection({ teacherId }: { teacherId: string }) {
-  const data = await loadTeacherEditorData(teacherId);
+  const [data, settings] = await Promise.all([loadTeacherEditorData(teacherId), loadSettings()]);
   return (
     <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
       <Card>
         <CardHeader title="Haftalık şablon" />
         <CardBody>
-          <WeeklyAvailabilityEditor teacherId={teacherId} initialRules={data.rules} bufferMinutes={data.teacher.bufferMinutes} />
+          <WeeklyAvailabilityEditor teacherId={teacherId} initialRules={data.rules} bufferMinutes={data.teacher.bufferMinutes} bookingOpen={settings.lessonBookingEnabled} />
         </CardBody>
       </Card>
       <Card>

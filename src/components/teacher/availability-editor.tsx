@@ -16,10 +16,13 @@ export function WeeklyAvailabilityEditor({
   teacherId,
   initialRules,
   bufferMinutes,
+  bookingOpen = true,
 }: {
   teacherId: string;
   initialRules: { weekday: number; start: string; end: string }[];
   bufferMinutes: number;
+  /** Randevu açıkken ders süresi ve mola notu gösterilir; ders talebi modelinde saatler yalnızca bilgi içindir */
+  bookingOpen?: boolean;
 }) {
   const [week, setWeek] = useState<Record<number, Interval[]>>(() => {
     const map: Record<number, Interval[]> = { 1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [] };
@@ -71,7 +74,11 @@ export function WeeklyAvailabilityEditor({
         ))}
       </div>
       <input type="hidden" name="bufferMinutes" value={0} data-previous={bufferMinutes} />
-      <p className="text-sm text-slate-500">Dersler tam saatte başlar (ör. 17:00, 18:00) ve 45 ya da 60 dakika sürer. Aralıkları tam saatlerle girmeniz yeterli; 45 dakikalık derslerden sonra 15 dakika mola kendiliğinden kalır.</p>
+      <p className="text-sm text-slate-500">
+        {bookingOpen
+          ? "Dersler tam saatte başlar (ör. 17:00, 18:00) ve 45 ya da 60 dakika sürer. Aralıkları tam saatlerle girmeniz yeterli; 45 dakikalık derslerden sonra 15 dakika mola kendiliğinden kalır."
+          : "Ders verebileceğiniz saat aralıklarını girin. Profilinizde ve aramadaki saat süzgecinde görünür; kesin ders saatini veliyle birlikte belirlersiniz."}
+      </p>
       <SubmitButton size="lg">Takvimi kaydet</SubmitButton>
     </ActionForm>
   );

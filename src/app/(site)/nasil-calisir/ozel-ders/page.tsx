@@ -70,7 +70,8 @@ export default async function PrivateLessonGuidePage() {
     { Icon: PhoneOff, title: "Numaranız korunur", text: "Telefonunuzu yalnızca talebinizi kabul eden öğretmen görür; profilde ve mesajlarda iletişim bilgisi gizlenir." },
     { Icon: HandCoins, title: "Aracı komisyon yok", text: "Ücreti öğretmenle doğrudan konuşursunuz. Pi Kampüs ders ücretine karışmaz, araya ücret eklemez." },
     { Icon: MessageSquareLock, title: "Kayıtlı mesajlaşma", text: "Talepten önce öğretmenle site içinden yazışabilirsiniz; yazışmalar kayıt altında kalır." },
-    { Icon: PhoneCall, title: "Geri dönüş haberi", text: "Öğretmen talebinizi kabul ettiğinde ya da geri çevirdiğinde size bildirim gelir; beklemede kalmazsınız." },
+    { Icon: PhoneCall, title: "Geri dönüş haberi", text: "Öğretmen talebinizi kabul ettiğinde ya da geri çevirdiğinde size bildirim gelir; taleplerinizin durumunu Hesabım → Ders taleplerim sayfasında görürsünüz." },
+    { Icon: BadgeCheck, title: "Gerçek yorumlar", text: "Yorumu yalnızca talebi kabul edilmiş ve öğretmenle sitemizde en az 15 dakikalık görüntülü ders yapmış veliler yazabilir." },
     { Icon: ShieldAlert, title: "Şikâyet ve kurallar", text: "Öğretmenler saygılı iletişim ve doğru bilgi kurallarını kabul eder. Sorun yaşarsanız bize yazın; kurala uymayan öğretmenin hesabı kapatılır." },
   ];
 
@@ -78,6 +79,8 @@ export default async function PrivateLessonGuidePage() {
     ["Üyelik ya da talep ücretli mi?", "Hayır. Öğretmenlere üye olmadan bakabilirsiniz; ders talebi göndermek ve takip için ücretsiz veli hesabı yeterli."],
     ["Ders ücretini kime ödüyorum?", "Doğrudan öğretmene. Ücreti, ders saatini ve ödeme şeklini öğretmenle telefonda konuşursunuz; Pi Kampüs ödemeye aracılık etmez ve komisyon almaz."],
     ["Aynı anda birkaç öğretmene talep gönderebilir miyim?", "Evet, farklı öğretmenlere gönderebilirsiniz. Aynı öğretmene, önceki talebiniz yanıtlanana kadar ikinci talep gönderilemez; günde en fazla 5 talep gönderilebilir."],
+    ["Talebimin durumunu nerede görürüm?", "Hesabım → Ders taleplerim sayfasında. Yanıt bekleyen, kabul edilen ve geri çevrilen talepleriniz burada listelenir; kabul edilen talepte Koçum bağlantısı da çıkar."],
+    ["Öğretmenimi nasıl değerlendiririm?", "Öğretmeninizle Pi Koç'ta en az 15 dakikalık görüntülü ders yaptıktan sonra Ders taleplerim sayfasında o talebin altında puan ve yorum kutusu açılır."],
     ["Öğretmen talebimi geri çevirirse?", "Size bildirim gelir. Listeden başka bir öğretmen seçebilir ya da listenin altındaki forma ihtiyacınızı yazıp size uygun öğretmeni bulmamızı isteyebilirsiniz."],
     ["Koçum bölümünde neleri görürüm?", "Öğretmenin hazırladığı programı ve ödevleri, çözülen soru sayılarını, deneme sonuçlarını ve öğretmenin gönderdiği haftalık raporları. Öğretmen görüntülü ders açtığında katılım bağlantısı da burada görünür."],
     ["Birden fazla çocuğum var, tek hesap yeter mi?", "Evet. Her talepte dersin hangi çocuğunuz için olduğunu yazarsınız; tüm çocuklarınızın takibi aynı hesapta görünür."],
@@ -204,6 +207,15 @@ export default async function PrivateLessonGuidePage() {
             <b>Kabulden sonra:</b> velinin telefonu, tek tıkla arama ve WhatsApp bağlantısı; öğrencinin Pi Koç sayfasına geçiş.
           </Figure>
         </Pair>
+        <Feature
+          flip
+          shot={shot("07-ders-taleplerim", "pikampus.com/hesabim/ders-talepleri", "Velinin Ders taleplerim sayfası", 1440, 900)}
+          title="Velinin gördüğü ekran"
+          legend={[
+            ["Talep durumu:", "yanıt bekliyor, kabul edildi ya da öğretmen şu an öğrenci alamıyor. Kabul edilen talepte Koçum bağlantısı çıkar."],
+            ["Değerlendirme:", "öğretmenle Pi Koç'ta en az 15 dakikalık görüntülü ders yapıldıktan sonra puan ve yorum kutusu açılır."],
+          ]}
+        />
       </GuideSection>
 
       <GuideSection id="takip" eyebrow="Düzenli takip" title="Çocuğunuzun gelişimi hesabınızda" lead="Talebi kabul edilen öğrenci, öğretmenin Pi Koç hesabına eklenir ve sizin veli hesabınıza bağlanır. Öğretmenin girdiği her şeyi Koçum bölümünden görürsünüz.">
@@ -264,15 +276,15 @@ export default async function PrivateLessonGuidePage() {
           title="Öğretmen paneli"
           legend={[
             ["Menü:", "ders talepleri, Pi Koç öğrencileri, mesajlar, profil ve fiyatlar, müsaitlik takvimi, yorumlar."],
-            ["Özet:", "yanıt bekleyen ders talepleri ve Pi Koç'taki öğrenci sayınız tek bakışta."],
+            ["Pi Koç paketiniz:", "öğretmen hesabınızla birlikte ücretsiz açılır; öğrenci sayınız, görüntülü ders süresi ve ücretli pakette açılan özellikler özette görünür."],
           ]}
         >
-          <Note>Ücretli Pi Koç paketindeki öğretmenler aramada öne çıkar; PDF&apos;ten deneme aktarımı, konu analizi ve kendi adınızla otomatik haftalık veli raporu açılır.</Note>
+          <Note>Ücretsiz pakette görüntülü ders görüşme başına {s.piKocFreeMeetingMinutes} dakikadır. Ücretli Pi Koç paketindeki öğretmenler aramada öne çıkar; süre sınırı kalkar, PDF&apos;ten deneme aktarımı, konu analizi ve kendi adınızla otomatik haftalık veli raporu açılır.</Note>
         </Feature>
         <Gallery
           items={[
             { shot: shot("18-pikoc-ogrenci", "Pi Koç · öğrenci", "Pi Koç öğrenci sayfası", 1440, 1000), caption: "Pi Koç: talepten gelen öğrencinin programı, ödevleri, soru ve deneme takibi, veli raporu." },
-            { shot: shot("14-takvim", "Müsaitlik takvimi", "Müsaitlik takvimi", 1440, 1100), caption: "Müsaitlik: haftalık uygun saatleriniz; veliler aramada saate göre süzer." },
+            { shot: shot("14-takvim", "Müsaitlik takvimi", "Müsaitlik takvimi", 1440, 1100), caption: "Müsaitlik (isteğe bağlı): haftalık uygun saatleriniz; profilinizde görünür, veliler aramada saate göre süzer." },
             { shot: shot("15-fiyatlar", "Dersler ve fiyatlar", "Dersler ve fiyatlar", 1440, 900), caption: "Dersler ve fiyatlar: kademe ve derse göre saatlik ücretiniz; profilde bilgi olarak görünür." },
           ]}
         />

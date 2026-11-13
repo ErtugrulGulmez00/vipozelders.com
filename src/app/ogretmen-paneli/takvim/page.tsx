@@ -25,7 +25,7 @@ export default async function AvailabilityPage() {
         <Card>
           <CardHeader title="Haftalık şablon" description="Her hafta tekrarlanan ders verebileceğiniz saatler." />
           <CardBody>
-            <WeeklyAvailabilityEditor teacherId={user.id} initialRules={data.rules} bufferMinutes={data.teacher.bufferMinutes} />
+            <WeeklyAvailabilityEditor teacherId={user.id} initialRules={data.rules} bufferMinutes={data.teacher.bufferMinutes} bookingOpen={settings.lessonBookingEnabled} />
           </CardBody>
         </Card>
         <Card>
