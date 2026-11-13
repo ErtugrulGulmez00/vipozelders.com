@@ -62,6 +62,8 @@ const TASKS = {
   statsPrune: pruneStats,
   // Tanınmayan deneme PDF'leri (gerçek öğrenci verisi) 30 gün sonra silinir
   examPdfPrune: (now: Date) => pruneUploadFolder("private", UNKNOWN_PDF_FOLDER, UNKNOWN_PDF_KEEP_MS, now),
+  // Beyaz tahtaya eklenen görseller 30 gün sonra silinir
+  boardPrune: (now: Date) => pruneUploadFolder("private", "tahta", 30 * 86_400_000, now),
   // Kurum paneli: taksit hatırlatmaları WhatsApp kuyruğuna girer; mesaj geçmişinin durumu kuyruklardan eşitlenir.
   centerReminders: sendCenterPaymentReminders,
   centerExpiry: sendCenterExpiryNotices,

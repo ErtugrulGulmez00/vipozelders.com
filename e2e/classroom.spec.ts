@@ -135,7 +135,15 @@ test("yönetici test dersi açar, öğretmen ve veli sanal sınıfta buluşur", 
   await drawRectangle(parentPage, 140);
   await expect(teacherBoard).toHaveAttribute("data-elements", "2", { timeout: 15_000 });
   await expect(parentBoard).toHaveAttribute("data-elements", "2");
+
+  // Tahtaya PDF eklenir (tablette ekran paylaşımı yerine): her sayfa ayrı görsel, karşı taraf sunucudan çeker
+  const parentFetch = parentPage.waitForResponse((r) => r.url().includes("/api/tahta?k=") && r.status() === 200, { timeout: 30_000 });
+  await teacherPage.getByTestId("board-file").setInputFiles({ name: "sorular.pdf", mimeType: "application/pdf", buffer: Buffer.from(twoPagePdf()) });
+  await expect(teacherBoard).toHaveAttribute("data-elements", "4", { timeout: 30_000 });
+  await expect(parentBoard).toHaveAttribute("data-elements", "4", { timeout: 15_000 });
+  await parentFetch;
   await teacherPage.screenshot({ path: "test-results/tahta-ogretmen.png" });
+  await parentPage.screenshot({ path: "test-results/tahta-veli.png" });
 
   // Yoklama: iki taraf da kaydedildi
   await expect
@@ -177,3 +185,23 @@ test("telefonda sınıf: tahta, kameralar ve düğmeler ekrana sığar", async (
   }
   await parentPage.screenshot({ path: "test-results/tahta-telefon.png" });
 });
+
+/** İki sayfalık küçük bir PDF (her sayfada bir yazı); çapraz başvuru tablosu pdf.js tarafından onarılır. */
+function twoPagePdf(): string {
+  const page = (n: number, contents: number) => `${n} 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents ${contents} 0 R /Resources << /Font << /F1 7 0 R >> >> >> endobj\n`;
+  const stream = (n: number, text: string) => {
+    const body = `BT /F1 36 Tf 100 700 Td (${text}) Tj ET`;
+    return `${n} 0 obj << /Length ${body.length} >> stream\n${body}\nendstream endobj\n`;
+  };
+  return (
+    "%PDF-1.4\n" +
+    "1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n" +
+    "2 0 obj << /Type /Pages /Kids [3 0 R 5 0 R] /Count 2 >> endobj\n" +
+    page(3, 4) +
+    stream(4, "Soru 1") +
+    page(5, 6) +
+    stream(6, "Soru 2") +
+    "7 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj\n" +
+    "trailer << /Root 1 0 R >>\n%%EOF\n"
+  );
+}
