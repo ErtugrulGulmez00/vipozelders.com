@@ -68,7 +68,7 @@ export async function coachMeetingAllowance(studentId: string, now = new Date())
   const perMeeting = policy.maxMeetingMinutes ?? (await loadSettings()).piKocFreeMeetingMinutes;
   const left = Math.floor(perMeeting - (now.getTime() - current.startedAt.getTime()) / 60_000);
   if (left < 1) {
-    return { ok: false, reason: `Bu görüşmenin ücretsiz paketteki süresi (${perMeeting} dk) doldu. ${MEETING_RESUME_MINUTES} dakika sonra yeni görüşme başlatabilir ya da ücretli pakete geçerek süre sınırını kaldırabilirsiniz.` };
+    return { ok: false, scope: "meeting", reason: `Bu görüşmenin ücretsiz paketteki süresi (${perMeeting} dk) doldu. ${MEETING_RESUME_MINUTES} dakika sonra yeni görüşme başlatabilir ya da ücretli pakete geçerek süre sınırını kaldırabilirsiniz.` };
   }
   return { ...allowance, minutes: Math.min(allowance.minutes, left) };
 }

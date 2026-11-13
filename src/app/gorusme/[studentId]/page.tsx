@@ -5,8 +5,10 @@ import { connection } from "next/server";
 import { Classroom } from "@/app/ders/[bookingId]/classroom";
 import { buttonClasses } from "@/components/ui/button";
 import { requireUser } from "@/server/auth/current-user";
-import { announceMeeting, meetingAccess, meetingToken } from "@/server/koc-meeting";
-import { coachMeetingAllowance } from "@/server/koc-meeting-usage";
+import { announceMeeting, meetingAccess, meetingLive, meetingToken } from "@/server/koc-meeting";
+import { AutoRefresh } from "@/components/ui/auto-refresh";
+import { coachMeetingAllowance, MEETING_RESUME_MINUTES } from "@/server/koc-meeting-usage";
+import { PAID_MEETING_MINUTES } from "@/lib/pi-koc";
 import { videoConfigured } from "@/server/video";
 
 export const metadata: Metadata = { title: "Online görüşme", robots: { index: false } };
@@ -37,25 +39,48 @@ export default async function KocMeetingPage({ params }: PageProps<"/gorusme/[st
   const allowance = await coachMeetingAllowance(studentId);
   if (!allowance.ok) {
     return (
-      <Message icon={<MonitorX className="size-10 text-brand-400" />} title="Görüşme süresi doldu" backHref={access.role === "teacher" ? "/koc/abonelik" : access.backHref}>
-        <p className="text-slate-300">{access.role === "teacher" ? allowance.reason : "Koçunuzun bu ayki görüşme süresi doldu. Koçunuzla iletişime geçin."}</p>
+      <Message icon={<MonitorX className="size-10 text-brand-400" />} title="Görüşme süresi doldu" backHref={access.backHref} upgrade={access.role === "teacher"}>
+        <p className="text-slate-300">
+          {access.role === "teacher"
+            ? allowance.reason
+            : allowance.scope === "meeting"
+              ? `Bu görüşmenin süresi doldu. Koçunuz ${MEETING_RESUME_MINUTES} dakika sonra yeni görüşme başlatabilir.`
+              : "Koçunuzun bu ayki görüşme süresi doldu. Koçunuzla iletişime geçin."}
+        </p>
+      </Message>
+    );
+  }
+  // Öğrenci yalnızca koç görüşmeyi başlattıktan sonra girebilir
+  if (access.role === "student" && !(await meetingLive(studentId))) {
+    return (
+      <Message icon={<Video className="size-10 text-brand-400" />} title="Görüşme henüz başlamadı" backHref={access.backHref}>
+        <p className="text-slate-300">Koçunuz görüşmeyi başlatınca bu sayfa kendiliğinden açılır; size bildirim de gelir.</p>
+        <AutoRefresh intervalMs={8_000} maxMs={30 * 60_000} />
       </Message>
     );
   }
   if (access.role === "teacher") await announceMeeting(studentId, `${user.firstName} ${user.lastName}`);
   const { token, serverUrl, endsAt } = await meetingToken(studentId, access.role, user, allowance.minutes);
-  return <Classroom token={token} serverUrl={serverUrl} title={title} endsAt={endsAt} backHref={access.backHref} />;
+  // Ücretsiz paketin süreli görüşmesi süre dolunca kendiliğinden kapanır
+  return <Classroom token={token} serverUrl={serverUrl} title={title} endsAt={endsAt} backHref={access.backHref} hardEnd={allowance.minutes < PAID_MEETING_MINUTES} />;
 }
 
-function Message({ icon, title, children, backHref }: { icon: React.ReactNode; title: string; children?: React.ReactNode; backHref: string }) {
+function Message({ icon, title, children, backHref, upgrade = false }: { icon: React.ReactNode; title: string; children?: React.ReactNode; backHref: string; upgrade?: boolean }) {
   return (
     <div className="flex min-h-dvh flex-col items-center justify-center bg-slate-950 px-4 text-center">
       {icon}
       <h1 className="mt-4 text-xl font-bold text-white">{title}</h1>
       <div className="mt-2 max-w-lg text-sm">{children}</div>
-      <Link href={backHref} className={buttonClasses("outline", "md", "mt-6")}>
-        Geri dön
-      </Link>
+      <div className="mt-6 flex flex-wrap justify-center gap-2">
+        {upgrade ? (
+          <Link href="/koc/abonelik" className={buttonClasses("primary", "md")}>
+            Paketleri gör
+          </Link>
+        ) : null}
+        <Link href={backHref} className={buttonClasses("outline", "md")}>
+          Geri dön
+        </Link>
+      </div>
     </div>
   );
 }

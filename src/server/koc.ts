@@ -230,13 +230,19 @@ export async function kocOverview(ctx: CenterContext, today: string) {
   const centerId = ctx.center.id;
   const weekStart = weekStartOf(today);
   const weekEnd = addDaysToDateString(weekStart, 7);
-  const [students, sessions, plan, logs, results] = await Promise.all([
+  const [students, notes, plan, logs, results, meetings] = await Promise.all([
     db.centerStudent.findMany({ where: { centerId, status: "ACTIVE" }, orderBy: [{ firstName: "asc" }, { lastName: "asc" }] }),
     db.centerCoachingSession.findMany({ where: { centerId }, select: { studentId: true, date: true, held: true }, orderBy: { date: "desc" } }),
     db.centerStudyPlanItem.findMany({ where: { centerId, date: { gte: dateStringToDbDate(weekStart), lt: dateStringToDbDate(weekEnd) } }, select: { studentId: true, doneAt: true } }),
     db.centerQuestionLog.findMany({ where: { centerId, date: { gte: dateStringToDbDate(addDaysToDateString(today, -13)) } }, select: { studentId: true, date: true, solved: true } }),
     db.centerExamResult.findMany({ where: { exam: { centerId } }, select: { studentId: true, net: true, exam: { select: { kind: true, date: true } } }, orderBy: { exam: { date: "asc" } } }),
+    // Koç ve öğrencinin birlikte yaptığı görüntülü görüşmeler de görüşme sayılır
+    db.coachMeeting.findMany({ where: { centerId, peakCount: { gte: 2 } }, select: { studentId: true, startedAt: true } }),
   ]);
+  const sessions = [
+    ...notes,
+    ...meetings.map((m) => ({ studentId: m.studentId, date: dateStringToDbDate(toLocalDateString(m.startedAt)), held: true })),
+  ].sort((a, b) => b.date.getTime() - a.date.getTime());
   const todayWeekday = isoWeekday(today);
   const cards: KocStudentCard[] = students.map((s) => {
     const mine = sessions.filter((x) => x.studentId === s.id);

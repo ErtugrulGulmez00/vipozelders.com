@@ -10,7 +10,9 @@ import { cn } from "@/lib/cn";
 import { addDaysToDateString, dateStringToDbDate, dbDateToString, formatDate, minutesToTime, toLocalDateString, WEEKDAY_NAMES } from "@/lib/dates";
 import { db } from "@/server/db";
 import { questionStats, studentExams, studentGoals } from "@/server/koc";
+import { meetingLive } from "@/server/koc-meeting";
 import { GoalCard } from "./goal-card";
+import { MeetingJoinButton } from "./meeting-join-button";
 import { BarChart, HBarList, LineChart } from "./charts";
 import { DeleteExamButton, DeleteLogButton, ExamForm, QuestionLogForm } from "./koc-forms";
 import { DeleteStudyButton, StudyEntryForm, StudyTimer } from "./koc-tools";
@@ -70,9 +72,8 @@ export async function KocStudentPortal({ student, base, tab: requested, isStuden
             ) : null}
           </p>
         </div>
-        <Link href={`/gorusme/${student.id}`} className="inline-flex h-11 items-center gap-2 rounded-full bg-brand-600 px-5 text-sm font-bold text-white shadow-lg shadow-brand-900/30 hover:bg-brand-700">
-          <Video className="size-4" aria-hidden /> Görüşmeye katıl
-        </Link>
+        {/* Koç görüşmeyi başlatınca açılır */}
+        <MeetingJoinButton studentId={student.id} initialLive={await meetingLive(student.id)} />
         </div>
       </section>
 

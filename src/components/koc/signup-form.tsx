@@ -40,7 +40,7 @@ function TierSelect({ tiers, chosen, freeStudents }: { tiers: Tier[]; chosen: nu
       hint={freeStudents > 0 ? "Hesabınız ücretsiz paketle açılır. Ücretli paket seçerseniz ödemeniz kaydedilince açılır; ödeme bilgisi panelde." : "Ücretli paket ödemeniz kaydedilince açılır; ödeme bilgisi panelde."}
     >
       <Select id="ks-students" name="students" defaultValue={String(chosen ?? (freeStudents > 0 ? 0 : (tiers[0]?.students ?? "")))}>
-        {freeStudents > 0 ? <option value={0}>Karalama Defteri · ücretsiz, {freeStudents} öğrenciye kadar</option> : null}
+        {freeStudents > 0 ? <option value={0}>Başlangıç · ücretsiz, {freeStudents} öğrenciye kadar</option> : null}
         {tiers.map((t) => (
           <option key={t.students} value={t.students}>
             {t.label}

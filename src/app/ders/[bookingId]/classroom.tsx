@@ -15,6 +15,7 @@ import {
   useChat,
   useConnectionState,
   useLocalParticipant,
+  useRoomContext,
   useTracks,
 } from "@livekit/components-react";
 import { ConnectionState, Track, VideoPresets, type LocalVideoTrack, type RoomOptions } from "livekit-client";
@@ -152,6 +153,7 @@ function ChatPanel({ chat, onClose }: { chat: Chat; onClose: () => void }) {
 function Stage({
   title,
   endsAt,
+  hardEnd = false,
   bookingId,
   observer,
   teacherNotice,
@@ -160,6 +162,7 @@ function Stage({
 }: {
   title: string;
   endsAt: number;
+  hardEnd?: boolean;
   bookingId?: string;
   observer: boolean;
   teacherNotice: boolean;
@@ -206,11 +209,20 @@ function Stage({
   const [shareError, setShareError] = useState<string | null>(null);
   const canShareScreen = useCanShareScreen();
   const [now, setNow] = useState(() => Date.now());
+  const lastMinute = hardEnd && endsAt - now <= 60_000;
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 30_000);
+    // Son dakikada saniye saniye geri sayılır
+    const id = setInterval(() => setNow(Date.now()), lastMinute ? 1_000 : 30_000);
     return () => clearInterval(id);
-  }, []);
+  }, [lastMinute]);
   const minutesLeft = Math.round((endsAt - now) / 60_000);
+  // Süreli görüşme (Pi Koç ücretsiz paket): süre dolunca oda beklenmeden kapanır; sunucu da odayı kapatır
+  const room = useRoomContext();
+  useEffect(() => {
+    if (!hardEnd) return;
+    const id = setTimeout(() => void room.disconnect(), Math.max(0, endsAt - Date.now()));
+    return () => clearTimeout(id);
+  }, [hardEnd, endsAt, room]);
 
   return (
     <div className="flex h-full flex-col bg-slate-950">
@@ -218,7 +230,7 @@ function Stage({
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold">{title}</p>
           <p className="text-xs text-slate-400">
-            {state === ConnectionState.Connected ? (minutesLeft > 0 ? `Dersin bitmesine ${minutesLeft} dakika` : "Ders süresi doldu") : state === ConnectionState.Reconnecting ? "Yeniden bağlanılıyor…" : "Bağlanılıyor…"}
+            {state === ConnectionState.Connected ? (lastMinute ? `Görüşme ${Math.max(0, Math.ceil((endsAt - now) / 1000))} saniye sonra kapanacak` : minutesLeft > 0 ? `Dersin bitmesine ${minutesLeft} dakika` : "Ders süresi doldu") : state === ConnectionState.Reconnecting ? "Yeniden bağlanılıyor…" : "Bağlanılıyor…"}
           </p>
         </div>
         <StartAudio label="Sesi aç" className="rounded-lg bg-gold-400 px-3 py-1.5 text-xs font-semibold text-ink-900" />
@@ -323,11 +335,14 @@ export function Classroom({
   observer = false,
   teacherNotice = false,
   startMuted = false,
+  hardEnd = false,
 }: {
   token: string;
   serverUrl: string;
   title: string;
   endsAt: number;
+  /** Süre dolunca oda kendiliğinden kapanır (Pi Koç görüşmesi) */
+  hardEnd?: boolean;
   backHref: string;
   /** Birebir derste uygunsuz durum bildirimi için; grup dersinde yok */
   bookingId?: string;
@@ -346,6 +361,7 @@ export function Classroom({
         <Stage
           title={title}
           endsAt={endsAt}
+          hardEnd={hardEnd}
           bookingId={bookingId}
           observer={observer}
           teacherNotice={teacherNotice}

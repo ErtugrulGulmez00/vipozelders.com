@@ -65,7 +65,7 @@ export default async function SubscriptionPage() {
           <CardBody className="space-y-3 text-sm text-slate-700">
             {ctx.coach?.state === "free" ? (
               <p>
-                Ücretsiz paket süresizdir. Daha fazla öğrenci için aşağıdaki paketlerden birinin tutarını havale / EFT ile gönderin; açıklamaya adınızı ve paketin adını yazın (ör. “{ctx.center.name} · Soru Canavarı”). Ödemeniz kaydedilince paketiniz açılır.
+                Ücretsiz paket süresizdir. Daha fazla öğrenci için aşağıdaki paketlerden birinin tutarını havale / EFT ile gönderin; açıklamaya adınızı ve paketin adını yazın (ör. “{ctx.center.name} · Mentor”). Ödemeniz kaydedilince paketiniz açılır.
               </p>
             ) : (
               <p>Aboneliğinizi havale / EFT ile yenileyebilirsiniz. Açıklamaya {coach ? "adınızı ve paketi" : "kurum adınızı"} yazın; ödemeniz kaydedilince süreniz otomatik uzar.</p>

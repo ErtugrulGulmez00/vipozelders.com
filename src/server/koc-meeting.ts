@@ -49,3 +49,8 @@ export async function meetingToken(studentId: string, role: "teacher" | "student
   const { token, serverUrl } = await createRoomToken({ room: meetingRoomName(studentId), role, closesAt }, user);
   return { token, serverUrl, endsAt: closesAt.getTime() };
 }
+
+/** Koç görüşmeyi başlattı mı: odada süren görüşme var mı (öğrenci yalnızca koç başlatınca girebilir). */
+export async function meetingLive(studentId: string): Promise<boolean> {
+  return Boolean(await db.coachMeeting.findFirst({ where: { roomName: meetingRoomName(studentId), endedAt: null }, select: { id: true } }));
+}

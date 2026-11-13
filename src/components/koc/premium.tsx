@@ -1,11 +1,11 @@
-import { Crown, FileUp, Flame, Map as MapIcon, PencilLine, Rocket, Send, Sparkles, Star, Target, Trophy, Video, Wallet, type LucideIcon } from "lucide-react";
+import { Award, Compass, Crown, FileUp, GraduationCap, Landmark, Map as MapIcon, PencilLine, Send, Sparkles, Star, Video, Wallet, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { COACH_FEATURES, COACH_FREE_NAME, type CoachFeature, type CoachTier } from "@/lib/pi-koc";
 
 // Pi Koç ücretli paketlerinin vitrini: paket simgeleri, ücretli özellikler ve yükseltme kartı (öğretmen özeti, Pi Koç menüsü).
 
-const TIER_ICONS: Record<number, LucideIcon> = { 0: PencilLine, 5: Target, 10: Flame, 20: Trophy, 50: Rocket };
+const TIER_ICONS: Record<number, LucideIcon> = { 0: PencilLine, 5: Compass, 10: GraduationCap, 20: Award, 50: Landmark };
 const TIER_TONES: Record<number, string> = {
   0: "from-slate-400 to-slate-500",
   5: "from-sky-400 to-indigo-500",

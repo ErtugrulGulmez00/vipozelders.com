@@ -94,7 +94,7 @@ export default async function KocStudentPage({ params, searchParams }: PageProps
         </div>
         <div className="flex flex-wrap gap-2">
           <LinkButton href={`/gorusme/${student.id}`} size="sm" variant="outline">
-            <Video className="size-4" aria-hidden /> Online görüşme
+            <Video className="size-4" aria-hidden /> Görüşmeyi başlat
           </LinkButton>
           <LinkButton href={`/koc/ogrenciler/${student.id}/rapor`} size="sm">
             <FileText className="size-4" aria-hidden /> Haftalık rapor
@@ -183,7 +183,7 @@ export default async function KocStudentPage({ params, searchParams }: PageProps
 
 async function OverviewTab({ centerId, studentId, today, kindParam, base }: { centerId: string; studentId: string; today: string; kindParam?: string; base: string }) {
   const weekStart = weekStartOf(today);
-  const [exams, stats, plan, resources, lastSession, goals, study] = await Promise.all([
+  const [exams, stats, plan, resources, lastSession, goals, study, lastMeeting] = await Promise.all([
     studentExams(centerId, studentId),
     questionStats(centerId, today, studentId),
     db.centerStudyPlanItem.findMany({ where: { centerId, studentId, date: { gte: dateStringToDbDate(weekStart), lt: dateStringToDbDate(addDaysToDateString(weekStart, 7)) } }, select: { doneAt: true } }),
@@ -191,7 +191,13 @@ async function OverviewTab({ centerId, studentId, today, kindParam, base }: { ce
     db.centerCoachingSession.findFirst({ where: { centerId, studentId, held: true }, orderBy: { date: "desc" } }),
     studentGoals(centerId, studentId),
     studyStats(studentId, today),
+    db.coachMeeting.findFirst({ where: { studentId, peakCount: { gte: 2 } }, orderBy: { startedAt: "desc" }, select: { startedAt: true } }),
   ]);
+  // Son görüşme: görüşme notu ya da birlikte yapılan görüntülü görüşme, hangisi yeniyse
+  const meetingDay = lastMeeting ? toLocalDateString(lastMeeting.startedAt) : null;
+  const noteDay = lastSession ? dbDateToString(lastSession.date) : null;
+  const lastDay = meetingDay && (!noteDay || meetingDay > noteDay) ? meetingDay : noteDay;
+  const lastIsVideo = Boolean(lastDay && lastDay === meetingDay && lastDay !== noteDay);
   const kinds = [...new Set(exams.map((e) => e.kind))];
   const kind: ExamKindName | null = (kinds.find((k) => k === kindParam) as ExamKindName | undefined) ?? exams[0]?.kind ?? null;
   const series = exams.filter((e) => e.kind === kind).slice(0, 10).reverse();
@@ -208,7 +214,7 @@ async function OverviewTab({ centerId, studentId, today, kindParam, base }: { ce
         <Tile label={kind ? `Son ${EXAM_PRESETS[kind].label} neti` : "Son deneme"} value={latest ? formatNet(latest.net) : "—"} hint={latest && prev ? `${latest.net - prev.net >= 0 ? "+" : ""}${formatNet(latest.net - prev.net)} önceki denemeye göre` : latest ? dmy(latest.date) : "Deneme girilmedi"} up={latest && prev ? latest.net >= prev.net : undefined} />
         <Tile label="Bu hafta çözülen soru" value={stats.thisWeek.toLocaleString("tr-TR")} hint={`Geçen hafta ${stats.lastWeek.toLocaleString("tr-TR")}`} up={stats.thisWeek || stats.lastWeek ? stats.thisWeek >= stats.lastWeek : undefined} />
         <Tile label="Doğruluk (30 gün)" value={correct30 + wrong30 ? `%${Math.round((correct30 / (correct30 + wrong30)) * 100)}` : "—"} hint={`${solvedTotal30.toLocaleString("tr-TR")} soru`} />
-        <Tile label="Son görüşme" value={lastSession ? dmy(dbDateToString(lastSession.date)).slice(0, 5) : "—"} hint={lastSession?.nextGoal ? `Hedef: ${lastSession.nextGoal}` : lastSession ? "Hedef yazılmadı" : "Görüşme kaydı yok"} />
+        <Tile label="Son görüşme" value={lastDay ? dmy(lastDay).slice(0, 5) : "—"} hint={lastIsVideo ? "Görüntülü görüşme" : lastSession?.nextGoal ? `Hedef: ${lastSession.nextGoal}` : lastSession ? "Hedef yazılmadı" : "Görüşme kaydı yok"} />
       </div>
 
       <GoalCard studentId={studentId} goals={goals} editable />

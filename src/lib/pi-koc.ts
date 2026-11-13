@@ -3,8 +3,8 @@
 export type CoachTier = { students: number; priceTl: number; name: string };
 
 /** Paket adları (öğrenci sınırına göre); listede olmayan sınır "N öğrenci paketi" olur. */
-export const COACH_FREE_NAME = "Karalama Defteri";
-const COACH_TIER_NAMES: Record<number, string> = { 5: "Net Avcısı", 10: "Soru Canavarı", 20: "Deneme Ustası", 50: "Derece Fabrikası" };
+export const COACH_FREE_NAME = "Başlangıç";
+const COACH_TIER_NAMES: Record<number, string> = { 5: "Rehber", 10: "Mentor", 20: "Usta Öğretici", 50: "Akademi" };
 
 export function coachTierName(students: number): string {
   return COACH_TIER_NAMES[students] ?? `${students} öğrenci paketi`;
@@ -106,7 +106,8 @@ export function meetingPolicy(plan: CoachPlan, settings: { piKocFreeStudents: nu
 /** Ücretli pakette bir görüşmenin en uzun süresi (anahtar süresi; uzun ders için yeniden girilebilir). */
 export const PAID_MEETING_MINUTES = 120;
 
-export type MeetingAllowance = { ok: true; minutes: number; overPool: boolean } | { ok: false; reason: string };
+/** scope: hangi sınır doldu (görüşme başına süre ya da aylık süre); öğrenciye gösterilen mesaj buna göre seçilir. */
+export type MeetingAllowance = { ok: true; minutes: number; overPool: boolean } | { ok: false; reason: string; scope?: "meeting" | "month" };
 
 /** Görüşmeye girerken: bu ay kullanılan dakikaya göre izin ve anahtar süresi. */
 export function meetingAllowance(policy: MeetingPolicy, usedMinutes: number): MeetingAllowance {

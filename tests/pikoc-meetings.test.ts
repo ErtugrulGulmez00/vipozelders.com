@@ -114,3 +114,15 @@ describe("görüşme kaydı ve sınır (veritabanı)", () => {
     expect(await coachMeetingAllowance(paid.student.id)).toMatchObject({ ok: true, minutes: 120 });
   });
 });
+
+describe("görüşmeyi koç başlatır", () => {
+  it("odada süren görüşme yokken öğrenci giremez; koç girince açılır, herkes çıkınca kapanır", async () => {
+    const { student, room } = await coachWithStudent(false);
+    const { meetingLive } = await import("@/server/koc-meeting");
+    expect(await meetingLive(student.id)).toBe(false);
+    await handleCoachRoomEvent(room, "koc-kullanici", "participant_joined", new Date());
+    expect(await meetingLive(student.id)).toBe(true);
+    await handleCoachRoomEvent(room, "koc-kullanici", "participant_left", new Date());
+    expect(await meetingLive(student.id)).toBe(false);
+  });
+});
