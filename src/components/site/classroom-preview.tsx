@@ -49,7 +49,7 @@ export function ClassroomPreview({ className }: { className?: string }) {
         </div>
       </div>
       <div className="absolute -bottom-5 -left-6 rounded-2xl bg-white px-3 py-2 text-xs font-semibold text-ink-900 shadow-lg ring-1 ring-ink-100">
-        Görüntü · Ekran paylaşımı · <span className="text-brand-700">Ortak beyaz tahta</span>
+        Görüntü · Ekran paylaşımı · <span className="text-brand-700">Ortak beyaz tahta</span> · PDF ve fotoğraf
       </div>
     </div>
   );

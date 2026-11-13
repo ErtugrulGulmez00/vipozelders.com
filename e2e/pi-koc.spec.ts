@@ -70,12 +70,12 @@ test("Pi Koç sayfası ücretsiz paketi ve fiyatları gösterir; koç kendi kayd
   // Deneme süresi yok: hesap ücretsiz paketle açılır; seçilen 10 öğrencilik paket ödeme gelince geçerli olur
   expect(center).toMatchObject({ kind: "COACH", status: "ACTIVE", studentLimit: 10 });
   await page.goto("/koc/abonelik");
-  await expect(page.getByText("Pi Koç · Ücretsiz paket · 3 öğrenciye kadar")).toBeVisible();
+  await expect(page.getByText("Pi Koç · Başlangıç · ücretsiz, 3 öğrenciye kadar")).toBeVisible();
   await expect(page.getByText("Ücretli pakette ek olarak")).toBeVisible();
 
   // Ücretli özellikler gizlenmez, kilitli görünür
   await page.goto("/koc/denemeler");
-  await expect(page.locator("[data-locked='pdfImport']")).toContainText("5 öğrenci paketinde açılır");
+  await expect(page.locator("[data-locked='pdfImport']")).toContainText("Rehber paketinde açılır (5 öğrenci)");
   await page.goto("/koc/tahsilat");
   await expect(page.locator("[data-locked='fees']")).toBeVisible();
   await page.goto("/koc/hesap");
@@ -122,7 +122,8 @@ test("yönetici koç hesabı açar; koç yalnızca takip bölümlerini görür",
   // Koç kurum paneline değil kendi paneline (Pi Koç) düşer
   await expect(page).toHaveURL(/\/koc$/);
   const nav = page.getByRole("navigation").first();
-  for (const label of ["Genel bakış", "Öğrencilerim", "Haftalık görüşmeler", "Kaynak kütüphanesi", "Hesap ve abonelik"]) await expect(nav.getByRole("link", { name: label, exact: true })).toBeVisible();
+  for (const label of ["Genel bakış", "Öğrencilerim", "Haftalık görüşmeler", "Kaynak kütüphanesi", "Hesap"]) await expect(nav.getByRole("link", { name: label, exact: true })).toBeVisible();
+  await expect(nav.getByRole("link", { name: /^Paketler/ })).toBeVisible();
 
   // Kurum paneli adresleri Pi Koç'a döner
   for (const path of ["/kurum", "/kurum/siniflar", "/kurum/ogrenciler"]) {
@@ -177,7 +178,7 @@ test("yönetici koç hesabı açar; koç yalnızca takip bölümlerini görür",
   await expect(page.getByRole("link", { name: new RegExp(`Elif Koç${stamp}`) }).first()).toBeVisible();
   await page.goto("/koc/abonelik");
   // Yöneticinin açtığı hesap deneme süresindeyken 5 öğrencilik paket açık
-  await expect(page.getByText("Pi Koç · 5 öğrenci paketi", { exact: false })).toBeVisible();
+  await expect(page.getByText("Pi Koç · Rehber · 5 öğrenciye kadar", { exact: false })).toBeVisible();
 
   // Öğrenci girişi: koç hesap açar, bugüne bir görev yazar
   const studentId = studentUrl.split("/").pop()!;

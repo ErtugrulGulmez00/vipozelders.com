@@ -44,7 +44,7 @@ export default async function BecomeTeacherPage() {
   const legacyBenefits = [
     { Icon: Wallet, title: "Kendi fiyatınız", text: `Her ders ve kademe için ücreti siz belirlersiniz. Platform hizmet bedeli yalnızca tamamlanan derslerden %${commission}.` },
     { Icon: CalendarClock, title: "Kendi takviminiz", text: "Haftalık müsait saatlerinizi girin; veliler yalnızca boş saatlerinizden randevu alır, onayı siz verirsiniz." },
-    { Icon: PenLine, title: "Site içi sanal sınıf", text: "Kamera, ekran paylaşımı, sohbet ve ortak beyaz tahta. Ek program ya da bağlantı paylaşmak gerekmez." },
+    { Icon: PenLine, title: "Site içi sanal sınıf", text: "Kamera, ekran paylaşımı, sohbet ve ortak beyaz tahta; tahtaya PDF ve fotoğraf ekleyip üstüne yazarsınız. Ek program ya da bağlantı paylaşmak gerekmez." },
     { Icon: ShieldCheck, title: "Ödemeniz güvencede", text: `Veli dersi önceden öder, para bizde güvende bekler. Ders yapıldıktan sonra kazancınız en geç ${settings.settlementDays} gün içinde ödenebilir bakiyenize geçer. ${payoutText}` },
   ];
   const benefits = bookingOpen
@@ -53,7 +53,7 @@ export default async function BecomeTeacherPage() {
         { Icon: Wallet, title: "Ücret sizin", text: "Ücreti veliyle siz konuşur, kendiniz alırsınız. Pi Kampüs komisyon almaz, ödemenize karışmaz." },
         { Icon: Inbox, title: "Velilerden ders talebi", text: "Veliler sizi kademe, ders ve fiyata göre bulup talep gönderir. Kabul ettiğiniz velinin telefonunu görürsünüz." },
         { Icon: PenLine, title: "Pi Koç ile takip", text: "Kabul ettiğiniz öğrenci Pi Koç hesabınıza düşer: program, ödev, soru ve deneme takibi, veli raporu." },
-        { Icon: Video, title: "Görüntülü ders", text: "Pi Koç'ta kamera, ekran paylaşımı ve beyaz tahtayla ders; ek program ya da bağlantı gerekmez." },
+        { Icon: Video, title: "Görüntülü ders", text: "Pi Koç'ta kamera, ekran paylaşımı ve beyaz tahtayla ders; tabletten de soru PDF'ini tahtaya ekleyip üstüne yazarsınız. Ek program ya da bağlantı gerekmez." },
       ];
   const steps = ["Formu doldurun", "Kısa görüşme ve belge kontrolü", "Öğretmen hesabınız açılır", "Profilinizi tamamlayıp ders vermeye başlayın"];
 

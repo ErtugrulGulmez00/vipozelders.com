@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 
 const FEATURES = [
   { Icon: UserRound, tile: "bg-brand-600 text-white", title: "Öğrenci sayfası", text: "Her öğrencinin neti, çözdüğü soru, programı ve görüşmeleri grafiklerle tek sayfada." },
-  { Icon: HeartHandshake, tile: "bg-gold-400 text-ink-900", title: "Görüşme notları", text: "Haftalık görüşme gününü belirleyin; not, öncelikli konu ve sonraki hedefi kaydedin." },
+  { Icon: HeartHandshake, tile: "bg-gold-400 text-ink-900", title: "Görüntülü ders ve görüşme notları", text: "Site içinde kamera, ekran paylaşımı ve tahtaya soru PDF'i ekleyerek ders yapın; not, öncelikli konu ve sonraki hedefi kaydedin." },
   { Icon: BookMarked, tile: "bg-mint-400 text-ink-950", title: "Kaynak ve program", text: "Kitaplarınızı bir kez tanımlayın, öğrenciye ekleyin; gün gün çalışma programı yazın." },
   { Icon: ChartColumn, tile: "bg-ink-900 text-gold-400", title: "Deneme takibi", text: "Sonuç kâğıdındaki doğru ve yanlışı girin; net gelişim grafiği ve ders analizi hazır." },
   { Icon: NotebookPen, tile: "bg-iris-500 text-white", title: "Soru takibi", text: "Gün gün, ders ders çözülen soruyu girin; haftalık grafik ve doğruluk oranı çıkar." },

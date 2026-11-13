@@ -50,7 +50,7 @@ const TRACKING = [
   { Icon: ClipboardList, title: "Haftalık program", text: "Öğretmenin hazırladığı çalışma programı ve ödevler; çocuğunuz yaptıklarını işaretler." },
   { Icon: BookOpenCheck, title: "Soru takibi", text: "Günlük çözülen soru, doğru ve yanlış sayıları derse göre." },
   { Icon: LineChart, title: "Deneme sonuçları", text: "Net grafiği ve ders ders gelişim; deneme deneme karşılaştırma." },
-  { Icon: Video, title: "Görüntülü ders", text: "Öğretmen görüşme açar, çocuğunuz aynı hesaptan tek tıkla katılır; program kurmak gerekmez." },
+  { Icon: Video, title: "Görüntülü ders", text: "Öğretmen görüşmeyi başlatınca çocuğunuzun Görüşmeye katıl düğmesi açılır; kamera, ekran paylaşımı ve tahtaya eklenen soru PDF'leri üzerinde birlikte çalışılır." },
 ];
 
 export default async function PrivateLessonGuidePage() {
@@ -82,7 +82,7 @@ export default async function PrivateLessonGuidePage() {
     ["Talebimin durumunu nerede görürüm?", "Hesabım → Ders taleplerim sayfasında. Yanıt bekleyen, kabul edilen ve geri çevrilen talepleriniz burada listelenir; kabul edilen talepte Koçum bağlantısı da çıkar."],
     ["Öğretmenimi nasıl değerlendiririm?", "Öğretmeninizle Pi Koç'ta en az 15 dakikalık görüntülü ders yaptıktan sonra Ders taleplerim sayfasında o talebin altında puan ve yorum kutusu açılır."],
     ["Öğretmen talebimi geri çevirirse?", "Size bildirim gelir. Listeden başka bir öğretmen seçebilir ya da listenin altındaki forma ihtiyacınızı yazıp size uygun öğretmeni bulmamızı isteyebilirsiniz."],
-    ["Koçum bölümünde neleri görürüm?", "Öğretmenin hazırladığı programı ve ödevleri, çözülen soru sayılarını, deneme sonuçlarını ve öğretmenin gönderdiği haftalık raporları. Öğretmen görüntülü ders açtığında katılım bağlantısı da burada görünür."],
+    ["Koçum bölümünde neleri görürüm?", "Öğretmenin hazırladığı programı ve ödevleri, çözülen soru sayılarını, deneme sonuçlarını ve öğretmenin gönderdiği haftalık raporları. Öğretmen görüntülü dersi başlatınca Görüşmeye katıl düğmesi burada açılır."],
     ["Birden fazla çocuğum var, tek hesap yeter mi?", "Evet. Her talepte dersin hangi çocuğunuz için olduğunu yazarsınız; tüm çocuklarınızın takibi aynı hesapta görünür."],
   ];
 
@@ -272,7 +272,7 @@ export default async function PrivateLessonGuidePage() {
         />
         <Feature
           flip
-          shot={shot("11-panel", "pikampus.com/ogretmen-paneli", "Öğretmen paneli", 1440, 900)}
+          shot={shot("11-panel", "pikampus.com/ogretmen-paneli", "Öğretmen paneli ve Pi Koç paketi", 1440, 1120)}
           title="Öğretmen paneli"
           legend={[
             ["Menü:", "ders talepleri, Pi Koç öğrencileri, mesajlar, profil ve fiyatlar, müsaitlik takvimi, yorumlar."],

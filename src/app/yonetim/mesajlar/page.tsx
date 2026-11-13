@@ -50,7 +50,7 @@ export default async function MessageModerationPage({ searchParams }: PageProps<
     <>
       <PageHeader
         title="Mesaj denetimi"
-        description="Veli ile öğretmen yazışmaları. İletişim bilgisi gizlenen ya da “WhatsApp, elden ödeme, IBAN” gibi platform dışına yönlendirme içeren mesajlar işaretlenir; öğretmene otomatik uyarı gider. Son 30 günde 3 işaretli mesaj yazan öğretmen size ayrıca bildirilir."
+        description="Veli ile öğretmen yazışmaları. Ders talebi kabul edilmeden önce iletişim bilgisi gizlenen ya da “WhatsApp'tan yazalım, numaranı ver” gibi başka uygulamaya yönlendiren mesajlar işaretlenir; öğretmene otomatik uyarı gider. Ücret ve ödeme konuşmaları (havale, elden ödeme) işaretlenmez; talep kabul edildikten sonra iletişim bilgisi de serbesttir. Son 30 günde 3 işaretli mesaj yazan öğretmen size ayrıca bildirilir."
       />
       <div className="mb-4 flex flex-wrap gap-2">
         {TABS.map((t) => (

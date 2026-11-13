@@ -1,6 +1,6 @@
 import "server-only";
 import { COACH_DEFAULT_STUDENT_LIMIT, COACH_DISABLED_MODULES } from "@/lib/center/modules";
-import { parseCoachTiers } from "@/lib/pi-koc";
+import { COACH_FREE_NAME, coachTierName, parseCoachTiers } from "@/lib/pi-koc";
 import { normalizePhone, normalizePersonName } from "@/lib/text";
 import { audit } from "./audit";
 import { hashPassword, passwordProblem } from "./auth/password";
@@ -55,7 +55,7 @@ async function createCoachCenter(userId: string, name: string, students: number,
     await audit({ actorId: null, action: "center.koc_auto", entityType: "Center", entityId: center.id, details: { name } });
     return center;
   }
-  await notifyRole("ADMIN", { type: "center.koc_signup", title: "Yeni Pi Koç kaydı", body: wantsPaid ? `${name} · ${limit} öğrenci paketini istiyor (ödeme bekleniyor); ücretsiz paketle başladı` : `${name} · ücretsiz paket`, link: `/yonetim/kurumlar/${center.id}`, email: false });
+  await notifyRole("ADMIN", { type: "center.koc_signup", title: "Yeni Pi Koç kaydı", body: wantsPaid ? `${name} · ${coachTierName(limit)} paketini (${limit} öğrenci) istiyor, ödeme bekleniyor; ücretsiz paketle başladı` : `${name} · ${COACH_FREE_NAME} (ücretsiz)`, link: `/yonetim/kurumlar/${center.id}`, email: false });
   await notify({
     userId,
     type: "center.koc_welcome",

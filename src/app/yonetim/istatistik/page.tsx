@@ -22,11 +22,11 @@ export default async function StatsPage({ searchParams }: PageProps<"/yonetim/is
   await connection();
   const now = new Date();
   const since = zonedDateTime(addDaysToDateString(toLocalDateString(now), -(days - 1)), 0);
-  const [stats, signups, bookings, intros, threads] = await Promise.all([
+  const [stats, signups, inquiries, accepted, threads] = await Promise.all([
     statsSummary(days, now),
     db.user.count({ where: { role: "STUDENT", createdAt: { gte: since } } }),
-    db.booking.count({ where: { createdAt: { gte: since }, isTest: false, isIntro: false, paidAt: { not: null } } }),
-    db.booking.count({ where: { createdAt: { gte: since }, isIntro: true } }),
+    db.teacherInquiry.count({ where: { createdAt: { gte: since } } }),
+    db.teacherInquiry.count({ where: { createdAt: { gte: since }, status: "ACCEPTED" } }),
     db.messageThread.count({ where: { createdAt: { gte: since } } }),
   ]);
   const max = Math.max(1, ...stats.series.map((d) => d.views));
@@ -51,7 +51,7 @@ export default async function StatsPage({ searchParams }: PageProps<"/yonetim/is
         <StatCard label="Sayfa görüntüleme" value={stats.totalViews.toLocaleString("tr-TR")} icon={<Eye className="size-5" />} />
         <StatCard label="Günlük tekil ziyaretçi (toplam)" value={stats.totalVisitors.toLocaleString("tr-TR")} icon={<Users className="size-5" />} />
         <StatCard label="Yeni veli/öğrenci üyeliği" value={signups} icon={<UserPlus className="size-5" />} />
-        <StatCard label="Ödenmiş randevu" value={bookings} hint={`${intros} tanışma talebi`} icon={<CalendarCheck className="size-5" />} />
+        <StatCard label="Ders talebi" value={inquiries} hint={`${accepted} kabul edildi`} icon={<CalendarCheck className="size-5" />} />
         <StatCard label="Yeni mesajlaşma" value={threads} icon={<BarChart3 className="size-5" />} />
       </div>
 
