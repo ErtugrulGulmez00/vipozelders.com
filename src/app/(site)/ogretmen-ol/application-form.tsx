@@ -69,7 +69,7 @@ export function ApplicationForm({ cities }: { cities: { id: number; name: string
         <Checkbox
           name="rules"
           required
-          label="Öğrencilere ve velilere kişisel iletişim bilgisi vermeyeceğimi, dersleri ve ödemeleri platform dışına taşımayacağımı; aksi hâlde hesabımın kalıcı olarak kapatılacağını kabul ediyorum."
+          label="Ders talebini kabul etmeden önce mesajlarda kişisel iletişim bilgisi paylaşmayacağımı, öğrencilere ve velilere saygılı davranacağımı; aksi hâlde hesabımın kapatılabileceğini kabul ediyorum."
         />
         <FieldError name="rules" />
       </div>

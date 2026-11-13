@@ -201,3 +201,17 @@ export async function teacherInquiries(teacherId: string) {
 export async function pendingInquiryCount(teacherId: string) {
   return db.teacherInquiry.count({ where: { teacherId, status: "PENDING" } });
 }
+
+/** Velinin gönderdiği ders talepleri (Hesabım → Ders taleplerim). */
+export async function requesterInquiries(requesterId: string) {
+  return db.teacherInquiry.findMany({
+    where: { requesterId },
+    orderBy: { createdAt: "desc" },
+    take: 100,
+    include: { teacher: { select: { firstName: true, lastName: true, teacherProfile: { select: { slug: true } } } }, review: { select: { id: true } } },
+  });
+}
+
+export async function pendingRequesterInquiryCount(requesterId: string) {
+  return db.teacherInquiry.count({ where: { requesterId, status: "PENDING" } });
+}

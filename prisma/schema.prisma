@@ -823,8 +823,11 @@ enum ReviewStatus {
 
 model Review {
   id               String         @id @default(cuid())
-  bookingId        String         @unique
-  booking          Booking        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  // Eski model: tamamlanan randevu; yeni model: kabul edilen ders talebi (biri dolu olur)
+  bookingId        String?        @unique
+  booking          Booking?       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  inquiryId        String?        @unique
+  inquiry          TeacherInquiry? @relation(fields: [inquiryId], references: [id], onDelete: SetNull)
   teacherId        String
   teacher          TeacherProfile @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
   studentId        String
@@ -1814,6 +1817,8 @@ model CoachMeeting {
   roomName    String
   free        Boolean   @default(false)
   activeCount Int       @default(0)
+  // Aynı anda odada bulunan en yüksek kişi sayısı (2 = koç ve öğrenci/veli birlikte görüştü)
+  peakCount   Int       @default(1)
   startedAt   DateTime  @default(now())
   endedAt     DateTime?
 
@@ -2427,6 +2432,7 @@ model TeacherInquiry {
   // Kabul edilince öğretmenin Pi Koç'una eklenen öğrenci (adım 5)
   centerStudentId String?
   ipAddress      String?
+  review         Review?
   createdAt      DateTime             @default(now())
   updatedAt      DateTime             @updatedAt
 

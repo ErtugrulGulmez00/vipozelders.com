@@ -5,7 +5,7 @@ import { z } from "zod";
 import { failure, success, zodFieldErrors, type ActionState } from "@/lib/action-state";
 import { safeNextPath } from "@/lib/auth-constants";
 import { gateHome, sideHome, wrongGateMessage, type Side } from "@/lib/sides";
-import { normalizePhone } from "@/lib/text";
+import { normalizePhone, normalizePersonName } from "@/lib/text";
 import { AccountError, registerStudent, sendPasswordResetEmail, sendVerificationEmail } from "@/server/accounts";
 import { DELETION_REQUEST_MESSAGE, requestAccountDeletion } from "@/server/account-deletion";
 import { getCurrentUser } from "@/server/auth/current-user";
@@ -92,8 +92,8 @@ export async function verifyTwoFactorAction(_: ActionState, formData: FormData):
 }
 
 const registerSchema = z.object({
-  firstName: z.string().trim().min(2, "Adınızı yazın.").max(50),
-  lastName: z.string().trim().min(2, "Soyadınızı yazın.").max(50),
+  firstName: z.string().trim().min(2, "Adınızı yazın.").max(50).transform(normalizePersonName),
+  lastName: z.string().trim().min(2, "Soyadınızı yazın.").max(50).transform(normalizePersonName),
   email: z.email("Geçerli bir e-posta adresi yazın.").max(120),
   phone: z.string().trim().optional(),
   password: z.string().min(1, "Şifre belirleyin."),

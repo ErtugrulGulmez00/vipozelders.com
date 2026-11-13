@@ -1,7 +1,7 @@
 import "server-only";
 import { COACH_DEFAULT_STUDENT_LIMIT, COACH_DISABLED_MODULES } from "@/lib/center/modules";
 import { parseCoachTiers } from "@/lib/pi-koc";
-import { normalizePhone } from "@/lib/text";
+import { normalizePhone, normalizePersonName } from "@/lib/text";
 import { audit } from "./audit";
 import { hashPassword, passwordProblem } from "./auth/password";
 import { countRecentAttempts, recordLoginAttempt } from "./auth/rate-limit";
@@ -25,7 +25,7 @@ async function coachLimit(students: number) {
   return { limit: tier?.students ?? tiers[0]?.students ?? COACH_DEFAULT_STUDENT_LIMIT, wantsPaid: Boolean(tier), free: settings.piKocFreeStudents };
 }
 
-async function createCoachCenter(userId: string, name: string, students: number, phone: string | null, email: string | null) {
+async function createCoachCenter(userId: string, name: string, students: number, phone: string | null, email: string | null, auto = false) {
   const { limit, wantsPaid, free } = await coachLimit(students);
   const center = await db.center.create({
     data: {
@@ -42,6 +42,19 @@ async function createCoachCenter(userId: string, name: string, students: number,
       members: { create: { userId, role: "OWNER", title: "Koç" } },
     },
   });
+  if (auto) {
+    // Öğretmene kendiliğinden açılan ücretsiz paket: yönetime bildirim yok, öğretmene site bildirimi
+    await notify({
+      userId,
+      type: "center.koc_welcome",
+      title: "Pi Koç hesabınız hazır",
+      body: `Öğrencilerinizi Pi Koç'ta takip edin: program, ödev, soru ve deneme takibi, görüntülü ders ve veli raporu. ${free} öğrenciye kadar süresiz ücretsiz.`,
+      link: "/koc",
+      email: false,
+    });
+    await audit({ actorId: null, action: "center.koc_auto", entityType: "Center", entityId: center.id, details: { name } });
+    return center;
+  }
   await notifyRole("ADMIN", { type: "center.koc_signup", title: "Yeni Pi Koç kaydı", body: wantsPaid ? `${name} · ${limit} öğrenci paketini istiyor (ödeme bekleniyor); ücretsiz paketle başladı` : `${name} · ücretsiz paket`, link: `/yonetim/kurumlar/${center.id}`, email: false });
   await notify({
     userId,
@@ -75,8 +88,8 @@ export async function signupCoach(input: CoachSignupInput, ipAddress: string | n
       role: "CENTER",
       email,
       username: await generateUsername(input.firstName, input.lastName),
-      firstName: input.firstName,
-      lastName: input.lastName,
+      firstName: normalizePersonName(input.firstName),
+      lastName: normalizePersonName(input.lastName),
       phone,
       passwordHash: await hashPassword(input.password),
     },
@@ -96,4 +109,13 @@ export async function addCoachToUser(user: { id: string; firstName: string; last
   const existing = await db.centerMember.findFirst({ where: { userId: user.id, isActive: true, center: { kind: "COACH" } }, select: { id: true } });
   if (existing) throw new CenterError("Hesabınızda zaten Pi Koç var.");
   return createCoachCenter(user.id, panelName || `${user.firstName} ${user.lastName} Koçluk`, students, user.phone, user.email);
+}
+
+/** Her öğretmende Pi Koç ücretsiz paketi hazır olur (hesap açılınca ve toplu açılışta); varsa dokunmaz. */
+export async function ensureTeacherCoach(userId: string) {
+  const user = await db.user.findUnique({ where: { id: userId }, select: { id: true, role: true, firstName: true, lastName: true, phone: true, email: true, status: true } });
+  if (!user || user.role !== "TEACHER" || user.status !== "ACTIVE") return null;
+  const existing = await db.centerMember.findFirst({ where: { userId, isActive: true, center: { kind: "COACH" } }, select: { centerId: true } });
+  if (existing) return null;
+  return createCoachCenter(user.id, `${user.firstName} ${user.lastName} Koçluk`, 0, user.phone, user.email, true);
 }

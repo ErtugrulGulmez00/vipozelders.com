@@ -32,7 +32,7 @@ export default async function TeacherSettingsPage() {
               ]}
             />
             <ActionForm action={updateTeacherContactAction} className="space-y-3">
-              <Field label="Cep telefonu" htmlFor="phone" hint="Yalnızca onaylı yüz yüze derslerde veliyle paylaşılır.">
+              <Field label="Cep telefonu" htmlFor="phone" hint="Veliyle paylaşılmaz; ders talebini kabul edince velinin numarasını siz görürsünüz.">
                 <PhoneInput id="phone" name="phone" defaultValue={user.phone ?? ""} placeholder="05XX XXX XX XX" />
               </Field>
               <SubmitButton variant="outline">Kaydet</SubmitButton>

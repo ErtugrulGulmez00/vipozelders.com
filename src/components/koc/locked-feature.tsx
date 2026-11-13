@@ -30,13 +30,13 @@ export async function LockedFeature({ feature, className, compact }: { feature: 
 }
 
 /** Paket sayfaları: ücretsiz pakette olanlar ve ücretli pakette açılanlar. */
-export function CoachPlanCompare({ freeStudents, freeMinutes, freeAi }: { freeStudents: number; freeMinutes: number; freeAi: number }) {
+export function CoachPlanCompare({ freeStudents, freeMinutes, freeAi, freeHours }: { freeStudents: number; freeMinutes: number; freeAi: number; freeHours?: number }) {
   const free = [
     `${freeStudents} öğrenciye kadar, süresiz`,
     "Haftalık program, kaynak ve soru takibi",
     "Görüşme notları ve elle deneme girişi, net grafiği",
     "Haftalık veli raporu (elle gönderim, Pi Koç imzalı)",
-    `Görüntülü görüşme: görüşme başına ${freeMinutes} dk`,
+    `Görüntülü görüşme: görüşme başına ${freeMinutes} dk${freeHours ? `, ayda toplam ${freeHours} saat` : ""}`,
     freeAi ? `Ayda ${freeAi} yapay zekâ taslağı` : null,
   ].filter((x): x is string => Boolean(x));
   return (

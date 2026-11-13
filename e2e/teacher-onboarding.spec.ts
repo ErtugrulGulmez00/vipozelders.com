@@ -56,7 +56,7 @@ test("öğretmen başvurusu → hesap açılır → belge yüklenir ve onaylanı
   await page.getByRole("button", { name: "Başvurumu gönder" }).click();
   // Platform kuralları ve KVKK onayı olmadan gönderilmez (tarayıcı zorunlu alan uyarısı)
   await expect(page.getByText("Başvurunuz alındı!", { exact: false })).toHaveCount(0);
-  await page.getByLabel(/platform dışına taşımayacağımı/).check();
+  await page.getByLabel(/kişisel iletişim bilgisi paylaşmayacağımı/).check();
   await page.getByLabel(/KVKK Aydınlatma Metni/).check();
   await page.getByRole("button", { name: "Başvurumu gönder" }).click();
   await expect(page.getByText("Başvurunuz alındı!", { exact: false })).toBeVisible();
@@ -74,7 +74,7 @@ test("öğretmen başvurusu → hesap açılır → belge yüklenir ve onaylanı
   await page.getByLabel("E-posta").fill(email);
   await page.getByLabel("Cep telefonu").fill("05324445566");
   await page.getByLabel("Ders verdiğiniz kademe ve dersler").fill("Lise kimya");
-  await page.getByLabel(/platform dışına taşımayacağımı/).check();
+  await page.getByLabel(/kişisel iletişim bilgisi paylaşmayacağımı/).check();
   await page.getByLabel(/KVKK Aydınlatma Metni/).check();
   await page.getByRole("button", { name: "Başvurumu gönder" }).click();
   await expect(page.getByText("başvurunuz zaten inceleniyor", { exact: false })).toBeVisible();

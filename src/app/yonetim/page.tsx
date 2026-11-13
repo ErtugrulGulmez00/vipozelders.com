@@ -1,4 +1,4 @@
-import { AlertTriangle, Banknote, CalendarCheck, CircleDollarSign, FileCheck2, GraduationCap, RotateCcw, UserPlus, Users } from "lucide-react";
+import { AlertTriangle, Banknote, CalendarCheck, CircleDollarSign, FileCheck2, GraduationCap, PhoneCall, RotateCcw, UserPlus, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { BookingStatusBadge } from "@/components/panel/booking-ui";
@@ -10,6 +10,7 @@ import { fullName, shortName } from "@/lib/text";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { getPaymentProvider } from "@/server/payments/service";
+import { loadSettings } from "@/server/settings";
 import { videoConfigured } from "@/server/video-config";
 import { SchedulerButton } from "./scheduler-button";
 
@@ -41,10 +42,19 @@ export default async function AdminDashboard() {
     }),
     db.user.count({ where: { email: { endsWith: `@${DEMO_EMAIL_DOMAIN}` } } }),
   ]);
-  const [applications, pendingDocuments] = await Promise.all([
+  const [applications, pendingDocuments, settings, inquiriesMonth, inquiriesPending, inquiriesAccepted, coachCenters, paidCoaches, subscriptionRevenue] = await Promise.all([
     db.teacherApplication.count({ where: { status: "NEW" } }),
     db.teacherDocument.findMany({ where: { status: "PENDING" }, orderBy: { createdAt: "asc" }, take: 5, include: { teacher: { select: { user: { select: { firstName: true, lastName: true } } } } } }),
+    loadSettings(),
+    db.teacherInquiry.count({ where: { createdAt: { gte: monthStart } } }),
+    db.teacherInquiry.count({ where: { status: "PENDING" } }),
+    db.teacherInquiry.count({ where: { status: "ACCEPTED", createdAt: { gte: monthStart } } }),
+    db.center.count({ where: { kind: "COACH" } }),
+    db.center.count({ where: { kind: "COACH", status: "ACTIVE", paidUntil: { gt: now } } }),
+    db.centerSubscriptionPayment.aggregate({ where: { createdAt: { gte: monthStart } }, _sum: { amount: true } }),
   ]);
+  // Randevu ve ödeme kapalıyken (2026-11 modeli) özet ders talepleri ve aboneliklerle çalışır
+  const open = settings.lessonBookingEnabled;
   const provider = getPaymentProvider();
   const twoFactorOn = Boolean((await db.user.findUnique({ where: { id: admin.id }, select: { totpEnabledAt: true } }))?.totpEnabledAt);
 
@@ -73,14 +83,25 @@ export default async function AdminDashboard() {
         </Alert>
       ) : null}
 
+      {open ? null : (
+        <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+          <StatCard label="Bu ay ders talebi" value={inquiriesMonth} hint={`${inquiriesAccepted} kabul · ${inquiriesPending} yanıt bekliyor`} icon={<PhoneCall className="size-5" />} />
+          <StatCard label="Pi Koç hesapları" value={coachCenters} hint={`${paidCoaches} ücretli paket`} icon={<GraduationCap className="size-5" />} />
+          <StatCard label="Bu ay abonelik geliri" value={formatMoney(subscriptionRevenue._sum.amount ?? 0)} hint="Pi Koç ve kurum, kaydedilen havaleler" icon={<CircleDollarSign className="size-5" />} />
+          <StatCard label="Öğretmen / öğrenci" value={`${teachers} / ${students}`} hint={`Bu ay ${newStudents} yeni üye`} icon={<Users className="size-5" />} />
+        </div>
+      )}
+      {!open ? null : (
       <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatCard label="Bu ay tahsilat" value={formatMoney(collected._sum.amount ?? 0)} hint={`İade: ${formatMoney(refunds._sum.amount ?? 0)}`} icon={<CircleDollarSign className="size-5" />} />
         <StatCard label="Bu ay komisyon" value={formatMoney(commission._sum.commissionAmount ?? 0)} hint={`${commission._count._all} tamamlanan ders`} icon={<Banknote className="size-5" />} />
         <StatCard label="Öğretmenlere ödenecek" value={formatMoney(available._sum.amount ?? 0)} hint={provider.automaticPayouts ? "Ödeme kuruluşu aktarır" : "Havale bekleyen serbest bakiye"} icon={<RotateCcw className="size-5" />} />
         <StatCard label="Öğretmen / öğrenci" value={`${teachers} / ${students}`} hint={`Bu ay ${newStudents} yeni üye · ${pendingApprovals} onay bekleyen talep`} icon={<Users className="size-5" />} />
       </div>
+      )}
 
       <div className="mb-6 grid gap-6 lg:grid-cols-3">
+        {!open && !disputes.length ? null : (
         <Card>
           <CardHeader title="Açık itirazlar" />
           <CardBody className="space-y-2 text-sm">
@@ -95,6 +116,8 @@ export default async function AdminDashboard() {
             ))}
           </CardBody>
         </Card>
+        )}
+        {!open && !failedRefunds.length ? null : (
         <Card>
           <CardHeader title="Başarısız iadeler" />
           <CardBody className="space-y-2 text-sm">
@@ -106,6 +129,7 @@ export default async function AdminDashboard() {
             ))}
           </CardBody>
         </Card>
+        )}
         <Card>
           <CardHeader title="Öğretmen tarafında bekleyenler" />
           <CardBody className="space-y-2 text-sm">
@@ -129,6 +153,7 @@ export default async function AdminDashboard() {
         </Card>
       </div>
 
+      {!open && !recent.length ? null : (
       <Card>
         <CardHeader title="Son randevular" action={<Link href="/yonetim/randevular" className="text-sm font-semibold text-brand-700 hover:underline">Tümü</Link>} />
         <Table>
@@ -166,6 +191,7 @@ export default async function AdminDashboard() {
           </tbody>
         </Table>
       </Card>
+      )}
       <p className="mt-4 flex items-center gap-1.5 text-xs text-slate-400">
         <CalendarCheck className="size-3.5" aria-hidden /> Dönem: {formatCompact(monthStart)} – şimdi
       </p>

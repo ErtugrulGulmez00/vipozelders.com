@@ -1,9 +1,10 @@
 import type { AccountType } from "@/generated/prisma/client";
-import { slugify } from "@/lib/text";
+import { slugify, normalizePersonName } from "@/lib/text";
 import { audit } from "./audit";
 import { generateTemporaryPassword, hashPassword } from "./auth/password";
 import { issueUserToken } from "./auth/tokens";
 import { db } from "./db";
+import { ensureTeacherCoach } from "./koc-signup";
 import { renderEmail } from "./email";
 import { loadSettings } from "./settings";
 
@@ -74,6 +75,13 @@ async function upgradeCenterUserToTeacher(user: { id: string; email: string | nu
  * E-posta bir kurum personeli hesabına aitse yeni hesap açılmaz, o hesaba öğretmen paneli eklenir.
  */
 export async function createTeacherAccount(input: NewTeacherInput, adminId: string): Promise<TeacherAccountResult> {
+  const result = await createTeacherUser(input, adminId);
+  // Her öğretmende Pi Koç ücretsiz paketi hazır olur; açılamazsa hesap yine açılır (ilk girişte yeniden denenir)
+  await ensureTeacherCoach(result.user.id).catch((error) => console.error("Pi Koç açılamadı", error));
+  return result;
+}
+
+async function createTeacherUser(input: NewTeacherInput, adminId: string): Promise<TeacherAccountResult> {
   const email = input.email?.trim().toLowerCase() || null;
   const existing = email ? await db.user.findUnique({ where: { email } }) : null;
   if (existing?.role === "CENTER") return upgradeCenterUserToTeacher(existing, input, adminId);
@@ -94,8 +102,8 @@ export async function createTeacherAccount(input: NewTeacherInput, adminId: stri
       email,
       username,
       phone: input.phone || null,
-      firstName: input.firstName.trim(),
-      lastName: input.lastName.trim(),
+      firstName: normalizePersonName(input.firstName),
+      lastName: normalizePersonName(input.lastName),
       passwordHash: await hashPassword(temporaryPassword),
       mustChangePassword: true,
       teacherProfile: { create: { slug, headline: input.headline?.trim() || null } },
@@ -148,8 +156,8 @@ export async function registerStudent(input: StudentRegistration) {
       role: "STUDENT",
       email,
       phone: input.phone,
-      firstName: input.firstName.trim(),
-      lastName: input.lastName.trim(),
+      firstName: normalizePersonName(input.firstName),
+      lastName: normalizePersonName(input.lastName),
       passwordHash: await hashPassword(input.password),
       referredById: input.referredById ?? null,
       whatsappConsentAt: input.whatsappConsent ? new Date() : null,

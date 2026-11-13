@@ -7,7 +7,7 @@ import { db } from "@/server/db";
 import { LessonRequestStatusForm } from "./request-form";
 import { requireRole } from "@/server/auth/current-user";
 
-export const metadata: Metadata = { title: "Öğretmen talepleri" };
+export const metadata: Metadata = { title: "Öğretmen bulma istekleri" };
 
 const STATUS: Record<string, { label: string; tone: "amber" | "sky" | "green" | "slate" }> = {
   NEW: { label: "Yeni", tone: "amber" },
@@ -28,7 +28,7 @@ export default async function LessonRequestsPage({ searchParams }: PageProps<"/y
   });
   return (
     <>
-      <PageHeader title="Öğretmen talepleri" description="Aradığı öğretmeni bulamayan velilerin bıraktığı talepler. Uygun öğretmeni bulup veliye dönün; o derste ders veren öğretmenlere iletişim bilgisi olmadan haber verildi." />
+      <PageHeader title="Öğretmen bulma istekleri" description="Aradığı öğretmeni bulamayan velilerin bıraktığı talepler. Uygun öğretmeni bulup veliye dönün; o derste ders veren öğretmenlere iletişim bilgisi olmadan haber verildi." />
       <div className="mb-4 flex flex-wrap gap-2 text-sm">
         {[["acik", "Açık"], ["MATCHED", "Eşleşen"], ["CLOSED", "Kapanan"]].map(([key, label]) => (
           <Link key={key} href={`/yonetim/talepler?durum=${key}`} className={`rounded-full px-3 py-1 ${filter === key ? "bg-brand-600 text-white" : "bg-slate-100 text-slate-700"}`}>

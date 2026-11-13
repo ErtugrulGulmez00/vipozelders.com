@@ -169,7 +169,7 @@ export default async function HomePage() {
           <div className="min-w-0 flex-1">
             <p className="text-sm font-bold tracking-wide text-gold-400">VELİLER İÇİN</p>
             <h2 className="mt-2 text-3xl font-extrabold leading-tight">Çocuğunuz için özel ders öğretmeni mi arıyorsunuz?</h2>
-            <p className="mt-2.5 text-[17px] leading-relaxed text-ink-200">LGS ve YKS’ye hazırlık için kimliği ve diploması kontrol edilmiş öğretmenler. Birçok öğretmenle ilk 15 dakikalık tanışma ücretsizdir.</p>
+            <p className="mt-2.5 text-[17px] leading-relaxed text-ink-200">LGS ve YKS’ye hazırlık için kimliği ve diploması kontrol edilmiş öğretmenler. Ders talebi ücretsiz; ücreti ve saati öğretmenle siz konuşursunuz, aracı komisyon yok.</p>
           </div>
           <Link href="/ozel-ders" className={cn(CHUNKY, "min-h-14 self-start border-gold-600 bg-gold-400 px-6 text-base text-ink-900 hover:bg-gold-300")}>
             Öğretmenleri inceleyin

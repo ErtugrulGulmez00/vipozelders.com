@@ -33,9 +33,13 @@ export default async function AdminReviewsPage() {
                   <Link href={`/yonetim/ogretmenler/${r.teacherId}`} className="font-semibold text-brand-700 hover:underline">
                     {r.teacher.user.firstName} {r.teacher.user.lastName}
                   </Link>
-                  <Link href={`/yonetim/randevular/${r.booking.id}`} className="text-xs text-slate-400 hover:underline">
-                    {r.booking.code}
-                  </Link>
+                  {r.booking ? (
+                    <Link href={`/yonetim/randevular/${r.booking.id}`} className="text-xs text-slate-400 hover:underline">
+                      {r.booking.code}
+                    </Link>
+                  ) : (
+                    <span className="text-xs text-slate-400">Ders talebi</span>
+                  )}
                   <span className="text-xs text-slate-400">{formatCompact(r.createdAt)}</span>
                   {r.status === "HIDDEN" ? <Badge tone="rose">Gizli{r.hiddenReason ? `: ${r.hiddenReason}` : ""}</Badge> : null}
                 </div>

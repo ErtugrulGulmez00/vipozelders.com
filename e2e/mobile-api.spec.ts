@@ -82,7 +82,8 @@ test("mobil API: kayıt → randevu → ödeme → onay → favori, bildirim, ta
   expect(user.role).toBe("STUDENT");
   const student = client(request, token);
   const updated = await (await request.patch(`${API}/ben`, { headers: { Authorization: `Bearer ${token}` }, data: { phone: "0532 111 22 33", cityId: 34, accountType: "STUDENT" } })).json();
-  expect(updated).toMatchObject({ phone: "05321112233", student: { accountType: "STUDENT", city: { id: 34 } } });
+  // Hesap tipi kayıtta seçilir, sonradan değiştirilemez (18 yaş beyanı)
+  expect(updated).toMatchObject({ phone: "05321112233", student: { accountType: "PARENT", city: { id: 34 } } });
   const badPhone = await request.patch(`${API}/ben`, { headers: { Authorization: `Bearer ${token}` }, data: { phone: "123" } });
   expect((await badPhone.json()).error.fields.phone).toBeTruthy();
 

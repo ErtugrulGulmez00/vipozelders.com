@@ -43,15 +43,14 @@ export async function StudentSettings({ userId, side }: { userId: string; side: 
               </div>
               <Field label="Cep telefonu" htmlFor="phone">
                 <PhoneInput id="phone" name="phone" defaultValue={profile.phone ?? ""} placeholder="05XX XXX XX XX" />
+                {privateSide ? <p className="mt-1 text-xs text-slate-500">Ders talebi formuna kendiliğinden gelir; öğretmen yalnızca talebinizi kabul ederse görür.</p> : null}
               </Field>
               <FieldError name="phone" />
               {privateSide ? (
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Hesap tipi" htmlFor="accountType">
-                    <Select id="accountType" name="accountType" defaultValue={student?.accountType ?? "PARENT"}>
-                      <option value="PARENT">Veli</option>
-                      <option value="STUDENT">Öğrenci (18+)</option>
-                    </Select>
+                  {/* Hesap tipi kayıtta seçilir (18 yaş beyanı); değiştirmek için destek */}
+                  <Field label="Hesap tipi" htmlFor="accountType" hint="Değiştirmek için bize yazın.">
+                    <Input id="accountType" value={student?.accountType === "STUDENT" ? "Öğrenci (18+)" : "Veli"} readOnly disabled />
                   </Field>
                   <Field label="İl" htmlFor="cityId">
                     <Select id="cityId" name="cityId" defaultValue={student?.cityId ?? ""}>
@@ -66,7 +65,6 @@ export async function StudentSettings({ userId, side }: { userId: string; side: 
                 </div>
               ) : (
                 <>
-                  <input type="hidden" name="accountType" value={student?.accountType ?? "PARENT"} />
                   {student?.cityId ? <input type="hidden" name="cityId" value={student.cityId} /> : null}
                   {student?.marketingConsent ? <input type="hidden" name="marketing" value="on" /> : null}
                 </>
@@ -78,9 +76,9 @@ export async function StudentSettings({ userId, side }: { userId: string; side: 
         </Card>
 
         <div className="space-y-6">
-          {privateSide ? (
+          {privateSide && student?.accountType !== "STUDENT" ? (
             <Card>
-              <CardHeader title="Öğrencilerim" description="Ders aldığınız çocuklarınızı kaydedin; randevu alırken tek tıkla seçin." />
+              <CardHeader title="Öğrencilerim" description="Ders alacak çocuklarınızı kaydedin; ders talebi gönderirken tek tıkla seçin." />
               <CardBody className="space-y-4">
                 <ul className="divide-y divide-slate-100">
                   {student?.learners.map((l) => (

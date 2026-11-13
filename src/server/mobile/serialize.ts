@@ -85,7 +85,7 @@ export function teacherProfileJson(teacher: PublicTeacher) {
       rating: r.rating,
       comment: r.comment,
       studentName: shortName(r.student),
-      lesson: `${r.booking.levelName} ${r.booking.subjectName}`,
+      lesson: r.booking ? `${r.booking.levelName} ${r.booking.subjectName}` : "Özel ders",
       teacherReply: r.teacherReply,
       teacherRepliedAt: r.teacherRepliedAt,
       createdAt: r.createdAt,

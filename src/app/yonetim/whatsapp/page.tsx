@@ -27,7 +27,7 @@ export default async function WhatsAppAdminPage() {
   const count = (s: string) => counts.find((c) => c.status === s)?._count ?? 0;
   return (
     <>
-      <PageHeader title="WhatsApp bildirimleri" description="Önemli bildirimler (ders talebi, onay, 1 saat kala hatırlatma, çözüm geldi…) e-postanın yanında WhatsApp ile de gider. Gönderim LetsBot üzerinden, dakikada en fazla 20 mesaj." />
+      <PageHeader title="WhatsApp bildirimleri" description="Önemli bildirimler (ders talebi ve yanıtı, kurum ve koç bildirimleri) e-postanın yanında WhatsApp ile de gider; dakikada en fazla 20 mesaj." />
       {!letsbotConfigured() ? (
         <Alert tone="warning" className="mb-6">LetsBot API anahtarı sunucuya girilmemiş; mesajlar kuyrukta bekler.</Alert>
       ) : session.ok ? (

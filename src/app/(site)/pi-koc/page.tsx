@@ -113,7 +113,7 @@ export default async function PiKocPage() {
               </div>
             ))}
           </div>
-          {freeStudents > 0 ? <CoachPlanCompare freeStudents={freeStudents} freeMinutes={settings.piKocFreeMeetingMinutes} freeAi={settings.piKocFreeAiPerMonth} /> : null}
+          {freeStudents > 0 ? <CoachPlanCompare freeStudents={freeStudents} freeMinutes={settings.piKocFreeMeetingMinutes} freeAi={settings.piKocFreeAiPerMonth} freeHours={freeStudents * settings.piKocHoursPerStudent} /> : null}
           <p className="mt-5 text-sm text-ink-500">Ücretli paket ödemesini şimdilik havale ya da EFT ile alıyoruz; ödemeniz kaydedilene kadar ücretsiz paketle çalışırsınız. Ücretli paketin süresi biterse kayıtlarınız silinmez.</p>
         </div>
       </section>

@@ -71,6 +71,7 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
   // Vitrinden randevu kapalıyken (2026-11-12 modeli) veli öğretmene ders talebi gönderir
   const bookingOpen = pkgSettings.lessonBookingEnabled;
   const myInquiry = !bookingOpen && viewerUser?.role === "STUDENT" ? await db.teacherInquiry.findFirst({ where: { teacherId: teacher.userId, requesterId: viewerUser.id }, orderBy: { createdAt: "desc" }, select: { status: true } }) : null;
+  const myLearners = !bookingOpen && viewerUser?.role === "STUDENT" ? (await db.learner.findMany({ where: { studentId: viewerUser.id }, orderBy: { createdAt: "asc" }, select: { name: true } })).map((l) => l.name) : [];
   const myPackages = viewerUser?.role === "STUDENT" ? (await activePackages(viewerUser.id, teacher.userId)).map((p) => ({ id: p.id, code: p.code, offeringId: p.offeringId, durationMinutes: p.durationMinutes, left: p.left })) : [];
   const name = fullName(teacher.user);
   const video = youtubeId(teacher.videoUrl);
@@ -226,7 +227,7 @@ async function TeacherProfile({ params }: { params: Promise<{ slug: string }> })
                   online={teacher.offersOnline}
                   inPerson={teacher.offersInPerson}
                   offerings={teacher.offerings.map((o) => ({ id: o.id, label: `${o.level.name} · ${o.subject.name}` }))}
-                  defaults={{ name: `${viewerUser.firstName} ${viewerUser.lastName}`.trim(), phone: viewerUser.phone ?? "" }}
+                  defaults={{ name: `${viewerUser.firstName} ${viewerUser.lastName}`.trim(), phone: viewerUser.phone ?? "", learners: myLearners }}
                 />
               ) : viewerUser ? (
                 <p className="text-sm text-slate-500">Ders talebi veli ya da öğrenci hesabıyla gönderilir.</p>
@@ -348,7 +349,7 @@ function Reviews({ teacher }: { teacher: PublicTeacher }) {
               <div className="flex flex-wrap items-center gap-2">
                 <Stars value={review.rating} />
                 <span className="text-sm font-semibold text-slate-800">{shortName(review.student)}</span>
-                <span className="text-xs text-slate-400">· {formatDate(review.createdAt)} · {review.booking.levelName} {review.booking.subjectName}</span>
+                <span className="text-xs text-slate-400">· {formatDate(review.createdAt)}{review.booking ? ` · ${review.booking.levelName} ${review.booking.subjectName}` : ""}</span>
               </div>
               {review.comment ? <p className="mt-2 text-sm leading-relaxed text-slate-700">{review.comment}</p> : null}
               {review.teacherReply ? (

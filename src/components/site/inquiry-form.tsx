@@ -27,7 +27,7 @@ export function InquiryForm({
   offerings: Offering[];
   online: boolean;
   inPerson: boolean;
-  defaults: { name: string; phone: string };
+  defaults: { name: string; phone: string; learners?: string[] };
 }) {
   return (
     <ActionForm action={submitInquiryAction} className="space-y-3">
@@ -59,7 +59,14 @@ export function InquiryForm({
         )}
         <div className="grid grid-cols-2 gap-3">
           <Field label="Öğrencinin adı">
-            <Input name="studentName" maxLength={80} placeholder="Deniz" />
+            <Input name="studentName" maxLength={80} placeholder="Deniz" list={defaults.learners?.length ? "inquiry-learners" : undefined} defaultValue={defaults.learners?.length === 1 ? defaults.learners[0] : undefined} />
+            {defaults.learners?.length ? (
+              <datalist id="inquiry-learners">
+                {defaults.learners.map((name) => (
+                  <option key={name} value={name} />
+                ))}
+              </datalist>
+            ) : null}
           </Field>
           <Field label="Sınıfı">
             <Input name="gradeName" maxLength={40} placeholder="8. sınıf" />

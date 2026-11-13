@@ -283,15 +283,17 @@ export async function profileChecklist(teacherId: string) {
       _count: { select: { offerings: { where: { isActive: true } }, availabilityRules: true } },
     },
   });
-  const items = [
+  // Randevu kapalıyken (ders talebi modeli) müsaitlik takvimi isteğe bağlıdır; doldurana aramadaki saat süzgeci çalışır
+  const bookingOpen = (await loadSettings()).lessonBookingEnabled;
+  const items: { key: string; label: string; done: boolean; optional?: boolean }[] = [
     { key: "photo", label: "Profil fotoğrafı", done: Boolean(teacher.photoKey) },
     { key: "bio", label: "Hakkımda yazısı (en az 100 karakter)", done: (teacher.bio?.trim().length ?? 0) >= 100 },
     { key: "offerings", label: "En az bir ders ve fiyat", done: teacher._count.offerings > 0 },
-    { key: "availability", label: "Haftalık müsaitlik takvimi", done: teacher._count.availabilityRules > 0 },
+    { key: "availability", label: bookingOpen ? "Haftalık müsaitlik takvimi" : "Haftalık müsaitlik takvimi (isteğe bağlı)", done: teacher._count.availabilityRules > 0, optional: !bookingOpen },
     { key: "mode", label: "Ders şekli (online veya yüz yüze)", done: teacher.offersOnline || teacher.offersInPerson },
     { key: "declaration", label: "Öğretmen beyanı", done: Boolean(teacher.statusDeclarationAt) },
   ];
-  return { items, complete: items.every((i) => i.done), status: teacher.status };
+  return { items, complete: items.every((i) => i.done || i.optional), status: teacher.status };
 }
 
 /** Arama için ad, başlık ve derslerden sade metin üretir. */

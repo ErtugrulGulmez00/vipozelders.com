@@ -23,6 +23,9 @@ export default async function setup() {
   // Randevu, paket ve grup dersi akışlarının testleri: vitrinden satış açıkmış gibi (canlıda varsayılan kapalı)
   const db = new pg.Client({ connectionString: testUrl });
   await db.connect();
-  await db.query(`INSERT INTO "SiteSetting" ("key", "value", "updatedAt") VALUES ('lessonBookingEnabled', 'true'::jsonb, now()) ON CONFLICT ("key") DO UPDATE SET "value" = 'true'::jsonb`);
+  // Grup dersi, paket ve davet de 2026-11'den beri varsayılan kapalı; eski akışların testleri için açılır
+  for (const key of ["lessonBookingEnabled", "groupsEnabled", "packagesEnabled", "referralEnabled"]) {
+    await db.query(`INSERT INTO "SiteSetting" ("key", "value", "updatedAt") VALUES ($1, 'true'::jsonb, now()) ON CONFLICT ("key") DO UPDATE SET "value" = 'true'::jsonb`, [key]);
+  }
   await db.end();
 }

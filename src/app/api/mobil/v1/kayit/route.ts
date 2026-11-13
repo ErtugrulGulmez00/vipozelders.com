@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { normalizePhone } from "@/lib/text";
+import { normalizePhone, normalizePersonName } from "@/lib/text";
 import { AccountError, registerStudent } from "@/server/accounts";
 import { referrerForCode } from "@/server/discounts";
 import { passwordProblem } from "@/server/auth/password";
@@ -11,8 +11,8 @@ import { meJson } from "@/server/mobile/me";
 import { publicRoute } from "@/server/mobile/route";
 
 const registerSchema = z.object({
-  firstName: z.string().trim().min(2, "Adınızı yazın.").max(50),
-  lastName: z.string().trim().min(2, "Soyadınızı yazın.").max(50),
+  firstName: z.string().trim().min(2, "Adınızı yazın.").max(50).transform(normalizePersonName),
+  lastName: z.string().trim().min(2, "Soyadınızı yazın.").max(50).transform(normalizePersonName),
   email: z.email("Geçerli bir e-posta adresi yazın.").max(120),
   phone: z.string().trim().optional(),
   password: z.string().min(1, "Şifre belirleyin."),

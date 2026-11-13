@@ -62,7 +62,7 @@ export function coachPlan(
 /** Paketin kısa adı: "Ücretsiz paket · 3 öğrenci" / "10 öğrenci paketi". */
 export function coachPlanLabel(plan: CoachPlan): string {
   if (plan.state === "free") return `Ücretsiz paket · ${plan.studentLimit} öğrenciye kadar`;
-  return `${plan.studentLimit} öğrenci paketi${plan.state === "trial" ? " (deneme)" : ""}`;
+  return `${plan.studentLimit} öğrenci paketi${plan.state === "trial" ? " (deneme; bitince ücretsiz pakete geçer)" : ""}`;
 }
 
 // ——— Ücretli özellikler ———

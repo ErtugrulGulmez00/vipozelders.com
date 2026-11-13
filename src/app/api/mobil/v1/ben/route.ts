@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { whatsappPreferenceData } from "@/lib/notification-channels";
-import { normalizePhone } from "@/lib/text";
+import { normalizePhone, normalizePersonName } from "@/lib/text";
 import { db } from "@/server/db";
 import { ApiError, json, readBody } from "@/server/mobile/http";
 import { meJson } from "@/server/mobile/me";
@@ -9,8 +9,8 @@ import { withUser } from "@/server/mobile/route";
 export const GET = withUser(async ({ user }) => json(await meJson(user.id)), { allowPasswordChange: true, allowCenter: true });
 
 const updateSchema = z.object({
-  firstName: z.string().trim().min(2, "Adınızı yazın.").max(50).optional(),
-  lastName: z.string().trim().min(2, "Soyadınızı yazın.").max(50).optional(),
+  firstName: z.string().trim().min(2, "Adınızı yazın.").max(50).transform(normalizePersonName).optional(),
+  lastName: z.string().trim().min(2, "Soyadınızı yazın.").max(50).transform(normalizePersonName).optional(),
   phone: z.string().trim().max(20).nullable().optional(),
   accountType: z.enum(["PARENT", "STUDENT"]).optional(),
   cityId: z.number().int().min(1).max(81).nullable().optional(),
@@ -45,7 +45,7 @@ export const PATCH = withUser(async ({ request, user }) => {
       ...whatsapp,
       studentProfile: {
         update: {
-          ...(input.accountType ? { accountType: input.accountType } : {}),
+          // Hesap tipi kayıtta seçilir, sonradan değiştirilemez
           ...(input.cityId !== undefined ? { cityId: input.cityId } : {}),
           ...(input.marketingConsent !== undefined ? { marketingConsent: input.marketingConsent } : {}),
         },

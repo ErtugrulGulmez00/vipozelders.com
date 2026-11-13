@@ -19,7 +19,7 @@ export const GET = withUser(async ({ user }) => {
       rating: r.rating,
       comment: r.comment,
       studentName: shortName(r.student),
-      lesson: `${r.booking.levelName} ${r.booking.subjectName}`,
+      lesson: r.booking ? `${r.booking.levelName} ${r.booking.subjectName}` : "Özel ders",
       status: r.status,
       teacherReply: r.teacherReply,
       teacherRepliedAt: r.teacherRepliedAt,

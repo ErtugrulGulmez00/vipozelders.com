@@ -76,6 +76,7 @@ export function FlagsForm({
   freeLessonLinks,
   commissionPercent,
   defaultPercent,
+  legacy = true,
 }: {
   teacherId: string;
   verificationStatus: string;
@@ -83,6 +84,8 @@ export function FlagsForm({
   freeLessonLinks: boolean;
   commissionPercent: string;
   defaultPercent: string;
+  /** Randevu/ödeme modeli alanları (komisyon, serbest ders bağlantısı); kapalıyken değerler korunur, gösterilmez */
+  legacy?: boolean;
 }) {
   return (
     <ActionForm action={setTeacherFlagsAction} className="space-y-3">
@@ -95,15 +98,23 @@ export function FlagsForm({
           <option value="REJECTED">Reddedildi</option>
         </Select>
       </Field>
-      <Field label="Öğretmene özel komisyon (%)" hint={`Boş bırakılırsa site varsayılanı (%${defaultPercent}) uygulanır.`}>
-        <Input name="commissionPercent" inputMode="decimal" defaultValue={commissionPercent} placeholder={defaultPercent} className="w-32" />
-      </Field>
+      {legacy ? (
+        <Field label="Öğretmene özel komisyon (%)" hint={`Boş bırakılırsa site varsayılanı (%${defaultPercent}) uygulanır.`}>
+          <Input name="commissionPercent" inputMode="decimal" defaultValue={commissionPercent} placeholder={defaultPercent} className="w-32" />
+        </Field>
+      ) : (
+        <input type="hidden" name="commissionPercent" value={commissionPercent} />
+      )}
       <Checkbox name="isFeatured" defaultChecked={isFeatured} label="Vitrinde öne çıkar (listelerde üstte, “Öne çıkan” rozeti)" />
-      <Checkbox
-        name="freeLessonLinks"
-        defaultChecked={freeLessonLinks}
-        label="Serbest ders bağlantısı: gerekçe yazmadan, istediği öğrenciyle ücretsiz ders açabilir (ör. öğrenci koçu). Kapalıyken yalnızca ücreti ödenmiş dersin telafisi açılabilir."
-      />
+      {legacy ? (
+        <Checkbox
+          name="freeLessonLinks"
+          defaultChecked={freeLessonLinks}
+          label="Serbest ders bağlantısı: gerekçe yazmadan, istediği öğrenciyle ücretsiz ders açabilir (ör. öğrenci koçu). Kapalıyken yalnızca ücreti ödenmiş dersin telafisi açılabilir."
+        />
+      ) : freeLessonLinks ? (
+        <input type="hidden" name="freeLessonLinks" value="on" />
+      ) : null}
       <SubmitButton variant="outline">Kaydet</SubmitButton>
     </ActionForm>
   );

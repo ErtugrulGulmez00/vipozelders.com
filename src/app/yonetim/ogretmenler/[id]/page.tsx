@@ -43,12 +43,17 @@ export default async function AdminTeacherPage({ params, searchParams }: PagePro
   const user = await db.user.findUnique({ where: { id }, include: { teacherProfile: true } });
   if (!user?.teacherProfile) notFound();
   const teacher = user.teacherProfile;
-  const [checklist, settings, pendingDocuments, activeGroups] = await Promise.all([
+  const [checklist, settings, pendingDocuments, activeGroups, legacyCounts] = await Promise.all([
     profileChecklist(id),
     loadSettings(),
     db.teacherDocument.count({ where: { teacherId: id, status: "PENDING" } }),
     db.groupCourse.count({ where: { teacherId: id, status: { in: ["OPEN", "CONFIRMED"] } } }),
+    Promise.all([db.groupCourse.count({ where: { teacherId: id } }), db.ledgerEntry.count({ where: { teacherId: id } }), db.booking.count({ where: { teacherId: id } })]),
   ]);
+  // Randevu ve ödeme kapalıyken eski modelin bölümleri yalnızca kaydı olan öğretmende görünür
+  const open = settings.lessonBookingEnabled;
+  const [groupCount, ledgerCount, bookingCount] = legacyCounts;
+  const sections = SECTIONS.filter((s) => (s.key === "grup" ? open || groupCount > 0 : s.key === "finans" ? open || ledgerCount > 0 : true));
 
   return (
     <>
@@ -68,7 +73,7 @@ export default async function AdminTeacherPage({ params, searchParams }: PagePro
         ) : null}
       </div>
       <nav className="mb-6 flex gap-1 overflow-x-auto rounded-xl bg-slate-100 p-1 text-sm font-semibold sm:w-fit">
-        {SECTIONS.map((s) => (
+        {sections.map((s) => (
           <Link key={s.key} href={`/yonetim/ogretmenler/${id}?bolum=${s.key}`} className={cn("shrink-0 rounded-lg px-4 py-1.5", section === s.key ? "bg-white text-brand-700 shadow-xs" : "text-slate-600")}>
             {s.label}
             {s.key === "belgeler" && pendingDocuments ? <span className="ml-1.5 rounded-full bg-amber-400 px-1.5 text-xs text-amber-950">{pendingDocuments}</span> : null}
@@ -98,7 +103,7 @@ export default async function AdminTeacherPage({ params, searchParams }: PagePro
               </CardBody>
             </Card>
             <Card>
-              <CardHeader title="Doğrulama, vitrin ve komisyon" />
+              <CardHeader title={open || ledgerCount > 0 ? "Doğrulama, vitrin ve komisyon" : "Doğrulama ve vitrin"} />
               <CardBody>
                 <FlagsForm
                   teacherId={id}
@@ -107,6 +112,7 @@ export default async function AdminTeacherPage({ params, searchParams }: PagePro
                   freeLessonLinks={teacher.freeLessonLinks}
                   commissionPercent={teacher.commissionRateBps === null ? "" : String(teacher.commissionRateBps / 100)}
                   defaultPercent={String(settings.commissionRateBps / 100)}
+                  legacy={open || bookingCount > 0 || ledgerCount > 0}
                 />
               </CardBody>
             </Card>
@@ -139,7 +145,7 @@ export default async function AdminTeacherPage({ params, searchParams }: PagePro
                 </div>
               </CardBody>
             </Card>
-            <RecentBookings teacherId={id} />
+            {open || bookingCount > 0 ? <RecentBookings teacherId={id} /> : <RecentInquiries teacherId={id} />}
           </div>
         </div>
       ) : null}
@@ -354,6 +360,34 @@ async function RecentBookings({ teacherId }: { teacherId: string }) {
         {bookings.length === 0 ? <EmptyState title="Randevu yok" /> : null}
         {bookings.map((b) => (
           <BookingRow key={b.id} booking={{ ...b, counterpart: `${b.student.firstName} ${b.student.lastName}` }} href={`/yonetim/randevular/${b.id}`} />
+        ))}
+      </CardBody>
+    </Card>
+  );
+}
+
+async function RecentInquiries({ teacherId }: { teacherId: string }) {
+  const [items, coach] = await Promise.all([
+    db.teacherInquiry.findMany({ where: { teacherId }, orderBy: { createdAt: "desc" }, take: 8 }),
+    db.centerMember.findFirst({ where: { userId: teacherId, isActive: true, center: { kind: "COACH" } }, select: { center: { select: { id: true, name: true } } } }),
+  ]);
+  const label = { PENDING: "Yanıt bekliyor", ACCEPTED: "Kabul etti", DECLINED: "Geri çevirdi" } as const;
+  return (
+    <Card>
+      <CardHeader
+        title="Son ders talepleri"
+        action={coach ? <Link href={`/yonetim/kurumlar/${coach.center.id}`} className="text-sm font-semibold text-brand-700 hover:underline">Pi Koç hesabı</Link> : null}
+      />
+      <CardBody className="space-y-2">
+        {items.length === 0 ? <EmptyState title="Ders talebi yok" /> : null}
+        {items.map((q) => (
+          <div key={q.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm">
+            <span className="min-w-0">
+              <span className="font-medium text-slate-900">{q.name}</span>
+              <span className="text-slate-500"> · {q.lessonName ?? "Ders belirtilmedi"} · {formatCompact(q.createdAt)}</span>
+            </span>
+            <Badge tone={q.status === "ACCEPTED" ? "green" : q.status === "PENDING" ? "amber" : "slate"}>{label[q.status]}</Badge>
+          </div>
         ))}
       </CardBody>
     </Card>

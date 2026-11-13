@@ -7,13 +7,16 @@ import { questionSessionRightCount } from "@/server/lesson-links";
 import { unreadThreadCount } from "@/server/messages";
 import { loadSettings } from "@/server/settings";
 import { sideFacts } from "@/server/sides";
+import { ensureTeacherCoach } from "@/server/koc-signup";
 import { pendingInquiryCount } from "@/server/teacher-inquiries";
 
 export const instant = false;
 
 export default async function TeacherLayout({ children }: { children: React.ReactNode }) {
   const user = await requireRole("TEACHER");
-  const facts = await sideFacts(user.id, user.role);
+  let facts = await sideFacts(user.id, user.role);
+  // Her öğretmende Pi Koç ücretsiz paketi hazır olur (hesap açılırken açılamadıysa burada)
+  if (!facts.kocStaff && (await ensureTeacherCoach(user.id).catch(() => null))) facts = await sideFacts(user.id, user.role);
   const [pending, unread, questionRights, unreadMessages, inquiries, settings, legacy] = await Promise.all([
     db.booking.count({ where: { teacherId: user.id, status: "PENDING_APPROVAL" } }),
     db.notification.count({ where: { userId: user.id, readAt: null, ...notificationScopeWhere(notificationScope(facts, "ozel")) } }),
@@ -40,7 +43,7 @@ export default async function TeacherLayout({ children }: { children: React.Reac
         ...(show(legacy.bookings > 0 || pending > 0) ? [{ href: pending ? "/ogretmen-paneli/talepler" : "/ogretmen-paneli/dersler", label: "Derslerim", icon: <CalendarDays />, badge: pending || undefined, also: ["/ogretmen-paneli/talepler", "/ogretmen-paneli/dersler"] }] : []),
         ...(show(legacy.links > 0) ? [{ href: "/ogretmen-paneli/ders-baglantilari", label: "Ders bağlantıları", icon: <Link2 /> }] : []),
         ...(show(questionRights > 0) ? [{ href: "/ogretmen-paneli/soru-cozum", label: "Soru çözüm dersleri", icon: <MessageCircleQuestion />, badge: questionRights || undefined }] : []),
-        ...(show(legacy.groups > 0) ? [{ href: "/ogretmen-paneli/grup-dersleri", label: "Grup dersleri", icon: <Users /> }] : []),
+        ...((open && settings.groupsEnabled) || legacy.groups > 0 ? [{ href: "/ogretmen-paneli/grup-dersleri", label: "Grup dersleri", icon: <Users /> }] : []),
         { href: "/ogretmen-paneli/profil", label: "Profilim", icon: <UserRound />, also: ["/ogretmen-paneli/dersler-ve-fiyatlar", "/ogretmen-paneli/belgeler"] },
         // Takvim aramadaki saat süzgecini ve profildeki uygun saatleri besler; her modelde kalır
         { href: "/ogretmen-paneli/takvim", label: "Müsaitlik takvimi", icon: <CalendarClock /> },
@@ -60,7 +63,8 @@ async function legacyUsage(teacherId: string) {
   const [bookings, links, groups, ledger] = await Promise.all([
     db.booking.count({ where: { teacherId } }),
     db.lessonLink.count({ where: { teacherId } }),
-    db.groupCourse.count({ where: { teacherId } }),
+    // Kaydı (ödeme yapan öğrencisi) olan grup dersleri; boş ya da iptal edilmiş taslaklar sayılmaz
+    db.groupCourse.count({ where: { teacherId, enrollments: { some: { status: { in: ["PAID", "CANCELLED"] } } } } }),
     db.ledgerEntry.count({ where: { teacherId } }),
   ]);
   return { bookings, links, groups, ledger };

@@ -3,11 +3,12 @@ import { cacheLife } from "next/cache";
 import { loadCatalog } from "@/server/catalog";
 import { listPublicCenters } from "@/server/center/public";
 import { db } from "@/server/db";
+import { loadSettings } from "@/server/settings";
 
 async function sitemapData() {
   "use cache";
   cacheLife("hours");
-  const [catalog, teachers, pages, centers, groups, posts] = await Promise.all([
+  const [catalog, teachers, pages, centers, groups, posts, settings] = await Promise.all([
     loadCatalog(),
     // Aktif dersi olmayan profil boş ders bölümüyle açılır; arama motoruna gönderilmez
     db.teacherProfile.findMany({ where: { status: "PUBLISHED", user: { status: "ACTIVE" }, offerings: { some: { isActive: true } } }, select: { slug: true, updatedAt: true } }),
@@ -16,8 +17,9 @@ async function sitemapData() {
     // Kayıt alan, herkese açık grup dersleri
     db.groupCourse.findMany({ where: { status: "OPEN", isPublic: true, teacher: { status: "PUBLISHED" } }, select: { code: true, updatedAt: true } }),
     db.blogPost.findMany({ where: { isPublished: true }, select: { slug: true, updatedAt: true } }),
+    loadSettings(),
   ]);
-  return { catalog, teachers, pages, centers, groups, posts };
+  return { catalog, teachers, pages, centers, groups: settings.groupsEnabled ? groups : null, posts };
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -29,8 +31,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${base}/`, changeFrequency: "daily", priority: 1 },
     { url: `${base}/ozel-ders`, changeFrequency: "daily", priority: 0.9 },
     { url: `${base}/ogretmenler`, changeFrequency: "daily", priority: 0.9 },
-    { url: `${base}/grup-dersleri`, changeFrequency: "daily", priority: 0.8 },
-    ...groups.map((g) => ({ url: `${base}/grup-dersleri/${g.code}`, lastModified: g.updatedAt, changeFrequency: "daily" as const, priority: 0.6 })),
+    ...(groups ? [{ url: `${base}/grup-dersleri`, changeFrequency: "daily" as const, priority: 0.8 }] : []),
+    ...(groups ?? []).map((g) => ({ url: `${base}/grup-dersleri/${g.code}`, lastModified: g.updatedAt, changeFrequency: "daily" as const, priority: 0.6 })),
     { url: `${base}/rehber`, changeFrequency: "weekly", priority: 0.7 },
     ...posts.map((p) => ({ url: `${base}/rehber/${p.slug}`, lastModified: p.updatedAt, changeFrequency: "monthly" as const, priority: 0.6 })),
     { url: `${base}/ogretmen-ol`, changeFrequency: "monthly", priority: 0.5 },

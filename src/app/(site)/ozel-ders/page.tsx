@@ -33,7 +33,7 @@ import { featuredTeachers } from "@/server/teachers";
 export const metadata: Metadata = {
   alternates: { canonical: "/ozel-ders" },
   title: "Özel ders öğretmenleri",
-  description: "LGS, YKS ve okul derslerinde onaylı özel ders öğretmenleri. Grup dersleri ve koçluk. Fiyatları ve boş saatleri inceleyin.",
+  description: "LGS, YKS ve okul derslerinde onaylı özel ders öğretmenleri ve koçlar. Profilleri ve ücretleri inceleyin, öğretmene ücretsiz ders talebi gönderin; aracı komisyon yok.",
 };
 
 const SERVICE_STYLE: Record<string, { icon: typeof GraduationCap; tile: string; ink: string }> = {

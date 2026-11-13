@@ -61,7 +61,7 @@ export async function handleCoachRoomEvent(roomName: string, identity: string, e
     const open = await tx.coachMeeting.findFirst({ where: { roomName, endedAt: null }, orderBy: { startedAt: "desc" } });
     if (event === "participant_joined") {
       if (open) {
-        await tx.coachMeeting.update({ where: { id: open.id }, data: { activeCount: { increment: 1 } } });
+        await tx.coachMeeting.update({ where: { id: open.id }, data: { activeCount: { increment: 1 }, peakCount: Math.max(open.peakCount, open.activeCount + 1) } });
         return;
       }
       const student = await tx.centerStudent.findUnique({ where: { id: studentId }, select: { centerId: true } });

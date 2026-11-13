@@ -1,4 +1,5 @@
 import { CalendarRange, MonitorPlay, ShieldCheck, Users } from "lucide-react";
+import { loadSettings } from "@/server/settings";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -20,6 +21,7 @@ export const instant = false;
 
 export default async function GroupCoursePage({ params }: PageProps<"/grup-dersleri/[code]">) {
   const { code } = await params;
+  if (!(await loadSettings()).groupsEnabled) notFound();
   const [user, course] = await Promise.all([
     getCurrentUser(),
     db.groupCourse.findUnique({

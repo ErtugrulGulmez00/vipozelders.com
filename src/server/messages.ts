@@ -22,8 +22,8 @@ const ADMIN_ALERT_THRESHOLD = 3;
 const OFF_PLATFORM: [RegExp, string][] = [
   [/whats\s*app|watsap|vatsap|whatsap|\bwp\b|wpden|telegram|instagram|\binsta\b|\bdm\b|snapchat|facebook|\bface\b/, "Başka uygulamaya yönlendirme"],
   [/(numara|telefon)(n|m)?(ı|i|ı|u)?(n|m)?\s*(ver|yaz|at|gönder|söyle|paylaş)|beni\s+ara|ararım|ara\s+beni|arayın|arar\s*mısın/, "Telefon isteme / verme"],
-  [/\biban\b|havale|\beft\b|elden|nakit|hesabıma|hesap\s*numara/, "Platform dışı ödeme"],
-  [/site\s*dışı|platform\s*dışı|siteden\s*(değil|bağımsız)|dışarıda\s*(ders|görüş|anlaş)|özelden|komisyon\s*(vermeden|ödemeden|olmadan)|aracısız|direkt\s*(ödeme|anlaş)|doğrudan\s*(ödeme|anlaş)/, "Platform dışına yönlendirme"],
+  // Ödeme kelimeleri (IBAN, havale, elden…) işaretlenmez: 2026-11 modelinde ücret öğretmenle veli arasında konuşulur
+  [/site\s*dışı|platform\s*dışı|siteden\s*(değil|bağımsız)|dışarıda\s*(ders|görüş|anlaş)|özelden/, "Platform dışına yönlendirme"],
   [/gmail|hotmail|outlook|yandex|e-?posta\s*adres|mail\s*adres/, "E-posta isteme / verme"],
 ];
 
@@ -72,9 +72,11 @@ export async function sendMessage(threadId: string, sender: Sender, text: string
     }
   }
 
-  const body = maskContacts(raw);
+  // Ders talebi kabul edildiyse telefon zaten paylaşıldı: iletişim bilgisi gizlenmez, mesaj işaretlenmez
+  const accepted = await db.teacherInquiry.findFirst({ where: { teacherId: thread.teacherId, requesterId: thread.studentId, status: "ACCEPTED" }, select: { id: true } });
+  const body = accepted ? raw : maskContacts(raw);
   const masked = body !== raw;
-  const detected = offPlatformReason(raw);
+  const detected = accepted ? null : offPlatformReason(raw);
   const flagReason = masked ? ["İletişim bilgisi paylaşıldı (gizlendi)", detected].filter(Boolean).join(", ") : detected;
   const previous = await db.directMessage.findFirst({ where: { threadId, authorId: sender.id }, orderBy: { createdAt: "desc" }, select: { createdAt: true } });
   await db.$transaction([

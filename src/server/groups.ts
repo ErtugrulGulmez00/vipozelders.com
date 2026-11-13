@@ -170,6 +170,7 @@ export async function paidCount(courseId: string, tx: Tx = db) {
 // ---------------------------------------------------------------------------
 
 export async function inviteToGroup(teacherId: string, courseId: string, emailOrUsername: string, now = new Date()) {
+  if (!(await loadSettings()).groupsEnabled) throw new GroupError("Grup dersi şu an kapalı.");
   const course = await db.groupCourse.findUnique({ where: { id: courseId } });
   if (!course || course.teacherId !== teacherId) throw new GroupError("Ders bulunamadı.");
   if (course.status !== "OPEN" || course.enrollDeadline <= now) throw new GroupError("Bu dersin kayıtları kapandı.");

@@ -1,5 +1,7 @@
 // Yasal sayfa şablonları. {süslü} ifadeler sayfa gösterilirken site ayarlarıyla doldurulur.
 // Metinler genel şablondur; şirketin durumuna göre bir avukata kontrol ettirilmesi önerilir (Yönetim → Sayfalar'dan düzenlenir).
+// 2026-11-13: ödemeye aracılık edilmeyen modele göre yeniden yazıldı (özel ders ücreti öğretmenle veli arasında;
+// sitede satılan hizmet Pi Koç ve kurum paneli aboneliği).
 
 export const LEGAL_PAGES: { slug: string; title: string; sortOrder: number; showInFooter: boolean; content: string }[] = [
   {
@@ -7,18 +9,20 @@ export const LEGAL_PAGES: { slug: string; title: string; sortOrder: number; show
     title: "Hakkımızda",
     sortOrder: 1,
     showInFooter: true,
-    content: `{siteName}, okul öncesinden üniversite sınavına kadar her kademede öğrencileri doğru öğretmenle buluşturan bir online eğitim platformudur. Veliler ve öğrenciler öğretmenleri inceler, boş saatlerinden randevu alır ve dersi sitemizdeki sanal sınıfta ya da yüz yüze yapar.
+    content: `{siteName}; etüt merkezleri için kurum paneli, öğrenci koçları ve özel ders öğretmenleri için Pi Koç takip paneli ve velilerin öğretmen bulduğu bir özel ders vitrini sunar.
 
 ## Ne sunuyoruz?
-- Özel ders: İlkokul, ortaokul, lise, LGS ve YKS hazırlıkta birebir dersler. Fiyatlar öğretmen profillerinde KDV dahil gösterilir.
-- Koçluk: Sınav hazırlığında çalışma programı ve düzenli takip.
-- Kurum paneli: Etüt merkezlerine öğrenci, yoklama, deneme ve tahsilat takibi için yazılım.
+- Kurum paneli: Etüt merkezlerine öğrenci, yoklama, etüt, ödev, deneme analizi, veli iletişimi ve tahsilat takibi için yazılım.
+- Pi Koç: Koçların ve öğretmenlerin kendi öğrencilerini program, ödev, soru ve deneme takibi, görüntülü görüşme ve veli raporuyla izlediği panel. {piKocFreeStudents} öğrenciye kadar ücretsizdir.
+- Özel ders vitrini: Veliler öğretmen profillerini inceler ve ücretsiz ders talebi gönderir. Öğretmen kabul edince veliyi arar; ders saatini ve ücreti taraflar birlikte belirler.
+
+## Özel derste rolümüz
+{siteName} özel ders ücretine aracılık etmez ve komisyon almaz. Ders ücreti doğrudan öğretmene ödenir; dersin içeriğinden ve yürütülmesinden öğretmen sorumludur.
 
 ## Nasıl güven sağlıyoruz?
-- Öğretmenlerimizin kimlik ve diploma bilgilerini kontrol ediyor, onaylı öğretmenleri rozetle gösteriyoruz.
-- Ödemeyi 3D Secure ile alıyor, ders gerçekleşip itiraz süresi dolana kadar öğretmene aktarmıyoruz.
-- Öğretmen onaylamazsa ya da derse gelmezse ödemenin tamamını iade ediyoruz.
-- Yorumları yalnızca dersi gerçekten tamamlanmış öğrenciler ve veliler yazabilir.
+- Öğretmenlerin kimlik ve diploma bilgilerini kontrol ediyor, onaylı öğretmenleri rozetle gösteriyoruz.
+- Telefon numaranız yalnızca talebinizi kabul eden öğretmenle paylaşılır; ondan önce mesajlarda iletişim bilgisi gizlenir.
+- Yorumları yalnızca öğretmenle görüntülü ders yapmış veliler ve öğrenciler yazabilir.
 
 ## Şirket bilgileri
 Unvan: {companyName}
@@ -33,72 +37,49 @@ E-posta: {contactEmail}`,
     title: "Nasıl Çalışır?",
     sortOrder: 2,
     showInFooter: true,
-    content: `{siteName}'te birebir ders ve grup dersi tek yerde. İhtiyacınıza uygun yolu seçin.
+    content: `## Özel ders
+1. Öğretmeni bulun: kademe, ders, ders şekli, il/ilçe ve fiyata göre süzün; onaylı öğretmen rozetine, tanıtıma ve yorumlara bakın.
+2. Ücretsiz ders talebi gönderin: öğretmenin profilindeki formdan dersi, öğrenciyi ve uygun saatlerinizi yazın.
+3. Öğretmen sizi arar: talebinizi kabul eden öğretmen telefon numaranızı görür. Ders saatini, ücreti ve ödeme şeklini onunla konuşursunuz; ödemeyi doğrudan öğretmene yaparsınız.
+4. Takip edin: öğrenci öğretmenin Pi Koç takibine eklenir. Program, ödev, deneme sonuçları ve koçluk notları Hesabım → Koçum bölümünde görünür.
 
-## Birebir özel ders
-1. Öğretmeni bulun: kademe, ders, ders şekli, il/ilçe ve fiyata göre filtreleyin; onaylı öğretmen rozetine ve gerçek yorumlara bakın. Birçok öğretmenle ücretsiz 15 dakikalık tanışma görüşmesi yapabilirsiniz.
-2. Saati seçin ve ödeyin: öğretmenin takviminde yalnızca boş saatler seçilebilir. Ödeme 3D Secure ile alınır; seçtiğiniz saat ödeme süresince sizin için ayrılır.
-3. Öğretmen onaylar: talebinizi {approvalWindowHours} saat içinde onaylar. Onaylamazsa ya da süresinde yanıt vermezse ödediğiniz tutarın tamamı iade edilir.
-4. Derse katılın: online derslerde ders saatinden {classroomOpensMinutesBefore} dakika önce "Derse Katıl" düğmesi açılır; program kurmanız gerekmez. Yüz yüze derslerde adres bilgisi onaydan sonra öğretmenle paylaşılır.
-5. Değerlendirin: ders bitince puan ve yorum bırakabilirsiniz. Bir sorun yaşadıysanız {disputeWindowHours} saat içinde bildirin; bu süre dolmadan öğretmene ödeme yapılmaz.
+## Pi Koç
+Koçlar ve öğretmenler öğrencilerini tek panelde takip eder. {piKocFreeStudents} öğrenciye kadar ücretsizdir; daha fazlası ve ek özellikler için ücretli paketler Pi Koç sayfasında yazılıdır.
 
-## Paket ders ve düzenli ders
-- Paket: aynı öğretmenden birden fazla dersi peşin ve indirimli alırsınız; saatleri öğretmenin takviminden dilediğiniz zaman seçip "Paketimden kullan" ile ders alırsınız.
-- Düzenli ders: saat seçerken "Her hafta bu saatte tekrarla"yı işaretlerseniz dersler peşin ödenir ve her hafta için öğretmeninize talep gider.
-- Öğretmen bir dersi onaylamazsa ya da dersi erken iptal ederseniz ders paketinize geri eklenir.
-
-## Ders saatini değiştirmek (erteleme)
-Onaylı bir dersin saatini dersten en az {rescheduleMinHours} saat önce değiştirmek isteyebilirsiniz. Ders sayfasından yeni bir saat önerin; öğretmeniniz kabul ederse ders yeni saate taşınır. Öğretmeniniz de size yeni saat önerebilir.
-
-## Grup dersleri
-{groupMinParticipants}–{groupMaxCapacity} kişilik online sınıflarda, birebir dersten çok daha uygun fiyata ders alırsınız. Ders, kayıt bitişinde en az katılımcı sayısına ulaşırsa açılır; ulaşmazsa ödediğiniz ücretin tamamı iade edilir.
-
-## Dersle birlikte soru çözümü
-Bazı öğretmenler, tamamlanan her dersin ardından 30 dakikalık ücretsiz bir soru çözüm dersi açar. Bu öğretmenlerin profilinde belirtilir; ayrı bir ücret alınmaz.
-
-## Aradığınızı bulamazsanız
-Öğretmen listesinin altındaki formdan ders ve uygun saatlerinizi bırakın; size uygun öğretmeni bulup dönelim. Sorularınız için sağ alttaki WhatsApp düğmesini de kullanabilirsiniz.`,
+## Kurum paneli
+Etüt merkezleri öğrenci, yoklama, deneme, veli iletişimi ve tahsilatı tek panelden yönetir. Ayrıntılar Kurumlar için sayfasındadır.`,
   },
   {
     slug: "sss",
     title: "Sıkça Sorulan Sorular",
     sortOrder: 3,
     showInFooter: true,
-    content: `## Ödememi ne zaman yaparım?
-Randevu talebini gönderirken ödersiniz. Öğretmen onaylamazsa ödemenin tamamı otomatik olarak iade edilir. Paket ve düzenli derslerde dersler peşin ödenir; öğretmen onaylamadığı ders paketinize geri eklenir.
+    content: `## Ders talebi ücretli mi?
+Hayır. Ders talebi göndermek ve siteye üye olmak ücretsizdir.
 
-## Dersi iptal edebilir miyim?
-Evet. Dersten {fullRefundHours} saat öncesine kadar yapılan iptallerde tamamı, {partialRefundHours} saat öncesine kadar %{partialRefundPercent}'si iade edilir. Daha geç iptallerde ve derse katılınmadığında iade yapılmaz. Paketten alınan derste tam iade gereken durumda ders paketinize geri döner.
+## Ders ücretini kime, nasıl öderim?
+Doğrudan öğretmene. Ücreti, ders saatini ve ödeme şeklini öğretmen sizi aradığında birlikte belirlersiniz. {siteName} ders ücretine aracılık etmez ve komisyon almaz.
 
-## Ders saatini değiştirebilir miyim?
-Evet. Dersten en az {rescheduleMinHours} saat önce ders sayfasından yeni saat önerebilirsiniz; öğretmeniniz kabul ederse ders taşınır. Bir ders en fazla {rescheduleMaxPerBooking} kez ertelenebilir.
+## Telefon numaram kimlerle paylaşılır?
+Yalnızca talebinizi kabul eden öğretmenle. Talep kabul edilmeden önce mesajlarda telefon, e-posta ve adres paylaşılamaz.
 
-## Paket almanın avantajı ne?
-Öğretmeniniz paket indirimi sunuyorsa dersler daha uygun olur ve aynı öğretmenle düzenli çalışırsınız. Paket {packageValidityMonths} ay geçerlidir; süresi dolduğunda kullanılmayan derslerin ücreti iade edilir.
+## Öğretmen talebimi kabul etmezse?
+Size e-postayla haber veririz; aynı derste başka öğretmenlere talep gönderebilirsiniz. Taleplerinizin durumunu Hesabım → Ders taleplerim sayfasında görürsünüz.
 
-## Öğretmen derse gelmezse ne olur?
-Ödediğiniz tutarın tamamı iade edilir ve öğretmen hakkında işlem yapılır. Grup derslerinde öğretmenin katılmadığı oturumun ücreti iade edilir.
-
-## Grup dersi nasıl işliyor?
-Öğretmen bir program ilan eder (ör. 4 hafta, haftada 2 ders). Kayıt bitişinde en az katılımcı sayısına ulaşılırsa ders kesinleşir; ulaşılmazsa ücretin tamamı iade edilir. İlk dersten önce kaydınızı iptal ederseniz tam iade alırsınız.
-
-## Davet indirimi nasıl uygulanır?
-Arkadaşınızın davet bağlantısıyla kayıt olduysanız ilk siparişinizde indirim kendiliğinden uygulanır.
-
-## Arkadaşımı nasıl davet ederim?
-Hesabım → Arkadaşını davet et sayfasındaki bağlantınızı paylaşın. Arkadaşınız ilk siparişinde indirim kazanır.
+## Koçum bölümünde neler var?
+Talebinizi kabul eden öğretmen çocuğunuzu Pi Koç takibine ekler. Haftalık program, ödevler, deneme sonuçları, koçluk notları ve görüntülü ders bağlantısı burada görünür.
 
 ## Online ders için ne gerekiyor?
-Kamera ve mikrofonu olan bir bilgisayar, tablet ya da telefon ve güncel bir tarayıcı yeterlidir. Ders sitemizin içinde açılır.
+Kamera ve mikrofonu olan bir bilgisayar, tablet ya da telefon ve güncel bir tarayıcı yeterlidir. Görüntülü ders sitemizin içinde açılır.
 
 ## Kimler yorum yapabilir?
-Yalnızca o öğretmenle en az bir dersi tamamlanmış öğrenciler ve veliler yorum yapabilir. Bu sayede tüm yorumlar gerçek derslere dayanır.
+Öğretmenin talebini kabul ettiği ve öğretmenle sitemizde en az bir görüntülü ders yapmış veliler ve öğrenciler. Bu sayede yorumlar gerçek derslere dayanır.
 
 ## Aradığım öğretmeni bulamadım, ne yapmalıyım?
 Öğretmen listesinin altındaki "Aradığınız öğretmeni bulamadınız mı?" formunu doldurun; uygun öğretmeni bulup size dönelim.
 
-## Öğretmen olmak istiyorum, nasıl başvururum?
-"Öğretmen ol" sayfasındaki başvuru formunu doldurun; belgeleriniz incelendikten sonra ekibimiz sizinle iletişime geçer.`,
+## Öğretmen olmak istiyorum, ne ödemem gerekir?
+Profil açmak ve ders talebi almak ücretsizdir; {siteName} ders ücretinizden komisyon almaz. Öğrencilerinizi takip ettiğiniz Pi Koç {piKocFreeStudents} öğrenciye kadar ücretsizdir; daha fazla öğrenci için aylık paket alırsınız. Başvuru için "Öğretmen ol" sayfasını kullanın.`,
   },
   {
     slug: "iletisim",
@@ -128,38 +109,42 @@ Veri sorumlusu: {companyName} · {companyAddress} · {companyTaxInfo} · {contac
 
 ## İşlenen kişisel veriler
 - Kimlik ve iletişim: ad, soyad, e-posta, telefon
-- Ders bilgileri: dersin kimin için alındığı, sınıf/kademe, ders notları, randevu geçmişi
-- Yüz yüze derslerde adres ve ilçe bilgisi
+- Ders talepleri: talebi gönderen velinin adı ve telefonu, öğrencinin adı ve sınıfı, ders, ders şekli, uygun saatler ve not
 - İşlem güvenliği: IP adresi, oturum ve giriş kayıtları
-- Ödeme bilgileri: kart bilgileriniz tarafımızca saklanmaz, lisanslı ödeme kuruluşu tarafından işlenir
-- Öğretmenler için ayrıca: eğitim ve deneyim bilgileri, diploma/sertifika, adli sicil kaydı, IBAN ve T.C. kimlik numarası
-- Kurum panelindeki öğrenci ve veliler için: kurumun girdiği ad, telefon, e-posta, sınıf, yoklama, deneme sonucu, ödeme planı ve notlar
-- Online derslerde: derse giriş ve çıkış zamanları
+- Öğretmenler için ayrıca: eğitim ve deneyim bilgileri, diploma/sertifika, istenirse adli sicil kaydı; daha önce hakediş almışsa IBAN ve T.C. kimlik numarası
+- Kurum paneli ve Pi Koç'taki öğrenci ve veliler için: kurumun ya da koçun girdiği ad, telefon, e-posta, sınıf, yoklama, ödev, deneme sonucu, çalışma programı, görüşme notları ve ödeme planı
+- Görüntülü derslerde: görüşmeye giriş ve çıkış zamanları (görüntü ve ses kaydedilmez)
+- Abonelik ödemeleri: havale/EFT ile ödeyen kurum ve koçların ödeme tutarı, tarihi ve açıklaması
 - Bildirimler: cihaz bildirim anahtarı, WhatsApp tercihiniz ve gönderim kayıtları
 
 ## İşleme amaçları
-Üyelik ve randevu süreçlerinin yürütülmesi, ödeme ve iadelerin yapılması, derslerin gerçekleştirilmesi, öğretmen doğrulaması, müşteri hizmetleri, yasal yükümlülüklerin yerine getirilmesi ve hizmet güvenliğinin sağlanması.
+Üyeliğin ve ders taleplerinin yürütülmesi, talebin öğretmene iletilmesi, Pi Koç ve kurum paneli hizmetlerinin sunulması, görüntülü derslerin gerçekleştirilmesi, öğretmen doğrulaması, abonelik ödemelerinin takibi, müşteri hizmetleri, yasal yükümlülüklerin yerine getirilmesi ve hizmet güvenliğinin sağlanması.
 
 ## Hukuki sebepler
 Sözleşmenin kurulması ve ifası, hukuki yükümlülük, meşru menfaat ve gerektiğinde açık rızanız (KVKK m.5). WhatsApp bildirimleri ve pazarlama iletileri yalnızca açık rızanıza dayanır.
 
+## Ders talebinde paylaşım
+Ders talebi gönderdiğinizde talebiniz seçtiğiniz öğretmene iletilir. Adınız ve telefon numaranız öğretmene yalnızca talebinizi kabul ederse gösterilir. Kabul eden öğretmen öğrenciyi Pi Koç takibine ekler; bu andan itibaren takip kayıtları için veri sorumlusu öğretmendir.
+
 ## Aktarım
 Kişisel verileriniz yalnızca hizmetin gerektirdiği ölçüde aşağıdaki taraflarla paylaşılır:
-- Ödeme kuruluşu ve banka: ödeme ve iade işlemleri
+- Ders talebini kabul eden öğretmen: talep bilgileri ve telefon numarası
 - Barındırma ve e-posta hizmet sağlayıcıları: sitenin çalışması ve bildirim e-postaları
-- LiveKit: online derslerde görüntü ve sesin iletilmesi
+- LiveKit: görüntülü derslerde görüntü ve sesin anlık iletilmesi
 - Google (Firebase Cloud Messaging, Google Drive): mobil uygulama bildirimleri ve şifrelenmiş yedekler
-- Meta Platforms (WhatsApp) ve WhatsApp iş ortağımız LetsBot: yalnızca WhatsApp bildirimi alıyorsanız telefon numaranız ve mesaj içeriği
+- OpenRouter ve aracılık ettiği yapay zekâ model sağlayıcıları: kurum ve koçların yüklediği deneme sonuç dosyalarının okunması ve koç raporu taslağı (rapor taslağına öğrenci adı gönderilmez)
+- Meta Platforms (WhatsApp): yalnızca WhatsApp bildirimi alıyorsanız telefon numaranız ve mesaj içeriği
 - Telegram: site yöneticilerine giden iç bildirimler (ad ve işlem özeti)
+- Bankalar: abonelik bedellerinin havale/EFT ile alınması
 - Yetkili kamu kurumları: yasal zorunluluk hâlinde
 
-LiveKit, Google, Meta ve Telegram sunucuları yurt dışında bulunabilir. Yurt dışına aktarım KVKK m.9 kapsamındaki şartlara uygun yapılır.
+LiveKit, Google, OpenRouter ve yapay zekâ model sağlayıcıları, Meta ve Telegram sunucuları yurt dışında bulunabilir. Yurt dışına aktarım KVKK m.9 kapsamındaki şartlara uygun yapılır.
 
 ## WhatsApp bildirimleri
 WhatsApp bildirimleri isteğe bağlıdır ve yalnızca izninizle gönderilir. İzninizi kayıt sırasında ya da Hesap ayarlarından verebilir, aynı yerden geri alabilir ya da WhatsApp’tan DUR yazarak bildirimleri durdurabilirsiniz. Bu durum e-posta ve site bildirimlerini etkilemez. Kurum öğrencilerinin velilerine giden WhatsApp bildirimleri için izni kurum alır.
 
-## Kurum kayıtları
-Etüt merkezi panelinde kurumun girdiği öğrenci ve veli verileri için veri sorumlusu ilgili kurumdur; {siteName} bu verileri kurum adına, veri işleyen olarak işler.
+## Kurum ve Pi Koç kayıtları
+Kurum panelinde kurumun, Pi Koç'ta koçun girdiği öğrenci ve veli verileri için veri sorumlusu ilgili kurum ya da koçtur; {siteName} bu verileri onlar adına, veri işleyen olarak işler.
 
 ## Reşit olmayanlar
 18 yaşından küçük öğrenciler adına hesap, veli veya yasal temsilci tarafından açılmalıdır.
@@ -179,15 +164,17 @@ Sitemizde oturumunuzu açık tutmak ve güvenliği sağlamak için zorunlu çere
 - vd_cookie_consent: Çerez tercihinizi hatırlar (zorunlu)
 - vd_center: Kurum paneli oturumu (yalnızca kurum personeli, zorunlu)
 - vd_2fa: İki adımlı doğrulama sırasında kısa süreli oturum (zorunlu)
-- vd_davet: Arkadaş davet bağlantısıyla gelenlerde davet kodu (zorunlu)
 
 İleride analiz veya pazarlama çerezleri eklenirse yalnızca açık onayınızla kullanılacaktır.
 
 ## Güvenlik
-Şifreler geri döndürülemez biçimde saklanır; kart bilgileri sistemimizde tutulmaz; hassas veriler ve yedekler şifrelenir.
+Şifreler geri döndürülemez biçimde saklanır; sitede kart bilgisi alınmaz; hassas veriler ve yedekler şifrelenir.
+
+## Ders talepleri
+Ders talebindeki telefon numaranız yalnızca talebinizi kabul eden öğretmene gösterilir. Talep kabul edilmeden önce mesajlarda iletişim bilgileri gizlenir.
 
 ## WhatsApp bildirimleri
-Telefon numaranız, yalnızca izin verdiyseniz ders ve hesap bildirimleri için WhatsApp üzerinden kullanılır; bu amaçla Meta Platforms ve iş ortağımız LetsBot ile paylaşılır. Reklam ya da kampanya mesajı göndermek için kullanılmaz. Bildirimleri Hesap ayarlarından kapatabilir ya da WhatsApp’tan DUR yazarak durdurabilirsiniz.
+Telefon numaranız, yalnızca izin verdiyseniz önemli bildirimler için WhatsApp üzerinden kullanılır; bu amaçla Meta Platforms (WhatsApp) ile paylaşılır. Reklam ya da kampanya mesajı göndermek için kullanılmaz. Bildirimleri Hesap ayarlarından kapatabilir ya da WhatsApp’tan DUR yazarak durdurabilirsiniz.
 
 ## Kişisel verileriniz
 Hangi verileri neden işlediğimiz, kimlerle paylaştığımız ve haklarınız KVKK Aydınlatma Metni’nde yer alır. Hesabınızı ve verilerinizi silmek için “Verilerimi Nasıl Sildiririm?” sayfasına bakın.
@@ -204,7 +191,7 @@ Gizlilikle ilgili sorularınız için: {companyName} · {contactEmail}`,
 
 ## 1. Hesabınızı kendiniz silin (en hızlı yol)
 - Veli / öğrenci: Giriş yapın → Hesabım → Hesap ayarları → “Hesabı sil”.
-- Öğretmen: Giriş yapın → Öğretmen paneli → Ayarlar → “Hesabı sil”.
+- Öğretmen: Giriş yapın → Öğretmen paneli → Hesap ayarları → “Hesabı sil”.
 
 Silme işlemi onaylandığında hesabınız hemen kapatılır; ad, e-posta, telefon, profil fotoğrafı, mesajlar ve bildirim tercihleriniz silinir ya da anonimleştirilir.
 
@@ -213,8 +200,8 @@ Hesabınıza giremiyorsanız ya da yalnızca belirli verilerin (ör. WhatsApp i�
 
 Yalnızca WhatsApp bildirimlerini durdurmak istiyorsanız WhatsApp’tan DUR yazmanız yeterlidir.
 
-## 3. Kurum (etüt merkezi) kayıtları
-Bir kurumun öğrencisi ya da velisiyseniz, öğrenci kartı ve yoklama, deneme, ödeme gibi kayıtlar o kurum adına tutulur. Silme talebinizi kurumunuza iletebilir ya da {contactEmail} adresine yazabilirsiniz; talebi kurumla birlikte sonuçlandırırız.
+## 3. Kurum ve Pi Koç kayıtları
+Bir kurumun ya da Pi Koç kullanan bir koçun öğrencisi veya velisiyseniz; öğrenci kartı, yoklama, deneme, program ve ödeme gibi kayıtlar o kurum ya da koç adına tutulur. Silme talebinizi kurumunuza ya da koçunuza iletebilir veya {contactEmail} adresine yazabilirsiniz; talebi onlarla birlikte sonuçlandırırız.
 
 ## Saklanması zorunlu kayıtlar
 Ödeme, fatura ve muhasebe kayıtları vergi mevzuatı gereği yasal süre boyunca saklanır; bu kayıtlar başka hiçbir amaçla kullanılmaz ve süre dolunca silinir.
@@ -230,76 +217,68 @@ E-posta: {contactEmail}`,
     sortOrder: 12,
     showInFooter: true,
     content: `## 1. Taraflar
-Satıcı / Aracı Hizmet Sağlayıcı: {companyName}
+Satıcı: {companyName}
 Adres: {companyAddress}
 Vergi bilgileri: {companyTaxInfo}
 Telefon: {contactPhone} · E-posta: {contactEmail}
 
-Alıcı: Siteye üye olan ve ödeme adımında bilgileri yer alan kişi (veli, yasal temsilci ya da 18 yaşını doldurmuş öğrenci).
+Alıcı: {siteName} üzerinden Pi Koç ücretli paketini satın alan kişi.
 
 ## 2. Konu
-İşbu sözleşme, alıcının {siteName} üzerinden satın aldığı eğitim hizmetlerinin satışı ve ifasına ilişkin tarafların hak ve yükümlülüklerini 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği uyarınca düzenler. Sözleşme konusu hizmetler:
-- Özel ders ve koçluk görüşmesi: seçilen öğretmen, hizmet türü, kademe, ders, süre, tarih, saat ve ders şekli (online / yüz yüze) ödeme adımındaki sipariş özetinde yer alır.
-- Grup dersi: öğretmenin ilan ettiği programdaki (tarih, saat ve oturum sayısı sipariş özetinde yer alır) online grup oturumlarına katılım hakkıdır. Bedel kişi başı ve tüm program için tek seferde alınır.
-- Paket ders ve düzenli ders: aynı öğretmenden, sipariş özetinde belirtilen ders ve sürede, belirtilen sayıda ders hakkıdır. Bedel peşin alınır; dersler öğretmenin takviminden seçilir ve öğretmen onayıyla kesinleşir. Paket {packageValidityMonths} ay geçerlidir.
+İşbu sözleşme, alıcının {siteName} üzerinden satın aldığı Pi Koç yazılım aboneliğinin satışı ve ifasına ilişkin tarafların hak ve yükümlülüklerini 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği uyarınca düzenler.
+
+Pi Koç; koçların ve öğretmenlerin öğrencilerini program, ödev, soru ve deneme takibi, görüntülü görüşme ve veli raporuyla izlediği web ve mobil yazılımdır. {piKocFreeStudents} öğrenciye kadar ücretsiz paket süresizdir; ücretli paketler öğrenci sayısına göre aylık olarak satılır. Paketlerin içeriği ve fiyatları Pi Koç sayfasında yer alır.
+
+{siteName} üzerinden öğretmenlerle kurulan özel ders ilişkisi bu sözleşmenin konusu değildir: {siteName} özel ders hizmetinin satıcısı ya da ödemesinin aracısı değildir; ders ücreti öğretmen ile veli arasında belirlenir ve doğrudan öğretmene ödenir.
 
 ## 3. Bedel ve ödeme
-Hizmet bedeli tüm vergiler dahil olarak sipariş özetinde gösterilir; ek ücret alınmaz. Ödeme kredi veya banka kartıyla, 3D Secure doğrulamalı olarak tek çekim alınır. Kart bilgileri {siteName} tarafından görülmez ve saklanmaz; yalnızca bankanın güvenli ödeme sayfasında girilir. Tahsil edilen ders bedeli, ders gerçekleşip itiraz süresi dolana kadar öğretmene aktarılmaz.
+Paket bedeli tüm vergiler dahil olarak Pi Koç sayfasında ve panelin Abonelik sayfasında gösterilir. Ödeme havale / EFT ile yapılır; ödeme açıklamasına hesap adı ve paket yazılır. Sitede kart bilgisi alınmaz.
 
-## 4. Hizmetin ifası (teslimat)
-Hizmet fiziksel olarak kargo ile teslim edilmez. Online dersler onaylanan tarih ve saatte sitedeki sanal sınıfta, yüz yüze dersler taraflarca belirlenen adreste yapılır. Grup dersi, kayıt bitiş tarihinde en az katılımcı sayısına ulaşılırsa kesinleşir ve programdaki saatlerde sitedeki sanal sınıfta yapılır; ulaşılamazsa iptal edilir ve bedelin tamamı iade edilir. Ayrıntılar Teslimat ve Hizmet Bilgileri sayfasındadır.
+## 4. Hizmetin ifası
+Ödeme kaydedildiğinde seçilen paket alıcının Pi Koç hesabında açılır ve ödenen süre boyunca geçerli olur. Hizmet elektronik ortamda sunulur; kargo ile teslimat yoktur. Süre bitip yenilenmezse hesap ücretsiz pakete döner; kayıtlar silinmez.
 
-## 5. Öğretmen onayı
-Ders talebi öğretmenin onayıyla kesinleşir. Öğretmen talebi reddederse ya da {approvalWindowHours} saat içinde yanıt vermezse ödenen tutarın tamamı kartınıza iade edilir.
+## 5. Cayma hakkı
+Paket, alıcının onayıyla ödemenin kaydedildiği anda elektronik ortamda anında ifa edilmeye başlanır. Mesafeli Sözleşmeler Yönetmeliği'nin 15. maddesinin (ğ) bendi uyarınca bu hizmette cayma hakkı kullanılamaz. Paket açılmadan önce yapılan ödemenin iadesi istenebilir.
 
-## 6. Cayma hakkı ve iptal
-- Alıcı, hizmetin ifasına başlanmadan önce siparişini iptal edebilir. Dersten {fullRefundHours} saat öncesine kadar yapılan iptallerde bedelin tamamı, {partialRefundHours} saat öncesine kadar %{partialRefundPercent}'si iade edilir.
-- Mesafeli Sözleşmeler Yönetmeliği'nin 15. maddesi uyarınca, alıcının onayıyla ifasına başlanan hizmetlerde (başlamış ya da tamamlanmış ders) cayma hakkı kullanılamaz.
-- Paket dersinde tam iade gerektiren durumlarda (öğretmen onaylamaz ya da ders zamanında iptal edilir) ders pakete geri eklenir; kısmi iadeler karta yapılır. Kullanılmamış dersler istenildiğinde iade edilir; bu durumda kullanılan dersler paket indirimi uygulanmadan tek ders ücretinden düşülür. Paket süresi dolduğunda kullanılmayan derslerin bedeli iade edilir.
-- Grup dersi kaydı, ilk oturum başlamadan önce iptal edilirse bedelin tamamı iade edilir. İlk oturum başladıktan sonra iptal ve iade yapılmaz; öğretmenin katılmadığı ya da iptal edilen oturumların bedeli iade edilir.
-- İptal ve iade koşullarının tamamı İptal ve İade Politikası'nda yer alır ve bu sözleşmenin ayrılmaz parçasıdır.
+## 6. İade
+Hatalı ya da fazla yapılan ödemeler, alıcının bildirdiği hesaba en geç 14 gün içinde iade edilir. Dönem içinde paket bırakılırsa paket dönem sonuna kadar açık kalır.
 
-## 7. İade yöntemi
-İadeler ödemenin yapıldığı karta, iptal ya da iade kararından itibaren en geç 14 gün içinde yapılır. Tutarın hesaba yansıma süresi bankaya göre değişebilir.
-
-## 8. Uyuşmazlık
+## 7. Uyuşmazlık
 Uyuşmazlıklarda Ticaret Bakanlığınca her yıl ilan edilen parasal sınırlar dahilinde alıcının yerleşim yerindeki tüketici hakem heyetleri, bu sınırları aşan durumlarda tüketici mahkemeleri yetkilidir.
 
-## 9. Yürürlük
-Alıcı, ödeme adımında bu sözleşmeyi ve Ön Bilgilendirme Formu'nu okuyup onayladığında sözleşme kurulmuş sayılır.`,
+## 8. Yürürlük
+Alıcı, ödemeyi yapmadan önce bu sözleşmeyi ve Ön Bilgilendirme Formu'nu okuyup onaylamış sayılır; sözleşme ödemenin kaydedilmesiyle kurulur.`,
   },
   {
     slug: "on-bilgilendirme-formu",
     title: "Ön Bilgilendirme Formu",
     sortOrder: 13,
     showInFooter: true,
-    content: `## Satıcı / Aracı Hizmet Sağlayıcı
+    content: `## Satıcı
 Unvan: {companyName}
 Adres: {companyAddress}
 Vergi bilgileri: {companyTaxInfo}
 Telefon: {contactPhone} · E-posta: {contactEmail}
 
 ## Hizmetin temel nitelikleri
-- Ders: hizmet türü (özel ders, koçluk), kademe, ders, süre, tarih-saat, ders şekli (online / yüz yüze) ve öğretmen bilgisi sipariş özetinde yer alır.
-- Grup dersi: öğretmen, program (oturum tarihleri ve saatleri), kontenjan, en az katılımcı sayısı ve kayıt bitiş tarihi sipariş özetinde yer alır.
+Pi Koç yazılım aboneliği: koçların ve öğretmenlerin öğrencilerini program, ödev, soru ve deneme takibi, görüntülü görüşme ve veli raporuyla izlediği panel. Ücretli paketler öğrenci sayısına göre aylıktır; paket içerikleri Pi Koç sayfasında yazılıdır. {piKocFreeStudents} öğrenciye kadar ücretsiz paket süresizdir.
 
 ## Toplam bedel
-Tüm vergiler dahil toplam bedel sipariş özetinde gösterilir. Ek bir ücret ya da kargo bedeli alınmaz.
+Tüm vergiler dahil paket bedeli Pi Koç sayfasında gösterilir. Ek ücret alınmaz.
 
 ## Ödeme
-Kredi veya banka kartıyla, 3D Secure doğrulamalı olarak tek çekim.
+Havale / EFT. Sitede kart bilgisi alınmaz.
 
 ## Teslimat
-Hizmet elektronik ortamda ya da yüz yüze ifa edilir; kargo gönderimi yoktur. Online dersler sitedeki sanal sınıfta yapılır.
+Ödeme kaydedildiğinde paket Pi Koç hesabınızda elektronik ortamda açılır; kargo gönderimi yoktur.
 
-## İptal, cayma ve iade
-- Öğretmen talebi onaylamazsa veya {approvalWindowHours} saat içinde yanıt vermezse: tam iade
-- Dersten {fullRefundHours} saat öncesine kadar iptal: tam iade
-- Dersten {partialRefundHours} saat öncesine kadar iptal: %{partialRefundPercent} iade
-- Daha geç iptal veya derse katılmama: iade yapılmaz
-- Öğretmen iptal ederse veya derse gelmezse: tam iade
-- Grup dersi: en az katılımcıya ulaşılamazsa tam iade; ilk oturumdan önce iptalde tam iade; sonrasında iade yok, öğretmenin katılmadığı ya da iptal edilen oturumların bedeli iade
-- İfasına başlanan hizmetlerde cayma hakkı kullanılamaz (Mesafeli Sözleşmeler Yönetmeliği m.15).
+## Cayma ve iade
+- Elektronik ortamda anında ifa edilen hizmet olduğundan, paket açıldıktan sonra cayma hakkı kullanılamaz (Mesafeli Sözleşmeler Yönetmeliği m.15/ğ).
+- Paket açılmadan önce yapılan, hatalı ya da fazla ödemeler 14 gün içinde iade edilir.
+- Süre bitip yenilenmezse hesap ücretsiz pakete döner; kayıtlar silinmez.
+
+## Özel ders
+{siteName}, öğretmenlerle kurulan özel ders hizmetinin satıcısı ya da ödemesinin aracısı değildir; ders ücreti doğrudan öğretmene ödenir.
 
 ## Şikayet
 Şikayetlerinizi {contactEmail} adresine ya da {contactPhone} numarasına iletebilir, tüketici hakem heyetlerine ve tüketici mahkemelerine başvurabilirsiniz.`,
@@ -309,61 +288,38 @@ Hizmet elektronik ortamda ya da yüz yüze ifa edilir; kargo gönderimi yoktur. 
     title: "İptal ve İade Politikası",
     sortOrder: 14,
     showInFooter: true,
-    content: `## Öğretmen onayı
-Ödemeniz alındıktan sonra öğretmenin talebinizi onaylaması gerekir. Talep reddedilirse veya öğretmen {approvalWindowHours} saat içinde yanıt vermezse ödediğiniz tutarın tamamı otomatik olarak kartınıza iade edilir.
+    content: `## Özel ders
+{siteName} özel ders ücretine aracılık etmez; ders ücreti, iptal ve iade koşulları öğretmen ile veli arasında belirlenir. Ders talebi göndermek ücretsizdir.
 
-## Sizin iptaliniz
-Randevunuzu Hesabım sayfasından iptal edebilirsiniz.
-- Dersin başlamasına {fullRefundHours} saat veya daha fazla varsa: tam iade
-- {fullRefundHours} saatten az, {partialRefundHours} saatten fazla varsa: %{partialRefundPercent} iade
-- {partialRefundHours} saatten az kaldıysa veya derse katılmadıysanız: iade yapılmaz
+## Pi Koç ücretli paketleri
+- Ücretsiz paket süresizdir; iptal gerektirmez.
+- Ücretli paket ödendiği süre boyunca açık kalır. Yenilemezseniz süre sonunda hesabınız ücretsiz pakete döner; kayıtlarınız silinmez.
+- Paket, ödemeniz kaydedilip açıldığında elektronik ortamda ifa edilmeye başlar; bu andan sonra cayma hakkı kullanılamaz (Mesafeli Sözleşmeler Yönetmeliği m.15/ğ).
+- Paket açılmadan önce yapılan, hatalı ya da fazla ödemeler, bildirdiğiniz hesaba en geç 14 gün içinde iade edilir.
 
-## Öğretmenin iptali veya katılmaması
-Öğretmen dersi iptal ederse veya derse katılmazsa ödediğiniz tutarın tamamı iade edilir.
+## Kurum paneli
+Kurum paneli aboneliğinde iptal ve iade koşulları Kurum Hizmet Sözleşmesi'nde yer alır.
 
-## Paket ders ve düzenli ders
-- Öğretmen paketten alınan bir dersi onaylamazsa, iptal ederse ya da dersten {fullRefundHours} saat öncesine kadar siz iptal ederseniz ders paketinize geri eklenir. Daha geç iptallerde yukarıdaki kısmi iade kuralları paketin ödemesinden uygulanır.
-- Kullanılmamış derslerinizi Hesabım → Derslerim → Paketlerim sayfasından iade edebilirsiniz; kullanılan dersler paket indirimi olmadan tek ders ücretinden düşülür.
-- Paket {packageValidityMonths} ay geçerlidir; süresi dolduğunda kullanılmayan derslerin bedeli kartınıza iade edilir.
-
-## Ders saatinin değiştirilmesi
-Onaylı bir dersin saati, dersten en az {rescheduleMinHours} saat önce taraflardan birinin önerisi ve diğerinin kabulüyle değiştirilebilir. Erteleme ücret değişikliğine yol açmaz.
-
-## Grup dersi
-- Ders, kayıt bitiş tarihinde en az katılımcı sayısına ulaşmazsa iptal edilir ve ödediğiniz bedelin tamamı kartınıza iade edilir.
-- İlk oturum başlamadan Hesabım → Grup derslerim sayfasından kaydınızı iptal ederseniz bedelin tamamı iade edilir. İlk oturum başladıktan sonra iptal ve iade yapılmaz.
-- Öğretmen bir oturuma katılmazsa ya da ders iptal edilirse, yapılmayan oturumların bedeli kartınıza iade edilir.
-
-## Cayma hakkı
-İfasına sizin onayınızla başlanan hizmetlerde (başlamış ya da tamamlanmış ders) Mesafeli Sözleşmeler Yönetmeliği'nin 15. maddesi uyarınca cayma hakkı kullanılamaz. Bunun dışındaki iptallerde yukarıdaki kurallar uygulanır.
-
-## Sorun bildirme
-Ders bitiminden itibaren {disputeWindowHours} saat içinde "Sorun bildir" ile başvurabilirsiniz. İnceleme sonuçlanana kadar öğretmene ödeme yapılmaz.
-
-## İade süresi
-İadeler ödemenin yapıldığı karta en geç 14 gün içinde yapılır; tutarın hesabınıza yansıma süresi bankanıza göre değişebilir. Sorularınız için: {contactEmail} · {contactPhone}`,
+## Eski randevu ve paket ödemeleri
+Sitede daha önce kartla ödenmiş randevu, paket ya da grup dersi varsa, o ödemeler satın alındıkları tarihte geçerli koşullarla sonuçlandırılır. Sorularınız için: {contactEmail} · {contactPhone}`,
   },
   {
     slug: "teslimat-ve-hizmet-bilgileri",
     title: "Teslimat ve Hizmet Bilgileri",
     sortOrder: 14,
     showInFooter: true,
-    content: `{siteName} üzerinden satılan tüm hizmetler eğitim hizmetidir; fiziksel ürün satışı ve kargo gönderimi yapılmaz. Hizmetler aşağıdaki şekilde teslim edilir.
+    content: `{siteName} üzerinden satılan hizmetler yazılım aboneliğidir; fiziksel ürün satışı ve kargo gönderimi yapılmaz.
 
-## Online özel ders ve koçluk
-- Ödemeniz alındıktan sonra öğretmen talebinizi en geç {approvalWindowHours} saat içinde onaylar; onay e-posta ve site bildirimiyle size iletilir.
-- Ders, onaylanan tarih ve saatte sitedeki sanal sınıfta yapılır. "Derse Katıl" düğmesi ders saatinden {classroomOpensMinutesBefore} dakika önce Hesabım sayfasında açılır; program kurmanız gerekmez.
-- Ders süresi sipariş özetinde yazan süre kadardır.
+## Pi Koç
+- Ücretsiz paket, hesabınız açıldığında hemen kullanılabilir.
+- Ücretli paket, havale / EFT ödemeniz kaydedildiğinde Pi Koç hesabınızda açılır ve size site bildirimi ile haber verilir.
+- Hizmete pikampus.com/koc-giris adresinden ve mobil uygulamadan erişilir.
 
-## Yüz yüze ders
-Ders, öğretmenin hizmet verdiği ilçede, randevuda belirtilen adreste yapılır. Adresiniz yalnızca öğretmen onay verdikten sonra öğretmenle paylaşılır.
+## Kurum paneli
+Kurum paneli, başvurunuz onaylanınca açılır; giriş bilgileri e-postanıza gönderilir. Abonelik ödemesi kaydedildiğinde süreniz uzar.
 
-## Grup dersi
-- Kaydınız ödemeyle tamamlanır. Ders, kayıt bitiş tarihinde en az katılımcı sayısına ulaşırsa kesinleşir ve size bildirilir.
-- Oturumlar programdaki tarih ve saatlerde sitedeki sanal sınıfta yapılır; “Derse katıl” düğmesi Hesabım → Grup derslerim sayfasında ders saatinden {classroomOpensMinutesBefore} dakika önce açılır.
-
-## Teslim edilemeyen hizmet
-Öğretmen onay vermezse, dersi iptal ederse ya da derse gelmezse ödediğiniz tutarın tamamı kartınıza iade edilir. Ayrıntılar İptal ve İade Politikası sayfasındadır.
+## Özel ders
+Özel dersler öğretmen ile veli arasında kararlaştırılan zamanda, sitemizdeki görüntülü ders odasında ya da yüz yüze yapılır. {siteName} özel ders hizmetinin satıcısı değildir.
 
 ## İletişim
 {companyName} · {contactPhone} · {contactEmail}`,
@@ -373,28 +329,30 @@ Ders, öğretmenin hizmet verdiği ilçede, randevuda belirtilen adreste yapıl�
     title: "Kullanım Şartları",
     sortOrder: 15,
     showInFooter: true,
-    content: `Bu şartlar, {companyName} tarafından işletilen {siteName} sitesinin ve mobil uygulamasının kullanımını düzenler.
+    content: `Bu şartlar, {companyName} tarafından işletilen {siteName} sitesinin ve mobil uygulamalarının kullanımını düzenler.
 
 ## Hizmet
-{siteName}; özel ders ve koçluk için öğrenci ve velileri öğretmenlerle buluşturur. Etüt merkezlerine ise kurum yönetim yazılımı sunar. Kurum paneli için Kurum Hizmet Sözleşmesi geçerlidir.
+{siteName}; velilerin özel ders öğretmeni bulup ders talebi gönderdiği bir vitrin, koçlar ve öğretmenler için Pi Koç takip paneli ve etüt merkezleri için kurum yönetim yazılımı sunar. Pi Koç ve kurum paneli için ayrıca Kurum Hizmet Sözleşmesi geçerlidir.
 
 ## Üyelik
-Üyelik ücretsizdir. 18 yaşından küçükler adına hesap veli veya yasal temsilci tarafından açılır. Hesap bilgilerinin gizliliğinden kullanıcı sorumludur.
+Üyelik ücretsizdir. 18 yaşından küçükler adına hesap veli veya yasal temsilci tarafından açılır; hesap tipi (veli ya da 18 yaşını doldurmuş öğrenci) kayıtta beyan edilir. Hesap bilgilerinin gizliliğinden kullanıcı sorumludur.
 
-## Platform dışı ödeme yasağı
-Site üzerinden tanışılan öğretmenle site dışında ödeme yapılması yasaktır. Bu durumda iade güvencesi, değerlendirme ve itiraz hakları kullanılamaz; ilgili hesaplar askıya alınabilir.
+## Ders talepleri ve özel ders
+- Ders talebi ücretsizdir. Veli adı ve telefonu, yalnızca talebi kabul eden öğretmene gösterilir.
+- Ders saati, ücret ve ödeme şekli öğretmen ile veli arasında belirlenir; ders ücreti doğrudan öğretmene ödenir. {siteName} ders ücretine aracılık etmez, komisyon almaz ve özel ders sözleşmesinin tarafı değildir.
+- Talep kabul edilmeden önce mesajlarda telefon, e-posta, adres ve sosyal medya bilgisi paylaşılamaz; paylaşılan bilgiler gizlenir.
 
 ## Davranış kuralları
 Derslerde ve mesajlarda saygılı bir dil kullanılır; çocuk güvenliğini tehlikeye atan her türlü davranış hesabın kapatılması ve yetkili makamlara bildirim sebebidir.
 
 ## Değerlendirmeler
-Yorumlar gerçek ders deneyimine dayanmalıdır. Hakaret, kişisel veri veya reklam içeren yorumlar yayından kaldırılır.
+Yorumlar gerçek ders deneyimine dayanmalıdır; öğretmenle sitemizde görüntülü ders yapmış veliler ve öğrenciler yorum yazabilir. Hakaret, kişisel veri veya reklam içeren yorumlar yayından kaldırılır.
 
 ## Sorumluluk
-{siteName}, öğretmen ile öğrenci arasında aracı hizmet sağlayıcıdır. Dersin içeriğinden ve yürütülmesinden dersi veren öğretmen sorumludur. Ödeme, iptal ve iade kuralları Mesafeli Satış Sözleşmesi ile İptal ve İade Politikası’nda yer alır.
+Dersin içeriğinden, yürütülmesinden ve ücretinden dersi veren öğretmen sorumludur. Öğretmen profillerindeki bilgiler öğretmenin beyanıdır; {siteName} kimlik ve diploma kontrolü yaptığı öğretmenleri "Onaylı öğretmen" rozetiyle gösterir.
 
 ## Fikri haklar
-Sitedeki yazılım, marka ve tasarım {companyName}’a aittir; izinsiz kopyalanamaz. Öğretmenlerin ve kurumların yüklediği içeriklerin sorumluluğu kendilerine aittir.
+Sitedeki yazılım, marka ve tasarım {companyName}’a aittir; izinsiz kopyalanamaz. Öğretmenlerin, koçların ve kurumların yüklediği içeriklerin sorumluluğu kendilerine aittir.
 
 ## Değişiklikler
 Bu şartlar güncellenebilir; güncel metin bu sayfada yayımlanır ve sayfanın başındaki tarih değişir.
@@ -407,27 +365,37 @@ Tüketici işlemlerinde tüketici hakem heyetleri ve tüketici mahkemeleri yetki
     title: "Öğretmen Hizmet Sözleşmesi",
     sortOrder: 16,
     showInFooter: false,
-    content: `## Hizmet
-Öğretmen, {siteName} üzerinden öğrencilere eğitim hizmeti verir; ders ücretlerini ve müsaitlik takvimini kendisi belirler.
+    content: `Bu sözleşme, {companyName} ("{siteName}") ile {siteName}'te öğretmen profili açan öğretmen arasında geçerlidir.
 
-## Komisyon ve ödeme
-Platform, her dersten site ayarlarında belirtilen oranda hizmet bedeli keser. Kalan tutar ders tamamlanıp {disputeWindowHours} saatlik itiraz süresi dolduktan sonra öğretmene aktarılır.
+## Hizmet
+- Öğretmen, profilinde verdiği dersleri ve bilgi amaçlı ücretlerini yayınlar; veliler profilden ücretsiz ders talebi gönderir.
+- Öğretmen talebi kabul edince velinin adını ve telefonunu görür; ders saatini, ücreti ve ödeme şeklini veliyle kendisi belirler. Ders ücreti doğrudan öğretmene ödenir.
+- {siteName} ders ücretine aracılık etmez, ders ücretinden komisyon almaz ve öğretmen ile veli arasındaki özel ders ilişkisinin tarafı değildir.
+
+## Pi Koç
+- Her öğretmen hesabında Pi Koç ücretsiz paketi açılır ({piKocFreeStudents} öğrenciye kadar, süresiz). Kabul edilen ders talebindeki öğrenci öğretmenin Pi Koç'una eklenir.
+- Daha fazla öğrenci ve ek özellikler için ücretli paketler aylık olarak satılır; koşulları Kurum Hizmet Sözleşmesi ve Mesafeli Satış Sözleşmesi'nde yer alır.
 
 ## Yükümlülükler
-- Talepleri {approvalWindowHours} saat içinde yanıtlamak
-- Onaylanan derslere zamanında katılmak; iptalleri en aza indirmek
-- Platform dışında ödeme almamak, öğrencileri platform dışına yönlendirmemek
-- Kimlik, diploma ve istenmesi halinde adli sicil kaydı belgelerini doğru sunmak
+- Profil bilgilerini, eğitim ve deneyim bilgilerini doğru vermek; kimlik, diploma ve istenmesi halinde adli sicil kaydı belgelerini doğru sunmak
+- Ders taleplerini makul sürede yanıtlamak
+- Talep kabul edilmeden önce mesajlarda kişisel iletişim bilgisi paylaşmamak
+- Velinin telefonunu ve öğrenci bilgilerini yalnızca o öğrencinin dersi ve takibi için kullanmak; Pi Koç'a girdiği öğrenci verileri için veri sorumlusu olarak KVKK yükümlülüklerine uymak
+- Öğrencilere ve velilere saygılı davranmak; çocuk güvenliğini gözetmek
+- Aldığı ders ücretlerine ilişkin vergi ve diğer yasal yükümlülüklerini kendisi yerine getirmek
 
 ## Statü beyanı
-Öğretmen; devlet okulunda kadrolu olarak çalışmadığını veya ücretli özel ders vermesine mevzuatın izin verdiğini, aksi halde doğacak sorumluluğun kendisine ait olduğunu beyan eder.`,
+Öğretmen; devlet okulunda kadrolu olarak çalışmadığını veya ücretli özel ders vermesine mevzuatın izin verdiğini, aksi halde doğacak sorumluluğun kendisine ait olduğunu beyan eder.
+
+## Hesabın askıya alınması
+Bu sözleşmeye, yasalara ya da davranış kurallarına aykırılıkta profil yayından kaldırılabilir ve hesap kapatılabilir.`,
   },
   {
     slug: "kurum-hizmet-sozlesmesi",
     title: "Kurum Hizmet Sözleşmesi",
     sortOrder: 17,
     showInFooter: true,
-    content: `Bu sözleşme, {companyName} ("{siteName}") ile kurum paneli için başvuran etüt merkezi ya da bireysel koç ("Kurum") arasında geçerlidir.
+    content: `Bu sözleşme, {companyName} ("{siteName}") ile kurum paneli ya da Pi Koç kullanan etüt merkezi, bireysel koç veya öğretmen ("Kurum") arasında geçerlidir.
 
 ## Taraf bilgileri
 Hizmet sağlayıcı: {companyName}
@@ -436,12 +404,16 @@ Vergi bilgileri: {companyTaxInfo}
 Telefon: {contactPhone} · E-posta: {contactEmail}
 
 ## Hizmet
-{siteName}, Kurum'a seçtiği pakete göre öğrenci, yoklama, etüt, deneme, veli iletişimi ve tahsilat takibi için web ve mobil yazılım sunar. Paket özellikleri ve fiyatlar Kurumlar İçin sayfasında yer alır.
+{siteName}, Kurum'a seçtiği pakete göre öğrenci, yoklama, etüt, ödev, deneme, çalışma programı, görüntülü görüşme, veli iletişimi ve tahsilat takibi için web ve mobil yazılım sunar. Paket özellikleri ve fiyatlar Kurumlar İçin ve Pi Koç sayfalarında yer alır.
+
+## Pi Koç ücretsiz paketi
+- Pi Koç {piKocFreeStudents} öğrenciye kadar süresiz ücretsizdir. Ücretsiz pakette görüntülü görüşme başına {piKocFreeMeetingMinutes} dakika ve aylık toplam süre sınırı uygulanır; bazı özellikler (ör. PDF'ten deneme aktarımı, konu eksik haritası, otomatik veli raporu, tahsilat takibi) ücretli pakette açılır.
+- Ücretli paket süresi biterse hesap ücretsiz pakete döner; kayıtlar silinmez.
 
 ## Deneme süresi ve abonelik
-- Deneme süresi için kart bilgisi istenmez; süre sonunda otomatik ücret alınmaz.
+- Kurum paneli deneme süresi için kart bilgisi istenmez; süre sonunda otomatik ücret alınmaz.
 - Abonelik seçilen paket, öğrenci sayısı ve dönem için geçerlidir. Bedel havale / EFT ile ödenir; ödeme kaydedilince süre uzar.
-- Abonelik sona erer ve yenilenmezse panel salt okunur olur. Kayıtlar silinmez; abonelik başlatıldığında kaldığınız yerden devam edilir.
+- Kurum paneli aboneliği sona erer ve yenilenmezse panel salt okunur olur. Kayıtlar silinmez; abonelik başlatıldığında kaldığınız yerden devam edilir.
 - Dönem bitmeden ayrılma ve iade koşulları abonelik sırasında yazılı olarak belirlenir.
 
 ## Kurumun sorumlulukları
@@ -451,7 +423,9 @@ Telefon: {contactPhone} · E-posta: {contactEmail}
 - Veli ve öğrencilere yasalara uygun bilgilendirme yapması
 
 ## Kişisel veriler
-Panele girilen öğrenci ve veli verileri için veri sorumlusu Kurum'dur; {siteName} bu verileri Kurum adına ve talimatları doğrultusunda, veri işleyen olarak işler. Kurum; aydınlatma yükümlülüğünü yerine getirmekten ve gerekli izinleri almaktan sorumludur. {siteName} bu verileri kendi pazarlaması için kullanmaz, gerekli güvenlik önlemlerini alır ve Kurum istediğinde verileri dışa aktarma imkânı sunar.
+- Panele girilen öğrenci ve veli verileri için veri sorumlusu Kurum'dur; {siteName} bu verileri Kurum adına ve talimatları doğrultusunda, veri işleyen olarak işler. Kurum; aydınlatma yükümlülüğünü yerine getirmekten ve gerekli izinleri almaktan sorumludur.
+- {siteName} hizmeti sunmak için barındırma, e-posta, görüntülü görüşme (LiveKit) ve yapay zekâ (OpenRouter aracılığıyla model sağlayıcıları; deneme dosyalarının okunması ve rapor taslağı) hizmet sağlayıcılarından yararlanır. Rapor taslağına öğrenci adı gönderilmez.
+- {siteName} bu verileri kendi pazarlaması için kullanmaz, gerekli güvenlik önlemlerini alır ve Kurum istediğinde verileri dışa aktarma imkânı sunar.
 
 ## Mesajlar ve WhatsApp
 - Velilere WhatsApp bildirimi yalnızca izin vermiş veli için gönderilir. İzni almak ve panelde işaretlemek Kurum'un sorumluluğundadır.

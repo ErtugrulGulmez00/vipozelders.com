@@ -85,7 +85,7 @@ async function Post({ params }: { params: Promise<{ slug: string }> }) {
         <Card className="mt-6 flex flex-col items-start gap-3 border-brand-200 bg-brand-50/60 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="font-bold text-slate-900">Doğru öğretmeni birlikte bulalım</p>
-            <p className="text-sm text-slate-600">Onaylı öğretmenler, net fiyatlar; öğretmen onaylamazsa ücretin tamamı iade.</p>
+            <p className="text-sm text-slate-600">Onaylı öğretmenler, ücretsiz ders talebi; ücreti öğretmenle siz konuşursunuz, aracı komisyon yok.</p>
           </div>
           <LinkButton href="/ogretmenler">Öğretmenleri incele</LinkButton>
         </Card>

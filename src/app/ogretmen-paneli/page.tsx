@@ -1,4 +1,4 @@
-import { CalendarDays, CheckCircle2, Circle, Clock, GraduationCap, Inbox, Star, Wallet } from "lucide-react";
+import { CalendarDays, CheckCircle2, Circle, Clock, GraduationCap, Inbox, Lock, Star, Wallet } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
@@ -10,6 +10,7 @@ import { Alert, Badge, Card, CardBody, CardHeader, EmptyState, PageHeader, StatC
 import { formatDuration } from "@/lib/dates";
 import { TEACHER_STATUS } from "@/lib/labels";
 import { formatMoney } from "@/lib/money";
+import { COACH_FEATURES, coachPlan, coachPlanLabel } from "@/lib/pi-koc";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { teacherBalances } from "@/server/ledger";
@@ -34,13 +35,18 @@ export default async function TeacherDashboard() {
       orderBy: { startAt: "asc" },
       take: 5,
     }),
-    db.centerMember.findFirst({ where: { userId: user.id, isActive: true, center: { kind: "COACH" } }, select: { centerId: true } }),
+    db.centerMember.findFirst({
+      where: { userId: user.id, isActive: true, center: { kind: "COACH" } },
+      select: { centerId: true, center: { select: { status: true, trialEndsAt: true, paidUntil: true, studentLimit: true } } },
+    }),
     pendingInquiryCount(user.id),
     loadSettings(),
   ]);
   const coachStudents = coachMembership ? await db.centerStudent.count({ where: { centerId: coachMembership.centerId, status: "ACTIVE" } }) : 0;
   // Randevu/ödeme kapalı: ders talepleri ve Pi Koç öne çıkar; bakiye yalnızca geçmişi olana
   const bookingOpen = settings.lessonBookingEnabled;
+  const plan = coachMembership ? coachPlan(coachMembership.center, settings.piKocFreeStudents, now) : null;
+  const freeHours = settings.piKocFreeStudents * settings.piKocHoursPerStudent;
   const hasBalance = balances.available + balances.pending > 0;
   const status = TEACHER_STATUS[profile.status];
 
@@ -123,24 +129,46 @@ export default async function TeacherDashboard() {
         </Alert>
       ) : null}
 
-      {coachMembership ? null : (
+      {plan ? (
         <Card className="mb-6">
-          <CardBody className="flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="font-semibold text-slate-900">Kendi öğrencilerinizi Pi Koç ile takip edin</p>
-              <p className="text-sm text-slate-600">Program, ödev, soru ve deneme takibi, görüntülü ders ve veli raporu. Aynı hesapla, 3 öğrenciye kadar ücretsiz.</p>
-            </div>
-            <div className="flex gap-2">
-              <LinkButton href="/pi-koc" variant="ghost" size="sm">
-                İnceleyin
+          <CardHeader
+            title="Pi Koç paketiniz"
+            description={`${coachPlanLabel(plan)} · ${coachStudents} / ${plan.studentLimit} öğrenci`}
+            action={<Badge tone={plan.state === "trial" ? "amber" : plan.paid ? "green" : "slate"}>{plan.state === "trial" ? "Deneme" : plan.paid ? "Ücretli" : "Ücretsiz"}</Badge>}
+          />
+          <CardBody className="space-y-4">
+            <p className="text-sm text-slate-600">
+              Ders talebini kabul ettiğiniz öğrenci Pi Koç&apos;unuza eklenir: program, ödev, soru ve deneme takibi, görüntülü ders ve veli raporu.
+              {plan.paid ? null : ` Ücretsiz pakette görüntülü ders görüşme başına ${settings.piKocFreeMeetingMinutes} dakika, ayda toplam ${freeHours} saat.`}
+            </p>
+            {plan.paid ? null : (
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Ücretli pakette açılır</p>
+                <ul className="flex flex-wrap gap-2">
+                  {Object.values(COACH_FEATURES).map((f) => (
+                    <li key={f.title} className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                      <Lock className="size-3" aria-hidden /> {f.title}
+                    </li>
+                  ))}
+                  <li className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+                    <Lock className="size-3" aria-hidden /> Süre sınırsız görüntülü ders
+                  </li>
+                </ul>
+              </div>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <LinkButton href="/koc" size="sm">
+                <GraduationCap className="size-4" aria-hidden /> Pi Koç&apos;a git
               </LinkButton>
-              <LinkButton href="/pi-koc/kayit" variant="outline" size="sm">
-                Hesabıma ekle
-              </LinkButton>
+              {plan.paid && plan.state !== "trial" ? null : (
+                <LinkButton href="/koc/abonelik" variant="outline" size="sm">
+                  Paketi yükselt
+                </LinkButton>
+              )}
             </div>
           </CardBody>
         </Card>
-      )}
+      ) : null}
 
       {!bookingOpen && !upcoming.length ? null : (
       <Card>

@@ -15,7 +15,11 @@ export default async function AvailabilityPage() {
     <>
       <PageHeader
         title="Müsaitlik takvimi"
-        description={`Veliler yalnızca buradaki boş saatlerden randevu alabilir. Randevular en erken ${settings.allowSameDayBooking ? `${settings.minNoticeHours} saat sonrası` : "ertesi gün"}, en geç ${settings.maxAdvanceDays} gün ilerisi için alınabilir.`}
+        description={
+          settings.lessonBookingEnabled
+            ? `Veliler yalnızca buradaki boş saatlerden randevu alabilir. Randevular en erken ${settings.allowSameDayBooking ? `${settings.minNoticeHours} saat sonrası` : "ertesi gün"}, en geç ${settings.maxAdvanceDays} gün ilerisi için alınabilir.`
+            : "İsteğe bağlı. Uygun saatleriniz profilinizde görünür ve velilerin saat süzgeciyle sizi bulmasını sağlar; ders saatini veliyle birlikte belirlersiniz."
+        }
       />
       <div className="grid gap-6 2xl:grid-cols-[minmax(0,1fr)_420px]">
         <Card>

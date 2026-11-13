@@ -175,7 +175,7 @@ test("kurum personeli aynı e-postayla öğretmen başvurusu yapar; onayda kurum
   await page.getByLabel("E-posta").fill(staffEmail);
   await page.getByLabel("Cep telefonu").fill("0532 444 55 77");
   await page.getByLabel("Ders verdiğiniz kademe ve dersler").fill("Lise fizik");
-  await page.getByLabel(/platform dışına taşımayacağımı/).check();
+  await page.getByLabel(/kişisel iletişim bilgisi paylaşmayacağımı/).check();
   await page.getByLabel(/KVKK Aydınlatma Metni/).check();
   await page.getByRole("button", { name: "Başvurumu gönder" }).click();
   await expect(page.getByText("Başvurunuz alındı!", { exact: false })).toBeVisible();
@@ -188,7 +188,8 @@ test("kurum personeli aynı e-postayla öğretmen başvurusu yapar; onayda kurum
   await card.getByRole("button", { name: "Onayla ve hesap aç" }).click();
   await expect(page.getByText("o hesaba öğretmen paneli eklendi", { exact: false })).toBeVisible();
   const [user] = await sql<{ role: string; members: number; profiles: number }>(
-    `SELECT u.role, (SELECT count(*)::int FROM "CenterMember" m WHERE m."userId" = u.id AND m."isActive") AS members, (SELECT count(*)::int FROM "TeacherProfile" p WHERE p."userId" = u.id) AS profiles FROM "User" u WHERE u.email = $1`,
+    // Pi Koç ücretsiz paketi her öğretmende kendiliğinden açılır; burada yalnızca kurum üyeliği sayılır
+    `SELECT u.role, (SELECT count(*)::int FROM "CenterMember" m JOIN "Center" c ON c.id = m."centerId" WHERE m."userId" = u.id AND m."isActive" AND c.kind <> 'COACH') AS members, (SELECT count(*)::int FROM "TeacherProfile" p WHERE p."userId" = u.id) AS profiles FROM "User" u WHERE u.email = $1`,
     [staffEmail],
   );
   expect(user).toEqual({ role: "TEACHER", members: 1, profiles: 1 });

@@ -6,19 +6,38 @@ import { loadSettings } from "./settings";
 
 export class ReviewError extends Error {}
 
-/** Öğrenci bu öğretmeni değerlendirebilir mi? En az bir dersi tamamlanmış ve süre dolmamış olmalı. */
+/** Yorum hakkı veren görüntülü görüşmenin en kısa süresi (dakika). */
+export const REVIEW_MIN_MEETING_MINUTES = 15;
+
+/**
+ * Öğrenci/veli bu öğretmeni değerlendirebilir mi?
+ * Eski model: süresi dolmamış, tamamlanmış bir randevu. Yeni model: kabul edilmiş ders talebi ve öğretmenle
+ * Pi Koç'ta birlikte yapılmış en az 15 dakikalık görüntülü görüşme.
+ */
 export async function reviewEligibility(studentId: string, teacherId: string, now = new Date()) {
   const settings = await loadSettings();
   const since = new Date(now.getTime() - settings.reviewWindowDays * 24 * 3_600_000);
-  const [lastCompleted, existing] = await Promise.all([
+  const [lastCompleted, existing, inquiries] = await Promise.all([
     db.booking.findFirst({
       where: { studentId, teacherId, status: "COMPLETED", isTest: false, isIntro: false, completedAt: { gte: since } },
       orderBy: { completedAt: "desc" },
       select: { id: true },
     }),
     db.review.findUnique({ where: { teacherId_studentId: { teacherId, studentId } } }),
+    db.teacherInquiry.findMany({ where: { teacherId, requesterId: studentId, status: "ACCEPTED", centerStudentId: { not: null } }, select: { id: true, centerStudentId: true }, orderBy: { createdAt: "desc" } }),
   ]);
-  return { eligible: Boolean(lastCompleted), bookingId: lastCompleted?.id ?? null, existing };
+  if (lastCompleted) return { eligible: true, bookingId: lastCompleted.id, inquiryId: null, existing };
+  const inquiryId = await inquiryWithMeeting(inquiries);
+  return { eligible: Boolean(inquiryId), bookingId: null, inquiryId, existing };
+}
+
+/** Öğrencisiyle en az 15 dakikalık ortak görüşme yapılmış ilk talep. */
+async function inquiryWithMeeting(inquiries: { id: string; centerStudentId: string | null }[]): Promise<string | null> {
+  const ids = inquiries.map((q) => q.centerStudentId).filter((id): id is string => Boolean(id));
+  if (!ids.length) return null;
+  const meetings = await db.coachMeeting.findMany({ where: { studentId: { in: ids }, peakCount: { gte: 2 }, endedAt: { not: null } }, select: { studentId: true, startedAt: true, endedAt: true } });
+  const met = new Set(meetings.filter((m) => m.endedAt!.getTime() - m.startedAt.getTime() >= REVIEW_MIN_MEETING_MINUTES * 60_000).map((m) => m.studentId));
+  return inquiries.find((q) => q.centerStudentId && met.has(q.centerStudentId))?.id ?? null;
 }
 
 export async function recomputeTeacherRating(tx: DbTransaction | typeof db, teacherId: string) {
@@ -39,16 +58,16 @@ export async function upsertReview(studentId: string, teacherId: string, rating:
   const text = maskContacts(comment.trim());
   if (text.length > 1500) throw new ReviewError("Yorum en fazla 1500 karakter olabilir.");
 
-  const { eligible, bookingId, existing } = await reviewEligibility(studentId, teacherId, now);
-  if (!eligible || !bookingId) {
-    throw new ReviewError("Değerlendirme yapabilmek için bu öğretmenle en az bir dersinizin tamamlanmış olması gerekir.");
+  const { eligible, bookingId, inquiryId, existing } = await reviewEligibility(studentId, teacherId, now);
+  if (!eligible || (!bookingId && !inquiryId)) {
+    throw new ReviewError("Değerlendirme yapabilmek için öğretmenin talebinizi kabul etmiş ve sizinle en az bir görüntülü ders yapmış olması gerekir.");
   }
 
   await db.$transaction(async (tx) => {
     if (existing) {
       await tx.review.update({ where: { id: existing.id }, data: { rating, comment: text || null } });
     } else {
-      await tx.review.create({ data: { bookingId, teacherId, studentId, rating, comment: text || null } });
+      await tx.review.create({ data: { bookingId, inquiryId: bookingId ? null : inquiryId, teacherId, studentId, rating, comment: text || null } });
       await notify(
         {
           userId: teacherId,

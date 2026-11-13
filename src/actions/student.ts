@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { failure, success, zodFieldErrors, type ActionState } from "@/lib/action-state";
 import { notificationScopeWhere, parseNotificationScope } from "@/lib/sides";
-import { normalizePhone } from "@/lib/text";
+import { normalizePhone, normalizePersonName } from "@/lib/text";
 import { actionUser } from "@/server/auth/current-user";
 import { requestMeta } from "@/server/auth/session";
 import {
@@ -172,10 +172,10 @@ export async function toggleFavoriteAction(formData: FormData) {
 }
 
 const profileSchema = z.object({
-  firstName: z.string().trim().min(2).max(50),
-  lastName: z.string().trim().min(2).max(50),
+  firstName: z.string().trim().min(2).max(50).transform(normalizePersonName),
+  lastName: z.string().trim().min(2).max(50).transform(normalizePersonName),
   phone: z.string().trim().optional(),
-  accountType: z.enum(["PARENT", "STUDENT"]),
+  // Hesap tipi (veli / 18 yaş üstü öğrenci) kayıtta seçilir; ayarlardan değiştirilemez
   cityId: z.coerce.number().int().optional(),
   marketing: z.string().optional(),
 });
@@ -195,7 +195,7 @@ export async function updateStudentProfileAction(_: ActionState, formData: FormD
       lastName: parsed.data.lastName,
       phone,
       studentProfile: {
-        update: { accountType: parsed.data.accountType, cityId: parsed.data.cityId ?? null, marketingConsent: parsed.data.marketing === "on" },
+        update: { cityId: parsed.data.cityId ?? null, marketingConsent: parsed.data.marketing === "on" },
       },
     },
   });

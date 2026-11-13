@@ -6,7 +6,7 @@ import { z } from "zod";
 import { failure, success, zodFieldErrors, type ActionState } from "@/lib/action-state";
 import { parseCoachTiers } from "@/lib/pi-koc";
 import { parseMoneyInput } from "@/lib/money";
-import { normalizePhone, slugify } from "@/lib/text";
+import { normalizePhone, slugify, normalizePersonName } from "@/lib/text";
 import { AccountError, createTeacherAccount, resetTeacherPassword } from "@/server/accounts";
 import { audit } from "@/server/audit";
 import { actionUser } from "@/server/auth/current-user";
@@ -44,8 +44,8 @@ const DENIED = failure("Bu işlem için yönetici yetkisi gerekli.");
 // ---------------------------------------------------------------------------
 
 const newTeacherSchema = z.object({
-  firstName: z.string().trim().min(2, "Ad gerekli.").max(50),
-  lastName: z.string().trim().min(2, "Soyad gerekli.").max(50),
+  firstName: z.string().trim().min(2, "Ad gerekli.").max(50).transform(normalizePersonName),
+  lastName: z.string().trim().min(2, "Soyad gerekli.").max(50).transform(normalizePersonName),
   email: z.union([z.literal(""), z.email("Geçerli e-posta yazın.")]).optional(),
   phone: z.string().trim().optional(),
   username: z.string().trim().optional(),
@@ -92,7 +92,7 @@ export async function updateTeacherAccountAction(_: ActionState, formData: FormD
   if (clash) return failure("Bu e-posta veya kullanıcı adı başka bir hesapta kullanılıyor.");
   await db.user.update({
     where: { id: userId },
-    data: { firstName: text(formData, "firstName"), lastName: text(formData, "lastName"), email, username, phone },
+    data: { firstName: normalizePersonName(text(formData, "firstName")), lastName: normalizePersonName(text(formData, "lastName")), email, username, phone },
   });
   await log(user.id, "user.update", "User", userId);
   updateTag(TEACHERS_CACHE_TAG);
@@ -117,7 +117,7 @@ export async function setTeacherStatusAction(_: ActionState, formData: FormData)
     data: { status: status as "DRAFT" | "PUBLISHED" | "SUSPENDED", publishedAt: status === "PUBLISHED" ? (teacher.publishedAt ?? new Date()) : teacher.publishedAt },
   });
   if (status === "PUBLISHED" && teacher.status !== "PUBLISHED") {
-    await notify({ userId: teacherId, type: "teacher.published", title: "Profiliniz yayında!", body: "Artık veliler sizi öğretmen listesinde görebilir ve randevu talep edebilir.", link: "/ogretmen-paneli" });
+    await notify({ userId: teacherId, type: "teacher.published", title: "Profiliniz yayında!", body: "Artık veliler sizi öğretmen listesinde görebilir ve size ders talebi gönderebilir.", link: "/ogretmen-paneli" });
   }
   await log(user.id, "teacher.status", "TeacherProfile", teacherId, { status });
   updateTag(TEACHERS_CACHE_TAG);

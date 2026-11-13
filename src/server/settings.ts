@@ -54,7 +54,7 @@ export const settingsSchema = z.object({
 
 
   // Grup dersi: komisyon, katılımcı sınırları, kişi başı ücret aralığı
-  groupsEnabled: z.boolean().default(true),
+  groupsEnabled: z.boolean().default(false),
   groupCommissionBps: z.number().int().min(0).max(9000).default(2000),
   groupMinParticipants: z.number().int().min(2).max(50).default(4),
   groupMaxCapacity: z.number().int().min(2).max(50).default(10),
@@ -62,14 +62,14 @@ export const settingsSchema = z.object({
   groupMaxPriceTl: z.number().int().min(1).max(100_000).default(20_000),
 
   // Arkadaşını getir: davetle gelen yeni üyenin ilk siparişine indirim (%)
-  referralEnabled: z.boolean().default(true),
+  referralEnabled: z.boolean().default(false),
   referralDiscountPercent: z.number().int().min(0).max(50).default(10),
 
   // Vitrinden randevu ve ödeme (2026-11-12: kapalı; veli öğretmene ders talebi gönderir, ödemeyi öğretmenle kendisi yapar)
   lessonBookingEnabled: z.boolean().default(false),
 
   // Paket ders ve tekrarlayan ders
-  packagesEnabled: z.boolean().default(true),
+  packagesEnabled: z.boolean().default(false),
   packageMaxLessons: z.number().int().min(2).max(50).default(20),
   packageMaxDiscountPercent: z.number().int().min(0).max(50).default(30),
   packageValidityMonths: z.number().int().min(1).max(24).default(6),

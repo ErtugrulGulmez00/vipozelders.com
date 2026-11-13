@@ -63,11 +63,13 @@ export async function SiteFooter() {
                 </Link>
               </li>
             ))}
-            <li>
-              <Link href="/grup-dersleri" className="hover:text-white">
-                Grup dersleri
-              </Link>
-            </li>
+            {settings.groupsEnabled ? (
+              <li>
+                <Link href="/grup-dersleri" className="hover:text-white">
+                  Grup dersleri
+                </Link>
+              </li>
+            ) : null}
             <li>
               <Link href="/ogretmen-ol" className="hover:text-white">
                 Öğretmen olarak katılın
@@ -130,10 +132,15 @@ export async function SiteFooter() {
             <span className="inline-flex items-center gap-1.5 rounded-md bg-white/5 px-2.5 py-1">
               <Lock className="size-3.5" aria-hidden /> 256-bit SSL
             </span>
-            <span className="inline-flex items-center gap-1.5 rounded-md bg-white/5 px-2.5 py-1">
-              <ShieldCheck className="size-3.5" aria-hidden /> 3D Secure
-            </span>
-            <CardLogos />
+            {/* Kartla ödeme açıkken (randevu satışı) 3D Secure ve kart logoları görünür */}
+            {settings.lessonBookingEnabled ? (
+              <>
+                <span className="inline-flex items-center gap-1.5 rounded-md bg-white/5 px-2.5 py-1">
+                  <ShieldCheck className="size-3.5" aria-hidden /> 3D Secure
+                </span>
+                <CardLogos />
+              </>
+            ) : null}
           </div>
         </div>
       </div>

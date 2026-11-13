@@ -11,10 +11,11 @@ afterAll(async () => {
 
 describe("platform dışına yönlendirme algılama", () => {
   it("şüpheli ifadeleri yakalar, normal ders konuşmasını işaretlemez", () => {
-    for (const text of ["WhatsApp'tan yazalım", "numaranı verir misin", "beni ara", "ödemeyi elden yapalım", "IBAN atarım", "site dışında anlaşalım", "gmail adresim"]) {
+    for (const text of ["WhatsApp'tan yazalım", "numaranı verir misin", "beni ara", "site dışında anlaşalım", "gmail adresim"]) {
       expect(offPlatformReason(text), text).not.toBeNull();
     }
-    for (const text of ["Oğlum 8. sınıf, matematikte zorlanıyor.", "Salı ve perşembe olur mu?", "Deneme sonuçlarını paylaşabilirim.", "Telefonla ulaşamadım ama buradan yazıyorum"]) {
+    // Ücret öğretmenle veli arasında konuşulur (2026-11 modeli): ödeme kelimeleri işaretlenmez
+    for (const text of ["Oğlum 8. sınıf, matematikte zorlanıyor.", "Salı ve perşembe olur mu?", "Deneme sonuçlarını paylaşabilirim.", "Telefonla ulaşamadım ama buradan yazıyorum", "ödemeyi elden yapalım", "IBAN atarım", "havale ile öderim"]) {
       expect(offPlatformReason(text), text).toBeNull();
     }
   });

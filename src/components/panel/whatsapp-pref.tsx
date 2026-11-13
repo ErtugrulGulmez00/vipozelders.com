@@ -4,7 +4,7 @@ import { setWhatsappOptOutAction } from "@/actions/whatsapp";
 import { ActionForm, SubmitButton } from "@/components/forms/action-form";
 import { WhatsAppCheckbox } from "@/components/notification-channel";
 
-const LABEL = "Önemli bildirimleri WhatsApp ile de almak istiyorum (ders talebi ve onayı, 1 saat kala hatırlatma, çözüm geldi, saat değişikliği). Reklam gönderilmez; istediğim zaman kapatabilirim.";
+const LABEL = "Önemli bildirimleri WhatsApp ile de almak istiyorum (ders talebi ve yanıtı, koçunuzdan ve öğretmeninizden gelen önemli bildirimler). Reklam gönderilmez; istediğim zaman kapatabilirim.";
 
 /** Hesap ayarlarında WhatsApp izni. Bildirim kanalı henüz e-posta olsa da izin verilebilir; WhatsApp açılınca geçerli olur. */
 export function WhatsAppPreference({ on, phone, active }: { on: boolean; phone: string | null; active: boolean }) {

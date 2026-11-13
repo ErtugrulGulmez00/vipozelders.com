@@ -38,7 +38,7 @@ export default async function SubscriptionPage() {
               items={[
                 { label: "Paket", value: ctx.coach ? `Pi Koç · ${coachPlanLabel(ctx.coach)}` : subscriptionLabel(settings, ctx.center.plan) },
                 {
-                  label: ctx.center.status === "TRIAL" ? "Deneme bitişi" : "Geçerlilik",
+                  label: ctx.center.status === "TRIAL" ? (coach ? "Deneme bitişi (sonra ücretsiz pakete geçer, kayıtlar silinmez)" : "Deneme bitişi") : "Geçerlilik",
                   value: ctx.access.endsAt ? `${formatDate(ctx.access.endsAt)}${ctx.access.daysLeft !== null && ctx.access.daysLeft > 0 ? ` (${ctx.access.daysLeft} gün)` : ""}` : "Süresiz",
                 },
                 { label: "Personel", value: `${staff} aktif hesap` },
@@ -63,7 +63,7 @@ export default async function SubscriptionPage() {
                 Ücretsiz paket süresizdir. Daha fazla öğrenci için aşağıdaki paketlerden birinin tutarını havale / EFT ile gönderin; açıklamaya adınızı ve paketi yazın (ör. “{ctx.center.name} · 10 öğrenci”). Ödemeniz kaydedilince paketiniz açılır.
               </p>
             ) : (
-              <p>Aboneliğinizi havale / EFT ile yenileyebilirsiniz. Açıklamaya kurum adınızı yazın; ödemeniz kaydedilince süreniz otomatik uzar.</p>
+              <p>Aboneliğinizi havale / EFT ile yenileyebilirsiniz. Açıklamaya {coach ? "adınızı ve paketi" : "kurum adınızı"} yazın; ödemeniz kaydedilince süreniz otomatik uzar.</p>
             )}
             {settings.centerBankInfo ? <p className="whitespace-pre-line rounded-xl bg-slate-50 p-3 font-mono text-xs">{settings.centerBankInfo}</p> : null}
             <p>
@@ -91,7 +91,7 @@ export default async function SubscriptionPage() {
               </div>
             ))}
           </div>
-          {settings.piKocFreeStudents > 0 ? <CoachPlanCompare freeStudents={settings.piKocFreeStudents} freeMinutes={settings.piKocFreeMeetingMinutes} freeAi={settings.piKocFreeAiPerMonth} /> : null}
+          {settings.piKocFreeStudents > 0 ? <CoachPlanCompare freeStudents={settings.piKocFreeStudents} freeMinutes={settings.piKocFreeMeetingMinutes} freeAi={settings.piKocFreeAiPerMonth} freeHours={settings.piKocFreeStudents * settings.piKocHoursPerStudent} /> : null}
         </>
       ) : (
         <>

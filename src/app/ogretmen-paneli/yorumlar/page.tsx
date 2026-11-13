@@ -32,7 +32,7 @@ export default async function TeacherReviewsPage() {
                 <Stars value={r.rating} />
                 <span className="text-sm font-semibold text-slate-800">{shortName(r.student)}</span>
                 <span className="text-xs text-slate-400">
-                  {formatDate(r.createdAt)} · {r.booking.levelName} {r.booking.subjectName}
+                  {formatDate(r.createdAt)}{r.booking ? ` · ${r.booking.levelName} ${r.booking.subjectName}` : ""}
                 </span>
                 {r.status === "HIDDEN" ? <Badge tone="rose">Yönetici tarafından gizlendi</Badge> : null}
               </div>

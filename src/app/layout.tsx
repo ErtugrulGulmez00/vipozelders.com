@@ -19,7 +19,7 @@ const display = Bricolage_Grotesque({
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
   return {
-    title: { default: `${settings.siteName} · Özel ders ve koçluk`, template: `%s · ${settings.siteName}` },
+    title: { default: `${settings.siteName} · Etüt merkezi paneli, koçluk ve özel ders`, template: `%s · ${settings.siteName}` },
     description: settings.siteTagline,
     metadataBase: new URL(process.env.APP_URL ?? "http://localhost:3000"),
     // WhatsApp, Instagram vb. bağlantı önizlemesi (görsel: app/opengraph-image.tsx). Başlık ve açıklama verilmez: alt sayfalar bunları miras alırdı; önizleme sayfanın kendi <title> ve açıklamasını kullanır

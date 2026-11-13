@@ -1,4 +1,4 @@
-import { CalendarPlus, MailWarning, Star } from "lucide-react";
+import { GraduationCap, Inbox, MailWarning, Search, Star } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { resendVerificationAction } from "@/actions/auth";
@@ -10,6 +10,8 @@ import { formatDateTime } from "@/lib/dates";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { loadSettings } from "@/server/settings";
+import { sideFacts } from "@/server/sides";
+import { requesterInquiries } from "@/server/teacher-inquiries";
 import { studentBookings, UPCOMING } from "@/server/student-queries";
 
 export const metadata: Metadata = { title: "Hesabım" };
@@ -18,7 +20,7 @@ export default async function StudentHomePage() {
   const user = await requireRole("STUDENT");
   const now = new Date();
   const settings = await loadSettings();
-  const [upcoming, awaitingPayment, toReview] = await Promise.all([
+  const [upcoming, awaitingPayment, toReview, inquiries, facts] = await Promise.all([
     studentBookings(user.id, { ...UPCOMING, endAt: { gt: now } }, { startAt: "asc" }, 10),
     studentBookings(user.id, { status: "PENDING_PAYMENT", holdExpiresAt: { gt: now } }),
     db.booking.findMany({
@@ -32,11 +34,24 @@ export default async function StudentHomePage() {
       include: { teacher: { select: { user: { select: { firstName: true } } } } },
       take: 5,
     }),
+    requesterInquiries(user.id),
+    sideFacts(user.id, user.role),
   ]);
+  const bookingOpen = settings.lessonBookingEnabled;
+  const pending = inquiries.filter((q) => q.status === "PENDING").length;
+  const accepted = inquiries.filter((q) => q.status === "ACCEPTED").length;
 
   return (
     <>
-      <PageHeader title={`Merhaba ${user.firstName}`} description="Derslerinizi buradan takip edebilirsiniz." actions={<LinkButton href="/ogretmenler"><CalendarPlus className="size-4" aria-hidden /> Yeni ders al</LinkButton>} />
+      <PageHeader
+        title={`Merhaba ${user.firstName}`}
+        description="Ders taleplerinizi ve koçunuzun takibini buradan izleyebilirsiniz."
+        actions={
+          <LinkButton href="/ogretmenler">
+            <Search className="size-4" aria-hidden /> Öğretmen bul
+          </LinkButton>
+        }
+      />
 
       {!user.emailVerified ? (
         <Alert tone="warning" title="E-posta adresinizi doğrulayın" className="mb-6">
@@ -80,6 +95,43 @@ export default async function StudentHomePage() {
         </Card>
       ) : null}
 
+      <div className="mb-6 grid gap-4 sm:grid-cols-2">
+        <Card>
+          <CardHeader title="Ders taleplerim" action={<Link href="/hesabim/ders-talepleri" className="text-sm font-semibold text-brand-700 hover:underline">Tümü</Link>} />
+          <CardBody>
+            {inquiries.length ? (
+              <p className="flex items-start gap-2 text-sm text-slate-700">
+                <Inbox className="mt-0.5 size-4 shrink-0 text-brand-600" aria-hidden />
+                <span>
+                  {inquiries.length} talep{pending ? ` · ${pending} yanıt bekliyor` : ""}{accepted ? ` · ${accepted} kabul edildi` : ""}. Öğretmen kabul edince sizi arar; ücreti ve saati onunla konuşursunuz.
+                </span>
+              </p>
+            ) : (
+              <p className="text-sm text-slate-600">Beğendiğiniz öğretmenin profilinden ücretsiz ders talebi gönderin; öğretmen kabul edince sizi arar.</p>
+            )}
+          </CardBody>
+        </Card>
+        <Card>
+          <CardHeader title="Koçum" />
+          <CardBody>
+            {facts.kocStudent ? (
+              <p className="flex items-start gap-2 text-sm text-slate-700">
+                <GraduationCap className="mt-0.5 size-4 shrink-0 text-brand-600" aria-hidden />
+                <span>
+                  Haftalık program, ödevler, deneme sonuçları ve koçluk raporları.{" "}
+                  <Link href="/kocum" className="font-semibold text-brand-700 hover:underline">
+                    Koçum&apos;a git
+                  </Link>
+                </span>
+              </p>
+            ) : (
+              <p className="text-sm text-slate-600">Öğretmeniniz talebinizi kabul edince çocuğunuz onun Pi Koç takibine eklenir; program, ödev ve deneme sonuçları burada görünür.</p>
+            )}
+          </CardBody>
+        </Card>
+      </div>
+
+      {!bookingOpen && !upcoming.length ? null : (
       <Card>
         <CardHeader title="Yaklaşan dersler" action={<Link href="/hesabim/derslerim" className="text-sm font-semibold text-brand-700 hover:underline">Tümü</Link>} />
         <CardBody className="space-y-3">
@@ -90,6 +142,7 @@ export default async function StudentHomePage() {
           )}
         </CardBody>
       </Card>
+      )}
     </>
   );
 }

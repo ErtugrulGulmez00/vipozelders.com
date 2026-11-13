@@ -1,6 +1,7 @@
 import { CalendarRange, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { Avatar, Card, EmptyState, Skeleton } from "@/components/ui/primitives";
@@ -22,6 +23,8 @@ export const instant = false;
 
 export default async function GroupCoursesPage() {
   const settings = await loadSettings();
+  // Grup dersleri kapalıyken (2026-11 modeli) vitrinde yok
+  if (!settings.groupsEnabled) notFound();
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
       <div className="max-w-2xl">

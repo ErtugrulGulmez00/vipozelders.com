@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { normalizePhone } from "@/lib/text";
+import { normalizePhone, normalizePersonName } from "@/lib/text";
 import { AccountError, createTeacherAccount, type TeacherAccountResult } from "./accounts";
 import { audit } from "./audit";
 import { countRecentAttempts, recordLoginAttempt } from "./auth/rate-limit";
@@ -59,8 +59,8 @@ export async function submitTeacherApplication(input: ApplicationInput, ipAddres
 
   const application = await db.teacherApplication.create({
     data: {
-      firstName: input.firstName,
-      lastName: input.lastName,
+      firstName: normalizePersonName(input.firstName),
+      lastName: normalizePersonName(input.lastName),
       email,
       phone,
       cityId: input.cityId ?? null,

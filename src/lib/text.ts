@@ -44,6 +44,17 @@ export function normalizeSearch(input: string): string {
     .trim();
 }
 
+/** "ALİ İHSAN" ya da "ali ihsan" → "Ali İhsan". Karışık yazılmış kelimeye (ör. "McAdam") dokunmaz. */
+export function normalizePersonName(input: string): string {
+  const cap = (part: string) => (part ? part.charAt(0).toLocaleUpperCase("tr-TR") + part.slice(1).toLocaleLowerCase("tr-TR") : part);
+  return input
+    .trim()
+    .replace(/\s+/g, " ")
+    .split(" ")
+    .map((word) => (word === word.toLocaleUpperCase("tr-TR") || word === word.toLocaleLowerCase("tr-TR") ? word.split("-").map(cap).join("-") : word))
+    .join(" ");
+}
+
 export function fullName(person: { firstName: string; lastName: string }): string {
   return `${person.firstName} ${person.lastName}`.trim();
 }
