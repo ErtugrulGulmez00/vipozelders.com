@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { publicUrl } from "@/lib/public-url";
 import { PROTECTED_PREFIXES, SESSION_COOKIE } from "@/lib/auth-constants";
 import { isAdminSession, maintenanceHtml, maintenanceState } from "@/server/maintenance";
 
@@ -30,7 +31,7 @@ export async function proxy(request: NextRequest) {
   // kurum.<alan adı> alt adresi aynı uygulamaya yönlenir; ana sayfası kurum girişi / kurum panelidir.
   const host = request.headers.get("host") ?? "";
   if (host.startsWith("kurum.") && pathname === "/") {
-    return NextResponse.redirect(new URL(sessionToken ? "/kurum" : "/kurum-giris", request.url));
+    return NextResponse.redirect(publicUrl(sessionToken ? "/kurum" : "/kurum-giris", request));
   }
 
   const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
@@ -39,7 +40,7 @@ export async function proxy(request: NextRequest) {
     // Her taraf kendi giriş kapısına gider: kurum paneli → kurum girişi, Pi Koç (koç ve öğrencisi) → Pi Koç girişi
     const gate = under("/kurum") ? "/kurum-giris" : under("/koc") || under("/kocum") || under("/gorusme") ? "/koc-giris" : "/giris";
     const isCenterPanel = gate !== "/giris";
-    const url = new URL(gate, request.url);
+    const url = publicUrl(gate, request);
     if (!isCenterPanel || !["/kurum", "/koc", "/kocum"].includes(pathname)) url.searchParams.set("next", `${pathname}${search}`);
     return NextResponse.redirect(url);
   }
