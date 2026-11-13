@@ -171,7 +171,7 @@ export async function sendCoachAutoReports(now = new Date()): Promise<number> {
   const week = dateStringToDbDate(weekStart);
   const centers = await db.center.findMany({
     where: { kind: "COACH", status: { not: "SUSPENDED" }, coachAutoReport: true, OR: [{ coachAutoReportWeek: null }, { coachAutoReportWeek: { lt: week } }] },
-    select: { id: true, name: true, status: true, trialEndsAt: true, paidUntil: true, studentLimit: true },
+    select: { id: true, name: true, status: true, trialEndsAt: true, paidUntil: true, studentLimit: true, promoUntil: true, promoStudents: true },
     take: 100,
   });
   let sent = 0;
@@ -206,7 +206,7 @@ export async function sendCoachAutoReports(now = new Date()): Promise<number> {
 /** Herkese açık rapor sayfası: süresi dolmamış, kurumu askıda olmayan Pi Koç raporu. */
 export async function reportByToken(token: string) {
   if (!/^[A-Za-z0-9_-]{16,80}$/.test(token)) return null;
-  const report = await db.centerWeeklyReport.findUnique({ where: { token }, include: { center: { select: { kind: true, status: true, name: true, trialEndsAt: true, paidUntil: true, studentLimit: true } } } });
+  const report = await db.centerWeeklyReport.findUnique({ where: { token }, include: { center: { select: { kind: true, status: true, name: true, trialEndsAt: true, paidUntil: true, studentLimit: true, promoUntil: true, promoStudents: true } } } });
   if (!report || report.expiresAt < new Date() || report.center.status === "SUSPENDED" || report.center.kind !== "COACH") return null;
   return report;
 }

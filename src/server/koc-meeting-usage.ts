@@ -33,7 +33,7 @@ export function monthStartOf(now: Date): Date {
 
 async function centerPolicy(centerId: string) {
   const [center, settings] = await Promise.all([
-    db.center.findUniqueOrThrow({ where: { id: centerId }, select: { status: true, trialEndsAt: true, paidUntil: true, studentLimit: true } }),
+    db.center.findUniqueOrThrow({ where: { id: centerId }, select: { status: true, trialEndsAt: true, paidUntil: true, studentLimit: true, promoUntil: true, promoStudents: true } }),
     loadSettings(),
   ]);
   const plan = coachPlan(center, settings.piKocFreeStudents);
@@ -73,12 +73,12 @@ export async function coachMeetingAllowance(studentId: string, now = new Date())
   return { ...allowance, minutes: Math.min(allowance.minutes, left) };
 }
 
-/** LiveKit katılım olayı (koc-<öğrenci> odası). Veli izleyici sayılmaz. */
+/** LiveKit katılım olayı (koc-<öğrenci> odası). Veli izleyici ve yönetimin teftiş izlemesi sayılmaz. */
 export async function handleCoachRoomEvent(roomName: string, identity: string, event: string | undefined, now = new Date()) {
   const studentId = STUDENT_ROOM.exec(roomName)?.[1];
-  if (!studentId || identity.includes(":izleyici:")) return;
+  if (!studentId || identity.includes(":izleyici:") || identity.includes(":teftis:")) return;
   if (event !== "participant_joined" && event !== "participant_left") return;
-  await db.$transaction(async (tx) => {
+  const started = await db.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtext(${`koc-meeting:${roomName}`}))`;
     const open = await tx.coachMeeting.findFirst({ where: { roomName, endedAt: null }, orderBy: { startedAt: "desc" } });
     if (event === "participant_joined") {
@@ -98,12 +98,19 @@ export async function handleCoachRoomEvent(roomName: string, identity: string, e
       if (!student) return;
       const { plan } = await centerPolicy(student.centerId);
       await tx.coachMeeting.create({ data: { centerId: student.centerId, studentId, roomName, free: !plan.paid, activeCount: 1, startedAt: now } });
-      return;
+      return true;
     }
     if (!open) return;
     const left = Math.max(0, open.activeCount - 1);
     await tx.coachMeeting.update({ where: { id: open.id }, data: { activeCount: left, endedAt: left === 0 ? now : null } });
   });
+  // Yeni görüşme başladı: yönetime teftiş için haber (görüşmedekilere bildirim gitmez)
+  if (started) {
+    const student = await db.centerStudent.findUnique({ where: { id: studentId }, select: { firstName: true, lastName: true, center: { select: { name: true } } } });
+    if (student) {
+      await notifyRole("ADMIN", { type: "admin.meeting_live", title: "Canlı görüşme başladı", body: `${student.center.name} · ${student.firstName} ${student.lastName}`, link: "/yonetim/canli-gorusmeler", email: false });
+    }
+  }
 }
 
 /**

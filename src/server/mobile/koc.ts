@@ -48,7 +48,7 @@ export async function kocLinksJson(userId: string) {
 export async function kocLink(userId: string, linkId: string) {
   const link = await db.centerGuardian.findFirst({
     where: { id: linkId, ...linkWhere(userId) },
-    include: { student: { include: { center: { select: { id: true, name: true, status: true, trialEndsAt: true, paidUntil: true, kind: true } } } } },
+    include: { student: { include: { center: { select: { id: true, name: true, status: true, trialEndsAt: true, paidUntil: true, kind: true, studentLimit: true, promoUntil: true, promoStudents: true } } } } },
   });
   if (!link) throw notFound("Öğrenci bulunamadı.");
   return link;

@@ -101,6 +101,9 @@ export function UpgradeShowcase({ next, used, limit, meetingMinutes, monthlyHour
           <Link href="/koc" className="inline-flex min-h-11 items-center rounded-full bg-white/15 px-5 font-semibold text-white ring-1 ring-white/30 hover:bg-white/25">
             Pi Koç&apos;a git
           </Link>
+          <Link href="/panel-sec?taraf=koc&next=/koc/abonelik" className="inline-flex min-h-11 items-center px-2 text-sm font-semibold text-white/90 underline-offset-4 hover:underline">
+            Deneme kodunuz var mı?
+          </Link>
         </div>
       </div>
     </section>

@@ -30,7 +30,7 @@ export function coachPriceFor(tiers: CoachTier[], students: number): number | nu
 // Ücretsiz paket süresizdir (az öğrenci, temel özellikler). Ücretli paket ödeme süresi boyunca açıktır; süre bitince
 // hesap ücretsiz pakete düşer (kayıtlar silinmez). Eski hesaplardaki deneme süresi bitene kadar ücretli gibi sayılır.
 
-export type CoachPlanState = "free" | "paid" | "trial";
+export type CoachPlanState = "free" | "paid" | "trial" | "promo";
 
 export type CoachPlan = {
   state: CoachPlanState;
@@ -49,7 +49,7 @@ export type CoachPlan = {
 export const COACH_GRACE_DAYS = 7;
 
 export function coachPlan(
-  center: { status: "TRIAL" | "ACTIVE" | "SUSPENDED"; trialEndsAt: Date | null; paidUntil: Date | null; studentLimit: number },
+  center: { status: "TRIAL" | "ACTIVE" | "SUSPENDED"; trialEndsAt: Date | null; paidUntil: Date | null; studentLimit: number; promoUntil?: Date | null; promoStudents?: number | null },
   freeStudents: number,
   now = new Date(),
 ): CoachPlan {
@@ -64,12 +64,18 @@ export function coachPlan(
   if (center.status === "ACTIVE" && center.paidUntil && center.paidUntil.getTime() + COACH_GRACE_DAYS * 86_400_000 > now.getTime()) {
     return { state: "paid", paid: true, studentLimit: Math.max(center.studentLimit, freeStudents), paidLimit: center.studentLimit, endsAt: center.paidUntil, daysLeft: days(center.paidUntil) };
   }
+  // Deneme kodu: süresince ücretli paket (öğrenci sınırı kodun paketi); bitince ücretsiz pakete döner
+  if (center.promoUntil && center.promoStudents && center.promoUntil.getTime() > now.getTime()) {
+    const limit = Math.max(center.promoStudents, freeStudents);
+    return { state: "promo", paid: true, studentLimit: limit, paidLimit: limit, endsAt: center.promoUntil, daysLeft: days(center.promoUntil) };
+  }
   return free;
 }
 
 /** Paketin kısa adı: "Ücretsiz paket · 3 öğrenci" / "10 öğrenci paketi". */
 export function coachPlanLabel(plan: CoachPlan): string {
   if (plan.state === "free") return `${COACH_FREE_NAME} · ücretsiz, ${plan.studentLimit} öğrenciye kadar`;
+  if (plan.state === "promo") return `${coachTierName(plan.studentLimit)} · deneme kodu, ${plan.studentLimit} öğrenciye kadar${plan.daysLeft !== null ? ` (${plan.daysLeft} gün kaldı)` : ""}`;
   return `${coachTierName(plan.studentLimit)} · ${plan.studentLimit} öğrenciye kadar${plan.state === "trial" ? " (deneme; bitince ücretsiz pakete geçer)" : ""}`;
 }
 

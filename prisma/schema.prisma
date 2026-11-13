@@ -94,6 +94,7 @@ model User {
   lessonRequests    LessonRequest[]
   teacherInquiries  TeacherInquiry[] @relation("InquiryTeacher")
   sentInquiries     TeacherInquiry[] @relation("InquiryRequester")
+  promoRedemptions  CoachPromoCode[] @relation("PromoRedeemer")
   referrals         User[]             @relation("Referrals")
   couponRedemptions CouponRedemption[]
   lessonPackages    LessonPackage[]
@@ -1108,6 +1109,12 @@ model Center {
   nextReceiptNo          Int          @default(1)
   // Pi Koç: koça "bugünkü görüşmeleriniz" sabah özeti en son hangi gün gitti
   coachDigestOn          DateTime?    @db.Date
+  // Pi Koç deneme kodu: bu tarihe kadar ücretli paket (promoStudents öğrenci) açık
+  promoUntil             DateTime?
+  promoStudents          Int?
+  // Pi Koç: ücretsiz paketin öğrenci sınırı ne zamandan beri aşılıyor (7 gün sonra fazlalar arşive alınır)
+  overLimitSince         DateTime?
+  promoCodes             CoachPromoCode[]
   createdAt              DateTime     @default(now())
   updatedAt              DateTime     @updatedAt
 
@@ -2747,4 +2754,25 @@ model CenterCoachPayment {
 
   @@unique([studentId, period])
   @@index([centerId, period])
+}
+
+// Pi Koç deneme kodu: yönetim üretir, öğretmen/koç bir kez kullanır; süre boyunca ücretli paket açılır
+model CoachPromoCode {
+  id               String    @id @default(cuid())
+  code             String    @unique
+  note             String?
+  days             Int       @default(30)
+  students         Int       @default(5)
+  // Bu tarihten sonra kullanılamaz (boşsa süresiz)
+  expiresAt        DateTime?
+  createdById      String?
+  createdAt        DateTime  @default(now())
+  redeemedAt       DateTime?
+  redeemedByUserId String?
+  redeemedBy       User?     @relation("PromoRedeemer", fields: [redeemedByUserId], references: [id], onDelete: SetNull)
+  centerId         String?
+  center           Center?   @relation(fields: [centerId], references: [id], onDelete: SetNull)
+  revokedAt        DateTime?
+
+  @@index([redeemedByUserId])
 }

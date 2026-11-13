@@ -38,7 +38,7 @@ export default async function TeacherDashboard() {
     }),
     db.centerMember.findFirst({
       where: { userId: user.id, isActive: true, center: { kind: "COACH" } },
-      select: { centerId: true, center: { select: { status: true, trialEndsAt: true, paidUntil: true, studentLimit: true } } },
+      select: { centerId: true, center: { select: { status: true, trialEndsAt: true, paidUntil: true, studentLimit: true, promoUntil: true, promoStudents: true } } },
     }),
     pendingInquiryCount(user.id),
     loadSettings(),
@@ -139,7 +139,7 @@ export default async function TeacherDashboard() {
           <CardHeader
             title="Pi Koç paketiniz"
             description={`${coachPlanLabel(plan)} · ${coachStudents} / ${plan.studentLimit} öğrenci`}
-            action={<Badge tone={plan.state === "trial" ? "amber" : plan.paid ? "green" : "slate"}>{plan.state === "trial" ? "Deneme" : plan.paid ? "Ücretli" : "Ücretsiz"}</Badge>}
+            action={<Badge tone={plan.state === "trial" || plan.state === "promo" ? "amber" : plan.paid ? "green" : "slate"}>{plan.state === "promo" ? "Deneme kodu" : plan.state === "trial" ? "Deneme" : plan.paid ? "Ücretli" : "Ücretsiz"}</Badge>}
           />
           <CardBody className="space-y-4">
             <p className="text-sm text-slate-600">

@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { CoachPlanBanner } from "@/components/koc/plan-banner";
 import { SidebarUpgrade } from "@/components/koc/premium";
+import { OVER_LIMIT_GRACE_DAYS } from "@/server/koc-promo";
 import { coachFeatureOpen, parseCoachTiers } from "@/lib/pi-koc";
 import { getSiteSettings } from "@/server/site";
 import { KocShell } from "@/components/koc/koc-shell";
@@ -27,6 +28,8 @@ export default async function KocLayout({ children }: { children: React.ReactNod
     db.centerStudent.count({ where: { centerId: ctx.center.id, status: "ACTIVE" } }),
   ]);
   const freePlan = Boolean(ctx.coach && !ctx.coach.paid);
+  const now = new Date();
+  const overLimitDaysLeft = ctx.center.overLimitSince ? Math.max(0, Math.ceil((ctx.center.overLimitSince.getTime() + OVER_LIMIT_GRACE_DAYS * 86_400_000 - now.getTime()) / 86_400_000)) : null;
   const nextTier = freePlan ? (parseCoachTiers((await getSiteSettings()).piKocTiers)[0] ?? null) : null;
   const nav: PanelNavItem[] = [
     { href: "/koc", label: "Genel bakış", icon: <LayoutDashboard />, exact: true },
@@ -49,7 +52,7 @@ export default async function KocLayout({ children }: { children: React.ReactNod
       : []),
   ];
   return (
-    <KocShell user={ctx.user} nav={nav} switchLinks={sideSwitches(facts, "koc")} unread={unread} usage={{ active, limit: ctx.center.studentLimit }} banner={ctx.coach ? <CoachPlanBanner plan={ctx.coach} active={active} /> : null} upgrade={freePlan ? <SidebarUpgrade next={nextTier} /> : undefined}>
+    <KocShell user={ctx.user} nav={nav} switchLinks={sideSwitches(facts, "koc")} unread={unread} usage={{ active, limit: ctx.center.studentLimit }} banner={ctx.coach ? <CoachPlanBanner plan={ctx.coach} active={active} overLimitDaysLeft={overLimitDaysLeft} /> : null} upgrade={freePlan ? <SidebarUpgrade next={nextTier} /> : undefined}>
       {children}
     </KocShell>
   );

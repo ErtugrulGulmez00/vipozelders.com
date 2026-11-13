@@ -60,14 +60,19 @@ export default async function AdminCoachAccountsPage({ searchParams }: PageProps
         title="Pi Koç hesapları"
         description="Koçların ve öğretmenlerin öğrenci takip paneli. Öğretmen hesabı açılınca ücretsiz paket kendiliğinden açılır; ücretli paketi ödemeyi kaydederek açarsınız."
         actions={
-          <Link href="/yonetim/kurumlar" className={buttonClasses("ghost", "sm")}>
-            Kurumlar
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href="/yonetim/kurumlar" className={buttonClasses("ghost", "sm")}>
+              Kurumlar
+            </Link>
+            <Link href="/yonetim/pi-koc/kodlar" className={buttonClasses("outline", "sm")}>
+              Deneme kodları
+            </Link>
+          </div>
         }
       />
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Pi Koç hesabı" value={rows.length} hint={`${rows.filter((r) => r.c._count.students > 0).length} hesapta öğrenci var`} />
-        <StatCard label="Ücretli paket" value={rows.filter((r) => r.plan.paid && r.plan.state !== "trial").length} hint={`${rows.filter((r) => r.plan.state === "trial").length} eski deneme`} />
+        <StatCard label="Ücretli paket" value={rows.filter((r) => r.plan.state === "paid").length} hint={`${rows.filter((r) => r.plan.state === "promo").length} deneme kodu · ${rows.filter((r) => r.plan.state === "trial").length} eski deneme`} />
         <StatCard label="Ücretsiz sınıra dayanan" value={rows.filter((r) => !r.plan.paid && r.full).length} hint="Satış fırsatı" />
         <StatCard label="Toplam paket geliri" value={formatMoney(revenue._sum.amount ?? 0)} />
       </div>
@@ -113,10 +118,10 @@ export default async function AdminCoachAccountsPage({ searchParams }: PageProps
                   </Td>
                   <Td>
                     <span className="flex items-center gap-2">
-                      <TierIcon students={plan.paid ? c.studentLimit : 0} className="size-7 rounded-xl [&>svg]:size-3.5" />
+                      <TierIcon students={plan.paid ? plan.paidLimit : 0} className="size-7 rounded-xl [&>svg]:size-3.5" />
                       <span className="text-sm">
-                        <span className="font-semibold text-slate-900">{plan.paid ? coachTierName(c.studentLimit) : COACH_FREE_NAME}</span>
-                        <span className="block text-xs text-slate-500">{plan.state === "trial" ? "Eski deneme" : plan.paid ? "Ücretli" : "Ücretsiz"}</span>
+                        <span className="font-semibold text-slate-900">{plan.paid ? coachTierName(plan.paidLimit) : COACH_FREE_NAME}</span>
+                        <span className="block text-xs text-slate-500">{plan.state === "trial" ? "Eski deneme" : plan.state === "promo" ? "Deneme kodu" : plan.paid ? "Ücretli" : "Ücretsiz"}</span>
                       </span>
                     </span>
                   </Td>

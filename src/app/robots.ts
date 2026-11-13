@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       // Paneller, ödeme ve hesap sayfaları arama motorlarına kapalı.
-      disallow: ["/yonetim", "/ogretmen-paneli", "/hesabim", "/kurum/", "/koc", "/kurum-davet/", "/kurum-erisim", "/kurum-giris", "/koc-giris", "/rapor/", "/gorusme/", "/ders/", "/rezervasyon", "/odeme/", "/api/", "/giris", "/kayit", "/sifre"],
+      disallow: ["/yonetim", "/ogretmen-paneli", "/hesabim", "/kurum/", "/koc", "/kurum-davet/", "/kurum-erisim", "/kurum-giris", "/koc-giris", "/rapor/", "/gorusme/", "/teftis/", "/ders/", "/rezervasyon", "/odeme/", "/api/", "/giris", "/kayit", "/sifre"],
     },
     sitemap: `${base}/sitemap.xml`,
   };

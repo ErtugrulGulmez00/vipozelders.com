@@ -1,4 +1,4 @@
-import { BarChart3, HeartHandshake, MessageCircle, Inbox, PhoneCall, Newspaper, Bell, Bug, Building2, CreditCard, CalendarDays, FileText, FolderTree, GraduationCap, History, LayoutDashboard, Mail, MessageCircleWarning, MessageSquareQuote, Settings, ShieldAlert, ShieldCheck, UserPlus, Users, Wallet } from "lucide-react";
+import { BarChart3, Eye, HeartHandshake, MessageCircle, Inbox, PhoneCall, Newspaper, Bell, Bug, Building2, CreditCard, CalendarDays, FileText, FolderTree, GraduationCap, History, LayoutDashboard, Mail, MessageCircleWarning, MessageSquareQuote, Settings, ShieldAlert, ShieldCheck, UserPlus, Users, Wallet } from "lucide-react";
 import { PanelShell } from "@/components/panel/panel-shell";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
@@ -9,7 +9,7 @@ export const instant = false;
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await requireRole("ADMIN");
-  const [disputes, drafts, unread, applications, documents, centerApplications, openErrors, openReports, messagesToReview, lessonRequests, pendingInquiries, settings, legacy] = await Promise.all([
+  const [disputes, drafts, unread, applications, documents, centerApplications, openErrors, openReports, messagesToReview, lessonRequests, pendingInquiries, settings, liveMeetings, legacy] = await Promise.all([
     db.booking.count({ where: { status: "DISPUTED" } }),
     db.teacherProfile.count({ where: { status: "DRAFT" } }),
     db.notification.count({ where: { userId: user.id, readAt: null } }),
@@ -22,6 +22,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     db.lessonRequest.count({ where: { status: "NEW" } }),
     db.teacherInquiry.count({ where: { status: "PENDING" } }),
     loadSettings(),
+    db.coachMeeting.count({ where: { endedAt: null } }),
     adminLegacyUsage(),
   ]);
   // Randevu ve ödeme kapalıyken eski modelin bölümleri yalnızca içinde kayıt varsa görünür
@@ -40,7 +41,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         { href: "/yonetim/talepler", label: "Öğretmen bulma istekleri", icon: <Inbox />, badge: lessonRequests || undefined },
         { href: "/yonetim/ogrenciler", label: "Öğrenciler / Veliler", icon: <Users /> },
         { href: "/yonetim/kurumlar", label: "Kurumlar", icon: <Building2 />, badge: centerApplications || undefined },
-        { href: "/yonetim/pi-koc", label: "Pi Koç hesapları", icon: <HeartHandshake /> },
+        { href: "/yonetim/pi-koc", label: "Pi Koç hesapları", icon: <HeartHandshake />, also: ["/yonetim/pi-koc/kodlar"] },
+        { href: "/yonetim/canli-gorusmeler", label: "Canlı görüşmeler", icon: <Eye />, badge: liveMeetings || undefined },
         ...(show(legacy.bookings > 0) ? [{ href: "/yonetim/randevular", label: "Randevular", icon: <CalendarDays />, badge: disputes || undefined }] : []),
         { href: "/yonetim/mesajlar", label: "Mesaj denetimi", icon: <MessageCircleWarning />, badge: messagesToReview || undefined },
         ...(show(legacy.reports > 0) ? [{ href: "/yonetim/ders-bildirimleri", label: "Ders bildirimleri", icon: <ShieldAlert />, badge: openReports || undefined }] : []),

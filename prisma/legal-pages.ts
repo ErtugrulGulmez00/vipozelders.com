@@ -123,6 +123,9 @@ Veri sorumlusu: {companyName} · {companyAddress} · {companyTaxInfo} · {contac
 ## Hukuki sebepler
 Sözleşmenin kurulması ve ifası, hukuki yükümlülük, meşru menfaat ve gerektiğinde açık rızanız (KVKK m.5). WhatsApp bildirimleri ve pazarlama iletileri yalnızca açık rızanıza dayanır.
 
+## Görüntülü derslerin izlenmesi
+Görüntülü dersler ve görüşmeler kayda alınmaz. Ancak kalite ve çocuk güvenliği amacıyla {siteName} yöneticileri görüşmeleri, katılımcılara ayrıca bildirim yapmadan canlı olarak izleyebilir (teftiş izleme). İzleme sırasında uygunsuz bir davranış görülürse ilgili hesap süresiz olarak askıya alınabilir. İzleme yalnızca canlı olarak yapılır; görüntü ve ses saklanmaz, yalnızca hangi yöneticinin hangi görüşmeyi ne zaman izlediği işlem kayıtlarında tutulur. Hukuki sebep: hizmetin güvenliğinin ve çocukların korunmasının sağlanmasına yönelik meşru menfaat (KVKK m.5/2-f).
+
 ## Ders talebinde paylaşım
 Ders talebi gönderdiğinizde talebiniz seçtiğiniz öğretmene iletilir. Adınız ve telefon numaranız öğretmene yalnızca talebinizi kabul ederse gösterilir. Kabul eden öğretmen öğrenciyi Pi Koç takibine ekler; bu andan itibaren takip kayıtları için veri sorumlusu öğretmendir.
 
@@ -345,6 +348,9 @@ Kurum paneli, başvurunuz onaylanınca açılır; giriş bilgileri e-postanıza 
 ## Davranış kuralları
 Derslerde ve mesajlarda saygılı bir dil kullanılır; çocuk güvenliğini tehlikeye atan her türlü davranış hesabın kapatılması ve yetkili makamlara bildirim sebebidir.
 
+## Görüntülü derslerin izlenmesi
+Görüntülü dersler ve görüşmeler kayda alınmaz. Ancak kalite ve çocuk güvenliği amacıyla {siteName} yöneticileri görüşmeleri, katılımcılara ayrıca bildirim yapmadan canlı olarak izleyebilir (teftiş izleme). İzleme sırasında uygunsuz bir davranış görülürse ilgili hesap süresiz olarak askıya alınabilir.
+
 ## Değerlendirmeler
 Yorumlar gerçek ders deneyimine dayanmalıdır; öğretmenle sitemizde görüntülü ders yapmış veliler ve öğrenciler yorum yazabilir. Hakaret, kişisel veri veya reklam içeren yorumlar yayından kaldırılır.
 
@@ -386,6 +392,9 @@ Tüketici işlemlerinde tüketici hakem heyetleri ve tüketici mahkemeleri yetki
 
 ## Statü beyanı
 Öğretmen; devlet okulunda kadrolu olarak çalışmadığını veya ücretli özel ders vermesine mevzuatın izin verdiğini, aksi halde doğacak sorumluluğun kendisine ait olduğunu beyan eder.
+
+## Görüntülü derslerin izlenmesi
+Görüntülü dersler ve görüşmeler kayda alınmaz. Ancak kalite ve çocuk güvenliği amacıyla {siteName} yöneticileri görüşmeleri, katılımcılara ayrıca bildirim yapmadan canlı olarak izleyebilir (teftiş izleme). İzleme sırasında uygunsuz bir davranış görülürse ilgili hesap süresiz olarak askıya alınabilir.
 
 ## Hesabın askıya alınması
 Bu sözleşmeye, yasalara ya da davranış kurallarına aykırılıkta profil yayından kaldırılabilir ve hesap kapatılabilir.`,
@@ -431,6 +440,9 @@ Telefon: {contactPhone} · E-posta: {contactEmail}
 - Velilere WhatsApp bildirimi yalnızca izin vermiş veli için gönderilir. İzni almak ve panelde işaretlemek Kurum'un sorumluluğundadır.
 - WhatsApp yalnızca bilgilendirme içindir (devamsızlık, toplantı, program değişikliği gibi). Reklam ve kampanya mesajı gönderilemez.
 - WhatsApp bildirimleri açıldığında kurum başına aylık mesaj sınırı uygulanır; sınır dolduğunda bildirimler e-postayla gider.
+
+## Görüntülü görüşmelerin izlenmesi
+Görüntülü dersler ve görüşmeler kayda alınmaz. Ancak kalite ve çocuk güvenliği amacıyla {siteName} yöneticileri görüşmeleri, katılımcılara ayrıca bildirim yapmadan canlı olarak izleyebilir (teftiş izleme). İzleme sırasında uygunsuz bir davranış görülürse ilgili hesap süresiz olarak askıya alınabilir.
 
 ## Hizmetin askıya alınması
 Bu sözleşmeye ya da yasalara aykırı kullanımda, özellikle başkalarının verilerinin izinsiz işlenmesinde ve istenmeyen mesaj gönderiminde hesap askıya alınabilir.

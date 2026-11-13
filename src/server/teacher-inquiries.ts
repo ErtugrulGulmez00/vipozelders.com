@@ -140,7 +140,7 @@ export async function addInquiryToCoach(teacherId: string, inquiryId: string): P
   let createdCoach = false;
   let member = await db.centerMember.findFirst({
     where: { userId: teacherId, isActive: true, role: "OWNER", center: { kind: "COACH", status: { not: "SUSPENDED" } } },
-    select: { id: true, center: { select: { id: true, name: true, status: true, trialEndsAt: true, paidUntil: true, studentLimit: true } } },
+    select: { id: true, center: { select: { id: true, name: true, status: true, trialEndsAt: true, paidUntil: true, studentLimit: true, promoUntil: true, promoStudents: true } } },
   });
   if (!member) {
     const teacher = await db.user.findUniqueOrThrow({ where: { id: teacherId }, select: { id: true, firstName: true, lastName: true, email: true, phone: true, role: true } });
@@ -148,7 +148,7 @@ export async function addInquiryToCoach(teacherId: string, inquiryId: string): P
     createdCoach = true;
     member = await db.centerMember.findFirstOrThrow({
       where: { userId: teacherId, isActive: true, role: "OWNER", center: { kind: "COACH" } },
-      select: { id: true, center: { select: { id: true, name: true, status: true, trialEndsAt: true, paidUntil: true, studentLimit: true } } },
+      select: { id: true, center: { select: { id: true, name: true, status: true, trialEndsAt: true, paidUntil: true, studentLimit: true, promoUntil: true, promoStudents: true } } },
     });
   }
   const { center } = member;

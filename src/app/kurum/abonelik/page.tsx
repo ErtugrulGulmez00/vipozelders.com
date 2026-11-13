@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { RedeemPromoForm } from "@/components/koc/promo-forms";
+import { OVER_LIMIT_GRACE_DAYS } from "@/server/koc-promo";
 import { RateBar } from "@/components/center/center-ui";
 import { PackageCard, TierCards } from "@/components/center/pricing";
 import { Badge, Card, CardBody, CardHeader, DescriptionList, PageHeader, Table, Td, Th } from "@/components/ui/primitives";
@@ -60,6 +62,22 @@ export default async function SubscriptionPage() {
             </div>
           </CardBody>
         </Card>
+        {coach && ctx.coach?.state === "free" && !ctx.center.promoUntil ? (
+          <Card id="kod" className="scroll-mt-24 border-gold-300 bg-gold-50/60 lg:col-span-2">
+            <CardHeader title="Deneme kodunuz var mı?" description="Size verilen kodu girin; süresince Rehber paketi (5 öğrenci, bütün ücretli özellikler) açılır. Kod hesap başına bir kez kullanılır." />
+            <CardBody>
+              <RedeemPromoForm />
+            </CardBody>
+          </Card>
+        ) : null}
+        {coach && ctx.coach?.state === "promo" ? (
+          <Card className="border-emerald-200 bg-emerald-50/60 lg:col-span-2">
+            <CardHeader
+              title="Deneme kodunuz açık"
+              description={`${ctx.coach.endsAt ? formatDate(ctx.coach.endsAt) : ""} tarihine kadar bütün ücretli özellikler açık. Süre bitince ücretsiz pakete dönersiniz; o zaman en fazla ${settings.piKocFreeStudents} öğrenci aktif kalabilir, fazlasını ${OVER_LIMIT_GRACE_DAYS} gün içinde arşive almanız gerekir. Devam etmek için paketlerden birini seçebilirsiniz.`}
+            />
+          </Card>
+        ) : null}
         <Card>
           <CardHeader title="Ödeme / yenileme" />
           <CardBody className="space-y-3 text-sm text-slate-700">

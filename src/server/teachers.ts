@@ -210,7 +210,7 @@ async function paidCoachUserIds(userIds: string[]): Promise<Set<string>> {
   if (!userIds.length) return new Set();
   const owners = await db.centerMember.findMany({
     where: { userId: { in: userIds }, role: "OWNER", isActive: true, center: { kind: "COACH", status: { not: "SUSPENDED" } } },
-    select: { userId: true, center: { select: { status: true, trialEndsAt: true, paidUntil: true, studentLimit: true } } },
+    select: { userId: true, center: { select: { status: true, trialEndsAt: true, paidUntil: true, studentLimit: true, promoUntil: true, promoStudents: true } } },
   });
   return new Set(owners.filter((o) => coachPlan(o.center, 0).paid).map((o) => o.userId));
 }

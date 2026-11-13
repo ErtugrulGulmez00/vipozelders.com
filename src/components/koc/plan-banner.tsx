@@ -3,7 +3,8 @@ import { Alert } from "@/components/ui/primitives";
 import type { CoachPlan } from "@/lib/pi-koc";
 
 /** Pi Koç panelinin tepesindeki paket uyarısı: sınır aşımı, biten ücretli paket, eski deneme. */
-export function CoachPlanBanner({ plan, active }: { plan: CoachPlan; active: number }) {
+/** overLimitDaysLeft: sınır aşımında fazlaların kendiliğinden arşive alınmasına kalan gün */
+export function CoachPlanBanner({ plan, active, overLimitDaysLeft }: { plan: CoachPlan; active: number; overLimitDaysLeft?: number | null }) {
   const link = (
     <Link href="/koc/abonelik" className="font-semibold underline">
       Paketler ve ödeme
@@ -12,7 +13,9 @@ export function CoachPlanBanner({ plan, active }: { plan: CoachPlan; active: num
   if (!plan.paid && active > plan.studentLimit) {
     return (
       <Alert tone="error" title={`Ücretsiz pakette en fazla ${plan.studentLimit} öğrenci olur; ${active} aktif öğrenciniz var`} className="mb-6">
-        Kayıtlarınızın hepsi duruyor, ancak yeni kayıt girilemiyor. Paketinizi yenileyin ya da öğrencileri arşive alarak {plan.studentLimit} öğrenciye inin. {link}
+        Kayıtlarınızın hepsi duruyor, ancak yeni kayıt girilemiyor. Paketinizi yenileyin ya da Öğrencilerim sayfasından öğrencileri arşive alarak {plan.studentLimit} öğrenciye inin.
+        {overLimitDaysLeft !== null && overLimitDaysLeft !== undefined ? ` ${overLimitDaysLeft} gün içinde inmezseniz en son eklenen ${active - plan.studentLimit} öğrenci kendiliğinden arşive alınır (kayıtları silinmez).` : null}{" "}
+        {link}
       </Alert>
     );
   }
@@ -27,6 +30,13 @@ export function CoachPlanBanner({ plan, active }: { plan: CoachPlan; active: num
     return (
       <Alert tone="info" title={`Paketinizin bitmesine ${plan.daysLeft} gün kaldı`} className="mb-6">
         Yenilemezseniz hesabınız ücretsiz pakete döner; kayıtlarınız silinmez. {link}
+      </Alert>
+    );
+  }
+  if (plan.state === "promo" && plan.daysLeft !== null && plan.daysLeft <= 5) {
+    return (
+      <Alert tone="info" title={`Deneme kodunuzun bitmesine ${plan.daysLeft} gün kaldı`} className="mb-6">
+        Süre bitince ücretsiz pakete dönersiniz ve en fazla 3 öğrenci aktif kalabilir; kayıtlarınız silinmez. {link}
       </Alert>
     );
   }

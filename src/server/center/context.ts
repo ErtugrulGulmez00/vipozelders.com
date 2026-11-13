@@ -26,6 +26,9 @@ const centerSelect = {
   studentLimit: true,
   trialEndsAt: true,
   paidUntil: true,
+  promoUntil: true,
+  promoStudents: true,
+  overLimitSince: true,
   phone: true,
   email: true,
   address: true,
@@ -49,6 +52,9 @@ export type CenterSummary = {
   studentLimit: number;
   trialEndsAt: Date | null;
   paidUntil: Date | null;
+  promoUntil: Date | null;
+  promoStudents: number | null;
+  overLimitSince: Date | null;
   phone: string | null;
   email: string | null;
   address: string | null;
