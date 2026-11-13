@@ -69,7 +69,7 @@ export type CenterContext = {
   access: CenterAccess;
   /** Pi Koç hesabında paket durumu (ücretsiz / ücretli); kurumlarda null. center.studentLimit geçerli sınırı gösterir. */
   coach: CoachPlan | null;
-  memberships: { centerId: string; centerName: string; role: CenterRoleName }[];
+  memberships: { centerId: string; centerName: string; role: CenterRoleName; coach: boolean }[];
   can: (permission: CenterPermission) => boolean;
 };
 
@@ -111,7 +111,7 @@ export const resolveCenter = cache(async (): Promise<Resolution> => {
       center,
       access: centerAccess(center),
       coach,
-      memberships: usable.map((m) => ({ centerId: m.centerId, centerName: m.center.name, role: m.role as CenterRoleName })),
+      memberships: usable.map((m) => ({ centerId: m.centerId, centerName: m.center.name, role: m.role as CenterRoleName, coach: m.center.kind === "COACH" })),
       can: (permission) => centerCan(role, permission),
     },
   };

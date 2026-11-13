@@ -5,7 +5,7 @@ import { coachFeatureOpen, type CoachPlan } from "@/lib/pi-koc";
 import type { CenterContext } from "@/server/center/context";
 import { db } from "@/server/db";
 import { freeAiLeft, sendCoachAutoReports } from "@/server/koc-report";
-import { InquiryError, respondInquiry, submitInquiry } from "@/server/teacher-inquiries";
+import { addInquiryToCoach, InquiryError, respondInquiry, submitInquiry } from "@/server/teacher-inquiries";
 import { createBookingHold } from "@/server/bookings";
 import { saveSettings } from "@/server/settings";
 import { createFixture } from "./helpers";
@@ -82,7 +82,7 @@ describe("vitrinden ders talebi", () => {
     const teacher = { userId: fixture.teacher.id, offerings: [{ id: fixture.offering.id }] };
     const id = randomUUID().slice(0, 8);
     const parent = await db.user.create({ data: { role: "STUDENT", username: `veli.${id}`, email: `veli.${id}@example.com`, firstName: "Ayten", lastName: "Kaya", passwordHash: "x" } });
-    const input = { teacherId: teacher!.userId, name: "Ayten Kaya", phone: "0532 111 22 33", offeringId: teacher!.offerings[0]?.id, mode: "online" as const, preferredTimes: "Hafta içi akşam, 0533 999 88 77", note: "LGS matematik" };
+    const input = { teacherId: teacher!.userId, name: "Ayten Kaya", phone: "0532 111 22 33", studentName: "Deniz", gradeName: "8. sınıf", offeringId: teacher!.offerings[0]?.id, mode: "online" as const, preferredTimes: "Hafta içi akşam, 0533 999 88 77", note: "LGS matematik" };
     const inquiry = await submitInquiry(input, { id: parent.id, email: parent.email }, null);
     expect(inquiry).toMatchObject({ status: "PENDING", phone: "05321112233" });
     // Serbest metindeki numara gizlenir
@@ -93,5 +93,25 @@ describe("vitrinden ders talebi", () => {
     expect((await db.teacherInquiry.findUniqueOrThrow({ where: { id: inquiry.id } })).status).toBe("ACCEPTED");
     expect(await db.notification.count({ where: { userId: parent.id, type: "inquiry.accepted" } })).toBe(1);
     await expect(respondInquiry(teacher!.userId, inquiry.id, false)).rejects.toBeInstanceOf(InquiryError);
+
+    // Adım 5: öğrenci öğretmenin Pi Koç'una düşer; hesabı yoksa ücretsiz açılır, veli hesabı bağlanır
+    const link = await addInquiryToCoach(teacher!.userId, inquiry.id);
+    expect(link).toMatchObject({ added: true, createdCoach: true });
+    const student = await db.centerStudent.findUniqueOrThrow({ where: { id: link.added ? link.studentId : "" }, include: { center: true, guardians: true } });
+    expect(student).toMatchObject({ firstName: "Deniz", lastName: "Kaya", gradeName: "8. sınıf" });
+    expect(student.center.kind).toBe("COACH");
+    expect(student.guardians[0]).toMatchObject({ userId: parent.id, phone: "05321112233", isStudentAccount: false });
+    expect(await db.notification.count({ where: { userId: parent.id, type: "inquiry.coach_linked" } })).toBe(1);
+    // Tekrar çağrı yeni öğrenci açmaz
+    expect(await addInquiryToCoach(teacher!.userId, inquiry.id)).toMatchObject({ added: true, studentId: student.id, createdCoach: false });
+
+    // Ücretsiz paket (3 öğrenci) dolunca öğrenci eklenmez, kabul geçerli kalır
+    await db.centerStudent.createMany({ data: ["A", "B"].map((n) => ({ centerId: student.centerId, firstName: n, lastName: id })) });
+    const other = await db.user.create({ data: { role: "STUDENT", username: `veli2.${id}`, email: `veli2.${id}@example.com`, firstName: "Can", lastName: "Er", passwordHash: "x" } });
+    const second = await submitInquiry({ ...input, name: "Can Er" }, { id: other.id, email: other.email }, null);
+    await respondInquiry(teacher!.userId, second.id, true);
+    const full = await addInquiryToCoach(teacher!.userId, second.id);
+    expect(full).toMatchObject({ added: false });
+    expect((await db.teacherInquiry.findUniqueOrThrow({ where: { id: second.id } })).status).toBe("ACCEPTED");
   });
 });

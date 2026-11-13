@@ -4,7 +4,13 @@ import { refresh } from "next/cache";
 import { failure, success, zodFieldErrors, type ActionState } from "@/lib/action-state";
 import { actionUser } from "@/server/auth/current-user";
 import { requestMeta } from "@/server/auth/session";
-import { InquiryError, inquirySchema, respondInquiry, submitInquiry } from "@/server/teacher-inquiries";
+import { CenterError } from "@/server/center/errors";
+import { addInquiryToCoach, InquiryError, inquirySchema, respondInquiry, submitInquiry, type CoachLinkResult } from "@/server/teacher-inquiries";
+
+function linkMessage(link: CoachLinkResult): string {
+  if (!link.added) return link.reason;
+  return link.createdCoach ? "Öğrenci, sizin için ücretsiz açtığımız Pi Koç hesabına eklendi." : "Öğrenci Pi Koç'unuza eklendi.";
+}
 
 /** Vitrinden öğretmene ders talebi (veli/öğrenci hesabıyla). */
 export async function submitInquiryAction(_: ActionState, formData: FormData): Promise<ActionState> {
@@ -29,12 +35,31 @@ export async function respondInquiryAction(_: ActionState, formData: FormData): 
   const user = await actionUser("TEACHER");
   if (!user) return failure("Oturumunuz kapanmış. Tekrar giriş yapın.");
   const accept = formData.get("accept") === "1";
+  const inquiryId = String(formData.get("inquiryId") ?? "");
+  let link: CoachLinkResult | null = null;
   try {
-    await respondInquiry(user.id, String(formData.get("inquiryId") ?? ""), accept);
+    await respondInquiry(user.id, inquiryId, accept);
+    // Kabul edilen talebin öğrencisi Pi Koç'a düşer; eklenemezse kabul geçerli kalır, öğretmen sonra tekrar dener
+    if (accept) link = await addInquiryToCoach(user.id, inquiryId).catch((error) => (error instanceof CenterError || error instanceof InquiryError ? { added: false as const, createdCoach: false, reason: error.message } : Promise.reject(error)));
   } catch (error) {
     if (error instanceof InquiryError) return failure(error.message);
     throw error;
   }
   refresh();
-  return success(accept ? "Talebi kabul ettiniz. Velinin telefonu aşağıda; arayıp ders saatini ve ücreti konuşun." : "Talep geri çevrildi; veliye nazikçe haber verdik.");
+  return success(accept ? `Talebi kabul ettiniz. ${link ? linkMessage(link) : ""} Velinin telefonu aşağıda; arayıp ders saatini ve ücreti konuşun.` : "Talep geri çevrildi; veliye nazikçe haber verdik.");
+}
+
+/** Kabul edilmiş ama sınır yüzünden Pi Koç'a eklenememiş talebi yeniden dener. */
+export async function addInquiryToCoachAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const user = await actionUser("TEACHER");
+  if (!user) return failure("Oturumunuz kapanmış. Tekrar giriş yapın.");
+  try {
+    const link = await addInquiryToCoach(user.id, String(formData.get("inquiryId") ?? ""));
+    if (!link.added) return failure(link.reason);
+    refresh();
+    return success(linkMessage(link));
+  } catch (error) {
+    if (error instanceof InquiryError || error instanceof CenterError) return failure(error.message);
+    throw error;
+  }
 }

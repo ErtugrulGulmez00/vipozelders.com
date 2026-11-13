@@ -1,7 +1,8 @@
 import { Inbox, MessageCircle, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import { InquiryActions } from "@/components/panel/inquiry-actions";
+import Link from "next/link";
+import { AddToCoachButton, InquiryActions } from "@/components/panel/inquiry-actions";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/primitives";
 import { formatCompact } from "@/lib/dates";
 import { requireRole } from "@/server/auth/current-user";
@@ -25,7 +26,7 @@ export default async function TeacherInquiriesPage() {
     <>
       <PageHeader
         title="Ders talepleri"
-        description="Veliler profilinizden ders talebi gönderir. Kabul ederseniz velinin telefonunu görürsünüz; ders saatini ve ücreti veliyle siz konuşursunuz, ödemeyi doğrudan size yapar."
+        description="Veliler profilinizden ders talebi gönderir. Kabul ederseniz velinin telefonunu görürsünüz ve öğrenci Pi Koç'unuza eklenir (hesabınız yoksa ücretsiz açılır). Ders saatini ve ücreti veliyle siz konuşursunuz, ödemeyi doğrudan size yapar."
       />
       {items.length ? (
         <div className="space-y-3">
@@ -59,9 +60,24 @@ export default async function TeacherInquiriesPage() {
                       </a>
                     ) : null}
                   </div>
+                ) : null}
+                {q.status === "ACCEPTED" ? (
+                  q.centerStudentId ? (
+                    <p className="mt-3 text-sm text-slate-600">
+                      Öğrenci Pi Koç&apos;unuzda: program, ödev, deneme ve veli raporu oradan.{" "}
+                      <Link href={`/panel-sec?taraf=koc&next=${encodeURIComponent(`/koc/ogrenciler/${q.centerStudentId}`)}`} className="font-semibold text-brand-700 hover:underline">
+                        Pi Koç&apos;ta aç
+                      </Link>
+                    </p>
+                  ) : (
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
+                      <span>Öğrenci Pi Koç&apos;a eklenemedi; paketinizin öğrenci sınırı dolu olabilir.</span>
+                      <AddToCoachButton inquiryId={q.id} />
+                    </div>
+                  )
                 ) : q.status === "PENDING" ? (
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
-                    <p className="text-xs text-slate-500">Kabul edince velinin adı ve telefonu görünür.</p>
+                    <p className="text-xs text-slate-500">Kabul edince velinin adı ve telefonu görünür, öğrenci Pi Koç&apos;unuza eklenir.</p>
                     <InquiryActions inquiryId={q.id} />
                   </div>
                 ) : null}

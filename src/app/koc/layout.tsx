@@ -16,7 +16,8 @@ export const metadata: Metadata = { title: { template: "%s · Pi Koç", default:
 // Pi Koç: bireysel koçun kendi paneli. Kurum hesabı buraya girerse kurum paneline döner.
 export default async function KocLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireCenter();
-  if (ctx.center.kind !== "COACH") redirect("/kurum");
+  // Hem kurum hem Pi Koç üyesi olan kişi (ör. kurumda da çalışan öğretmen): Pi Koç hesabına geçilir
+  if (ctx.center.kind !== "COACH") redirect(ctx.memberships.some((m) => m.coach) ? "/panel-sec?taraf=koc" : "/kurum");
   const facts = await sideFacts(ctx.user.id, ctx.user.role);
   const [unread, active] = await Promise.all([
     db.notification.count({ where: { userId: ctx.user.id, readAt: null, ...notificationScopeWhere(notificationScope(facts, "kurum")) } }),

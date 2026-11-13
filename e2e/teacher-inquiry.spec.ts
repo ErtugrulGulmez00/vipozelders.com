@@ -22,7 +22,12 @@ async function sql(text: string) {
   }
 }
 
+// Testin açtığı Pi Koç hesabı (öğretmenin önceden yoksa) ve eklenen öğrenci silinir
 async function cleanup() {
+  await sql(`DELETE FROM "CenterStudent" WHERE id IN (SELECT "centerStudentId" FROM "TeacherInquiry" WHERE "teacherId" = ${TEACHER} AND "requesterId" = ${PARENT} AND "centerStudentId" IS NOT NULL)`);
+  // Demo öğretmenin Pi Koç hesabı yoktur; talep kabulünde açılan hesap silinir
+  await sql(`DELETE FROM "Center" WHERE kind = 'COACH' AND id IN (SELECT "centerId" FROM "CenterMember" WHERE "userId" = ${TEACHER} AND role = 'OWNER')`);
+  await sql(`DELETE FROM "Notification" WHERE type LIKE 'center.koc_%' AND "userId" = ${TEACHER}`);
   await sql(`DELETE FROM "TeacherInquiry" WHERE "teacherId" = ${TEACHER} AND "requesterId" = ${PARENT}`);
   await sql(`DELETE FROM "Notification" WHERE type LIKE 'inquiry.%' AND "userId" IN (${TEACHER}, ${PARENT})`);
   await sql(`DELETE FROM "LoginAttempt" WHERE identifier = 'inquiry:' || ${PARENT}`);
@@ -61,4 +66,9 @@ test("veli ders talebi gönderir, öğretmen kabul edip telefonu görür", async
   await page.getByRole("button", { name: "Kabul et" }).first().click();
   await expect(page.getByText("Kabul ettiniz").first()).toBeVisible();
   await expect(page.locator("a[href='tel:05321112233']")).toBeVisible();
+  // Adım 5: öğrenci öğretmenin Pi Koç'una eklendi
+  const open = page.getByRole("link", { name: "Pi Koç'ta aç" });
+  await expect(open).toBeVisible();
+  await open.click();
+  await expect(page.getByRole("heading", { name: /^Deniz / })).toBeVisible();
 });

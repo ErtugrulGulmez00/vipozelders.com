@@ -43,7 +43,8 @@ export const instant = false;
 export default async function CenterLayout({ children }: { children: React.ReactNode }) {
   const ctx = await requireCenter();
   // Pi Koç hesabı kendi panelini kullanır
-  if (ctx.center.kind === "COACH") redirect("/koc");
+  // Hem kurum hem Pi Koç üyesi olan kişi: kurum hesabına geçilir (seçim çerezi yönlendirmede değişir)
+  if (ctx.center.kind === "COACH") redirect(ctx.memberships.some((m) => !m.coach) ? "/panel-sec?taraf=kurum" : "/koc");
   const facts = await sideFacts(ctx.user.id, ctx.user.role);
   const [unread, newLeads, openQuestions, settings] = await Promise.all([
     db.notification.count({ where: { userId: ctx.user.id, readAt: null, ...notificationScopeWhere(notificationScope(facts, "kurum")) } }),

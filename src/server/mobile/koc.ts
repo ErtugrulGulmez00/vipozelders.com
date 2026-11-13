@@ -158,7 +158,7 @@ export async function mobileCoachContext(user: MobileAccount): Promise<CenterCon
     center,
     access: centerAccess(center),
     coach,
-    memberships: [{ centerId: center.id, centerName: center.name, role }],
+    memberships: [{ centerId: center.id, centerName: center.name, role, coach: true }],
     can: (permission) => centerCan(role, permission),
   };
 }
