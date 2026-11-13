@@ -1,4 +1,4 @@
-import { BookMarked, BookOpenCheck, CalendarHeart, Crown, FileUp, LayoutDashboard, Map as MapIcon, Send, Sparkles, UserCog, Users, Wallet } from "lucide-react";
+import { BookMarked, BookOpenCheck, CalendarHeart, Crown, FileUp, LayoutDashboard, Map as MapIcon, School, Send, Sparkles, University, UserCog, Users, Wallet } from "lucide-react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { CoachPlanBanner } from "@/components/koc/plan-banner";
@@ -38,6 +38,8 @@ export default async function KocLayout({ children }: { children: React.ReactNod
     { href: "/koc/denemeler", label: "Denemeler", icon: <BookOpenCheck /> },
     { href: "/koc/kaynaklar", label: "Kaynak kütüphanesi", icon: <BookMarked /> },
     // Ücretsiz pakette kilitli bölümler gizlenmez, kilit simgesiyle görünür
+    { href: "/koc/lgs-tercih", label: "LGS tercih robotu", icon: <School />, locked: !coachFeatureOpen(ctx.coach, "lgsRobot") },
+    { href: "/koc/yks-tercih", label: "YKS tercih robotu", icon: <University />, locked: !coachFeatureOpen(ctx.coach, "yksRobot") },
     { href: "/koc/tahsilat", label: "Tahsilat", icon: <Wallet />, locked: !coachFeatureOpen(ctx.coach, "fees") },
     { href: "/koc/abonelik", label: "Paketler", icon: <Crown />, accent: true, tag: freePlan ? "Yükselt" : undefined },
     { href: "/koc/hesap", label: "Hesap", icon: <UserCog />, also: ["/koc/bildirimler"] },
@@ -46,7 +48,7 @@ export default async function KocLayout({ children }: { children: React.ReactNod
       ? [
           { href: "/koc/abonelik#pdf", label: "PDF'ten deneme aktarımı", icon: <FileUp />, locked: true, group: "Ücretli pakette" },
           { href: "/koc/abonelik#konu", label: "Konu eksik haritası", icon: <MapIcon />, locked: true, group: "Ücretli pakette" },
-          { href: "/koc/abonelik#yz", label: "Yapay zekâ taslakları", icon: <Sparkles />, locked: true, group: "Ücretli pakette" },
+          { href: "/koc/abonelik#yz", label: "Yapay zekâ asistanı", icon: <Sparkles />, locked: true, group: "Ücretli pakette" },
           { href: "/koc/abonelik#rapor", label: "Otomatik veli raporu", icon: <Send />, locked: true, group: "Ücretli pakette" },
         ]
       : []),

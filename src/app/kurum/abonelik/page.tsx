@@ -20,7 +20,7 @@ import { getSiteSettings } from "@/server/site";
 import { CoachPlanCompare } from "@/components/koc/locked-feature";
 
 // Pi Koç menüsündeki kilitli maddeler bu bölümlere iner
-const ANCHORS: Record<string, string> = { pdfImport: "pdf", topicAnalysis: "konu", ai: "yz", autoReport: "rapor" };
+const ANCHORS: Record<string, string> = { pdfImport: "pdf", topicAnalysis: "konu", ai: "yz", lgsRobot: "lgs", yksRobot: "yks", autoReport: "rapor" };
 
 export const metadata: Metadata = { title: "Abonelik" };
 

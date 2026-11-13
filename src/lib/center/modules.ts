@@ -12,6 +12,9 @@ export const OPTIONAL_MODULES = [
   { key: "denemeler", label: "Denemeler", hint: "Deneme sınavları, optik, karne, kelebek" },
   { key: "muhasebe", label: "Muhasebe", hint: "Ödeme planı, tahsilat, makbuz, gider" },
   { key: "on-kayit", label: "Ön kayıtlar", hint: "Vitrin formundan gelen adaylar" },
+  { key: "lgs-tercih", label: "LGS tercih robotu", hint: "Puan / yüzdelik dilime göre lise önerisi ve öğrencinin tercih listesi" },
+  { key: "yks-tercih", label: "YKS tercih robotu", hint: "Puan / başarı sırasına göre program önerisi ve öğrencinin tercih listesi" },
+  { key: "asistan", label: "Yapay zekâ asistanı", hint: "Öğrenci sayfasında haftalık yorum, özet ve yol haritası önerisi (yalnızca öğretmen görür)" },
 ] as const;
 
 export type CenterModuleKey = (typeof OPTIONAL_MODULES)[number]["key"];

@@ -82,12 +82,14 @@ export function coachPlanLabel(plan: CoachPlan): string {
 // ——— Ücretli özellikler ———
 // Ücretsiz pakette gizlenmez, kilitli gösterilir. Kurum hesaplarında (plan null) hepsi açıktır.
 
-export type CoachFeature = "pdfImport" | "topicAnalysis" | "ai" | "autoReport" | "fees" | "featured";
+export type CoachFeature = "pdfImport" | "topicAnalysis" | "ai" | "lgsRobot" | "yksRobot" | "autoReport" | "fees" | "featured";
 
 export const COACH_FEATURES: Record<CoachFeature, { title: string; text: string }> = {
   pdfImport: { title: "PDF'ten deneme aktarımı", text: "Yayınevinin sonuç PDF'ini yükleyin; bütün öğrencilerinizin netleri, cevapları ve konu analizi tek seferde girilsin." },
   topicAnalysis: { title: "Konu eksik haritası", text: "Kaynak ve denemelerden konu konu başarı; zayıf konular renkli görünür, tek tıkla programa eklenir." },
-  ai: { title: "Yapay zekâ taslakları", text: "Haftalık veli değerlendirmesini yapay zekâ verilerden yazar; siz okuyup düzeltirsiniz." },
+  ai: { title: "Yapay zekâ asistanı", text: "Öğrencinin haftasına bakıp size yorum, özet ve yol haritası önerir; veli değerlendirmesinin taslağını yazar." },
+  lgsRobot: { title: "LGS tercih robotu", text: "Puan ya da yüzdelik dilime göre güvenli, uygun ve riskli liseler; öğrencinin 5 tercihlik listesi." },
+  yksRobot: { title: "YKS tercih robotu", text: "Puan türü ve başarı sırasına göre programlar; öğrencinin 24 tercihlik listesi." },
   autoReport: { title: "Otomatik haftalık veli raporu", text: "Rapor her pazar akşamı sizin adınızla velilere kendiliğinden gider; altında Pi Koç yazısı olmaz." },
   fees: { title: "Tahsilat takibi", text: "Öğrenci başına aylık ücret, kim ödedi, kim bekliyor ve son 6 ayın tahsilatı." },
   featured: { title: "Vitrinde öne çıkma", text: "Özel ders vitrininde üst sıralarda ve “Öne çıkan” etiketiyle görünürsünüz." },

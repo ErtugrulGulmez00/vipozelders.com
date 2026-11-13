@@ -17,7 +17,9 @@ import {
   NotebookPen,
   MessagesSquare,
   Repeat,
+  School,
   Settings,
+  University,
   UserPlus,
   UserRound,
   Users,
@@ -62,6 +64,8 @@ export default async function CenterLayout({ children }: { children: React.React
     { group: "Öğrenci takibi", href: "/kurum/denemeler", label: "Denemeler", icon: <BookOpenCheck />, permission: "exams.manage" },
     { group: "Öğrenci takibi", href: "/kurum/odevler", label: "Ödevler", icon: <NotebookPen />, permission: "homework.manage" },
     { group: "Öğrenci takibi", href: "/kurum/sorular", label: "Öğrenci soruları", icon: <Camera />, permission: "questions.answer", badge: openQuestions || undefined },
+    { group: "Rehberlik", href: "/kurum/lgs-tercih", label: "LGS tercih robotu", icon: <School />, permission: "students.view" },
+    { group: "Rehberlik", href: "/kurum/yks-tercih", label: "YKS tercih robotu", icon: <University />, permission: "students.view" },
     { group: "Etüt ve salon", href: "/kurum/etutler", label: "Etüt planı", icon: <CalendarClock />, permission: "etud.manage" },
     { group: "Etüt ve salon", href: "/kurum/calisma-salonu", label: "Çalışma salonu", icon: <Library />, permission: "attendance.take" },
     // Dershane bölümleri: yalnızca türü Dershane olan kurumda

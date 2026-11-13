@@ -1,4 +1,7 @@
 import { ExternalLink, Pencil, Receipt } from "lucide-react";
+import { moduleEnabled } from "@/lib/center/modules";
+import { StudentAssistant } from "@/components/center/student-assistant";
+import { aiConfigured } from "@/server/ai";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -53,6 +56,7 @@ export default async function StudentCardPage({ params, searchParams }: PageProp
   if (!student) notFound();
   const today = toLocalDateString(new Date());
   const canFinance = ctx.can("finance.view");
+  const assistantOn = moduleEnabled(ctx.center, "asistan");
   const tabs = [
     { key: "genel", label: "Genel", href: `/kurum/ogrenciler/${id}` },
     { key: "devam", label: "Devam ve ödev", href: `/kurum/ogrenciler/${id}?sekme=devam` },
@@ -60,6 +64,7 @@ export default async function StudentCardPage({ params, searchParams }: PageProp
     { key: "program", label: "Program ve kaynaklar", href: `/kurum/ogrenciler/${id}?sekme=program` },
     ...(ctx.can("coaching.manage") ? [{ key: "kocluk", label: "Koçluk", href: `/kurum/ogrenciler/${id}?sekme=kocluk` }] : []),
     ...(canFinance ? [{ key: "odemeler", label: "Ödemeler", href: `/kurum/ogrenciler/${id}?sekme=odemeler` }] : []),
+    ...(assistantOn ? [{ key: "asistan", label: "Yapay zekâ asistanı", href: `/kurum/ogrenciler/${id}?sekme=asistan` }] : []),
   ];
   const [attendanceStats, balance] = await Promise.all([
     // Etüt merkezinde devam etüt katılımından, dershanede sınıf yoklamasından hesaplanır
@@ -117,6 +122,8 @@ export default async function StudentCardPage({ params, searchParams }: PageProp
         <CoachingView centerId={centerId} studentId={id} mode="staff" canWrite memberId={ctx.member.id} isManager={ctx.member.role === "OWNER" || ctx.member.role === "MANAGER"} />
       ) : tab === "program" ? (
         <StudyView centerId={centerId} studentId={id} week={typeof sp.hafta === "string" ? sp.hafta : undefined} baseHref={`/kurum/ogrenciler/${id}?sekme=program`} mode="staff" canEdit={ctx.can("resources.manage")} />
+      ) : tab === "asistan" && assistantOn ? (
+        <StudentAssistant studentId={id} aiEnabled={aiConfigured()} freeLeft={null} />
       ) : tab === "odemeler" && canFinance ? (
         <PaymentsTab centerId={centerId} studentId={id} today={today} canEdit={ctx.can("finance.edit")} academicYear={ctx.center.academicYear} />
       ) : (

@@ -80,6 +80,10 @@ test("Pi Koç sayfası ücretsiz paketi ve fiyatları gösterir; koç kendi kayd
   await expect(page.locator("[data-locked='fees']")).toBeVisible();
   await page.goto("/koc/hesap");
   await expect(page.locator("[data-locked='autoReport']")).toBeVisible();
+  for (const [path, key] of [["/koc/lgs-tercih", "lgsRobot"], ["/koc/yks-tercih", "yksRobot"]]) {
+    await page.goto(path);
+    await expect(page.locator(`[data-locked='${key}']`)).toBeVisible();
+  }
 
   // Aynı e-postayla ikinci kayıt reddedilir
   await page.context().clearCookies();

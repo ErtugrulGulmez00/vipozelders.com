@@ -24,6 +24,9 @@ import { GoalCard } from "@/components/koc/goal-card";
 import { DeleteStudyButton, StudyEntryForm } from "@/components/koc/koc-tools";
 import { formatMinutes, studyStats } from "@/server/koc-extra";
 import { TopicMapCard } from "@/components/koc/topic-map";
+import { StudentAssistant } from "@/components/center/student-assistant";
+import { aiConfigured } from "@/server/ai";
+import { freeAiLeft } from "@/server/koc-report";
 import { LockedFeature } from "@/components/koc/locked-feature";
 import { coachFeatureOpen } from "@/lib/pi-koc";
 import { planTemplates, resourceForecast } from "@/server/koc-plan";
@@ -53,6 +56,7 @@ export default async function KocStudentPage({ params, searchParams }: PageProps
     { key: "gorusmeler", label: "Görüşmeler", href: `${base}?sekme=gorusmeler` },
     { key: "sorular", label: "Soru ve çalışma", href: `${base}?sekme=sorular` },
     { key: "denemeler", label: "Denemeler", href: `${base}?sekme=denemeler` },
+    { key: "asistan", label: "Yapay zekâ asistanı", href: `${base}?sekme=asistan` },
     { key: "bilgiler", label: "Bilgiler", href: `${base}?sekme=bilgiler` },
   ];
   const name = `${student.firstName} ${student.lastName}`;
@@ -114,6 +118,8 @@ export default async function KocStudentPage({ params, searchParams }: PageProps
         <QuestionsTab centerId={centerId} studentId={id} today={today} />
       ) : tab === "denemeler" ? (
         <ExamsTab centerId={centerId} studentId={id} today={today} />
+      ) : tab === "asistan" ? (
+        <StudentAssistant studentId={id} aiEnabled={aiConfigured()} freeLeft={await freeAiLeft(ctx)} />
       ) : tab === "bilgiler" ? (
         <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-start">
           <Card>

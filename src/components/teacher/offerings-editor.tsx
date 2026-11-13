@@ -104,7 +104,7 @@ function OfferingForm({
         </Field>
       </div>
       <div className="grid gap-3 sm:grid-cols-[180px_1fr]">
-        <Field label="Saatlik ücret (₺, KDV dahil)">
+        <Field label={commissionBps > 0 ? "Saatlik ücret (₺, KDV dahil)" : "Saatlik ücret (₺)"} hint={commissionBps > 0 ? undefined : "Profilde veliye bilgi olarak görünür; ücreti veliyle siz konuşursunuz."}>
           <Input name="hourlyPrice" type="number" min={100} max={20000} step={10} defaultValue={initial ? initial.hourlyPrice / 100 : ""} onChange={(e) => setPrice(Number(e.target.value))} required />
         </Field>
         <fieldset>

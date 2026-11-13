@@ -22,9 +22,9 @@ function cellText(value: ExcelJS.CellValue): string {
   return String(value);
 }
 
-export async function readSpreadsheet(file: File): Promise<string[][]> {
+export async function readSpreadsheet(file: File, maxBytes = MAX_BYTES): Promise<string[][]> {
   if (!file || file.size === 0) throw new CenterError("Dosya seçin.");
-  if (file.size > MAX_BYTES) throw new CenterError("Dosya en fazla 5 MB olabilir.");
+  if (file.size > maxBytes) throw new CenterError(`Dosya en fazla ${Math.round(maxBytes / 1024 / 1024)} MB olabilir.`);
   const bytes = Buffer.from(await file.arrayBuffer());
   const isZip = bytes[0] === 0x50 && bytes[1] === 0x4b;
   if (!isZip) {

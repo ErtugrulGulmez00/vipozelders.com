@@ -225,11 +225,11 @@ async function GroupsSection({ teacherId }: { teacherId: string }) {
 }
 
 async function OfferingsSection({ teacherId }: { teacherId: string }) {
-  const [data, catalog] = await Promise.all([loadTeacherEditorData(teacherId), getCatalog()]);
+  const [data, catalog, settings] = await Promise.all([loadTeacherEditorData(teacherId), getCatalog(), loadSettings()]);
   return (
     <Card>
       <CardBody className="p-6">
-        <OfferingsEditor teacherId={teacherId} catalog={catalog} offerings={data.offerings} commissionBps={data.commissionBps} />
+        <OfferingsEditor teacherId={teacherId} catalog={catalog} offerings={data.offerings} commissionBps={settings.lessonBookingEnabled ? data.commissionBps : 0} />
       </CardBody>
     </Card>
   );

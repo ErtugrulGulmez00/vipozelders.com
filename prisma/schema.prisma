@@ -1143,6 +1143,7 @@ model Center {
   examAliases          CenterExamAlias[]
   questionLogs         CenterQuestionLog[]
   weeklyReports        CenterWeeklyReport[]
+  placementLists       CenterPlacementList[]
   planTemplates        CenterPlanTemplate[]
   studySessions        CenterStudySession[]
   coachPayments        CenterCoachPayment[]
@@ -1245,6 +1246,7 @@ model CenterStudent {
   examAliases  CenterExamAlias[]
   questionLogs CenterQuestionLog[]
   weeklyReports CenterWeeklyReport[]
+  placementLists CenterPlacementList[]
   goals        CenterStudentGoal[]
   studySessions CenterStudySession[]
   coachPayments CenterCoachPayment[]
@@ -2775,4 +2777,68 @@ model CoachPromoCode {
   revokedAt        DateTime?
 
   @@index([redeemedByUserId])
+}
+
+// ——— Tercih robotu (LGS / YKS) ———
+// Program / okul verisi yönetimden Excel/CSV ile yüklenir (YÖK Atlas, MEB). Yıl bazında tutulur; robot en son yılı kullanır.
+
+enum PlacementExam {
+  LGS
+  YKS
+}
+
+model PlacementProgram {
+  id          String        @id @default(cuid())
+  exam        PlacementExam
+  year        Int
+  /// YÖK program kodu / MEB kurum kodu (yoksa ad + il + tür üzerinden üretilir)
+  code        String
+  /// Program adı (YKS) ya da okul adı (LGS)
+  name        String
+  /// Üniversite (YKS); LGS'de boş
+  institution String?
+  faculty     String?
+  city        String
+  district    String?
+  /// YKS: SAY / EA / SÖZ / DİL / TYT · LGS: okul türü (Fen Lisesi, Anadolu Lisesi…)
+  scoreType   String
+  /// YKS: Devlet / Vakıf / KKTC / Yurt dışı · LGS: boş
+  kind        String?
+  /// Burs, öğretim türü, yabancı dil, pansiyon gibi ek bilgiler
+  details     String?
+  quota       Int?
+  placed      Int?
+  minScore    Float?
+  maxScore    Float?
+  /// YKS taban başarı sırası
+  minRank     Int?
+  /// LGS yüzdelik dilim (ör. 0,35)
+  percentile  Float?
+  createdAt   DateTime      @default(now())
+
+  @@unique([exam, year, code])
+  @@index([exam, year, scoreType])
+  @@index([exam, year, city])
+}
+
+/// Öğrencinin tercih listesi: sınav başına bir liste, sıralı program kimlikleri
+model CenterPlacementList {
+  id         String        @id @default(cuid())
+  centerId   String
+  center     Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  studentId  String
+  student    CenterStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  exam       PlacementExam
+  programIds String[]
+  /// Robota girilen puan bilgileri (son arama)
+  score      Float?
+  rank       Int?
+  percentile Float?
+  scoreType  String?
+  note       String?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@unique([studentId, exam])
+  @@index([centerId])
 }
