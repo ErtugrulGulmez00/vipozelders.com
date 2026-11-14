@@ -5,6 +5,7 @@ import { logoutAction } from "@/actions/auth";
 import { MobileNav, SideNav, type PanelNavItem } from "@/components/panel/nav-links";
 import { PiMark } from "@/components/site/pi-mark";
 import type { SideSwitch } from "@/lib/sides";
+import { SwitchLink } from "@/components/panel/switch-link";
 import { initials } from "@/lib/text";
 import type { SessionUser } from "@/server/auth/current-user";
 
@@ -105,10 +106,10 @@ export function KocShell({
           )}
           <div className="flex items-center gap-1">
             {switchLinks.map((link) => (
-              <Link key={link.href} href={link.href} aria-label={link.label} className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-50">
+              <SwitchLink key={link.href} href={link.href} aria-label={link.label} className="inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-50">
                 <ArrowLeftRight className="size-4" aria-hidden /> <span className="sm:hidden">{link.short}</span>
                 <span className="hidden sm:inline">{link.label}</span>
-              </Link>
+              </SwitchLink>
             ))}
             <Link href={`${home}/bildirimler`} className="relative inline-flex size-10 items-center justify-center rounded-xl text-slate-600 hover:bg-slate-100" aria-label={unread ? `Bildirimler (${unread} okunmamış)` : "Bildirimler"}>
               <Bell className="size-5" aria-hidden />

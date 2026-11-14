@@ -31,27 +31,33 @@ export default async function KocLayout({ children }: { children: React.ReactNod
   const now = new Date();
   const overLimitDaysLeft = ctx.center.overLimitSince ? Math.max(0, Math.ceil((ctx.center.overLimitSince.getTime() + OVER_LIMIT_GRACE_DAYS * 86_400_000 - now.getTime()) / 86_400_000)) : null;
   const nextTier = freePlan ? (parseCoachTiers((await getSiteSettings()).piKocTiers)[0] ?? null) : null;
+  // Açık özellikler menüde; kilitli olanların hepsi altta tek grupta (ücretsiz pakette tıklayınca tanıtım/paketler)
+  const tools: PanelNavItem[] = [
+    { href: "/koc/lgs-tercih", label: "LGS tercih robotu", icon: <School />, locked: !coachFeatureOpen(ctx.coach, "lgsRobot") },
+    { href: "/koc/yks-tercih", label: "YKS tercih robotu", icon: <University />, locked: !coachFeatureOpen(ctx.coach, "yksRobot") },
+    { href: "/koc/tahsilat", label: "Tahsilat", icon: <Wallet />, locked: !coachFeatureOpen(ctx.coach, "fees") },
+  ];
+  const locked: PanelNavItem[] = [
+    ...tools.filter((t) => t.locked),
+    ...(freePlan
+      ? [
+          { href: "/koc/abonelik#pdf", label: "PDF'ten deneme", icon: <FileUp />, locked: true },
+          { href: "/koc/abonelik#konu", label: "Konu eksik haritası", icon: <MapIcon />, locked: true },
+          { href: "/koc/abonelik#yz", label: "Yapay zekâ asistanı", icon: <Sparkles />, locked: true },
+          { href: "/koc/abonelik#rapor", label: "Otomatik veli raporu", icon: <Send />, locked: true },
+        ]
+      : []),
+  ];
   const nav: PanelNavItem[] = [
     { href: "/koc", label: "Genel bakış", icon: <LayoutDashboard />, exact: true },
     { href: "/koc/ogrenciler", label: "Öğrencilerim", icon: <Users /> },
     { href: "/koc/hafta", label: "Haftalık görüşmeler", icon: <CalendarHeart /> },
     { href: "/koc/denemeler", label: "Denemeler", icon: <BookOpenCheck /> },
     { href: "/koc/kaynaklar", label: "Kaynak kütüphanesi", icon: <BookMarked /> },
-    // Ücretsiz pakette kilitli bölümler gizlenmez, kilit simgesiyle görünür
-    { href: "/koc/lgs-tercih", label: "LGS tercih robotu", icon: <School />, locked: !coachFeatureOpen(ctx.coach, "lgsRobot") },
-    { href: "/koc/yks-tercih", label: "YKS tercih robotu", icon: <University />, locked: !coachFeatureOpen(ctx.coach, "yksRobot") },
-    { href: "/koc/tahsilat", label: "Tahsilat", icon: <Wallet />, locked: !coachFeatureOpen(ctx.coach, "fees") },
+    ...tools.filter((t) => !t.locked),
     { href: "/koc/abonelik", label: "Paketler", icon: <Crown />, accent: true, tag: freePlan ? "Yükselt" : undefined },
     { href: "/koc/hesap", label: "Hesap", icon: <UserCog />, also: ["/koc/bildirimler"] },
-    // Ücretsiz pakette kapalı özellikler: tıklayınca paketler sayfası
-    ...(freePlan
-      ? [
-          { href: "/koc/abonelik#pdf", label: "PDF'ten deneme aktarımı", icon: <FileUp />, locked: true, group: "Ücretli pakette" },
-          { href: "/koc/abonelik#konu", label: "Konu eksik haritası", icon: <MapIcon />, locked: true, group: "Ücretli pakette" },
-          { href: "/koc/abonelik#yz", label: "Yapay zekâ asistanı", icon: <Sparkles />, locked: true, group: "Ücretli pakette" },
-          { href: "/koc/abonelik#rapor", label: "Otomatik veli raporu", icon: <Send />, locked: true, group: "Ücretli pakette" },
-        ]
-      : []),
+    ...locked.map((item) => ({ ...item, group: freePlan ? "Ücretli pakette" : "Üst pakette" })),
   ];
   return (
     <KocShell user={ctx.user} nav={nav} switchLinks={sideSwitches(facts, "koc")} unread={unread} usage={{ active, limit: ctx.center.studentLimit }} banner={ctx.coach ? <CoachPlanBanner plan={ctx.coach} active={active} overLimitDaysLeft={overLimitDaysLeft} /> : null} upgrade={freePlan ? <SidebarUpgrade next={nextTier} /> : undefined}>

@@ -100,19 +100,33 @@ export function parseNotificationScope(value: unknown): NotificationScope {
 /** Panelin "diğer tarafa geç" bağlantıları. */
 export type SideSwitch = { href: string; label: string; short: string };
 
+/**
+ * Hem kurum personeli hem Pi Koç koçu olan kişide seçili hesap çerezi değişmeli: geçiş /panel-sec rotasından yapılır
+ * (doğrudan /koc ya da /kurum'a gidilirse düzen yönlendirir; sayfa içi gezinmede bu yönlendirme boş ekran bırakıyordu).
+ */
+export function staffPanelHref(f: SideFacts, side: "kurum" | "koc"): string {
+  const home = side === "koc" ? "/koc" : "/kurum";
+  return f.staff && f.kocStaff ? `/panel-sec?taraf=${side}` : home;
+}
+
+/** Tam sayfa yüklemesiyle açılması gereken adres (rota, sayfa değil) */
+export function needsFullLoad(href: string): boolean {
+  return href.startsWith("/panel-sec");
+}
+
 export function sideSwitches(f: SideFacts, current: "teacher" | "student" | "center" | "portal" | "koc"): SideSwitch[] {
   const links: SideSwitch[] = [];
   const toKoc = () => {
     const home = kocHome(f);
-    if (home) links.push({ href: home, label: "Pi Koç'a geç", short: "Pi Koç" });
+    if (home) links.push({ href: home === "/koc" ? staffPanelHref(f, "koc") : home, label: "Pi Koç'a geç", short: "Pi Koç" });
   };
   if (current === "teacher") {
-    if (f.staff) links.push({ href: "/kurum", label: "Kurum paneline geç", short: "Kurum" });
+    if (f.staff) links.push({ href: staffPanelHref(f, "kurum"), label: "Kurum paneline geç", short: "Kurum" });
     toKoc();
   }
   if (current === "student") {
     if (f.portal) links.push({ href: "/hesabim/kurum", label: "Kurum tarafına geç", short: "Kurum" });
-    if (f.staff) links.push({ href: "/kurum", label: "Kurum paneline geç", short: "Kurum paneli" });
+    if (f.staff) links.push({ href: staffPanelHref(f, "kurum"), label: "Kurum paneline geç", short: "Kurum paneli" });
     toKoc();
   }
   if (current === "center") {
@@ -125,7 +139,7 @@ export function sideSwitches(f: SideFacts, current: "teacher" | "student" | "cen
   // Kurumun davet ettiği veliye özel dersi biz tanıtmayız: geçiş yalnızca özel derste işlemi olana görünür
   if (current === "portal") {
     if (f.privateActivity) links.push({ href: "/hesabim", label: "Özel ders tarafına geç", short: "Özel ders" });
-    if (f.staff) links.push({ href: "/kurum", label: "Kurum paneline geç", short: "Kurum paneli" });
+    if (f.staff) links.push({ href: staffPanelHref(f, "kurum"), label: "Kurum paneline geç", short: "Kurum paneli" });
     toKoc();
   }
   // Pi Koç tarafı: koç olan özel ders öğretmeni ve kurum tarafı da olan kişi
@@ -133,7 +147,7 @@ export function sideSwitches(f: SideFacts, current: "teacher" | "student" | "cen
     if (f.role === "TEACHER") links.push({ href: "/ogretmen-paneli", label: "Özel ders paneline geç", short: "Özel ders" });
     if (f.role === "STUDENT" && f.privateActivity) links.push({ href: "/hesabim", label: "Özel ders tarafına geç", short: "Özel ders" });
     const kurum = kurumHome(f);
-    if (kurum) links.push({ href: kurum, label: "Kurum tarafına geç", short: "Kurum" });
+    if (kurum) links.push({ href: kurum === "/kurum" ? staffPanelHref(f, "kurum") : kurum, label: "Kurum tarafına geç", short: "Kurum" });
   }
   return links;
 }

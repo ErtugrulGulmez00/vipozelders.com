@@ -1,7 +1,6 @@
 import { Inbox, MessageCircle, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import { connection } from "next/server";
-import Link from "next/link";
 import { AddToCoachButton, InquiryActions } from "@/components/panel/inquiry-actions";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/primitives";
 import { formatCompact } from "@/lib/dates";
@@ -65,9 +64,9 @@ export default async function TeacherInquiriesPage() {
                   q.centerStudentId ? (
                     <p className="mt-3 text-sm text-slate-600">
                       Öğrenci Pi Koç&apos;unuzda: program, ödev, deneme ve veli raporu oradan.{" "}
-                      <Link href={`/panel-sec?taraf=koc&next=${encodeURIComponent(`/koc/ogrenciler/${q.centerStudentId}`)}`} className="font-semibold text-brand-700 hover:underline">
+                      <a href={`/panel-sec?taraf=koc&next=${encodeURIComponent(`/koc/ogrenciler/${q.centerStudentId}`)}`} className="font-semibold text-brand-700 hover:underline">
                         Pi Koç&apos;ta aç
-                      </Link>
+                      </a>
                     </p>
                   ) : (
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">

@@ -34,6 +34,7 @@ export function premiumFeatures() {
   ];
 }
 
+// Öğretmen panelinden Pi Koç'a bağlantılar /panel-sec üzerinden ve tam yüklemeyle (seçili hesap çerezi değişir)
 /** Öğretmen özetindeki koyu, dikkat çeken yükseltme kartı (ücretsiz pakette). */
 export function UpgradeShowcase({ next, used, limit, meetingMinutes, monthlyHours }: { next: CoachTier | null; used: number; limit: number; meetingMinutes: number; monthlyHours: number }) {
   const ratio = Math.min(1, used / Math.max(limit, 1));
@@ -95,15 +96,15 @@ export function UpgradeShowcase({ next, used, limit, meetingMinutes, monthlyHour
           <p className="font-bold">Ücretli paketlerle sınırları kaldırın</p>
         )}
         <div className="flex flex-wrap gap-2">
-          <Link href="/koc/abonelik" className="inline-flex min-h-11 items-center gap-2 rounded-full bg-gold-400 px-5 font-bold text-ink-950 shadow hover:bg-gold-300">
+          <a href="/panel-sec?taraf=koc&next=/koc/abonelik" className="inline-flex min-h-11 items-center gap-2 rounded-full bg-gold-400 px-5 font-bold text-ink-950 shadow hover:bg-gold-300">
             <Crown className="size-4" aria-hidden /> Paketleri gör
-          </Link>
-          <Link href="/koc" className="inline-flex min-h-11 items-center rounded-full bg-white/15 px-5 font-semibold text-white ring-1 ring-white/30 hover:bg-white/25">
+          </a>
+          <a href="/panel-sec?taraf=koc" className="inline-flex min-h-11 items-center rounded-full bg-white/15 px-5 font-semibold text-white ring-1 ring-white/30 hover:bg-white/25">
             Pi Koç&apos;a git
-          </Link>
-          <Link href="/panel-sec?taraf=koc&next=/koc/abonelik" className="inline-flex min-h-11 items-center px-2 text-sm font-semibold text-white/90 underline-offset-4 hover:underline">
+          </a>
+          <a href="/panel-sec?taraf=koc&next=/koc/abonelik" className="inline-flex min-h-11 items-center px-2 text-sm font-semibold text-white/90 underline-offset-4 hover:underline">
             Deneme kodunuz var mı?
-          </Link>
+          </a>
         </div>
       </div>
     </section>

@@ -6,6 +6,7 @@ import { logoutAction } from "@/actions/auth";
 import { Logo } from "@/components/site/logo";
 import { ROLE_LABEL } from "@/lib/labels";
 import type { SideSwitch } from "@/lib/sides";
+import { SwitchLink } from "@/components/panel/switch-link";
 import { initials } from "@/lib/text";
 import type { SessionUser } from "@/server/auth/current-user";
 import { MobileNav, SideNav, type PanelNavItem } from "./nav-links";
@@ -77,10 +78,10 @@ export function PanelShell({
             {headerActions}
             {switchLinks.map((link) => (
               // Üst çubukta her ekranda görünür; telefonda kısa ad
-              <Link key={link.href} href={link.href} aria-label={link.label} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-2 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-50 sm:gap-1.5 sm:px-3">
+              <SwitchLink key={link.href} href={link.href} aria-label={link.label} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-2 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-50 sm:gap-1.5 sm:px-3">
                 <ArrowLeftRight className="size-4" aria-hidden /> <span className="sm:hidden">{link.short}</span>
                 <span className="hidden sm:inline">{link.label}</span>
-              </Link>
+              </SwitchLink>
             ))}
             {hideSiteLink ? null : (
               <Link href="/" className="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm text-slate-600 hover:bg-slate-100 sm:px-3">
