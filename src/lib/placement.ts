@@ -56,7 +56,7 @@ alias("city", "İl", "Şehir", "İl Adı", "Ili");
 alias("district", "İlçe", "İlçe Adı");
 alias("scoreType", "Puan Türü", "Puan Tipi", "Okul Türü", "Okul Tipi", "Kurum Türü", "Lise Türü");
 alias("kind", "Üniversite Türü", "Üniversite Tipi", "Devlet/Vakıf", "Devlet / Vakıf", "Kurum Tipi");
-alias("detail", "Burs", "Burs Oranı", "Öğretim Türü", "Öğrenim Türü", "Yabancı Dil", "Dil", "Pansiyon", "Açıklama", "Özel Koşul", "Hazırlık", "Öğrenim Dili");
+alias("detail", "Yabancı Dil / Program", "Burs", "Burs Oranı", "Öğretim Türü", "Öğrenim Türü", "Yabancı Dil", "Dil", "Pansiyon", "Açıklama", "Özel Koşul", "Hazırlık", "Öğrenim Dili");
 alias("quota", "Kontenjan", "Genel Kontenjan", "Kont.", "Toplam Kontenjan");
 alias("placed", "Yerleşen", "Yerleşen Sayısı", "Yerleşen Aday");
 alias("minScore", "Taban Puan", "Taban Puanı", "Taban", "En Küçük Puan", "En Düşük Puan", "Min Puan", "Taban Puan (LGS)");
