@@ -1,4 +1,4 @@
-import { CalendarDays, CheckCircle2, Circle, Clock, GraduationCap, Inbox, Lock, Star, Wallet } from "lucide-react";
+import { CalendarDays, CheckCircle2, Circle, Clock, GraduationCap, Inbox, Star, Wallet } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
@@ -10,15 +10,16 @@ import { Alert, Badge, Card, CardBody, CardHeader, EmptyState, PageHeader, StatC
 import { formatDuration } from "@/lib/dates";
 import { TEACHER_STATUS } from "@/lib/labels";
 import { formatMoney } from "@/lib/money";
-import { COACH_FEATURES, coachPlan, coachPlanLabel, parseCoachTiers } from "@/lib/pi-koc";
-import { UpgradeShowcase } from "@/components/koc/premium";
+import { coachPlan, parseCoachTiers } from "@/lib/pi-koc";
+import { CoachPlanOverview } from "@/components/koc/plan-overview";
+import { countRecentAttempts } from "@/server/auth/rate-limit";
+import { coachMeetingStatus, monthStartOf } from "@/server/koc-meeting-usage";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { teacherBalances } from "@/server/ledger";
 import { loadSettings } from "@/server/settings";
 import { pendingInquiryCount } from "@/server/teacher-inquiries";
 import { profileChecklist } from "@/server/teachers";
-import { PlatformRules } from "@/components/teacher/platform-rules";
 
 export const metadata: Metadata = { title: "Öğretmen paneli" };
 
@@ -43,13 +44,17 @@ export default async function TeacherDashboard() {
     pendingInquiryCount(user.id),
     loadSettings(),
   ]);
-  const coachStudents = coachMembership ? await db.centerStudent.count({ where: { centerId: coachMembership.centerId, status: "ACTIVE" } }) : 0;
+  const [coachStudents, meeting, aiUsed] = coachMembership
+    ? await Promise.all([
+        db.centerStudent.count({ where: { centerId: coachMembership.centerId, status: "ACTIVE" } }),
+        coachMeetingStatus(coachMembership.centerId, now),
+        countRecentAttempts(`ai-free:${coachMembership.centerId}`, now.getTime() - monthStartOf(now).getTime()),
+      ])
+    : [0, null, 0];
   // Randevu/ödeme kapalı: ders talepleri ve Pi Koç öne çıkar; bakiye yalnızca geçmişi olana
   const bookingOpen = settings.lessonBookingEnabled;
   const plan = coachMembership ? coachPlan(coachMembership.center, settings.piKocFreeStudents, now) : null;
-  const freeHours = settings.piKocFreeStudents * settings.piKocHoursPerStudent;
   const tiers = parseCoachTiers(settings.piKocTiers);
-  const hasBalance = balances.available + balances.pending > 0;
   const status = TEACHER_STATUS[profile.status];
 
   return (
@@ -63,7 +68,6 @@ export default async function TeacherDashboard() {
         }
         actions={<LinkButton href={`/ogretmen/${profile.slug}`} variant="outline" target="_blank">Profilimi görüntüle</LinkButton>}
       />
-      <PlatformRules collapsible className="mb-6" />
 
       {profile.status !== "PUBLISHED" ? (
         <Card className="mb-6">
@@ -131,50 +135,24 @@ export default async function TeacherDashboard() {
         </Alert>
       ) : null}
 
-      {plan && !plan.paid ? (
-        <UpgradeShowcase next={tiers[0] ?? null} used={coachStudents} limit={plan.studentLimit} meetingMinutes={settings.piKocFreeMeetingMinutes} monthlyHours={freeHours} />
+      {plan && meeting ? (
+        <CoachPlanOverview
+          plan={plan}
+          next={tiers[0] ?? null}
+          usage={{
+            students: coachStudents,
+            studentLimit: plan.studentLimit,
+            meetingUsedMinutes: meeting.usedMinutes,
+            meetingPoolMinutes: meeting.policy.poolMinutes,
+            meetingMaxMinutes: meeting.policy.maxMeetingMinutes,
+            aiLeft: plan.paid ? null : Math.max(0, settings.piKocFreeAiPerMonth - aiUsed),
+            aiPerMonth: settings.piKocFreeAiPerMonth,
+          }}
+          kocHref="/panel-sec?taraf=koc&next=%2Fkoc%3Fgecis%3Dozel"
+          packagesHref="/panel-sec?taraf=koc&next=%2Fkoc%2Fabonelik"
+          codeHref="/panel-sec?taraf=koc&next=%2Fkoc%2Fabonelik%23kod"
+        />
       ) : null}
-      {plan?.paid ? (
-        <Card className="mb-6">
-          <CardHeader
-            title="Pi Koç paketiniz"
-            description={`${coachPlanLabel(plan)} · ${coachStudents} / ${plan.studentLimit} öğrenci`}
-            action={<Badge tone={plan.state === "trial" || plan.state === "promo" ? "amber" : plan.paid ? "green" : "slate"}>{plan.state === "promo" ? "Deneme kodu" : plan.state === "trial" ? "Deneme" : plan.paid ? "Ücretli" : "Ücretsiz"}</Badge>}
-          />
-          <CardBody className="space-y-4">
-            <p className="text-sm text-slate-600">
-              Ders talebini kabul ettiğiniz öğrenci Pi Koç&apos;unuza eklenir: program, ödev, soru ve deneme takibi, görüntülü ders ve veli raporu.
-              {plan.paid ? null : ` Ücretsiz pakette görüntülü ders görüşme başına ${settings.piKocFreeMeetingMinutes} dakika, ayda toplam ${freeHours} saat.`}
-            </p>
-            {plan.paid ? null : (
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Ücretli pakette açılır</p>
-                <ul className="flex flex-wrap gap-2">
-                  {Object.values(COACH_FEATURES).map((f) => (
-                    <li key={f.title} className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                      <Lock className="size-3" aria-hidden /> {f.title}
-                    </li>
-                  ))}
-                  <li className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-                    <Lock className="size-3" aria-hidden /> Süre sınırsız görüntülü ders
-                  </li>
-                </ul>
-              </div>
-            )}
-            <div className="flex flex-wrap gap-2">
-              <LinkButton href="/koc" size="sm">
-                <GraduationCap className="size-4" aria-hidden /> Pi Koç&apos;a git
-              </LinkButton>
-              {plan.paid && plan.state !== "trial" ? null : (
-                <LinkButton href="/koc/abonelik" variant="outline" size="sm">
-                  Paketi yükselt
-                </LinkButton>
-              )}
-            </div>
-          </CardBody>
-        </Card>
-      ) : null}
-
       {!bookingOpen ? null : (
       <Card>
         <CardHeader title="Yaklaşan dersler" action={<Link href="/ogretmen-paneli/dersler" className="text-sm font-semibold text-brand-700 hover:underline">Tümü</Link>} />
