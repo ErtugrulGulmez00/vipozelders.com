@@ -19,7 +19,10 @@ class AccountScreen extends StatelessWidget {
     final me = session.me!;
     final theme = Theme.of(context);
     final config = ConfigScope.of(context);
-    final coach = session.view == KocView.coach;
+    final view = session.view;
+    final coach = view == AppView.coach;
+    // Hesabın diğer tarafları (aynı hesap, farklı kapı): dokununca uygulama o tarafa geçer
+    final others = me.views.where((v) => v != view).toList();
     // Uygulama içinde açılan site sayfaları (sitedeki ayardan gelir; Paketler yalnızca koçta)
     final pages = config.pages.where((p) => p['key'] != 'paketler' || coach).toList();
     return ListView(
@@ -28,7 +31,7 @@ class AccountScreen extends StatelessWidget {
         SectionCard(
           title: me.fullName,
           subtitle: [me.email, me.username].whereType<String>().join(' · '),
-          child: Text(coach ? 'Pi Koç · koç hesabı' : 'Pi Koç · öğrenci / veli hesabı', style: theme.textTheme.bodySmall),
+          child: Text(view?.label ?? '', style: theme.textTheme.bodySmall),
         ),
         Card(
           child: Column(children: [
@@ -44,12 +47,30 @@ class AccountScreen extends StatelessWidget {
               trailing: const Icon(Icons.chevron_right_rounded),
               onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const PasswordScreen())),
             ),
-            if (me.isCoach && me.isStudent)
+            for (final v in others)
               ListTile(
+                key: Key('switch-${v.name}'),
                 leading: const Icon(Icons.swap_horiz_rounded),
-                title: Text(session.view == KocView.coach ? 'Öğrenci ekranına geç' : 'Koç paneline geç'),
-                onTap: () => session.switchView(session.view == KocView.coach ? KocView.student : KocView.coach),
+                title: Text('${v.label} tarafına geç'),
+                onTap: () {
+                  Navigator.of(context).popUntil((r) => r.isFirst);
+                  session.switchView(v);
+                },
               ),
+            if (view == AppView.teacher) ...[
+              ListTile(
+                leading: const Icon(Icons.event_available_outlined),
+                title: const Text('Müsaitlik takvimi'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => WebPageScreen.openPath(context, 'Müsaitlik takvimi', '/ogretmen-paneli/takvim'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.reviews_outlined),
+                title: const Text('Yorumlar'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: () => WebPageScreen.openPath(context, 'Yorumlar', '/ogretmen-paneli/yorumlar'),
+              ),
+            ],
             if (coach)
               ListTile(
                 leading: const Icon(Icons.open_in_new_rounded),

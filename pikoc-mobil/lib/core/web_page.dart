@@ -12,46 +12,43 @@ import 'session.dart';
 /// Site, user-agent'ta bunu görünce menüsünü, alt bilgisini ve çerez bandını gizler (uygulama görünümü).
 const appUserAgentMarker = 'PiKampusApp/1.0';
 
-/// Sitenin bir sayfasını uygulama içinde açar. [authPath] verilirse (ör. "/koc/abonelik") önce tek kullanımlık
+/// Sitenin bir sayfası (uygulamanın içinde). [authPath] verilirse (ör. "/koc/abonelik", "/kurum") önce tek kullanımlık
 /// web oturumu bağlantısı alınır; kullanıcı yeniden giriş yapmaz. Site dışı bağlantılar telefonun tarayıcısında açılır.
-class WebPageScreen extends StatefulWidget {
-  const WebPageScreen({super.key, required this.title, this.url, this.authPath}) : assert(url != null || authPath != null);
+class WebPanel extends StatefulWidget {
+  const WebPanel({super.key, this.url, this.authPath}) : assert(url != null || authPath != null);
 
-  final String title;
   final String? url;
   final String? authPath;
 
-  /// Ayarlardaki sayfa anahtarıyla aç (ör. "paketler", "kvkk")
-  static void openKey(BuildContext context, String key) {
-    final page = ConfigScope.of(context).page(key);
-    if (page == null) return;
-    open(context, page);
-  }
-
-  static void open(BuildContext context, Json page) {
-    final auth = page['auth'] == true;
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => WebPageScreen(title: (page['title'] as String?) ?? '', url: auth ? null : page['url'] as String?, authPath: auth ? page['path'] as String? : null),
-      ),
-    );
-  }
-
   @override
-  State<WebPageScreen> createState() => _WebPageScreenState();
+  State<WebPanel> createState() => WebPanelState();
 }
 
-class _WebPageScreenState extends State<WebPageScreen> {
+class WebPanelState extends State<WebPanel> {
   WebViewController? _controller;
   String? _error;
   int _progress = 0;
-  late String _siteHost;
+  late final String _siteHost = Uri.parse(AppConfig.siteUrl).host;
 
   @override
   void initState() {
     super.initState();
-    _siteHost = Uri.parse(AppConfig.siteUrl).host;
     _start();
+  }
+
+  /// Sayfa içinde geri gidebildiyse true (Android geri tuşu önce sayfada geri gider)
+  Future<bool> goBack() async {
+    final c = _controller;
+    if (c != null && await c.canGoBack()) {
+      await c.goBack();
+      return true;
+    }
+    return false;
+  }
+
+  Future<void> reload() async {
+    if (_controller == null) return _start();
+    await _controller!.reload();
   }
 
   Future<void> _start() async {
@@ -109,37 +106,115 @@ class _WebPageScreenState extends State<WebPageScreen> {
   @override
   Widget build(BuildContext context) {
     final controller = _controller;
+    if (_error != null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(_error!, textAlign: TextAlign.center),
+            const SizedBox(height: 12),
+            FilledButton(onPressed: _start, child: const Text('Tekrar dene')),
+          ]),
+        ),
+      );
+    }
+    if (controller == null) return const Center(child: CircularProgressIndicator());
+    return Stack(children: [
+      WebViewWidget(controller: controller),
+      if (_progress > 0 && _progress < 100) Positioned(top: 0, left: 0, right: 0, child: LinearProgressIndicator(value: _progress / 100, minHeight: 2)),
+    ]);
+  }
+}
+
+/// Sitenin sayfasını geri tuşlu ayrı bir ekranda açar.
+class WebPageScreen extends StatefulWidget {
+  const WebPageScreen({super.key, required this.title, this.url, this.authPath}) : assert(url != null || authPath != null);
+
+  final String title;
+  final String? url;
+  final String? authPath;
+
+  /// Ayarlardaki sayfa anahtarıyla aç (ör. "paketler", "kvkk")
+  static void openKey(BuildContext context, String key) {
+    final page = ConfigScope.of(context).page(key);
+    if (page == null) return;
+    open(context, page);
+  }
+
+  static void open(BuildContext context, Json page) {
+    final auth = page['auth'] == true;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => WebPageScreen(title: (page['title'] as String?) ?? '', url: auth ? null : page['url'] as String?, authPath: auth ? page['path'] as String? : null),
+      ),
+    );
+  }
+
+  /// Oturum açık bir site sayfası (ör. "/ogretmen-paneli/profil")
+  static void openPath(BuildContext context, String title, String path) {
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => WebPageScreen(title: title, authPath: path)));
+  }
+
+  @override
+  State<WebPageScreen> createState() => _WebPageScreenState();
+}
+
+class _WebPageScreenState extends State<WebPageScreen> {
+  final _panel = GlobalKey<WebPanelState>();
+
+  @override
+  Widget build(BuildContext context) {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
         final navigator = Navigator.of(context);
-        if (controller != null && await controller.canGoBack()) {
-          await controller.goBack();
-        } else {
-          navigator.pop();
+        if (!(await _panel.currentState?.goBack() ?? false)) navigator.pop();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.title),
+          actions: [IconButton(tooltip: 'Yenile', icon: const Icon(Icons.refresh_rounded), onPressed: () => _panel.currentState?.reload())],
+        ),
+        body: WebPanel(key: _panel, url: widget.url, authPath: widget.authPath),
+      ),
+    );
+  }
+}
+
+/// Ana ekran olarak site paneli (kurum paneli, veli portalı, Hesabım): geri tuşu önce sayfada geri gider.
+class WebHome extends StatefulWidget {
+  const WebHome({super.key, required this.title, required this.path, this.actions = const []});
+
+  final String title;
+  final String path;
+  final List<Widget> actions;
+
+  @override
+  State<WebHome> createState() => _WebHomeState();
+}
+
+class _WebHomeState extends State<WebHome> {
+  final _panel = GlobalKey<WebPanelState>();
+  bool _canExit = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: _canExit,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        if (!(await _panel.currentState?.goBack() ?? false)) {
+          setState(() => _canExit = true);
+          if (context.mounted) Navigator.of(context).maybePop();
         }
       },
       child: Scaffold(
         appBar: AppBar(
           title: Text(widget.title),
-          bottom: _progress > 0 && _progress < 100 ? PreferredSize(preferredSize: const Size.fromHeight(2), child: LinearProgressIndicator(value: _progress / 100, minHeight: 2)) : null,
-          actions: [if (controller != null) IconButton(tooltip: 'Yenile', icon: const Icon(Icons.refresh_rounded), onPressed: controller.reload)],
+          actions: [IconButton(tooltip: 'Yenile', icon: const Icon(Icons.refresh_rounded), onPressed: () => _panel.currentState?.reload()), ...widget.actions],
         ),
-        body: _error != null
-            ? Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Text(_error!, textAlign: TextAlign.center),
-                    const SizedBox(height: 12),
-                    FilledButton(onPressed: _start, child: const Text('Tekrar dene')),
-                  ]),
-                ),
-              )
-            : controller == null
-                ? const Center(child: CircularProgressIndicator())
-                : WebViewWidget(controller: controller),
+        body: WebPanel(key: _panel, authPath: widget.path),
       ),
     );
   }

@@ -2,11 +2,58 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api.dart';
 
-/// Uygulamanın gösterdiği taraf: koç paneli ya da öğrenci/veli ekranı.
-enum KocView { coach, student }
+/// Giriş kapısı (sitedeki gibi tek hesap, üç kapı): özel ders, kurum, Pi Koç.
+enum Door { ozel, kurum, koc }
+
+extension DoorLabel on Door {
+  String get label => switch (this) {
+        Door.ozel => 'Özel ders',
+        Door.kurum => 'Kurum',
+        Door.koc => 'Pi Koç',
+      };
+}
+
+/// Uygulamanın gösterdiği taraf.
+enum AppView {
+  /// Pi Koç koç paneli (uygulamanın kendi ekranları)
+  coach,
+
+  /// Pi Koç öğrencisi / velisi (uygulamanın kendi ekranları)
+  kocStudent,
+
+  /// Özel ders öğretmeni
+  teacher,
+
+  /// Özel ders velisi / öğrencisi (Hesabım)
+  parent,
+
+  /// Kurum personeli (kurum paneli)
+  kurumStaff,
+
+  /// Kurumun veli / öğrenci portalı
+  kurumPortal,
+}
+
+extension AppViewInfo on AppView {
+  Door get door => switch (this) {
+        AppView.coach || AppView.kocStudent => Door.koc,
+        AppView.teacher || AppView.parent => Door.ozel,
+        AppView.kurumStaff || AppView.kurumPortal => Door.kurum,
+      };
+
+  String get label => switch (this) {
+        AppView.coach => 'Pi Koç · koç paneli',
+        AppView.kocStudent => 'Pi Koç · öğrenci / veli',
+        AppView.teacher => 'Özel ders · öğretmen paneli',
+        AppView.parent => 'Özel ders · veli / öğrenci',
+        AppView.kurumStaff => 'Kurum paneli',
+        AppView.kurumPortal => 'Kurum · veli / öğrenci portalı',
+      };
+}
 
 /// Giriş yapan kullanıcı (GET /ben).
 class Me {
@@ -19,13 +66,34 @@ class Me {
   String get fullName => '$firstName $lastName';
   String? get email => json.strOrNull('email');
   String? get username => json.strOrNull('username');
+  String get role => json.str('role');
   bool get mustChangePassword => json.flag('mustChangePassword');
   int get unreadNotifications => json.integer('unreadNotifications');
-  bool get isCoach => json.obj('sides').flag('kocStaff');
-  bool get isStudent => json.obj('sides').flag('kocStudent');
+  Json get _sides => json.obj('sides');
+  bool get isCoach => _sides.flag('kocStaff');
+  bool get isStudent => _sides.flag('kocStudent');
+
+  /// Kapının bu hesapta açtığı taraflar (sitedeki kapı kuralı: src/lib/sides.ts)
+  List<AppView> viewsFor(Door door) => switch (door) {
+        Door.ozel => [
+            if (role == 'TEACHER') AppView.teacher,
+            if (role == 'STUDENT' && _sides.flag('ozel')) AppView.parent,
+          ],
+        Door.kurum => [
+            if (_sides.flag('staff')) AppView.kurumStaff,
+            if (role == 'STUDENT' && _sides.flag('portal')) AppView.kurumPortal,
+          ],
+        Door.koc => [
+            if (_sides.flag('kocStaff')) AppView.coach,
+            if (_sides.flag('kocStudent')) AppView.kocStudent,
+          ],
+      };
+
+  /// Hesabın uygulamada açabildiği bütün taraflar
+  List<AppView> get views => [for (final d in Door.values) ...viewsFor(d)];
 }
 
-/// Oturum: anahtar güvenli depoda; açılışta /ben ile doğrulanır.
+/// Oturum: anahtar güvenli depoda; açılışta /ben ile doğrulanır. Seçilen taraf cihazda hatırlanır.
 class Session extends ChangeNotifier {
   Session(this.api) {
     _sub = api.events.stream.listen((code) {
@@ -39,6 +107,8 @@ class Session extends ChangeNotifier {
   }
 
   static const _tokenKey = 'pikoc_token';
+  static const _viewKey = 'pk_view';
+  static const _doorKey = 'pk_door';
   static const _storage = FlutterSecureStorage();
 
   final ApiClient api;
@@ -46,20 +116,23 @@ class Session extends ChangeNotifier {
 
   Me? me;
   bool ready = false;
+  AppView? chosenView;
 
-  /// Hem koç hem öğrenci olan hesapta seçilen taraf
-  KocView? chosenView;
+  /// Son kullanılan giriş kapısı (giriş ekranında seçili gelir)
+  Door lastDoor = Door.ozel;
 
-  KocView? get view {
+  AppView? get view {
     final m = me;
     if (m == null) return null;
-    if (m.isCoach && m.isStudent) return chosenView ?? KocView.coach;
-    if (m.isCoach) return KocView.coach;
-    if (m.isStudent) return KocView.student;
-    return null;
+    final views = m.views;
+    if (views.isEmpty) return null;
+    return chosenView != null && views.contains(chosenView) ? chosenView : views.first;
   }
 
   Future<void> restore() async {
+    final prefs = await SharedPreferences.getInstance();
+    chosenView = AppView.values.where((v) => v.name == prefs.getString(_viewKey)).firstOrNull;
+    lastDoor = Door.values.where((d) => d.name == prefs.getString(_doorKey)).firstOrNull ?? Door.ozel;
     try {
       api.token = await _storage.read(key: _tokenKey);
     } catch (_) {
@@ -76,12 +149,31 @@ class Session extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> login(String identifier, String password) async {
-    final res = await api.post('/oturum', {'identifier': identifier.trim(), 'password': password, 'deviceName': 'Pi Koç uygulaması'});
+  /// Kapıdan giriş: hesabın o kapıda tarafı yoksa oturum açılmaz, hangi kapıdan girileceği söylenir.
+  Future<void> login(String identifier, String password, Door door) async {
+    final res = await api.post('/oturum', {'identifier': identifier.trim(), 'password': password, 'deviceName': 'Pi Kampüs uygulaması'});
     api.token = res.str('token');
+    final user = Me(res.obj('user'));
+    final views = user.viewsFor(door);
+    if (views.isEmpty) {
+      final other = Door.values.where((d) => d != door && user.viewsFor(d).isNotEmpty).map((d) => '“${d.label}”').toList();
+      try {
+        await api.delete('/oturum');
+      } catch (_) {}
+      api.token = null;
+      throw ApiException(
+        'WRONG_DOOR',
+        user.role == 'ADMIN'
+            ? 'Yönetici hesabı uygulamada açılmaz; lütfen siteyi kullanın.'
+            : 'Bu hesapla ${door.label} tarafında kaydınız yok.${other.isEmpty ? '' : ' Hesabınız ${other.join(' ya da ')} tarafında: üstten o kapıyı seçin.'}',
+      );
+    }
     await _storage.write(key: _tokenKey, value: api.token!);
-    me = Me(res.obj('user'));
-    chosenView = null;
+    me = user;
+    lastDoor = door;
+    await _saveView(views.first);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_doorKey, door.name);
     notifyListeners();
   }
 
@@ -90,9 +182,15 @@ class Session extends ChangeNotifier {
     notifyListeners();
   }
 
-  void switchView(KocView view) {
-    chosenView = view;
+  Future<void> switchView(AppView view) async {
+    await _saveView(view);
     notifyListeners();
+  }
+
+  Future<void> _saveView(AppView view) async {
+    chosenView = view;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_viewKey, view.name);
   }
 
   Future<void> logout() async {

@@ -58,3 +58,8 @@ next-env.d.ts
 /ornekfotolar/
 # Kök klasöre bırakılan belgeler (vergi yazısı, deneme sonuçları: kişisel veri içerir, depo herkese açık)
 /*.pdf
+
+# Firebase (gizli; depoya girmez)
+google-services.json
+GoogleService-Info.plist
+*firebase-adminsdk*.json

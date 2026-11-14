@@ -78,17 +78,18 @@ export function PanelShell({
             {headerActions}
             {switchLinks.map((link) => (
               // Üst çubukta her ekranda görünür; telefonda kısa ad
-              <SwitchLink key={link.href} href={link.href} aria-label={link.label} className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-2 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-50 sm:gap-1.5 sm:px-3">
+              <SwitchLink key={link.href} href={link.href} aria-label={link.label} className="pk-site-chrome inline-flex items-center gap-1 whitespace-nowrap rounded-lg px-2 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-50 sm:gap-1.5 sm:px-3">
                 <ArrowLeftRight className="size-4" aria-hidden /> <span className="sm:hidden">{link.short}</span>
                 <span className="hidden sm:inline">{link.label}</span>
               </SwitchLink>
             ))}
             {hideSiteLink ? null : (
-              <Link href="/" className="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm text-slate-600 hover:bg-slate-100 sm:px-3">
+              <Link href="/" className="pk-site-chrome inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm text-slate-600 hover:bg-slate-100 sm:px-3">
                 <ExternalLink className="size-4" aria-hidden /> <span className="hidden sm:inline">Siteye git</span>
               </Link>
             )}
-            <form action={logoutAction}>
+            {/* Uygulama içinde (pk-app) taraf geçişi, siteye git ve çıkış gizlenir: uygulamanın kendi düğmeleri var */}
+            <form action={logoutAction} className="pk-site-chrome">
               <button type="submit" className="inline-flex items-center gap-1.5 rounded-lg px-2 py-2 text-sm text-rose-600 hover:bg-rose-50 sm:px-3">
                 <LogOut className="size-4" aria-hidden /> <span className="hidden sm:inline">Çıkış</span>
               </button>

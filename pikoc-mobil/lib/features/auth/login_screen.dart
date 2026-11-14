@@ -6,7 +6,7 @@ import '../../core/pi_logo.dart';
 import '../../core/session.dart';
 import '../../core/theme.dart';
 
-/// Giriş: koç e-postasıyla, öğrenci koçunun verdiği kullanıcı adıyla.
+/// Giriş: sitedeki gibi tek hesap, üç kapı (özel ders, kurum, Pi Koç). Hesabın o kapıda tarafı yoksa doğru kapı söylenir.
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -20,6 +20,13 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _busy = false;
   bool _hidden = true;
   String? _error;
+  late Door _door = SessionScope.read(context).lastDoor;
+
+  static const _hints = {
+    Door.ozel: 'Veliler, öğrenciler ve özel ders öğretmenleri',
+    Door.kurum: 'Etüt merkezi personeli ve kurumun velileri',
+    Door.koc: 'Öğrenci koçları ve öğrencileri',
+  };
 
   Future<void> _submit() async {
     if (_id.text.trim().isEmpty || _password.text.isEmpty) {
@@ -31,7 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _error = null;
     });
     try {
-      await SessionScope.read(context).login(_id.text, _password.text);
+      await SessionScope.read(context).login(_id.text, _password.text, _door);
     } catch (e) {
       if (mounted) setState(() => _error = errorText(e));
     } finally {
@@ -53,10 +60,34 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Center(child: PiLogo(light: true, size: 44, name: 'Pi Koç')),
+                  const Center(child: PiLogo(light: true, size: 44, name: 'Pi Kampüs')),
                   const SizedBox(height: 12),
-                  const Text('Koçluk takibin cebinde: görevler, soru takibi, denemeler ve online görüşme.', textAlign: TextAlign.center, style: TextStyle(color: Brand.ink200)),
-                  const SizedBox(height: 28),
+                  const Text('Etüt merkezi paneli, Pi Koç ve özel ders tek uygulamada.', textAlign: TextAlign.center, style: TextStyle(color: Brand.ink200)),
+                  const SizedBox(height: 24),
+                  // Giriş kapıları
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(16)),
+                    child: Row(children: [
+                      for (final d in Door.values)
+                        Expanded(
+                          child: GestureDetector(
+                            key: Key('door-${d.name}'),
+                            onTap: () => setState(() {
+                              _door = d;
+                              _error = null;
+                            }),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              padding: const EdgeInsets.symmetric(vertical: 11),
+                              decoration: BoxDecoration(color: _door == d ? Brand.b600 : Colors.transparent, borderRadius: BorderRadius.circular(12)),
+                              child: Text(d.label, textAlign: TextAlign.center, style: TextStyle(color: _door == d ? Colors.white : Brand.ink200, fontWeight: FontWeight.w700)),
+                            ),
+                          ),
+                        ),
+                    ]),
+                  ),
+                  const SizedBox(height: 16),
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(color: theme.colorScheme.surface, borderRadius: BorderRadius.circular(26)),
@@ -64,7 +95,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text('Giriş yap', style: theme.textTheme.titleLarge),
+                          Text('${_door.label} girişi', style: theme.textTheme.titleLarge),
+                          const SizedBox(height: 2),
+                          Text(_hints[_door]!, style: theme.textTheme.bodySmall),
                           const SizedBox(height: 16),
                           TextField(
                             key: const Key('login-id'),
@@ -110,11 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  const Text('Öğrenciysen kullanıcı adını ve ilk şifreni koçun verir.\nKoçsan pikampus.com/pi-koc üzerinden ücretsiz başlayabilirsin.', textAlign: TextAlign.center, style: TextStyle(color: Brand.ink300, fontSize: 13)),
-                  TextButton(
-                    onPressed: () => launchUrl(Uri.parse('${AppConfig.siteUrl}/pi-koc'), mode: LaunchMode.externalApplication),
-                    child: const Text('Koç olarak kaydol', style: TextStyle(color: Brand.gold400)),
-                  ),
+                  ..._footer(),
                 ],
               ),
             ),
@@ -122,5 +151,29 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  /// Kapıya göre kısa açıklama ve kayıt bağlantısı
+  List<Widget> _footer() {
+    Widget link(String text, String path) => TextButton(
+          onPressed: () => launchUrl(Uri.parse('${AppConfig.siteUrl}$path'), mode: LaunchMode.externalApplication),
+          child: Text(text, style: const TextStyle(color: Brand.gold400)),
+        );
+    const note = TextStyle(color: Brand.ink300, fontSize: 13);
+    return switch (_door) {
+      Door.ozel => [
+          const Text('Öğretmen bulmak ve ders talebi göndermek ücretsizdir.', textAlign: TextAlign.center, style: note),
+          link('Veli / öğrenci olarak kaydol', '/kayit'),
+          link('Öğretmen olarak başvur', '/ogretmen-ol'),
+        ],
+      Door.kurum => [
+          const Text('Kurum personelinin giriş bilgilerini kurum yöneticisi verir.', textAlign: TextAlign.center, style: note),
+          link('Kurumunuz için paneli inceleyin', '/kurumlar-icin'),
+        ],
+      Door.koc => [
+          const Text('Öğrenciysen kullanıcı adını ve ilk şifreni koçun verir.', textAlign: TextAlign.center, style: note),
+          link('Koç olarak ücretsiz başla', '/pi-koc'),
+        ],
+    };
   }
 }

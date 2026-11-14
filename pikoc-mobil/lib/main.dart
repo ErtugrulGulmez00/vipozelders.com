@@ -15,7 +15,10 @@ import 'features/auth/login_screen.dart';
 import 'features/auth/password_screen.dart';
 import 'features/coach/coach_home.dart';
 import 'features/student/student_home.dart';
+import 'features/account/account_screen.dart';
 import 'features/account/no_koc_screen.dart';
+import 'features/teacher/teacher_home.dart';
+import 'core/web_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -98,11 +101,25 @@ class _RootState extends State<_Root> {
     final me = session.me;
     if (me == null) return const LoginScreen();
     if (me.mustChangePassword) return const PasswordScreen(firstLogin: true);
-    return switch (session.view) {
-      KocView.coach => const CoachHome(),
-      KocView.student => const StudentHome(),
-      null => const NoKocScreen(),
-    };
+    // Seçili taraf: Pi Koç uygulamanın kendi ekranları; özel ders öğretmeni karma; veli ve kurum sitenin paneli
+    final view = session.view;
+    final account = IconButton(
+      tooltip: 'Hesabım',
+      icon: const Icon(Icons.account_circle_outlined),
+      onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => Scaffold(appBar: AppBar(title: const Text('Hesabım')), body: const AccountScreen()))),
+    );
+    return KeyedSubtree(
+      key: ValueKey(view),
+      child: switch (view) {
+        AppView.coach => const CoachHome(),
+        AppView.kocStudent => const StudentHome(),
+        AppView.teacher => const TeacherHome(),
+        AppView.parent => WebHome(title: 'Hesabım', path: '/hesabim', actions: [account]),
+        AppView.kurumStaff => WebHome(title: 'Kurum paneli', path: '/kurum', actions: [account]),
+        AppView.kurumPortal => WebHome(title: 'Kurumum', path: '/hesabim/kurum', actions: [account]),
+        null => const NoKocScreen(),
+      },
+    );
   }
 }
 
