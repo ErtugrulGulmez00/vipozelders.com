@@ -35,7 +35,8 @@ export async function upsertPrograms(adminId: string, exam: PlacementExamName, y
       `INSERT INTO "PlacementProgram" (${cols.map((c) => `"${c}"`).join(", ")}) VALUES ${tuples.join(", ")}
        ON CONFLICT ("exam", "year", "code") DO UPDATE SET ${cols
          .filter((c) => !["id", "exam", "year", "code"].includes(c))
-         .map((c) => `"${c}" = EXCLUDED."${c}"`)
+         // Boş gelen alan var olanı silmez: kısmi dosya (ör. YÖK Atlas tercih listesi) yalnızca eksikleri doldurur
+         .map((c) => `"${c}" = COALESCE(EXCLUDED."${c}", "PlacementProgram"."${c}")`)
          .join(", ")}`,
       ...values,
     );
