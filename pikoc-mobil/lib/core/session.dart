@@ -120,7 +120,7 @@ class Session extends ChangeNotifier {
   AppView? chosenView;
 
   /// Son kullanılan giriş kapısı (giriş ekranında seçili gelir)
-  Door lastDoor = Door.ozel;
+  Door lastDoor = Door.koc;
 
   AppView? get view {
     final m = me;
@@ -133,7 +133,7 @@ class Session extends ChangeNotifier {
   Future<void> restore() async {
     final prefs = await SharedPreferences.getInstance();
     chosenView = AppView.values.where((v) => v.name == prefs.getString(_viewKey)).firstOrNull;
-    lastDoor = Door.values.where((d) => d.name == prefs.getString(_doorKey)).firstOrNull ?? Door.ozel;
+    lastDoor = Door.values.where((d) => d.name == prefs.getString(_doorKey)).firstOrNull ?? Door.koc;
     try {
       api.token = await _storage.read(key: _tokenKey);
     } catch (_) {
