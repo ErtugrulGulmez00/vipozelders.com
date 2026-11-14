@@ -20,7 +20,7 @@ const GROUPS: { title: string; Icon: typeof Users; items: { key: CoachFeature | 
       { key: "pdfImport", anchor: "pdf", title: "PDF'ten deneme aktarımı", text: "Yayınevi sonuç PDF'i tek seferde bütün öğrencilere işlenir" },
       { key: "topicAnalysis", anchor: "konu", title: "Konu eksik haritası", text: "Zayıf konular renkli görünür, tek tıkla programa eklenir" },
       { key: "targetSchool", title: "Hedef okul takibi", text: "Denemelerdeki puanla tabana ne kadar kaldığı" },
-      { key: "lgsRobot", anchor: "lgs", title: "LGS ve YKS tercih listesi", text: "Öğrenci başına tercih listesi, not ve çıktı" },
+      { key: "lgsRobot", anchor: "lgs", title: "Öğrenciye tercih listesi", text: "Robotla arama ücretsizde de açık; öğrenci başına liste, not ve çıktı" },
     ],
   },
   {
@@ -133,6 +133,7 @@ export function CoachSubscription({
               <p className="mt-3 text-2xl font-black text-ink-900">Ücretsiz</p>
               <ul className="mt-3 space-y-1 text-xs text-slate-600">
                 <li>Program, soru ve deneme takibi</li>
+                <li>LGS ve YKS tercih robotu (arama)</li>
                 <li>Görüşme başına {settings.piKocFreeMeetingMinutes} dk görüntülü ders</li>
                 <li>Ayda bir otomatik veli raporu</li>
                 {settings.piKocFreeAiPerMonth ? <li>Ayda {settings.piKocFreeAiPerMonth} yapay zekâ önerisi</li> : null}
