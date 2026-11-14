@@ -92,7 +92,8 @@ export function KocShell({
         </div>
       </aside>
       <div className="flex min-w-0 flex-col">
-        <header className="sticky top-0 z-20 flex h-16 print:hidden items-center justify-between gap-3 border-b border-ink-100 bg-white/85 px-4 backdrop-blur sm:px-6">
+        {/* Uygulama içinde (pk-app) gizlenir: uygulamanın kendi üst çubuğu ve menüsü var */}
+        <header className="pk-site-chrome sticky top-0 z-20 flex h-16 print:hidden items-center justify-between gap-3 border-b border-ink-100 bg-white/85 px-4 backdrop-blur sm:px-6">
           <div className="lg:hidden">
             <KocBrand compact home={home} />
           </div>
@@ -122,7 +123,7 @@ export function KocShell({
             </form>
           </div>
         </header>
-        <div className="px-4 print:hidden">
+        <div className="pk-site-chrome px-4 print:hidden">
           <MobileNav items={nav} />
         </div>
         <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8 print:max-w-none print:p-0">

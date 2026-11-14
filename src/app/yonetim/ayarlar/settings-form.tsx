@@ -194,6 +194,21 @@ export function SettingsForm({ settings }: { settings: SiteSettings }) {
         <NumberField name="piKocFreeAiPerMonth" label="Ücretsiz pakette yapay zekâ taslağı" value={settings.piKocFreeAiPerMonth} suffix="adet / ay" />
       </Section>
 
+      <Section title="Mobil uygulama" description="Uygulama açılışta bu değerleri okur; değişiklik yeniden derleme gerektirmez.">
+        <Field label="En düşük desteklenen sürüm" hint="Bundan eski uygulamalar 'Lütfen güncelleyin' ekranında durur. Örn: 1.0.0">
+          <Input name="mobileMinVersion" defaultValue={settings.mobileMinVersion} />
+        </Field>
+        <Field label="En yeni sürüm" hint="Daha eski sürümdeki kullanıcıya güncelleme önerilir (zorunlu değil).">
+          <Input name="mobileLatestVersion" defaultValue={settings.mobileLatestVersion} />
+        </Field>
+        <Field label="Google Play adresi">
+          <Input name="mobileAndroidUrl" defaultValue={settings.mobileAndroidUrl} placeholder="https://play.google.com/store/apps/details?id=com.pikampus.app" />
+        </Field>
+        <Field label="App Store adresi">
+          <Input name="mobileIosUrl" defaultValue={settings.mobileIosUrl} placeholder="https://apps.apple.com/..." />
+        </Field>
+      </Section>
+
       <Section title="Bakım modu">
         <div className="sm:col-span-2">
           <Checkbox name="maintenanceMode" defaultChecked={settings.maintenanceMode} label="Vitrini bakım moduna al (paneller ve giriş çalışmaya devam eder)" />

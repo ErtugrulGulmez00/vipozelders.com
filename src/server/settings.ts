@@ -90,6 +90,11 @@ export const settingsSchema = z.object({
   piKocFreeMeetingMinutes: z.number().int().min(10).max(240).default(40),
   // Ücretsiz pakette ayda kaç yapay zekâ taslağı
   piKocFreeAiPerMonth: z.number().int().min(0).max(50).default(1),
+  // Mobil uygulama: bu sürümden eskisi "güncelleyin" ekranına düşer; en yeni sürüm varsa güncelleme önerilir
+  mobileMinVersion: z.string().regex(/^\d+\.\d+\.\d+$/, "Sürüm 1.2.3 biçiminde olmalı").default("1.0.0"),
+  mobileLatestVersion: z.string().regex(/^\d+\.\d+\.\d+$/, "Sürüm 1.2.3 biçiminde olmalı").default("1.0.0"),
+  mobileAndroidUrl: z.string().default(""),
+  mobileIosUrl: z.string().default(""),
   centerTrialDays: z.number().int().min(0).max(90).default(14),
   // Kurum kapasite kademeleri: öğrenci sınırları. Yıllık 0 = yalnızca aylık.
   // Merdiven: bir kademenin yıllık fiyatı bir alttakini aylık ödemeye denk → "aynı paraya daha çok kapasite".

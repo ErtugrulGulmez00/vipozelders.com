@@ -30,7 +30,8 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.pikampus.pikoc"
+        // Tek uygulama: Pi Kampüs (namespace eski paket adında kalır; mağaza kimliği applicationId)
+        applicationId = "com.pikampus.app"
         // LiveKit / WebRTC en az Android 7 (API 24)
         minSdk = maxOf(24, flutter.minSdkVersion)
         targetSdk = flutter.targetSdkVersion

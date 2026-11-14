@@ -1,5 +1,5 @@
 name: pikoc
-description: "Pi Koç: bireysel koçluk takibi (koç, öğrenci ve veli)."
+description: "Pi Kampüs: Pi Koç öğrenci takibi, özel ders ve kurum paneli tek uygulamada."
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -25,6 +25,12 @@ dependencies:
   # 13.x Android Gradle Plugin 9 gerektiriyor; proje AGP 8 ile derlenir
   permission_handler: ^12.0.1
   wakelock_plus: ^1.7.0
+  # Paketler, tercih robotu, rehber ve yasal metinler: sitenin sayfası uygulama içinde (güncelleme gerekmeden değişir)
+  webview_flutter: ^4.14.1
+  webview_flutter_android: ^4.12.0
+  webview_flutter_wkwebview: ^3.25.1
+  # Uygulama sürümü (zorunlu güncelleme kontrolü)
+  package_info_plus: ^10.2.2
 
 dev_dependencies:
   flutter_test:

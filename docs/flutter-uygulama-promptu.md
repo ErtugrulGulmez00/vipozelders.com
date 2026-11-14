@@ -123,6 +123,7 @@ Sayfalı listelerde `?sayfa=N` gönderilir; yanıttaki `nextPage` null ise son s
 
 | İstek | Yanıt |
 | --- | --- |
+| `GET /ayarlar` | Pi Kampüs uygulamasının açılış ayarları (2026-11-15): `{app: {name, minVersion, latestVersion, store: {android, ios}}, site: {url, contactEmail, contactPhone, whatsapp}, announcement, maintenance: {on, message}, piKoc: {free: {name, students, meetingMinutes, monthlyHours, aiPerMonth}, hoursPerStudent, tiers: [{name, students, priceTl}], features: [{key, title, text}]}, pages: [{key, title, path, url, auth}]}`. Sürüm `minVersion`dan eskiyse uygulama "güncelleyin" ekranında durur. `auth: true` sayfalar `POST /web-oturum {path}` ile açılır. Değerler Yönetim → Ayarlar'dan gelir, yeniden derleme gerekmez. |
 | `GET /katalog` | `{site, maintenance: {on, message}, rules (… , questionAnswerHours), levels: [{id, name, slug, group, grades: [{id, name}], subjectIds}], subjects, services, cities, sortOptions, timeOptions, pages: [{slug, title, url}], paymentReturnPrefix}` |
 | `GET /iller/{ilId}/ilceler` | `{items: [{id, name, slug}]}` |
 | `GET /ogretmenler?level=&subject=&service=&mode=online\|yuz-yuze&city=&district=&minPrice=&maxPrice=&rating=4&gender=kadin\|erkek&time=hafta-ici-gunduz\|hafta-ici-aksam\|hafta-sonu&verified=1&intro=1&abonelik=1&q=&sort=&page=` (`abonelik=1`: aylık soru aboneliği verenler) (kademe, ders, hizmet, il, ilçe **slug**; fiyatlar **TL**) | `{items: TeacherCard[], total, page, pageCount}` |

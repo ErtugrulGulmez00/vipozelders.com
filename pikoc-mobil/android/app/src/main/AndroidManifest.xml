@@ -14,7 +14,7 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <application
-        android:label="Pi Koç"
+        android:label="Pi Kampüs"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

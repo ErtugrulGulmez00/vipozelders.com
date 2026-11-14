@@ -3,6 +3,8 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/api.dart';
 import '../../core/format.dart';
+import '../../core/remote_config.dart';
+import '../../core/web_page.dart';
 import '../../core/session.dart';
 import '../../core/widgets.dart';
 import '../auth/password_screen.dart';
@@ -16,13 +18,17 @@ class AccountScreen extends StatelessWidget {
     final session = SessionScope.of(context);
     final me = session.me!;
     final theme = Theme.of(context);
+    final config = ConfigScope.of(context);
+    final coach = session.view == KocView.coach;
+    // Uygulama içinde açılan site sayfaları (sitedeki ayardan gelir; Paketler yalnızca koçta)
+    final pages = config.pages.where((p) => p['key'] != 'paketler' || coach).toList();
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
       children: [
         SectionCard(
           title: me.fullName,
           subtitle: [me.email, me.username].whereType<String>().join(' · '),
-          child: Text(session.view == KocView.coach ? 'Pi Koç · koç hesabı' : 'Pi Koç · öğrenci / veli hesabı', style: theme.textTheme.bodySmall),
+          child: Text(coach ? 'Pi Koç · koç hesabı' : 'Pi Koç · öğrenci / veli hesabı', style: theme.textTheme.bodySmall),
         ),
         Card(
           child: Column(children: [
@@ -44,20 +50,51 @@ class AccountScreen extends StatelessWidget {
                 title: Text(session.view == KocView.coach ? 'Öğrenci ekranına geç' : 'Koç paneline geç'),
                 onTap: () => session.switchView(session.view == KocView.coach ? KocView.student : KocView.coach),
               ),
-            if (session.view == KocView.coach)
+            if (coach)
               ListTile(
                 leading: const Icon(Icons.open_in_new_rounded),
                 title: const Text('Tam paneli tarayıcıda aç'),
                 subtitle: const Text('Program yazma, deneme PDF aktarımı, tahsilat, veli raporu'),
                 onTap: () => launchUrl(Uri.parse('${AppConfig.siteUrl}/koc'), mode: LaunchMode.externalApplication),
               ),
-            ListTile(
-              leading: const Icon(Icons.help_outline_rounded),
-              title: const Text('Gizlilik ve kullanım koşulları'),
-              onTap: () => launchUrl(Uri.parse('${AppConfig.siteUrl}/gizlilik'), mode: LaunchMode.externalApplication),
-            ),
           ]),
         ),
+        if (pages.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Card(
+            child: Column(children: [
+              for (final p in pages)
+                ListTile(
+                  key: Key('page-${p['key']}'),
+                  leading: Icon(_pageIcon(p['key'] as String?)),
+                  title: Text((p['title'] as String?) ?? ''),
+                  trailing: const Icon(Icons.chevron_right_rounded),
+                  onTap: () => WebPageScreen.open(context, p),
+                ),
+            ]),
+          ),
+        ],
+        if (config.whatsapp != null || config.contactEmail != null) ...[
+          const SizedBox(height: 12),
+          Card(
+            child: Column(children: [
+              if (config.whatsapp != null)
+                ListTile(
+                  leading: const Icon(Icons.chat_outlined),
+                  title: const Text('WhatsApp ile yazın'),
+                  subtitle: config.contactPhone != null ? Text(config.contactPhone!) : null,
+                  onTap: () => launchUrl(Uri.parse('https://wa.me/${config.whatsapp}'), mode: LaunchMode.externalApplication),
+                ),
+              if (config.contactEmail != null)
+                ListTile(
+                  leading: const Icon(Icons.mail_outline_rounded),
+                  title: const Text('E-posta'),
+                  subtitle: Text(config.contactEmail!),
+                  onTap: () => launchUrl(Uri.parse('mailto:${config.contactEmail}')),
+                ),
+            ]),
+          ),
+        ],
         const SizedBox(height: 16),
         OutlinedButton.icon(
           key: const Key('logout'),
@@ -67,6 +104,8 @@ class AccountScreen extends StatelessWidget {
           icon: const Icon(Icons.logout_rounded),
           label: const Text('Çıkış yap'),
         ),
+        const SizedBox(height: 16),
+        Center(child: Text('${config.appName} · sürüm ${ConfigScope.versionOf(context)}', style: theme.textTheme.bodySmall)),
       ],
     );
   }
@@ -122,3 +161,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     );
   }
 }
+
+IconData _pageIcon(String? key) => switch (key) {
+      'paketler' => Icons.workspace_premium_outlined,
+      'tercih-lgs' || 'tercih-yks' => Icons.school_outlined,
+      'rehber' => Icons.menu_book_outlined,
+      'sss' => Icons.help_outline_rounded,
+      _ => Icons.description_outlined,
+    };

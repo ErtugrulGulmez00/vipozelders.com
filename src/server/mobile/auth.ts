@@ -123,12 +123,15 @@ export const TEACHER_PANEL_TARGETS = [
 
 /** Kurum paneli (personel): /kurum ve alt sayfaları, isteğe bağlı sorgu ile (bildirim bağlantıları). */
 export const CENTER_PANEL_TARGET = /^\/kurum(?:\/[a-z0-9_-]+)*\/?(?:\?[^\s#]*)?$/i;
+/** Pi Koç paneli (ör. Paketler sayfası); koç üyeliği olan kullanıcı açabilir */
+export const KOC_PANEL_TARGET = /^\/koc(?:\/[a-z0-9-]+)*$/i;
 
 /** Kurum panelinden Excel dışa aktarımı: WebView dosya indiremediği için tarayıcıda tek kullanımlık girişle açılır. */
 export const CENTER_EXPORT_TARGET = /^\/api\/kurum\/disa-aktar\/[a-z0-9-]+(?:\?[^\s#]*)?$/i;
 
 const WEB_LOGIN_TARGETS = [
   CENTER_PANEL_TARGET,
+  KOC_PANEL_TARGET,
   CENTER_EXPORT_TARGET,
   /^\/ders\/[a-z0-9]+$/i,
   /^\/odeme\/(garanti|paytr|test)\/[a-z0-9]+$/i,
