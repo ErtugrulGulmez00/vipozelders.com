@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import 'core/api.dart';
 import 'core/pi_logo.dart';
+import 'core/push.dart';
 import 'core/remote_config.dart';
 import 'core/session.dart';
 import 'core/theme.dart';
@@ -23,12 +24,14 @@ import 'core/web_page.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('tr_TR');
+  await PushService.instance.initialize();
   final api = ApiClient();
   final session = Session(api);
   // Açılış ayarları ve sürüm birlikte; oturum arkada açılır
   final results = await Future.wait([RemoteConfig.load(api), currentAppVersion()]);
   runApp(PiKampusApp(session: session, config: results[0] as RemoteConfig, version: results[1] as String));
   await session.restore();
+  PushService.instance.start(session);
 }
 
 class PiKampusApp extends StatelessWidget {

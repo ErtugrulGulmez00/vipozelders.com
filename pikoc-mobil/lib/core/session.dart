@@ -5,6 +5,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'api.dart';
+import 'push.dart';
 
 /// Giriş kapısı (sitedeki gibi tek hesap, üç kapı): özel ders, kurum, Pi Koç.
 enum Door { ozel, kurum, koc }
@@ -194,6 +195,7 @@ class Session extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    await PushService.instance.unregister(this);
     try {
       await api.delete('/oturum');
     } catch (_) {
