@@ -132,7 +132,8 @@ export async function processCoachOverLimit(now = new Date()): Promise<number> {
     }
     if (now.getTime() - c.overLimitSince.getTime() < OVER_LIMIT_GRACE_DAYS * 86_400_000) continue;
     const extra = await db.centerStudent.findMany({ where: { centerId: c.id, status: "ACTIVE" }, orderBy: { createdAt: "desc" }, take: active - plan.studentLimit, select: { id: true, firstName: true, lastName: true } });
-    await db.centerStudent.updateMany({ where: { id: { in: extra.map((s) => s.id) } }, data: { status: "PASSIVE" } });
+    // Sistemin arşivlediği öğrencinin arşiv zamanı tutulmaz: koltuk kuralına girmez, ödeme gelince hemen geri açılır
+    await db.centerStudent.updateMany({ where: { id: { in: extra.map((s) => s.id) } }, data: { status: "PASSIVE", archivedAt: null } });
     await db.center.update({ where: { id: c.id }, data: { overLimitSince: null } });
     await audit({ actorId: null, action: "center.koc_auto_archive", entityType: "Center", entityId: c.id, details: { archived: extra.length } });
     for (const userId of owners) {

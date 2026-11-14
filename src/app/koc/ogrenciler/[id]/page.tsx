@@ -173,7 +173,7 @@ export default async function KocStudentPage({ params, searchParams }: PageProps
               </CardBody>
             </Card>
             <Card>
-              <CardHeader title={student.status === "ACTIVE" ? "Arşive al" : "Arşivde"} description="Arşivdeki öğrenci öğrenci sınırına sayılmaz; kayıtları silinmez." />
+              <CardHeader title={student.status === "ACTIVE" ? "Arşive al" : "Arşivde"} description="Arşivdeki öğrenci sınıra sayılmaz, kayıtları silinmez. Arşive alınan öğrenci 30 gün tekrar aktif edilemez (ilk 24 saat geri alınabilir) ve son 30 günün öğrenci değişimine sayılır." />
               <CardBody>
                 <ArchiveStudentButton studentId={student.id} active={student.status === "ACTIVE"} />
               </CardBody>

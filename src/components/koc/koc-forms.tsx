@@ -155,7 +155,7 @@ export function ArchiveStudentButton({ studentId, active }: { studentId: string;
     <ActionForm action={kocSetStudentActiveAction}>
       <input type="hidden" name="studentId" value={studentId} />
       <input type="hidden" name="active" value={active ? "0" : "1"} />
-      <SubmitButton size="sm" variant="outline" confirmMessage={active ? "Öğrenci arşive alınsın mı? Kayıtları silinmez." : undefined}>
+      <SubmitButton size="sm" variant="outline" confirmMessage={active ? "Öğrenci arşive alınsın mı? Kayıtları silinmez. Arşive alınan öğrenci 30 gün tekrar aktif edilemez (yanlışlıkla arşivlediyseniz ilk 24 saat içinde geri alabilirsiniz)." : undefined}>
         {active ? <Archive className="size-4" aria-hidden /> : <RotateCcw className="size-4" aria-hidden />} {active ? "Arşive al" : "Yeniden aktif yap"}
       </SubmitButton>
     </ActionForm>

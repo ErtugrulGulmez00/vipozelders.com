@@ -8,6 +8,7 @@ import { loadSettings } from "./settings";
 import { coachPlan } from "@/lib/pi-koc";
 import { nextStudentNumber } from "./center/students";
 import { addCoachToUser } from "./koc-signup";
+import { coachSeatProblem } from "./koc-seats";
 
 // Vitrinden öğretmene doğrudan ders talebi (2026-11-12 modeli): platform ödemeye aracılık etmez. Veli talebi
 // gönderir; öğretmen kabul edince velinin telefonunu görür ve ücret, saat gibi ayrıntıları veliyle kendisi konuşur.
@@ -160,8 +161,8 @@ export async function addInquiryToCoach(teacherId: string, inquiryId: string): P
   const result = await db.$transaction(async (tx) => {
     // Aynı anda iki kabul sınırı aşmasın
     await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtext(${`koc-capacity:${center.id}`}))`;
-    const active = await tx.centerStudent.count({ where: { centerId: center.id, status: "ACTIVE" } });
-    if (active >= limit) return null;
+    const problem = await coachSeatProblem(center.id, limit, { tx });
+    if (problem) return problem;
     const student = await tx.centerStudent.create({
       data: {
         centerId: center.id,
@@ -179,8 +180,8 @@ export async function addInquiryToCoach(teacherId: string, inquiryId: string): P
     await tx.teacherInquiry.update({ where: { id: inquiry.id }, data: { centerStudentId: student.id } });
     return student;
   });
-  if (!result) {
-    return { added: false, createdCoach, reason: `Pi Koç paketinizin öğrenci sınırı (${limit}) dolu. Bir öğrenciyi arşive alın ya da paketinizi yükseltin, sonra “Pi Koç'a ekle” deyin.` };
+  if (typeof result === "string") {
+    return { added: false, createdCoach, reason: `${result} Yer açılınca “Pi Koç'a ekle” deyin.` };
   }
   if (inquiry.requesterId) {
     await notify({

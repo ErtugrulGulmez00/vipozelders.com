@@ -10,6 +10,7 @@ import { appUrl, renderEmail } from "../email";
 import { loadSettings } from "../settings";
 import type { CenterContext } from "./context";
 import { CenterError, isUniqueViolation } from "./errors";
+import { coachSeatProblem } from "../koc-seats";
 
 // Kurum öğrencileri ve velileri.
 
@@ -48,7 +49,13 @@ export async function nextStudentNumber(centerId: string, tx: Tx = db): Promise<
   return String(max + 1);
 }
 
-export async function assertStudentCapacity(ctx: CenterContext, adding = 1, tx: Tx = db) {
+export async function assertStudentCapacity(ctx: CenterContext, adding = 1, tx: Tx = db, reactivate?: { archivedAt: Date | null; createdAt: Date }) {
+  // Pi Koç: "arşivle, yenisini ekle, eskisini geri aç" döngüsüne karşı koltuk kuralı
+  if (ctx.center.kind === "COACH" && adding === 1) {
+    const problem = await coachSeatProblem(ctx.center.id, ctx.center.studentLimit, { reactivate, tx });
+    if (problem) throw new CenterError(problem);
+    return;
+  }
   const active = await tx.centerStudent.count({ where: { centerId: ctx.center.id, status: "ACTIVE" } });
   if (active + adding > ctx.center.studentLimit) {
     throw new CenterError(
@@ -144,15 +151,17 @@ export async function updateStudent(ctx: CenterContext, studentId: string, input
 
 export async function setStudentStatus(ctx: CenterContext, studentId: string, status: "ACTIVE" | "PASSIVE" | "LEFT") {
   const student = await getStudentOrThrow(ctx, studentId);
-  if (status === "ACTIVE" && student.status !== "ACTIVE") await assertStudentCapacity(ctx);
+  if (status === "ACTIVE" && student.status !== "ACTIVE") await assertStudentCapacity(ctx, 1, db, { archivedAt: student.archivedAt, createdAt: student.createdAt });
   await db.centerStudent.update({
     where: { id: studentId },
-    data: { status, leftAt: status === "LEFT" ? new Date() : null },
+    data: { status, leftAt: status === "LEFT" ? new Date() : null, archivedAt: status === "ACTIVE" ? null : student.status === "ACTIVE" ? new Date() : student.archivedAt },
   });
 }
 
 /** Öğrenciyi tamamen siler; tahsilatı olan öğrenci muhasebe kaydı bozulmasın diye silinemez. */
 export async function deleteStudent(ctx: CenterContext, studentId: string) {
+  // Pi Koç'ta öğrenci silinmez (silip yeniden eklemek koltuk kuralını aşmanın yolu olurdu); arşive alınır
+  if (ctx.center.kind === "COACH") throw new CenterError("Pi Koç'ta öğrenci silinmez; arşive alabilirsiniz. Kayıtları saklanır.");
   await getStudentOrThrow(ctx, studentId);
   const payments = await db.centerPayment.count({ where: { studentId, cancelledAt: null } });
   if (payments) throw new CenterError("Bu öğrencinin tahsilat kaydı var; muhasebe kayıtları korunmalı. Silmek yerine durumunu “Ayrıldı” yapın.");

@@ -1222,6 +1222,8 @@ model CenterStudent {
   planNudgedWeek    DateTime?           @db.Date
   /// Pi Koç: kayıt girmeyen öğrenciye son hatırlatma
   inactiveNudgedAt  DateTime?
+  /// Pi Koç: arşive alınma zamanı (30 gün tekrar aktif edilemez; son 30 günün öğrenci değişimine sayılır). Paket düşünce sistemin arşivledikleri boş kalır.
+  archivedAt        DateTime?
   // Pi Koç: koçun bu öğrenciden aldığı aylık ücret (kuruş); tahsilat takibi için
   monthlyFee        Int?
   enrolledAt        DateTime            @default(now())

@@ -12,6 +12,7 @@ import { assignResource } from "@/server/center/resources";
 import { createStudent } from "@/server/center/students";
 import { db } from "@/server/db";
 import { deleteUpload, saveUpload, UploadError } from "@/server/storage";
+import { assertCoachSeat } from "@/server/koc-seats";
 import { actionUser } from "@/server/auth/current-user";
 import { draftReportNote, saveReport, sendReport, type ReportDraft } from "@/server/koc-report";
 import { isDateString } from "@/lib/dates";
@@ -120,11 +121,10 @@ export async function kocSetStudentActiveAction(_: ActionState, formData: FormDa
   return guard(async () => {
     const student = await kocStudentOrThrow(auth.ctx, str(formData, "studentId"));
     const active = str(formData, "active") === "1";
-    if (active && student.status !== "ACTIVE") {
-      const count = await db.centerStudent.count({ where: { centerId: auth.ctx.center.id, status: "ACTIVE" } });
-      if (count >= auth.ctx.center.studentLimit) throw new CenterError(`Paketinizin öğrenci sınırı ${auth.ctx.center.studentLimit}. Önce bir öğrenciyi arşive alın ya da paketinizi yükseltin.`);
-    }
-    await db.centerStudent.update({ where: { id: student.id }, data: { status: active ? "ACTIVE" : "PASSIVE" } });
+    // Koltuk kuralı: arşivden dönüş 30 gün bekler (ilk 24 saat geri alınabilir); son 30 günün değişimi de sayılır
+    if (active && student.status !== "ACTIVE") await assertCoachSeat(auth.ctx.center.id, auth.ctx.center.studentLimit, { reactivate: { archivedAt: student.archivedAt, createdAt: student.createdAt } });
+    if (!active && student.status !== "ACTIVE") return success("Öğrenci zaten arşivde.");
+    await db.centerStudent.update({ where: { id: student.id }, data: { status: active ? "ACTIVE" : "PASSIVE", archivedAt: active ? null : new Date() } });
     refresh();
     return success(active ? "Öğrenci yeniden aktif." : "Öğrenci arşive alındı; kayıtları duruyor.");
   });
