@@ -191,6 +191,7 @@ export async function PlacementRobot({ exam, centerId, sp, basePath, listLocked 
                 <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
                 Tahmindir: {year} yerleştirmesinin taban {exam === "LGS" ? "puanı ve yüzdelik dilimlerine" : "puanı ve başarı sıralarına"} göre hesaplanır. Kontenjan ve puan dağılımı her yıl değişir; kesin
                 bilgi için {exam === "LGS" ? "MEB e-Okul" : "ÖSYM kılavuzu ve YÖK Atlas"} esas alınır.
+                {exam === "YKS" ? " Kaynak: taban puanları ÖSYM, başarı sıraları YÖK Atlas." : null}
               </p>
             </CardBody>
           </Card>
