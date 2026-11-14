@@ -30,7 +30,7 @@ function Kpi({ icon, label, value, hint, tone = "ink" }: { icon: React.ReactNode
 export default async function KocHome({ searchParams }: PageProps<"/koc">) {
   await connection();
   const ctx = await requireCenter();
-  const { durum } = await searchParams;
+  const { durum, gecis } = await searchParams;
   const today = toLocalDateString(new Date());
   const [overview, stats] = await Promise.all([kocOverview(ctx, today), questionStats(ctx.center.id, today)]);
   const { cards, todayWeekday } = overview;
@@ -47,6 +47,16 @@ export default async function KocHome({ searchParams }: PageProps<"/koc">) {
   return (
     <>
       <CenterFlash code={durum} />
+      {gecis === "ozel" ? (
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-brand-200 bg-brand-50 px-4 py-3" role="status">
+          <p className="text-sm text-ink-900">
+            <b>Pi Koç panelindesiniz.</b> Öğrencilerinizin programı, soru ve deneme takibi, görüşmeleri ve veli raporları burada. Ders talepleri ve profiliniz için sağ üstteki <b>Özel ders paneline geç</b> bağlantısını kullanın.
+          </p>
+          <Link href="/koc" className="shrink-0 rounded-lg px-3 py-1.5 text-sm font-semibold text-brand-700 hover:bg-white">
+            Tamam
+          </Link>
+        </div>
+      ) : null}
       <section className="relative mb-6 overflow-hidden rounded-[2rem] bg-ink-900 px-6 py-7 text-white sm:px-8 sm:py-9">
         <div className="pointer-events-none absolute -right-16 -top-20 size-72 rounded-full bg-brand-600/40 blur-3xl" aria-hidden />
         <div className="pointer-events-none absolute -bottom-24 left-1/3 size-60 rounded-full bg-gold-400/15 blur-3xl" aria-hidden />

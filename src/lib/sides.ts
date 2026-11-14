@@ -118,7 +118,10 @@ export function sideSwitches(f: SideFacts, current: "teacher" | "student" | "cen
   const links: SideSwitch[] = [];
   const toKoc = () => {
     const home = kocHome(f);
-    if (home) links.push({ href: home === "/koc" ? staffPanelHref(f, "koc") : home, label: "Pi Koç'a geç", short: "Pi Koç" });
+    if (!home) return;
+    // Özel ders panelinden gelen öğretmen Pi Koç'ta karşılama şeridi görür (?gecis=ozel)
+    const href = home !== "/koc" ? home : current === "teacher" ? (f.staff ? "/panel-sec?taraf=koc&next=%2Fkoc%3Fgecis%3Dozel" : "/koc?gecis=ozel") : staffPanelHref(f, "koc");
+    links.push({ href, label: "Pi Koç'a geç", short: "Pi Koç" });
   };
   if (current === "teacher") {
     if (f.staff) links.push({ href: staffPanelHref(f, "kurum"), label: "Kurum paneline geç", short: "Kurum" });

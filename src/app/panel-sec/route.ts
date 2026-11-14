@@ -15,5 +15,5 @@ export async function GET(request: NextRequest) {
   // İsteğe bağlı hedef: yalnızca o tarafın sayfaları
   const home = side === "koc" ? "/koc" : "/kurum";
   const next = safeNextPath(request.nextUrl.searchParams.get("next"));
-  return NextResponse.redirect(publicUrl(next && (next === home || next.startsWith(`${home}/`)) ? next : home, request));
+  return NextResponse.redirect(publicUrl(next && (next === home || next.startsWith(`${home}/`) || next.startsWith(`${home}?`)) ? next : home, request));
 }

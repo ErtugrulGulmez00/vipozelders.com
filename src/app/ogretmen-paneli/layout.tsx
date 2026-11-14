@@ -29,6 +29,8 @@ export default async function TeacherLayout({ children }: { children: React.Reac
   const open = settings.lessonBookingEnabled;
   // Randevu ve ödeme kapalıyken eski modelin bölümleri gösterilmez (eski kaydı olan hesapta da)
   const show = (_used: boolean) => open;
+  // Pi Koç ayrı bir paneldir: geçiş belirgin olsun, varınca karşılama şeridi çıksın (?gecis=ozel)
+  const kocHref = sideSwitches(facts, "teacher").find((l) => l.short === "Pi Koç")?.href ?? "/pi-koc";
   return (
     <PanelShell
       user={user}
@@ -36,21 +38,23 @@ export default async function TeacherLayout({ children }: { children: React.Reac
       switchLinks={sideSwitches(facts, "teacher")}
       nav={[
         { href: "/ogretmen-paneli", label: "Özet", icon: <LayoutDashboard />, exact: true },
-        { href: "/ogretmen-paneli/ders-talepleri", label: "Ders talepleri", icon: <Inbox />, badge: inquiries || undefined },
-        // Bekleyen talep varsa başlık doğrudan taleplere götürür
-        { href: facts.kocStaff ? "/koc" : "/pi-koc", label: "Pi Koç öğrencilerim", icon: <GraduationCap /> },
-        { href: "/ogretmen-paneli/mesajlar", label: "Mesajlar", icon: <MessageCircle />, badge: unreadMessages || undefined },
-        ...(show(legacy.bookings > 0 || pending > 0) ? [{ href: pending ? "/ogretmen-paneli/talepler" : "/ogretmen-paneli/dersler", label: "Derslerim", icon: <CalendarDays />, badge: pending || undefined, also: ["/ogretmen-paneli/talepler", "/ogretmen-paneli/dersler"] }] : []),
-        ...(show(legacy.links > 0) ? [{ href: "/ogretmen-paneli/ders-baglantilari", label: "Ders bağlantıları", icon: <Link2 /> }] : []),
-        ...(show(questionRights > 0) ? [{ href: "/ogretmen-paneli/soru-cozum", label: "Soru çözüm dersleri", icon: <MessageCircleQuestion />, badge: questionRights || undefined }] : []),
-        ...(open && settings.groupsEnabled ? [{ href: "/ogretmen-paneli/grup-dersleri", label: "Grup dersleri", icon: <Users /> }] : []),
-        { href: "/ogretmen-paneli/profil", label: "Profilim", icon: <UserRound />, also: ["/ogretmen-paneli/dersler-ve-fiyatlar", "/ogretmen-paneli/belgeler"] },
+        // Özel ders: velilerden gelen talepler ve yazışmalar
+        { group: "Özel ders", href: "/ogretmen-paneli/ders-talepleri", label: "Ders talepleri", icon: <Inbox />, badge: inquiries || undefined },
+        { group: "Özel ders", href: "/ogretmen-paneli/mesajlar", label: "Mesajlar", icon: <MessageCircle />, badge: unreadMessages || undefined },
+        ...(show(legacy.bookings > 0 || pending > 0) ? [{ group: "Özel ders", href: pending ? "/ogretmen-paneli/talepler" : "/ogretmen-paneli/dersler", label: "Derslerim", icon: <CalendarDays />, badge: pending || undefined, also: ["/ogretmen-paneli/talepler", "/ogretmen-paneli/dersler"] }] : []),
+        ...(show(legacy.links > 0) ? [{ group: "Özel ders", href: "/ogretmen-paneli/ders-baglantilari", label: "Ders bağlantıları", icon: <Link2 /> }] : []),
+        ...(show(questionRights > 0) ? [{ group: "Özel ders", href: "/ogretmen-paneli/soru-cozum", label: "Soru çözüm dersleri", icon: <MessageCircleQuestion />, badge: questionRights || undefined }] : []),
+        ...(open && settings.groupsEnabled ? [{ group: "Özel ders", href: "/ogretmen-paneli/grup-dersleri", label: "Grup dersleri", icon: <Users /> }] : []),
+        // Öğrenci takibi ayrı panelde (Pi Koç)
+        { group: "Öğrenci takibi", href: kocHref, label: "Pi Koç'a geç", icon: <GraduationCap />, accent: true, tag: "Ayrı panel" },
+        // Profil ve vitrin: velilerin gördüğü taraf
+        { group: "Profil ve vitrin", href: "/ogretmen-paneli/profil", label: "Profilim", icon: <UserRound />, also: ["/ogretmen-paneli/dersler-ve-fiyatlar", "/ogretmen-paneli/belgeler"] },
         // Takvim aramadaki saat süzgecini ve profildeki uygun saatleri besler; her modelde kalır
-        { href: "/ogretmen-paneli/takvim", label: "Müsaitlik takvimi", icon: <CalendarClock /> },
-        ...(show(legacy.ledger > 0) ? [{ href: "/ogretmen-paneli/kazanclar", label: "Kazançlarım", icon: <Wallet /> }] : []),
-        { href: "/ogretmen-paneli/yorumlar", label: "Yorumlar", icon: <MessageSquareQuote /> },
-        { href: "/ogretmen-paneli/bildirimler", label: "Bildirimler", icon: <Bell />, badge: unread || undefined },
-        { href: "/ogretmen-paneli/ayarlar", label: "Hesap ayarları", icon: <Settings /> },
+        { group: "Profil ve vitrin", href: "/ogretmen-paneli/takvim", label: "Müsaitlik takvimi", icon: <CalendarClock /> },
+        { group: "Profil ve vitrin", href: "/ogretmen-paneli/yorumlar", label: "Yorumlar", icon: <MessageSquareQuote /> },
+        ...(show(legacy.ledger > 0) ? [{ group: "Profil ve vitrin", href: "/ogretmen-paneli/kazanclar", label: "Kazançlarım", icon: <Wallet /> }] : []),
+        { group: "Hesap", href: "/ogretmen-paneli/bildirimler", label: "Bildirimler", icon: <Bell />, badge: unread || undefined },
+        { group: "Hesap", href: "/ogretmen-paneli/ayarlar", label: "Hesap ayarları", icon: <Settings /> },
       ]}
     >
       {children}

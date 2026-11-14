@@ -84,7 +84,7 @@ describe("Giriş kapısı kuralı (gateHome): girilen kapının tarafı açılı
 
   it("Pi Koç hesabı kurum tarafına sayılmaz; geçiş bağlantıları doğru tarafa gider", () => {
     expect(kurumHome(coach)).toBeNull();
-    expect(sideSwitches(teacherCoach, "teacher").map((s) => s.href)).toEqual(["/koc"]);
+    expect(sideSwitches(teacherCoach, "teacher").map((s) => s.href)).toEqual(["/koc?gecis=ozel"]);
     expect(sideSwitches(teacherCoach, "koc").map((s) => s.href)).toEqual(["/ogretmen-paneli"]);
   });
 });

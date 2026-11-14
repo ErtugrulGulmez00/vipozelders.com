@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { Lock } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { needsFullLoad } from "@/lib/sides";
 
 /** also: bu başlık altında toplanan diğer sayfalar (sekmeli bölümler); oradayken de başlık seçili görünür. */
 /** group: menüde bu maddenin üstünde gösterilen küçük başlık (aynı başlıktaki ardışık maddeler bir arada durur). */
@@ -26,7 +27,7 @@ export function SideNav({ items }: { items: PanelNavItem[] }) {
           {item.group && item.group !== items[index - 1]?.group ? (
             <p className="px-3 pb-1 pt-4 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{item.group}</p>
           ) : null}
-        <Link
+        <NavAnchor
           href={item.href}
           aria-current={isActive(pathname, item) ? "page" : undefined}
           className={cn(
@@ -39,7 +40,7 @@ export function SideNav({ items }: { items: PanelNavItem[] }) {
           {item.badge ? <span className="rounded-full bg-gold-400 px-1.5 text-xs font-bold text-ink-900">{item.badge}</span> : null}
           {item.tag ? <span className="rounded-full bg-gold-400 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-ink-900">{item.tag}</span> : null}
           {item.locked ? <Lock className="size-3.5 text-gold-400" aria-label="Ücretli pakette" /> : null}
-        </Link>
+        </NavAnchor>
         </div>
       ))}
     </nav>
@@ -51,7 +52,7 @@ export function MobileNav({ items }: { items: PanelNavItem[] }) {
   return (
     <nav className="-mx-4 flex gap-1 overflow-x-auto border-b border-slate-200 bg-white px-4 py-2 lg:hidden" aria-label="Panel menüsü">
       {items.map((item) => (
-        <Link
+        <NavAnchor
           key={item.href}
           href={item.href}
           className={cn(
@@ -62,8 +63,14 @@ export function MobileNav({ items }: { items: PanelNavItem[] }) {
           {item.label}
           {item.badge ? <span className="rounded-full bg-gold-400 px-1.5 text-[10px] text-ink-900">{item.badge}</span> : null}
           {item.locked ? <Lock className="size-3 text-gold-600" aria-label="Ücretli pakette" /> : null}
-        </Link>
+        </NavAnchor>
       ))}
     </nav>
   );
+}
+
+/** /panel-sec bir rotadır (çerez ayarlar): sayfa içi gezinme yerine tam yükleme */
+function NavAnchor({ href, ...props }: React.ComponentProps<"a"> & { href: string }) {
+  if (needsFullLoad(href)) return <a href={href} {...props} />;
+  return <Link href={href} {...props} />;
 }
