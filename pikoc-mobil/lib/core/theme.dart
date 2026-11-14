@@ -64,13 +64,7 @@ class Brand {
   static const hero = ink900;
 
   /// Avatar renkleri (sitedeki Avatar ile aynı sıra): arka plan, yazı
-  static const avatarTones = [
-    (b600, Colors.white),
-    (iris500, Colors.white),
-    (mint400, ink950),
-    (gold400, ink900),
-    (ink800, Colors.white),
-  ];
+  static const avatarTones = [(b600, Colors.white), (iris500, Colors.white), (mint400, ink950), (gold400, ink900), (ink800, Colors.white)];
 
   /// Sitedeki gibi ada göre sabit avatar rengi
   static (Color, Color) avatarTone(String name) {
@@ -79,6 +73,17 @@ class Brand {
       sum = (sum + unit) % 997;
     }
     return avatarTones[sum % avatarTones.length];
+  }
+
+  /// Açık temanın yumuşak avatar kutuları (koç paneli kartları): arka plan, yazı
+  static const softAvatarTones = [(b100, b700), (iris100, Color(0xFF3B3F9E)), (gold100, gold700), (Color(0xFFDDF5EC), Color(0xFF11684A)), (Color(0xFFF3E8FF), Color(0xFF6B2FB3))];
+
+  static (Color, Color) softAvatar(String name) {
+    var sum = 0;
+    for (final unit in name.runes) {
+      sum = (sum + unit) % 997;
+    }
+    return softAvatarTones[sum % softAvatarTones.length];
   }
 }
 
@@ -126,10 +131,7 @@ class AppTheme {
 
   static ThemeData _build(Brightness brightness) {
     final dark = brightness == Brightness.dark;
-    final scheme = ColorScheme.fromSeed(
-      seedColor: Brand.b600,
-      brightness: brightness,
-    ).copyWith(
+    final scheme = ColorScheme.fromSeed(seedColor: Brand.b600, brightness: brightness).copyWith(
       primary: dark ? Brand.b400 : Brand.b600,
       onPrimary: Colors.white,
       primaryContainer: dark ? const Color(0xFF4A1B10) : Brand.b50,
@@ -166,14 +168,9 @@ class AppTheme {
       materialTapTargetSize: MaterialTapTargetSize.padded,
     );
 
-    final text = base.textTheme.apply(
-      fontFamily: fontFamily,
-      bodyColor: scheme.onSurface,
-      displayColor: scheme.onSurface,
-    );
+    final text = base.textTheme.apply(fontFamily: fontFamily, bodyColor: scheme.onSurface, displayColor: scheme.onSurface);
 
-    TextStyle? display(TextStyle? style, FontWeight weight, [double letterSpacing = -0.3]) =>
-        style?.copyWith(fontFamily: displayFamily, fontWeight: weight, letterSpacing: letterSpacing);
+    TextStyle? display(TextStyle? style, FontWeight weight, [double letterSpacing = -0.3]) => style?.copyWith(fontFamily: displayFamily, fontWeight: weight, letterSpacing: letterSpacing);
 
     // Alanlar sitede rounded-xl, kartlar rounded-3xl, düğmeler hap
     final fieldRadius = BorderRadius.circular(14);
@@ -208,7 +205,10 @@ class AppTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: BorderSide(color: scheme.outlineVariant)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(color: scheme.outlineVariant),
+        ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(minimumSize: const Size(64, 50), shape: pill, padding: const EdgeInsets.symmetric(horizontal: 24), textStyle: buttonText),
@@ -227,17 +227,35 @@ class AppTheme {
         ),
       ),
       textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(shape: pill, textStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w700)),
+        style: TextButton.styleFrom(
+          shape: pill,
+          textStyle: const TextStyle(fontFamily: fontFamily, fontWeight: FontWeight.w700),
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: dark ? Brand.ink900 : Colors.white,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(borderRadius: fieldRadius, borderSide: BorderSide(color: scheme.outline)),
-        enabledBorder: OutlineInputBorder(borderRadius: fieldRadius, borderSide: BorderSide(color: scheme.outline)),
-        focusedBorder: OutlineInputBorder(borderRadius: fieldRadius, borderSide: BorderSide(color: scheme.primary, width: 2)),
-        errorBorder: OutlineInputBorder(borderRadius: fieldRadius, borderSide: BorderSide(color: scheme.error)),
-        focusedErrorBorder: OutlineInputBorder(borderRadius: fieldRadius, borderSide: BorderSide(color: scheme.error, width: 2)),
+        border: OutlineInputBorder(
+          borderRadius: fieldRadius,
+          borderSide: BorderSide(color: scheme.outline),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: fieldRadius,
+          borderSide: BorderSide(color: scheme.outline),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: fieldRadius,
+          borderSide: BorderSide(color: scheme.primary, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: fieldRadius,
+          borderSide: BorderSide(color: scheme.error),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: fieldRadius,
+          borderSide: BorderSide(color: scheme.error, width: 2),
+        ),
         errorMaxLines: 3,
         helperMaxLines: 3,
       ),
@@ -273,9 +291,7 @@ class AppTheme {
             color: states.contains(WidgetState.selected) ? scheme.primary : scheme.onSurfaceVariant,
           ),
         ),
-        iconTheme: WidgetStateProperty.resolveWith(
-          (states) => IconThemeData(color: states.contains(WidgetState.selected) ? scheme.primary : scheme.onSurfaceVariant),
-        ),
+        iconTheme: WidgetStateProperty.resolveWith((states) => IconThemeData(color: states.contains(WidgetState.selected) ? scheme.primary : scheme.onSurfaceVariant)),
       ),
       tabBarTheme: TabBarThemeData(
         labelColor: scheme.primary,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'pi_logo.dart';
+import 'theme.dart';
 
 /// Ekran genişliği eşikleri: yan menü (tablet, yatay telefon) ve iki bölmeli düzen (geniş tablet).
 abstract final class Breakpoints {
@@ -59,11 +60,7 @@ class AppNavScaffold extends StatelessWidget {
         appBar: appBar,
         floatingActionButton: floatingActionButton,
         body: body,
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: selectedIndex,
-          onDestinationSelected: onSelect,
-          destinations: [for (final i in items) NavigationDestination(icon: Icon(i.icon), selectedIcon: Icon(i.selectedIcon), label: i.label)],
-        ),
+        bottomNavigationBar: _FloatingNavBar(selectedIndex: selectedIndex, onSelect: onSelect, items: items),
       );
     }
     final theme = Theme.of(context);
@@ -91,6 +88,93 @@ class AppNavScaffold extends StatelessWidget {
             child: Scaffold(appBar: appBar, body: body),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Telefonda alttaki lacivert, yuvarlak köşeli menü; seçili sekme mercan.
+class _FloatingNavBar extends StatelessWidget {
+  const _FloatingNavBar({required this.selectedIndex, required this.onSelect, required this.items});
+
+  final int selectedIndex;
+  final ValueChanged<int> onSelect;
+  final List<NavItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    // Az sekmede simge + yazı yan yana; çok sekmede simge üstte, yazı altta
+    final compact = items.length > 3;
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+        child: Container(
+          height: compact ? 66 : 64,
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            color: Brand.ink900,
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: [BoxShadow(color: Brand.ink900.withValues(alpha: 0.18), blurRadius: 24, offset: const Offset(0, 8))],
+          ),
+          child: Row(
+            children: [
+              for (var i = 0; i < items.length; i++)
+                Expanded(
+                  child: Semantics(
+                    selected: i == selectedIndex,
+                    button: true,
+                    label: items[i].label,
+                    excludeSemantics: true,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 3),
+                      child: Material(
+                        color: i == selectedIndex ? Brand.b600 : Colors.transparent,
+                        borderRadius: BorderRadius.circular(16),
+                        child: InkWell(
+                          key: Key('nav-$i'),
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () => onSelect(i),
+                          child: SizedBox(
+                            height: 50,
+                            child: compact
+                                ? Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(i == selectedIndex ? items[i].selectedIcon : items[i].icon, size: 21, color: i == selectedIndex ? Colors.white : Brand.ink200),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        items[i].label,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: i == selectedIndex ? Colors.white : Brand.ink200),
+                                      ),
+                                    ],
+                                  )
+                                : Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(i == selectedIndex ? items[i].selectedIcon : items[i].icon, size: 21, color: i == selectedIndex ? Colors.white : Brand.ink200),
+                                      const SizedBox(width: 8),
+                                      Flexible(
+                                        child: Text(
+                                          items[i].label,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: i == selectedIndex ? Colors.white : Brand.ink200),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

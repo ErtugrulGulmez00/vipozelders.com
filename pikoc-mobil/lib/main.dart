@@ -52,7 +52,8 @@ class PiKampusApp extends StatelessWidget {
           title: config.appName,
           debugShowCheckedModeBanner: false,
           theme: AppTheme.light(),
-          darkTheme: AppTheme.dark(),
+          // Tasarım açık temada; telefon karanlık modda olsa da açık
+          themeMode: ThemeMode.light,
           locale: const Locale('tr', 'TR'),
           supportedLocales: const [Locale('tr', 'TR')],
           localizationsDelegates: const [GlobalMaterialLocalizations.delegate, GlobalWidgetsLocalizations.delegate, GlobalCupertinoLocalizations.delegate],

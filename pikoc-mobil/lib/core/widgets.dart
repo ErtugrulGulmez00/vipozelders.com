@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'api.dart';
+import 'pi_logo.dart';
 import 'theme.dart';
 
 /// Yükleniyor / hata / içerik: bir istek sonucunu çizen ortak sarmalayıcı.
@@ -120,11 +121,19 @@ class StatTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [
-            Icon(icon, size: 16, color: color ?? Brand.b600),
-            const SizedBox(width: 6),
-            Expanded(child: Text(label, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant), overflow: TextOverflow.ellipsis)),
-          ]),
+          Row(
+            children: [
+              Icon(icon, size: 16, color: color ?? Brand.b600),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  label,
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 6),
           Text(value, style: theme.textTheme.titleLarge),
           if (hint != null) Text(hint!, style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
@@ -144,16 +153,21 @@ class StatGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final rows = <Widget>[];
     for (var i = 0; i < children.length; i += 2) {
-      rows.add(Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: IntrinsicHeight(
-          child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Expanded(child: children[i]),
-            const SizedBox(width: 10),
-            Expanded(child: i + 1 < children.length ? children[i + 1] : const SizedBox()),
-          ]),
+      rows.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(child: children[i]),
+                const SizedBox(width: 10),
+                Expanded(child: i + 1 < children.length ? children[i + 1] : const SizedBox()),
+              ],
+            ),
+          ),
         ),
-      ));
+      );
     }
     return Column(children: rows);
   }
@@ -216,10 +230,12 @@ class RatioBar extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(children: [
-            Expanded(child: Text(label, style: theme.textTheme.bodyMedium)),
-            Text(trailing, style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700)),
-          ]),
+          Row(
+            children: [
+              Expanded(child: Text(label, style: theme.textTheme.bodyMedium)),
+              Text(trailing, style: theme.textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700)),
+            ],
+          ),
           const SizedBox(height: 4),
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
@@ -243,7 +259,10 @@ class Pill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(color: c.background, borderRadius: BorderRadius.circular(20)),
-      child: Text(text, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: c.foreground)),
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: c.foreground),
+      ),
     );
   }
 }
@@ -282,7 +301,7 @@ Future<bool> confirm(BuildContext context, String text, {String ok = 'Evet'}) as
   return result ?? false;
 }
 
-/// Koyu başlık kartı (sitedeki lacivert karşılama alanı)
+/// Mercan başlık kartı (koç panelindeki "Bugün" kartıyla aynı dil; köşede silik π)
 class HeroHeader extends StatelessWidget {
   const HeroHeader({super.key, required this.overline, required this.title, this.lines = const [], this.action});
 
@@ -295,17 +314,35 @@ class HeroHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-      decoration: BoxDecoration(color: Brand.ink900, borderRadius: BorderRadius.circular(26)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(color: Brand.b600, borderRadius: BorderRadius.circular(24)),
+      child: Stack(
         children: [
-          Text(overline, style: const TextStyle(color: Brand.ink200, fontSize: 13)),
-          const SizedBox(height: 4),
-          Text(title, style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: Colors.white)),
-          for (final line in lines.where((l) => l.isNotEmpty))
-            Padding(padding: const EdgeInsets.only(top: 4), child: Text(line, style: const TextStyle(color: Brand.ink200, fontSize: 13))),
-          if (action != null) ...[const SizedBox(height: 14), action!],
+          Positioned(right: -40, top: -40, child: PiMark(size: 170, color: Colors.white.withValues(alpha: 0.12))),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (overline.isNotEmpty)
+                  Text(
+                    overline.toUpperCase(),
+                    style: const TextStyle(color: Brand.b100, fontSize: 12, fontWeight: FontWeight.w700, letterSpacing: 0.8),
+                  ),
+                const SizedBox(height: 6),
+                Text(
+                  title,
+                  style: const TextStyle(fontFamily: AppTheme.displayFamily, color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800),
+                ),
+                for (final line in lines.where((l) => l.isNotEmpty))
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(line, style: const TextStyle(color: Brand.b100, fontSize: 13)),
+                  ),
+                if (action != null) ...[const SizedBox(height: 14), action!],
+              ],
+            ),
+          ),
         ],
       ),
     );

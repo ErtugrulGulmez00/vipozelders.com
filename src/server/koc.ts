@@ -260,10 +260,14 @@ export async function kocOverview(ctx: CenterContext, today: string) {
     const solvedThisWeek = myLogs.filter((l) => dbDateToString(l.date) >= weekStart).reduce((t, l) => t + l.solved, 0);
     const lastSessionDate = last ? dbDateToString(last.date) : null;
     const alerts: string[] = [];
-    if (!lastSessionDate) alerts.push("Henüz görüşme yok");
+    // Yeni eklenen öğrenciye (ilk 14 gün) "soru girilmedi" / "görüşme yok" uyarısı verilmez
+    const isNew = toLocalDateString(s.createdAt) > addDaysToDateString(today, -14);
+    if (!lastSessionDate) {
+      if (!isNew) alerts.push("Henüz görüşme yok");
+    }
     else if (lastSessionDate < addDaysToDateString(today, -14)) alerts.push("2 haftadır görüşme yok");
     if (netChange !== null && netChange <= -3) alerts.push(`Son denemede ${Math.abs(netChange).toLocaleString("tr-TR")} net düştü`);
-    if (!myLogs.length) alerts.push("2 haftadır soru girilmedi");
+    if (!myLogs.length && !isNew) alerts.push("2 haftadır soru girilmedi");
     if (todayWeekday >= 4 && items.length && items.filter((i) => i.doneAt).length / items.length < 0.4) alerts.push("Haftalık program geride");
     return {
       id: s.id,
