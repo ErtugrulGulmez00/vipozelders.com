@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/adaptive.dart';
 import '../../core/api.dart';
 import '../../core/format.dart';
 import '../../core/session.dart';
@@ -24,24 +25,23 @@ class _TeacherHomeState extends State<TeacherHome> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return AppNavScaffold(
       appBar: AppBar(title: Text(_titles[_tab])),
+      // Site sayfaları (mesajlar, profil) kendi düzenini kurar; uygulamanın ekranları ortada okunur genişlikte
       body: IndexedStack(index: _tab, children: const [
-        InquiriesScreen(),
+        Readable(child: InquiriesScreen()),
         WebPanel(authPath: '/ogretmen-paneli/mesajlar'),
         WebPanel(authPath: '/ogretmen-paneli/profil'),
-        AccountScreen(),
+        Readable(child: AccountScreen()),
       ]),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
-        onDestinationSelected: (i) => setState(() => _tab = i),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.inbox_outlined), selectedIcon: Icon(Icons.inbox_rounded), label: 'Talepler'),
-          NavigationDestination(icon: Icon(Icons.chat_bubble_outline_rounded), selectedIcon: Icon(Icons.chat_bubble_rounded), label: 'Mesajlar'),
-          NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'Profil'),
-          NavigationDestination(icon: Icon(Icons.settings_outlined), selectedIcon: Icon(Icons.settings_rounded), label: 'Hesap'),
-        ],
-      ),
+      selectedIndex: _tab,
+      onSelect: (i) => setState(() => _tab = i),
+      items: const [
+        NavItem(icon: Icons.inbox_outlined, selectedIcon: Icons.inbox_rounded, label: 'Talepler'),
+        NavItem(icon: Icons.chat_bubble_outline_rounded, selectedIcon: Icons.chat_bubble_rounded, label: 'Mesajlar'),
+        NavItem(icon: Icons.person_outline_rounded, selectedIcon: Icons.person_rounded, label: 'Profil'),
+        NavItem(icon: Icons.settings_outlined, selectedIcon: Icons.settings_rounded, label: 'Hesap'),
+      ],
     );
   }
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/adaptive.dart';
 import '../../core/api.dart';
 import '../../core/session.dart';
 
@@ -52,27 +53,41 @@ class _PasswordScreenState extends State<PasswordScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Şifre değiştir'),
-        actions: [
-          if (widget.firstLogin) TextButton(onPressed: () => SessionScope.read(context).logout(), child: const Text('Çıkış')),
-        ],
+        actions: [if (widget.firstLogin) TextButton(onPressed: () => SessionScope.read(context).logout(), child: const Text('Çıkış'))],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          if (widget.firstLogin)
-            const Padding(
-              padding: EdgeInsets.only(bottom: 16),
-              child: Text('Koçunun verdiği geçici şifreyle girdin. Devam etmek için kendine yeni bir şifre belirle.'),
+      body: Readable(
+        maxWidth: 520,
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            if (widget.firstLogin) const Padding(padding: EdgeInsets.only(bottom: 16), child: Text('Koçunun verdiği geçici şifreyle girdin. Devam etmek için kendine yeni bir şifre belirle.')),
+            TextField(
+              controller: _current,
+              obscureText: true,
+              decoration: InputDecoration(labelText: widget.firstLogin ? 'Geçici şifre' : 'Mevcut şifre'),
             ),
-          TextField(controller: _current, obscureText: true, decoration: InputDecoration(labelText: widget.firstLogin ? 'Geçici şifre' : 'Mevcut şifre')),
-          const SizedBox(height: 12),
-          TextField(controller: _next, obscureText: true, decoration: const InputDecoration(labelText: 'Yeni şifre', helperText: 'En az 8 karakter; harf ve rakam içersin.')),
-          const SizedBox(height: 12),
-          TextField(controller: _again, obscureText: true, decoration: const InputDecoration(labelText: 'Yeni şifre (tekrar)'), onSubmitted: (_) => _submit()),
-          if (_error != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error))),
-          const SizedBox(height: 20),
-          FilledButton(onPressed: _busy ? null : _submit, child: Text(_busy ? 'Kaydediliyor…' : 'Şifreyi kaydet')),
-        ],
+            const SizedBox(height: 12),
+            TextField(
+              controller: _next,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Yeni şifre', helperText: 'En az 8 karakter; harf ve rakam içersin.'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _again,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Yeni şifre (tekrar)'),
+              onSubmitted: (_) => _submit(),
+            ),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              ),
+            const SizedBox(height: 20),
+            FilledButton(onPressed: _busy ? null : _submit, child: Text(_busy ? 'Kaydediliyor…' : 'Şifreyi kaydet')),
+          ],
+        ),
       ),
     );
   }

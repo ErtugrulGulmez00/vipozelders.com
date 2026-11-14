@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/adaptive.dart';
 import '../../core/api.dart';
 import '../../core/format.dart';
 import '../../core/session.dart';
@@ -53,7 +54,7 @@ class _StudentHomeState extends State<StudentHome> {
           const AccountScreen(),
         ];
         const titles = ['Bugün', 'Haftalık program', 'Soru ve çalışma', 'Denemeler ve hedef', 'Hesabım'];
-        return Scaffold(
+        return AppNavScaffold(
           appBar: AppBar(
             title: Text(titles[_tab]),
             actions: [
@@ -69,18 +70,16 @@ class _StudentHomeState extends State<StudentHome> {
             ],
           ),
           // Sekme her açılışta güncel veriyi yükler (bir sekmede girilen kayıt diğerinde de görünür)
-          body: pages[_tab],
-          bottomNavigationBar: NavigationBar(
-            selectedIndex: _tab,
-            onDestinationSelected: (i) => setState(() => _tab = i),
-            destinations: const [
-              NavigationDestination(icon: Icon(Icons.today_outlined), selectedIcon: Icon(Icons.today_rounded), label: 'Bugün'),
-              NavigationDestination(icon: Icon(Icons.calendar_view_week_outlined), selectedIcon: Icon(Icons.calendar_view_week_rounded), label: 'Program'),
-              NavigationDestination(icon: Icon(Icons.edit_note_outlined), selectedIcon: Icon(Icons.edit_note_rounded), label: 'Kayıtlar'),
-              NavigationDestination(icon: Icon(Icons.insights_outlined), selectedIcon: Icon(Icons.insights_rounded), label: 'Denemeler'),
-              NavigationDestination(icon: Icon(Icons.person_outline_rounded), selectedIcon: Icon(Icons.person_rounded), label: 'Hesap'),
-            ],
-          ),
+          body: Readable(child: pages[_tab]),
+          selectedIndex: _tab,
+          onSelect: (i) => setState(() => _tab = i),
+          items: const [
+            NavItem(icon: Icons.today_outlined, selectedIcon: Icons.today_rounded, label: 'Bugün'),
+            NavItem(icon: Icons.calendar_view_week_outlined, selectedIcon: Icons.calendar_view_week_rounded, label: 'Program'),
+            NavItem(icon: Icons.edit_note_outlined, selectedIcon: Icons.edit_note_rounded, label: 'Kayıtlar'),
+            NavItem(icon: Icons.insights_outlined, selectedIcon: Icons.insights_rounded, label: 'Denemeler'),
+            NavItem(icon: Icons.person_outline_rounded, selectedIcon: Icons.person_rounded, label: 'Hesap'),
+          ],
         );
       },
     );
