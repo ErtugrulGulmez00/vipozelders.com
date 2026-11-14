@@ -45,6 +45,12 @@ for p in / /ogretmenler /soru-sor /kurumlar-icin; do curl -s -o /dev/null -w "$p
 
 Panel adresleri girişsiz 307 döner, bu normaldir. Hata takibi: Yönetim → Hatalar.
 
+Görsel önbelleğini ısıt (ilk ziyaretçi görselin hazırlanmasını beklemesin; ~1 dk):
+
+```bash
+ssh -o BatchMode=yes root@194.62.52.232 "sudo -iu vipozelders bash -c 'cd app && node scripts/gorsel-isit.mjs http://127.0.0.1:3000'"
+```
+
 ## Sunucudaki .env
 
 - Dosya: `/home/vipozelders/app/.env`. **Değerleri asla ekrana yazdırma**, sohbete ya da depoya koyma.
