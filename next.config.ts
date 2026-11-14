@@ -17,6 +17,14 @@ const nextConfig: NextConfig = {
   // "X-Powered-By: Next.js" başlığı gönderilmez.
   poweredByHeader: false,
   partialPrefetching: true,
+  images: {
+    // Optimize edilmiş görsel 30 gün önbellekte kalır (varsayılan 4 saat; süre dolunca ilk ziyaretçi ~1 sn bekliyordu).
+    // Önbelleği temizleme yolu yok: /public'teki bir görsel değişirse dosya adını da değiştirin.
+    minimumCacheTTL: 2_592_000,
+    // Daha az genişlik: aynı görselin daha az kopyası üretilir, önbellek daha sık isabet eder
+    deviceSizes: [640, 828, 1080, 1280, 1920],
+    imageSizes: [32, 64, 128, 256, 384],
+  },
   // iyzipay modüllerini dosya sisteminden dinamik yüklediği için paketlenmeden çalıştırılmalı.
   serverExternalPackages: ["iyzipay", "pg", "nodemailer", "exceljs", "unpdf"],
   // Eski "Nasıl çalışır?" yazısı (alt bilgi bağlantısı) yeni rehbere gider

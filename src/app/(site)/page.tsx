@@ -101,7 +101,7 @@ export default async function HomePage() {
                 width={1366}
                 height={820}
                 sizes="(min-width: 1024px) 520px, 90vw"
-                loading="eager"
+                preload
                 className="block h-auto w-full"
               />
             </div>
@@ -111,6 +111,7 @@ export default async function HomePage() {
                 alt="Telefonda etüt yoklaması ekranı: öğrenciler geldi veya gelmedi olarak işaretleniyor"
                 fill
                 sizes="190px"
+                preload
                 className="rounded-[23px] object-cover object-top"
               />
             </div>
