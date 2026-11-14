@@ -1,4 +1,4 @@
-import { Inbox, MessageCircle, Phone } from "lucide-react";
+import { Inbox, MessageCircle, Phone, Video } from "lucide-react";
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { AddToCoachButton, InquiryActions } from "@/components/panel/inquiry-actions";
@@ -27,6 +27,15 @@ export default async function TeacherInquiriesPage() {
         title="Ders talepleri"
         description="Veliler profilinizden ders talebi gönderir. Kabul ederseniz velinin telefonunu görürsünüz ve öğrenci Pi Koç'unuza eklenir (hesabınız yoksa ücretsiz açılır). Ders saatini ve ücreti veliyle siz konuşursunuz, ödemeyi doğrudan size yapar."
       />
+      {/* Görüntülü ders bilgisi: dersler Pi Koç'taki öğrenci sayfasından başlatılır */}
+      <div className="mb-5 flex items-start gap-3 rounded-2xl border border-violet-200 bg-gradient-to-r from-violet-50 via-white to-brand-50 p-4">
+        <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-violet-600 text-white shadow-sm">
+          <Video className="size-5" aria-hidden />
+        </span>
+        <p className="text-sm leading-relaxed text-ink-900">
+          <b>Görüntülü dersler Pi Koç üzerinden yapılır.</b> Talebi kabul ettiğiniz öğrenci Pi Koç&apos;unuza eklenir; dersi, Pi Koç&apos;ta öğrencinin sayfasındaki <b>&quot;Görüşmeyi başlat&quot;</b> düğmesiyle açarsınız. Siz başlattığınızda öğrencinin Koçum bölümünde <b>&quot;Görüşmeye katıl&quot;</b> düğmesi açılır; ayrıca bir uygulama gerekmez.
+        </p>
+      </div>
       {items.length ? (
         <div className="space-y-3">
           {items.map((q) => {
