@@ -1,4 +1,4 @@
-import { BookMarked, BookOpenCheck, CalendarHeart, Crown, FileUp, LayoutDashboard, Map as MapIcon, School, Send, Sparkles, University, UserCog, Users, Wallet } from "lucide-react";
+import { BookMarked, BookOpenCheck, CalendarHeart, Crown, LayoutDashboard, School, University, UserCog, Users, Wallet } from "lucide-react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { CoachPlanBanner } from "@/components/koc/plan-banner";
@@ -31,34 +31,19 @@ export default async function KocLayout({ children }: { children: React.ReactNod
   const now = new Date();
   const overLimitDaysLeft = ctx.center.overLimitSince ? Math.max(0, Math.ceil((ctx.center.overLimitSince.getTime() + OVER_LIMIT_GRACE_DAYS * 86_400_000 - now.getTime()) / 86_400_000)) : null;
   const nextTier = freePlan ? (parseCoachTiers((await getSiteSettings()).piKocTiers)[0] ?? null) : null;
-  // Açık özellikler menüde; kilitli olanların hepsi altta tek grupta (ücretsiz pakette tıklayınca tanıtım/paketler)
-  const tools: PanelNavItem[] = [
-    // Tercih robotu ücretsiz pakette de açık (arama); öğrenci listesi ücretli
-    { href: "/koc/lgs-tercih", label: "LGS tercih robotu", icon: <School /> },
-    { href: "/koc/yks-tercih", label: "YKS tercih robotu", icon: <University /> },
-    { href: "/koc/tahsilat", label: "Tahsilat", icon: <Wallet />, locked: !coachFeatureOpen(ctx.coach, "fees") },
-  ];
-  const locked: PanelNavItem[] = [
-    ...tools.filter((t) => t.locked),
-    ...(freePlan
-      ? [
-          { href: "/koc/abonelik#pdf", label: "PDF'ten deneme", icon: <FileUp />, locked: true },
-          { href: "/koc/abonelik#konu", label: "Konu eksik haritası", icon: <MapIcon />, locked: true },
-          { href: "/koc/abonelik#yz", label: "Yapay zekâ asistanı", icon: <Sparkles />, locked: true },
-          { href: "/koc/abonelik#rapor", label: "Markalı veli raporu", icon: <Send />, locked: true },
-        ]
-      : []),
-  ];
+  // Menü sade: kilitli özellikler ayrı listede gösterilmez (sayfalarında tanıtım kutusu var, altta yükseltme kutusu)
   const nav: PanelNavItem[] = [
     { href: "/koc", label: "Genel bakış", icon: <LayoutDashboard />, exact: true },
     { href: "/koc/ogrenciler", label: "Öğrencilerim", icon: <Users /> },
     { href: "/koc/hafta", label: "Haftalık görüşmeler", icon: <CalendarHeart /> },
     { href: "/koc/denemeler", label: "Denemeler", icon: <BookOpenCheck /> },
     { href: "/koc/kaynaklar", label: "Kaynak kütüphanesi", icon: <BookMarked /> },
-    ...tools.filter((t) => !t.locked),
+    // Tercih robotu ücretsiz pakette de açık (arama); öğrenci listesi ücretli
+    { href: "/koc/lgs-tercih", label: "LGS tercih robotu", icon: <School /> },
+    { href: "/koc/yks-tercih", label: "YKS tercih robotu", icon: <University /> },
+    { href: "/koc/tahsilat", label: "Tahsilat", icon: <Wallet />, locked: !coachFeatureOpen(ctx.coach, "fees") },
     { href: "/koc/abonelik", label: "Paketler", icon: <Crown />, accent: true, tag: freePlan ? "Yükselt" : undefined },
     { href: "/koc/hesap", label: "Hesap", icon: <UserCog />, also: ["/koc/bildirimler"] },
-    ...locked.map((item) => ({ ...item, group: freePlan ? "Ücretli pakette" : "Üst pakette" })),
   ];
   return (
     <KocShell user={ctx.user} nav={nav} switchLinks={sideSwitches(facts, "koc")} unread={unread} usage={{ active, limit: ctx.center.studentLimit }} banner={ctx.coach ? <CoachPlanBanner plan={ctx.coach} active={active} overLimitDaysLeft={overLimitDaysLeft} /> : null} upgrade={freePlan ? <SidebarUpgrade next={nextTier} /> : undefined}>

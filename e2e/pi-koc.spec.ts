@@ -70,8 +70,9 @@ test("Pi Koç sayfası ücretsiz paketi ve fiyatları gösterir; koç kendi kayd
   // Deneme süresi yok: hesap ücretsiz paketle açılır; seçilen 10 öğrencilik paket ödeme gelince geçerli olur
   expect(center).toMatchObject({ kind: "COACH", status: "ACTIVE", studentLimit: 10 });
   await page.goto("/koc/abonelik");
-  await expect(page.getByText("Pi Koç · Başlangıç · ücretsiz, 3 öğrenciye kadar")).toBeVisible();
-  await expect(page.getByText("Ücretli pakette ek olarak")).toBeVisible();
+  await expect(page.getByTestId("coach-plan")).toContainText("Başlangıç");
+  await expect(page.getByTestId("coach-plan")).toContainText("Ücretsiz");
+  await expect(page.getByRole("heading", { name: "Ücretli pakette açılanlar" })).toBeVisible();
 
   // Ücretli özellikler gizlenmez, kilitli görünür
   await page.goto("/koc/denemeler");
@@ -187,7 +188,8 @@ test("yönetici koç hesabı açar; koç yalnızca takip bölümlerini görür",
   await expect(page.getByRole("link", { name: new RegExp(`Elif Koç${stamp}`) }).first()).toBeVisible();
   await page.goto("/koc/abonelik");
   // Yöneticinin açtığı hesap deneme süresindeyken 5 öğrencilik paket açık
-  await expect(page.getByText("Pi Koç · Rehber · 5 öğrenciye kadar", { exact: false })).toBeVisible();
+  await expect(page.getByTestId("coach-plan")).toContainText("Rehber");
+  await expect(page.getByTestId("coach-plan")).toContainText("Deneme");
 
   // Öğrenci girişi: koç hesap açar, bugüne bir görev yazar
   const studentId = studentUrl.split("/").pop()!;

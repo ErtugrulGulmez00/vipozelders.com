@@ -18,6 +18,7 @@ import { centerPlans, subscriptionLabel } from "@/server/center/plans";
 import { db } from "@/server/db";
 import { getSiteSettings } from "@/server/site";
 import { CoachPlanCompare } from "@/components/koc/locked-feature";
+import { CoachSubscription } from "@/components/koc/coach-subscription";
 
 // Pi Koç menüsündeki kilitli maddeler bu bölümlere iner
 const ANCHORS: Record<string, string> = { pdfImport: "pdf", topicAnalysis: "konu", ai: "yz", lgsRobot: "lgs", yksRobot: "yks", autoReport: "rapor" };
@@ -37,6 +38,24 @@ export default async function SubscriptionPage() {
   const coach = ctx.center.kind === "COACH";
   const usage = activeStudents / Math.max(ctx.center.studentLimit, 1);
   const whatsapp = toWhatsAppNumber(settings.contactPhone);
+  // Pi Koç: ayrı, sade abonelik görünümü (paket durumu, paketler, gruplu özellikler, ödeme)
+  if (coach && ctx.coach) {
+    return (
+      <>
+        <PageHeader title="Paketler" description="Pi Koç paketiniz ve ödemeleriniz" />
+        <CoachSubscription
+          plan={ctx.coach}
+          centerName={ctx.center.name}
+          studentLimit={ctx.center.studentLimit}
+          activeStudents={activeStudents}
+          promoUntil={ctx.center.promoUntil}
+          settings={settings}
+          whatsapp={whatsapp}
+          payments={payments}
+        />
+      </>
+    );
+  }
   return (
     <>
       <PageHeader title="Abonelik" description={coach ? "Pi Koç planınız ve ödemeleriniz" : `${settings.siteName} kurum paneli planınız ve ödemeleriniz`} />

@@ -133,7 +133,7 @@ export function SidebarUpgrade({ next }: { next: CoachTier | null }) {
         <Crown className="size-3.5" aria-hidden /> Premium
       </p>
       <p className="mt-1 font-extrabold leading-tight">{next ? `${next.name} paketine geçin` : "Paketinizi yükseltin"}</p>
-      <p className="mt-1 text-xs text-white/85">PDF aktarımı, konu haritası, otomatik veli raporu, sınırsız görüntülü ders</p>
+      <p className="mt-1 text-xs text-white/85">Daha fazla öğrenci, PDF'ten deneme, hedef okul takibi, her hafta otomatik veli raporu ve yapay zekâ asistanı</p>
       <span className="mt-3 inline-flex items-center rounded-full bg-white px-3 py-1 text-xs font-bold text-brand-700 group-hover:bg-gold-100">
         {next ? `Ayda ${next.priceTl.toLocaleString("tr-TR")} ₺ · Paketleri gör` : "Paketleri gör"}
       </span>
