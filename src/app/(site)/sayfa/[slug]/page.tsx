@@ -7,6 +7,7 @@ import { Card, Skeleton } from "@/components/ui/primitives";
 import { formatDate } from "@/lib/dates";
 import { db } from "@/server/db";
 import { CACHE_TAGS, getSiteSettings } from "@/server/site";
+import { faqFromMarkdown, faqJsonLd, JsonLd } from "@/components/site/json-ld";
 
 async function getPage(slug: string) {
   "use cache";
@@ -40,12 +41,15 @@ async function PageContent({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const [page, settings] = await Promise.all([getPage(slug), getSiteSettings()]);
   if (!page || !page.isPublished) notFound();
+  const content = fillPlaceholders(page.content, settings);
+  const faq = slug === "sss" ? faqFromMarkdown(content) : [];
   return (
     <Card className="p-6 sm:p-10">
+      {faq.length ? <JsonLd data={faqJsonLd(faq)} /> : null}
       <h1 className="text-3xl font-bold tracking-tight text-slate-900">{page.title}</h1>
       <p className="mt-2 text-xs text-slate-400">Son güncelleme: {formatDate(page.updatedAt)}</p>
       <div className="mt-6">
-        <RichText content={fillPlaceholders(page.content, settings)} />
+        <RichText content={content} />
       </div>
     </Card>
   );

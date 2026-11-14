@@ -1,4 +1,5 @@
 import { Info, Search } from "lucide-react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { LockedFeature } from "@/components/koc/locked-feature";
 import { AddToListButton, ListItemControls, PlacementNoteForm, PrintButton, TargetButton } from "@/components/placement/placement-forms";
@@ -31,8 +32,9 @@ const many = (v: string | string[] | undefined) => (Array.isArray(v) ? v : v ? [
  * LGS / YKS tercih robotu: kurum panelinde ve Pi Koç'ta aynı sayfa.
  * listLocked: Pi Koç ücretsiz paketi (arama açık; öğrenci listesi, not ve yazdırma kilitli).
  * targets: listedeki programı öğrencinin hedefi yapma (Pi Koç hedef kartında görünür).
+ * aside: liste kilitliyken sağ sütunda kilit kutusu yerine gösterilecek içerik (herkese açık sayfa).
  */
-export async function PlacementRobot({ exam, centerId, sp, basePath, listLocked = false, targets = false }: { exam: PlacementExamName; centerId: string; sp: SP; basePath: string; listLocked?: boolean; targets?: boolean }) {
+export async function PlacementRobot({ exam, centerId, sp, basePath, listLocked = false, targets = false, aside }: { exam: PlacementExamName; centerId: string; sp: SP; basePath: string; listLocked?: boolean; targets?: boolean; aside?: ReactNode }) {
   const meta = PLACEMENT_EXAMS[exam];
   const year = await latestYear(exam);
   const header = (
@@ -40,8 +42,8 @@ export async function PlacementRobot({ exam, centerId, sp, basePath, listLocked 
       title={meta.title}
       description={
         exam === "LGS"
-          ? "LGS puanı ya da yüzdelik dilime göre geçen yılın taban puanlarıyla liseleri güvenli, uygun ve riskli diye ayırır; öğrencinin 5 tercihlik listesini hazırlarsınız."
-          : "Puan türü, puan ve başarı sırasına göre geçen yılın tabanlarıyla programları ayırır; öğrencinin 24 tercihlik listesini hazırlarsınız."
+          ? `LGS puanı ya da yüzdelik dilime göre geçen yılın taban puanlarıyla liseleri güvenli, uygun ve riskli diye ayırır${listLocked ? "." : "; öğrencinin 5 tercihlik listesini hazırlarsınız."}`
+          : `Puan türü, puan ve başarı sırasına göre geçen yılın tabanlarıyla programları ayırır${listLocked ? "." : "; öğrencinin 24 tercihlik listesini hazırlarsınız."}`
       }
     />
   );
@@ -293,9 +295,7 @@ export async function PlacementRobot({ exam, centerId, sp, basePath, listLocked 
         </div>
 
         {listLocked ? (
-          <div className="xl:sticky xl:top-20">
-            <LockedFeature feature={exam === "LGS" ? "lgsRobot" : "yksRobot"} />
-          </div>
+          <div className="xl:sticky xl:top-20">{aside ?? <LockedFeature feature={exam === "LGS" ? "lgsRobot" : "yksRobot"} />}</div>
         ) : (
         <Card className="xl:sticky xl:top-20">
           <CardHeader

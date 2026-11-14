@@ -25,6 +25,7 @@ import { Card } from "@/components/ui/primitives";
 import { centerPlans } from "@/server/center/plans";
 import { getSiteSettings } from "@/server/site";
 import { CenterApplicationForm } from "./center-application-form";
+import { faqJsonLd, JsonLd, softwareJsonLd } from "@/components/site/json-ld";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/kurumlar-icin" },
@@ -66,6 +67,18 @@ export default async function ForCentersPage() {
   const trialDays = settings.centerTrialDays;
   return (
     <>
+      <JsonLd
+        data={[
+          softwareJsonLd({
+            name: "Pi Kampüs Kurum Paneli",
+            description: "Etüt merkezleri ve dershaneler için öğrenci ve veli takibi, yoklama ve devamsızlık bildirimi, etüt planı, deneme analizi, ödeme planı ve tahsilat yazılımı.",
+            path: "/kurumlar-icin",
+            offers: plans.filter((p) => p.priceTl > 0).map((p) => ({ name: p.name, priceTl: p.priceTl })),
+            taxIncluded: false,
+          }),
+          faqJsonLd(faq(trialDays)),
+        ]}
+      />
       <section className="relative overflow-hidden bg-ink-900 text-white">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 sm:py-20 lg:grid-cols-[1.1fr_1fr]">
           <div>

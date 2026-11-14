@@ -6,6 +6,7 @@ import { cn } from "@/lib/cn";
 import { CENTER_STUDENT_COUNT_OPTIONS } from "@/lib/center/labels";
 import { parseHomeTestimonials, splitOfferLead } from "@/lib/home-page";
 import { getSiteSettings } from "@/server/site";
+import { JsonLd, siteBase } from "@/components/site/json-ld";
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSiteSettings();
@@ -36,8 +37,26 @@ export default async function HomePage() {
   const offer = settings.homeFounderOffer.trim() ? splitOfferLead(settings.homeFounderOffer) : null;
   const testimonials = parseHomeTestimonials(settings.homeTestimonials);
 
+  const base = siteBase();
   return (
     <>
+      <JsonLd
+        data={[
+          {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            name: settings.siteName,
+            url: base,
+            logo: `${base}/icon.svg`,
+            email: settings.contactEmail,
+            telephone: settings.contactPhone,
+            description: "Etüt merkezleri için kurum yönetim paneli, öğrenci koçları ve öğretmenler için Pi Koç takip paneli, veliler için özel ders öğretmeni vitrini.",
+            address: { "@type": "PostalAddress", addressLocality: "Süleymanpaşa", addressRegion: "Tekirdağ", addressCountry: "TR" },
+            areaServed: "TR",
+          },
+          { "@context": "https://schema.org", "@type": "WebSite", name: settings.siteName, url: base, inLanguage: "tr" },
+        ]}
+      />
       {/* Karşılama: kurum mesajı, başvuruya götüren çubuk ve gerçek panel ekranları */}
       <section className="bg-white">
         <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 pb-16 pt-10 sm:pt-14 lg:grid-cols-[1fr_1.05fr]">

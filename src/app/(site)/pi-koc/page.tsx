@@ -13,6 +13,7 @@ import { toWhatsAppNumber } from "@/server/whatsapp";
 import { PI_KOC_CONSENT, whatsappLink } from "@/components/center/pricing";
 import { KocSignupForm } from "@/components/koc/signup-form";
 import { CoachPlanCompare } from "@/components/koc/locked-feature";
+import { JsonLd, softwareJsonLd } from "@/components/site/json-ld";
 
 export const metadata: Metadata = {
   alternates: { canonical: "/pi-koc" },
@@ -46,6 +47,15 @@ export default async function PiKocPage() {
 
   return (
     <>
+      <JsonLd
+        data={softwareJsonLd({
+          name: "Pi Koç",
+          description: "Öğrenci koçları ve özel ders öğretmenleri için öğrenci takip paneli: haftalık program, soru ve deneme takibi, görüşme notları, görüntülü görüşme, veli raporu ve LGS/YKS tercih robotu.",
+          path: "/pi-koc",
+          offers: [...(freeStudents > 0 ? [{ name: `${COACH_FREE_NAME} (${freeStudents} öğrenciye kadar)`, priceTl: 0 }] : []), ...tiers.map((t) => ({ name: `${t.name} (${t.students} öğrenci)`, priceTl: t.priceTl }))],
+          taxIncluded: true,
+        })}
+      />
       <section className="bg-white">
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-12 sm:py-14 lg:grid-cols-[1fr_1.05fr]">
           <div className="flex min-w-0 flex-col gap-5">

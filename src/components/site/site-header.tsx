@@ -11,6 +11,7 @@ const NAV = [
   { href: "/kurumlar-icin#planlar", label: "Fiyatlar" },
   { href: "/nasil-calisir", label: "Nasıl çalışır?" },
   { href: "/ozel-ders", label: "Özel ders" },
+  { href: "/tercih-robotu", label: "Tercih robotu" },
 ];
 
 export async function SiteHeader() {

@@ -85,6 +85,11 @@ export async function SiteFooter() {
                 Pi Koç: koçlar için panel
               </Link>
             </li>
+            <li>
+              <Link href="/tercih-robotu" className="hover:text-white">
+                LGS ve YKS tercih robotu
+              </Link>
+            </li>
             {/* Kurum rehberi boşken bağlantı gösterilmez */}
             {showCenters ? (
               <li>

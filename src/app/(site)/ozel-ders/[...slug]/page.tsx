@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { breadcrumbJsonLd, JsonLd } from "@/components/site/json-ld";
 import { TeacherListing, TeacherListingSkeleton } from "@/components/site/teacher-listing";
 import { loadCatalog } from "@/server/catalog";
 import { getCatalog } from "@/server/site";
@@ -46,11 +47,22 @@ async function CategoryListing({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { slug } = await params;
+  const catalog = await getCatalog();
+  const level = catalog.levels.find((l) => l.slug === slug[0]);
+  const subject = slug[1] ? catalog.subjects.find((s) => s.slug === slug[1]) : null;
+  const crumbs = [
+    { name: "Özel ders", path: "/ozel-ders" },
+    ...(level ? [{ name: level.name, path: `/ozel-ders/${level.slug}` }] : []),
+    ...(level && subject ? [{ name: subject.name, path: `/ozel-ders/${level.slug}/${subject.slug}` }] : []),
+  ];
   return (
+    <>
+    <JsonLd data={breadcrumbJsonLd(crumbs)} />
     <TeacherListing
       searchParams={searchParams}
       preset={{ level: slug[0], ...(slug[1] ? { subject: slug[1] } : {}) }}
       basePath={`/ozel-ders/${slug.slice(0, 2).join("/")}`}
     />
+    </>
   );
 }
