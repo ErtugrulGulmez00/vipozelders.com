@@ -258,3 +258,21 @@ export function formatScore(v: number | null): string {
 export function formatPercentile(v: number | null): string {
   return v === null ? "—" : `%${v.toLocaleString("tr-TR", { maximumFractionDigits: 2 })}`;
 }
+
+/** Hedef programın deneme türü: LGS okulu → LGS; YKS programı puan türüne göre (SAY → AYT Sayısal …). */
+export function goalKindForProgram(exam: PlacementExamName, scoreType: string): "LGS" | "TYT" | "AYT_SAY" | "AYT_EA" | "AYT_SOZ" | "YDT" {
+  if (exam === "LGS") return "LGS";
+  const map: Record<string, "TYT" | "AYT_SAY" | "AYT_EA" | "AYT_SOZ" | "YDT"> = { SAY: "AYT_SAY", EA: "AYT_EA", SÖZ: "AYT_SOZ", DİL: "YDT", TYT: "TYT" };
+  return map[scoreType] ?? "TYT";
+}
+
+/** Hedefe uzaklık: son deneme puanı ile taban farkı (pozitif: kalan puan), yerleşme şansı ve gidişat. */
+export function targetProgress(exam: PlacementExamName, program: { minScore: number | null; minRank: number | null; percentile: number | null }, scores: number[]) {
+  const last = scores.length ? scores[scores.length - 1] : null;
+  const gap = last !== null && program.minScore !== null ? Math.round((program.minScore - last) * 100) / 100 : null;
+  const chance = last !== null ? placementChance(exam, program, { score: last, rank: null, percentile: null }) : null;
+  // Gidişat: son üç denemenin ilkiyle sonuncusu arasındaki fark
+  const recent = scores.slice(-3);
+  const trend = recent.length >= 2 ? Math.round((recent[recent.length - 1] - recent[0]) * 100) / 100 : null;
+  return { last, gap, chance, trend };
+}

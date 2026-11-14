@@ -1220,6 +1220,8 @@ model CenterStudent {
   coachMinute       Int?
   // Pi Koç: "program geride" hatırlatması en son hangi hafta (pazartesi) gitti
   planNudgedWeek    DateTime?           @db.Date
+  /// Pi Koç: kayıt girmeyen öğrenciye son hatırlatma
+  inactiveNudgedAt  DateTime?
   // Pi Koç: koçun bu öğrenciden aldığı aylık ücret (kuruş); tahsilat takibi için
   monthlyFee        Int?
   enrolledAt        DateTime            @default(now())
@@ -2704,6 +2706,9 @@ model CenterStudentGoal {
   label      String?
   // Bölüm adı → hedef net: { "Türkçe": 32, "Temel Matematik": 28 }
   sectionNets Json
+  /// Hedef okul / program (tercih robotundan): sınav + YÖK/MEB kodu; gösterimde en son yılın tabanı kullanılır
+  targetExam  PlacementExam?
+  targetCode  String?
   updatedAt  DateTime      @updatedAt
   createdAt  DateTime      @default(now())
 

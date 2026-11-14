@@ -78,11 +78,16 @@ test("Pi Koç sayfası ücretsiz paketi ve fiyatları gösterir; koç kendi kayd
   await expect(page.locator("[data-locked='pdfImport']")).toContainText("Rehber paketinde açılır (5 öğrenci)");
   await page.goto("/koc/tahsilat");
   await expect(page.locator("[data-locked='fees']")).toBeVisible();
+  // Otomatik rapor ücretsiz pakette ayda bir; logo ve hatırlatmalar kilitli
   await page.goto("/koc/hesap");
-  await expect(page.locator("[data-locked='autoReport']")).toBeVisible();
-  for (const [path, key] of [["/koc/lgs-tercih", "lgsRobot"], ["/koc/yks-tercih", "yksRobot"]]) {
+  await expect(page.getByLabel("Raporu ayın ilk pazarı 18:00'den sonra velilere kendiliğinden gönder")).toBeVisible();
+  await expect(page.locator("[data-locked='branding']")).toBeVisible();
+  await expect(page.locator("[data-locked='reminders']")).toBeVisible();
+  // Tercih robotunda arama açık, öğrenci listesi kilitli
+  for (const [path, title] of [["/koc/lgs-tercih", "LGS tercih robotu"], ["/koc/yks-tercih", "YKS tercih robotu"]]) {
     await page.goto(path);
-    await expect(page.locator(`[data-locked='${key}']`)).toBeVisible();
+    await expect(page.getByRole("heading", { name: title })).toBeVisible();
+    await expect(page.getByLabel("Öğrenci (listeye eklemek için)")).toHaveCount(0);
   }
 
   // Aynı e-postayla ikinci kayıt reddedilir

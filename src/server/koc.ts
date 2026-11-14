@@ -2,11 +2,13 @@ import "server-only";
 import { computeNet, EXAM_PRESETS, round2, type ExamKindName } from "@/lib/center/exams";
 import { centerAccess } from "@/lib/center/subscription";
 import { addDaysToDateString, dateStringToDbDate, dbDateToString, isoWeekday, toLocalDateString } from "@/lib/dates";
+import { targetProgress, type Chance, type PlacementExamName } from "@/lib/placement";
 import type { CenterContext } from "./center/context";
 import { CenterError } from "./center/errors";
 import { upsertResult } from "./center/exams";
 import { weekStartOf } from "./center/resources";
 import { db } from "./db";
+import { targetPrograms } from "./placement";
 
 // Pi Koç: bireysel koçun öğrenci takibi. Veri kurum tablolarında tutulur (Center türü COACH); ekranlar /koc altındadır.
 
@@ -196,6 +198,7 @@ export async function studentExams(centerId: string, studentId: string) {
     kind: r.exam.kind as ExamKindName,
     date: dbDateToString(r.exam.date),
     net: r.net,
+    score: r.score,
     correct: r.correct,
     wrong: r.wrong,
     blank: r.blank,
@@ -341,11 +344,30 @@ export type GoalView = {
   /** Hedefe kalan toplam net (son denemeye göre; ulaşıldıysa 0) */
   gap: number | null;
   sections: { name: string; target: number; current: number | null; gap: number | null }[];
+  /** Hedef okul / program (tercih robotundan) ve denemelerdeki puanla tabana uzaklık */
+  target: GoalTarget | null;
+};
+
+export type GoalTarget = {
+  exam: PlacementExamName;
+  name: string;
+  place: string;
+  year: number;
+  minScore: number | null;
+  minRank: number | null;
+  percentile: number | null;
+  /** Aynı türdeki denemelerin puanları (eskiden yeniye, en fazla 6) */
+  scores: { date: string; name: string; score: number }[];
+  last: number | null;
+  gap: number | null;
+  chance: Chance | null;
+  trend: number | null;
 };
 
 /** Öğrencinin hedefleri ve son denemeye göre durum; en son deneme yapılan tür önce. */
 export async function studentGoals(centerId: string, studentId: string): Promise<GoalView[]> {
   const [goals, exams] = await Promise.all([db.centerStudentGoal.findMany({ where: { studentId } }), studentExams(centerId, studentId)]);
+  const programs = await targetPrograms(goals.filter((g) => g.targetExam && g.targetCode).map((g) => ({ exam: g.targetExam as PlacementExamName, code: g.targetCode! })));
   return goals
     .map((g) => {
       const kind = g.kind as ExamKindName;
@@ -359,6 +381,27 @@ export async function studentGoals(centerId: string, studentId: string): Promise
           return { name: s.name, target: sectionNets[s.name], current, gap: current === null ? null : round2(Math.max(0, sectionNets[s.name] - current)) };
         });
       const currentTotal = latest ? round2(sections.reduce((t, s) => t + (s.current ?? 0), 0)) : null;
+      const program = g.targetExam && g.targetCode ? programs.get(`${g.targetExam}|${g.targetCode}`) ?? null : null;
+      let target: GoalTarget | null = null;
+      if (program) {
+        const scores = exams
+          .filter((e) => e.kind === kind && e.score !== null)
+          .slice(0, 6)
+          .reverse()
+          .map((e) => ({ date: e.date, name: e.name, score: e.score! }));
+        const progress = targetProgress(program.exam, program, scores.map((x) => x.score));
+        target = {
+          exam: program.exam,
+          name: program.name,
+          place: program.exam === "YKS" ? [program.institution, program.city].filter(Boolean).join(" · ") : [program.district, program.city].filter(Boolean).join(" / "),
+          year: program.year,
+          minScore: program.minScore,
+          minRank: program.minRank,
+          percentile: program.percentile,
+          scores,
+          ...progress,
+        };
+      }
       return {
         kind,
         kindLabel: EXAM_PRESETS[kind].label,
@@ -366,8 +409,10 @@ export async function studentGoals(centerId: string, studentId: string): Promise
         targetNet,
         sectionNets,
         current: latest ? { examName: latest.name, date: latest.date, net: latest.net } : null,
-        gap: currentTotal === null ? null : round2(Math.max(0, targetNet - currentTotal)),
+        // Yalnızca hedef okul seçilmiş (net hedefi yok) kayıtta net farkı hesaplanmaz
+        gap: currentTotal === null || targetNet === 0 ? null : round2(Math.max(0, targetNet - currentTotal)),
         sections,
+        target,
       };
     })
     .sort((a, b) => (exams.findIndex((e) => e.kind === a.kind) + 1 || 99) - (exams.findIndex((e) => e.kind === b.kind) + 1 || 99));

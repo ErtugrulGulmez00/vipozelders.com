@@ -24,7 +24,7 @@ import { sendPendingWhatsApps } from "./whatsapp";
 import { processGroups } from "./groups";
 import { expirePackages } from "./packages";
 import { expireRescheduleRequests } from "./reschedule";
-import { sendCoachDigests, sendPlanNudges } from "./koc-plan";
+import { sendCoachDigests, sendInactivityNudges, sendPlanNudges } from "./koc-plan";
 import { enforceCoachMeetings } from "./koc-meeting-usage";
 import { processCoachOverLimit } from "./koc-promo";
 import { sendCoachAutoReports } from "./koc-report";
@@ -70,6 +70,8 @@ const TASKS = {
   // Pi Koç: koça sabah görüşme özeti, programı geride kalan öğrenciye akşam hatırlatma
   kocDigests: sendCoachDigests,
   kocPlanNudges: sendPlanNudges,
+  // Pi Koç ücretli paket: iki gündür kayıt girmeyen öğrenciye hatırlatma, koça liste
+  kocInactivity: sendInactivityNudges,
   // Pi Koç görüntülü görüşme: ücretsiz pakette süresi dolan oda kapanır, ücretli pakette havuz aşımı bildirilir
   kocMeetings: enforceCoachMeetings,
   // Pi Koç: paketi (deneme kodu ya da ücretli) biten hesapta sınırın üstündeki öğrenciler 7 gün sonra arşive

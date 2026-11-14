@@ -5,11 +5,13 @@ import { redirect } from "next/navigation";
 import { failure, success, type ActionState } from "@/lib/action-state";
 import { EXAM_PRESETS, type ExamKindName } from "@/lib/center/exams";
 import { centerAction, centerAudit, coachFeatureLocked } from "@/server/center/context";
+import { coachFeatureOpen } from "@/lib/pi-koc";
 import { CenterError } from "@/server/center/errors";
 import { date, email, guard, int, money, opt, phone, requiredText, str, time } from "@/server/center/form";
 import { assignResource } from "@/server/center/resources";
 import { createStudent } from "@/server/center/students";
 import { db } from "@/server/db";
+import { deleteUpload, saveUpload, UploadError } from "@/server/storage";
 import { actionUser } from "@/server/auth/current-user";
 import { draftReportNote, saveReport, sendReport, type ReportDraft } from "@/server/koc-report";
 import { isDateString } from "@/lib/dates";
@@ -208,19 +210,44 @@ export async function kocSaveSettingsAction(_: ActionState, formData: FormData):
 // Haftalık veli raporu
 // ---------------------------------------------------------------------------
 
-/** Otomatik haftalık veli raporu (ücretli pakette). */
+/** Kendi markanızla rapor: koçun logosu veli raporunun başında görünür (ücretli pakette). */
+export async function kocSaveLogoAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const auth = await coachAuth("settings.manage");
+  if (!auth.ok) return auth.state;
+  const remove = formData.get("removeLogo") === "on";
+  const file = formData.get("logo");
+  const hasFile = file instanceof File && file.size > 0;
+  if (hasFile) {
+    const locked = coachFeatureLocked(auth.ctx, "branding");
+    if (locked) return locked;
+  }
+  if (!hasFile && !remove) return failure("Logo dosyası seçin.", { logo: "Dosya seçin." });
+  let logoKey: string | null = null;
+  if (hasFile) {
+    try {
+      logoKey = await saveUpload(file, { visibility: "public", folder: "center-logos", maxBytes: 2 * 1024 * 1024, kinds: ["image"] });
+    } catch (error) {
+      if (error instanceof UploadError) return failure(error.message, { logo: error.message });
+      throw error;
+    }
+  }
+  await db.center.update({ where: { id: auth.ctx.center.id }, data: { logoKey } });
+  if (auth.ctx.center.logoKey) await deleteUpload(auth.ctx.center.logoKey);
+  await centerAudit(auth.ctx, "settings.logo", "Center", auth.ctx.center.id, { removed: !hasFile });
+  refresh();
+  return success(hasFile ? "Logonuz kaydedildi; veli raporlarının başında görünür." : "Logo kaldırıldı.");
+}
+
+/** Otomatik veli raporu: ücretli pakette her hafta, ücretsiz pakette ayın ilk pazarı. */
 export async function kocSaveAutoReportAction(_: ActionState, formData: FormData): Promise<ActionState> {
   const auth = await coachAuth("settings.manage");
   if (!auth.ok) return auth.state;
   const on = formData.get("autoReport") === "on";
-  if (on) {
-    const locked = coachFeatureLocked(auth.ctx, "autoReport");
-    if (locked) return locked;
-  }
+  const weekly = coachFeatureOpen(auth.ctx.coach, "autoReport");
   await db.center.update({ where: { id: auth.ctx.center.id }, data: { coachAutoReport: on } });
   await centerAudit(auth.ctx, "settings.auto_report", "Center", auth.ctx.center.id, { on });
   refresh();
-  return success(on ? "Otomatik rapor açık: her pazar akşamı velilere gider." : "Otomatik rapor kapatıldı.");
+  return success(on ? (weekly ? "Otomatik rapor açık: her pazar akşamı velilere gider." : "Otomatik rapor açık: ayın ilk pazarı akşamı velilere gider.") : "Otomatik rapor kapatıldı.");
 }
 
 export async function kocSaveReportAction(_: ActionState, formData: FormData): Promise<ActionState> {

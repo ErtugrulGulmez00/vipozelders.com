@@ -6,6 +6,7 @@ import { PrintButton } from "@/components/center/center-client";
 import { WeeklyReport } from "@/components/koc/weekly-report";
 import { dbDateToString } from "@/lib/dates";
 import { coachPlan } from "@/lib/pi-koc";
+import { uploadUrl } from "@/server/storage";
 import { reportByToken, weeklyReportData } from "@/server/koc-report";
 
 export const instant = false;
@@ -23,7 +24,7 @@ export default async function PublicReportPage({ params }: PageProps<"/rapor/[to
   const paid = coachPlan(report.center, 0).paid;
   return (
     <main className="min-h-dvh bg-[#f6f5fb] px-3 py-6 sm:px-6 sm:py-10 print:bg-white print:p-0">
-      <WeeklyReport data={data} note={report.note} branded={!paid} />
+      <WeeklyReport data={data} note={report.note} branded={!paid} logoUrl={paid ? uploadUrl(data.student.center.logoKey) : null} />
       <div className="mx-auto mt-5 flex max-w-4xl flex-wrap items-center justify-between gap-3 px-1 text-sm text-slate-500 print:hidden">
         <PrintButton />
         {paid ? null : (

@@ -7,7 +7,7 @@ import { actionUser } from "@/server/auth/current-user";
 import { centerAction, coachFeatureLocked } from "@/server/center/context";
 import { CenterError } from "@/server/center/errors";
 import { readSpreadsheet } from "@/server/center/spreadsheet";
-import { addToPlacementList, changePlacementList, deleteProgramYear, savePlacementNote, upsertPrograms } from "@/server/placement";
+import { addToPlacementList, changePlacementList, deleteProgramYear, savePlacementNote, setPlacementTarget, upsertPrograms } from "@/server/placement";
 
 function examOf(formData: FormData): PlacementExamName | null {
   const v = String(formData.get("exam") ?? "");
@@ -65,6 +65,20 @@ export async function placementNoteAction(_: ActionState, formData: FormData): P
     await savePlacementNote(auth.ctx.center.id, String(formData.get("studentId") ?? ""), auth.exam, note);
     refresh();
     return success("Not kaydedildi.");
+  });
+}
+
+/** Listedeki programı öğrencinin hedefi yapar ya da hedefi kaldırır (Pi Koç hedef kartı). */
+export async function placementTargetAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const auth = await listAuth(formData);
+  if (!auth.ok) return auth.state;
+  const locked = coachFeatureLocked(auth.ctx, "targetSchool");
+  if (locked) return locked;
+  const on = formData.get("on") === "1";
+  return guard(async () => {
+    await setPlacementTarget(auth.ctx.center.id, String(formData.get("studentId") ?? ""), auth.exam, String(formData.get("programId") ?? ""), on);
+    refresh();
+    return success(on ? "Hedef olarak işaretlendi; öğrencinin hedef kartında görünür." : "Hedef kaldırıldı.");
   });
 }
 

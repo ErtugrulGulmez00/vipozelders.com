@@ -5,15 +5,16 @@ import { cn } from "@/lib/cn";
 import type { WeeklyReportData } from "@/server/koc-report";
 import { formatMinutes } from "@/lib/koc-format";
 import { BarChart, HBarList, Ring } from "./charts";
+import { TargetBlock } from "./goal-card";
 
 const dmy = (d: string) => d.split("-").reverse().join(".");
 const pct = (v: number | null) => (v === null ? "—" : `%${Math.round(v * 100)}`);
 
 /**
  * Haftalık koçluk raporu (koç önizlemesi ve velinin açtığı bağlantı aynı görünümü kullanır; yazdırmaya uygundur).
- * branded: ücretsiz pakette Pi Koç imzası; ücretli pakette rapor yalnızca koçun adıyla çıkar.
+ * branded: ücretsiz pakette Pi Koç imzası; ücretli pakette rapor yalnızca koçun adıyla (ve logosuyla) çıkar.
  */
-export function WeeklyReport({ data, note, branded = true }: { data: WeeklyReportData; note: string | null; branded?: boolean }) {
+export function WeeklyReport({ data, note, branded = true, logoUrl = null }: { data: WeeklyReportData; note: string | null; branded?: boolean; logoUrl?: string | null }) {
   const { student } = data;
   const diff = data.solved - data.previousSolved;
   const planRate = data.plan.total ? data.plan.done / data.plan.total : null;
@@ -33,9 +34,14 @@ export function WeeklyReport({ data, note, branded = true }: { data: WeeklyRepor
             </p>
           </div>
           <div className="flex items-center gap-2.5">
-            <span className="inline-flex size-10 -rotate-6 items-center justify-center rounded-2xl bg-brand-600 text-white">
-              {branded ? <PiMark className="size-6" /> : <span className="font-display text-lg font-extrabold">{student.center.name.trim().charAt(0).toLocaleUpperCase("tr-TR")}</span>}
-            </span>
+            {!branded && logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt="" className="size-12 rounded-xl bg-white object-contain p-1" />
+            ) : (
+              <span className="inline-flex size-10 -rotate-6 items-center justify-center rounded-2xl bg-brand-600 text-white">
+                {branded ? <PiMark className="size-6" /> : <span className="font-display text-lg font-extrabold">{student.center.name.trim().charAt(0).toLocaleUpperCase("tr-TR")}</span>}
+              </span>
+            )}
             <span className="text-right leading-tight">
               <span className="block text-sm font-bold">{student.center.name}</span>
               {branded ? <span className="block text-xs text-ink-300">Pi Koç</span> : null}
@@ -122,7 +128,8 @@ export function WeeklyReport({ data, note, branded = true }: { data: WeeklyRepor
             ) : (
               <p className="text-sm text-slate-500">Henüz deneme sonucu yok.</p>
             )}
-            {data.goal ? (
+            {data.goal?.target ? <TargetBlock target={data.goal.target} kindLabel={data.goal.kindLabel} className="mt-4 print:break-inside-avoid" /> : null}
+            {data.goal && data.goal.targetNet > 0 ? (
               <p className="mt-4 rounded-2xl bg-ink-50 px-3 py-2 text-sm text-ink-900">
                 <b>Hedef{data.goal.label ? `: ${data.goal.label}` : ""}</b> · {data.goal.kindLabel} {formatNet(data.goal.targetNet)} net
                 {data.goal.gap === null ? null : data.goal.gap === 0 ? <span className="font-bold text-emerald-700"> · hedefe ulaşıldı</span> : <span className="font-bold"> · {formatNet(data.goal.gap)} net kaldı</span>}

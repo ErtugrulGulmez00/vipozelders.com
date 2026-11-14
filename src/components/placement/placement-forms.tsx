@@ -1,7 +1,7 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Plus, Printer, X } from "lucide-react";
-import { deletePlacementYearAction, importPlacementAction, placementAddAction, placementChangeAction, placementNoteAction } from "@/actions/placement";
+import { ArrowDown, ArrowUp, Plus, Printer, Target, X } from "lucide-react";
+import { deletePlacementYearAction, importPlacementAction, placementAddAction, placementChangeAction, placementNoteAction, placementTargetAction } from "@/actions/placement";
 import { ActionForm, SubmitButton } from "@/components/forms/action-form";
 import { buttonClasses } from "@/components/ui/button";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
@@ -48,6 +48,28 @@ export function ListItemControls({ exam, studentId, programId, first, last }: Li
       </button>
       <button type="submit" name="op" value="remove" className={`${btn} hover:text-rose-600`} aria-label="Listeden çıkar">
         <X className="size-4" aria-hidden />
+      </button>
+    </ActionForm>
+  );
+}
+
+/** Listedeki tercihi öğrencinin hedefi yapar (aynı deneme türünde tek hedef) */
+export function TargetButton({ exam, studentId, programId, active }: ListKey & { programId: string; active: boolean }) {
+  return (
+    <ActionForm action={placementTargetAction} hideMessages className="print:hidden">
+      <Hidden exam={exam} studentId={studentId} programId={programId} />
+      <input type="hidden" name="on" value={active ? "0" : "1"} />
+      <button
+        type="submit"
+        className={
+          active
+            ? "inline-flex items-center gap-1 rounded-full bg-brand-600 px-2 py-0.5 text-xs font-semibold text-white hover:bg-brand-700"
+            : "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold text-brand-700 ring-1 ring-brand-200 hover:bg-brand-50"
+        }
+        aria-label={active ? "Hedefi kaldır" : "Hedef yap"}
+        aria-pressed={active}
+      >
+        <Target className="size-3" aria-hidden /> {active ? "Hedef" : "Hedef yap"}
       </button>
     </ActionForm>
   );

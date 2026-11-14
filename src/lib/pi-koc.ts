@@ -82,15 +82,19 @@ export function coachPlanLabel(plan: CoachPlan): string {
 // ——— Ücretli özellikler ———
 // Ücretsiz pakette gizlenmez, kilitli gösterilir. Kurum hesaplarında (plan null) hepsi açıktır.
 
-export type CoachFeature = "pdfImport" | "topicAnalysis" | "ai" | "lgsRobot" | "yksRobot" | "autoReport" | "fees" | "featured";
+export type CoachFeature = "pdfImport" | "topicAnalysis" | "ai" | "targetSchool" | "lgsRobot" | "yksRobot" | "autoReport" | "branding" | "reminders" | "templates" | "fees" | "featured";
 
 export const COACH_FEATURES: Record<CoachFeature, { title: string; text: string }> = {
   pdfImport: { title: "PDF'ten deneme aktarımı", text: "Yayınevinin sonuç PDF'ini yükleyin; bütün öğrencilerinizin netleri, cevapları ve konu analizi tek seferde girilsin." },
   topicAnalysis: { title: "Konu eksik haritası", text: "Kaynak ve denemelerden konu konu başarı; zayıf konular renkli görünür, tek tıkla programa eklenir." },
   ai: { title: "Yapay zekâ asistanı", text: "Öğrencinin haftasına bakıp size yorum, özet ve yol haritası önerir; veli değerlendirmesinin taslağını yazar." },
-  lgsRobot: { title: "LGS tercih robotu", text: "Puan ya da yüzdelik dilime göre güvenli, uygun ve riskli liseler; öğrencinin 5 tercihlik listesi." },
-  yksRobot: { title: "YKS tercih robotu", text: "Puan türü ve başarı sırasına göre programlar; öğrencinin 24 tercihlik listesi." },
-  autoReport: { title: "Otomatik haftalık veli raporu", text: "Rapor her pazar akşamı sizin adınızla velilere kendiliğinden gider; altında Pi Koç yazısı olmaz." },
+  targetSchool: { title: "Hedef okul takibi", text: "Öğrencinin hedef okulu ya da bölümü seçilir; denemelerdeki puanla tabana ne kadar kaldığı ve gidişat panelde ve veli raporunda görünür." },
+  lgsRobot: { title: "LGS tercih listesi", text: "Robotla arama ücretsiz pakette de açık; öğrencinin 5 tercihlik listesi, notu ve çıktısı ücretli pakette." },
+  yksRobot: { title: "YKS tercih listesi", text: "Robotla arama ücretsiz pakette de açık; öğrencinin 24 tercihlik listesi, notu ve çıktısı ücretli pakette." },
+  autoReport: { title: "Her hafta otomatik veli raporu", text: "Rapor her pazar akşamı velilere kendiliğinden gider (ücretsiz pakette ayda bir, ayın ilk pazarı)." },
+  branding: { title: "Kendi markanızla rapor", text: "Veli raporunun başında logonuz ve adınız olur; altında Pi Koç yazısı çıkmaz." },
+  reminders: { title: "Otomatik hatırlatmalar", text: "İki gün kayıt girmeyen öğrenciye hatırlatma gider; size de kimin geride kaldığı bildirilir." },
+  templates: { title: "Hazır program kütüphanesi", text: "LGS son dönem, TYT, AYT ve okul dönemi için hazır haftalık programlar; tek tıkla öğrenciye uygulanır." },
   fees: { title: "Tahsilat takibi", text: "Öğrenci başına aylık ücret, kim ödedi, kim bekliyor ve son 6 ayın tahsilatı." },
   featured: { title: "Vitrinde öne çıkma", text: "Özel ders vitrininde üst sıralarda ve “Öne çıkan” etiketiyle görünürsünüz." },
 };

@@ -3,6 +3,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import {
   CHANCE_ORDER,
   compareProgramsByCutoff,
+  goalKindForProgram,
   PLACEMENT_EXAMS,
   placementChance,
   type Chance,
@@ -196,4 +197,43 @@ export async function savePlacementNote(centerId: string, studentId: string, exa
     create: { centerId, studentId, exam, programIds: [], note },
     update: { note },
   });
+}
+
+// ——— Hedef okul / program ———
+
+/** Listedeki programı öğrencinin hedefi yapar (deneme türüne göre tek hedef) ya da hedefi kaldırır. */
+export async function setPlacementTarget(centerId: string, studentId: string, exam: PlacementExamName, programId: string, on: boolean) {
+  await studentOrThrow(centerId, studentId);
+  const program = await db.placementProgram.findFirst({ where: { id: programId, exam }, select: { code: true, scoreType: true } });
+  if (!program) throw new CenterError("Program bulunamadı.");
+  if (!on) {
+    const goals = await db.centerStudentGoal.findMany({ where: { studentId, targetExam: exam, targetCode: program.code }, select: { id: true, sectionNets: true } });
+    for (const g of goals) {
+      // Yalnızca hedef okul için açılmış (net hedefi olmayan) kayıt silinir
+      const empty = !Object.keys((g.sectionNets ?? {}) as Record<string, number>).length;
+      if (empty) await db.centerStudentGoal.delete({ where: { id: g.id } });
+      else await db.centerStudentGoal.update({ where: { id: g.id }, data: { targetExam: null, targetCode: null } });
+    }
+    return;
+  }
+  const kind = goalKindForProgram(exam, program.scoreType);
+  await db.centerStudentGoal.upsert({
+    where: { studentId_kind: { studentId, kind } },
+    create: { studentId, kind, sectionNets: {}, targetExam: exam, targetCode: program.code },
+    update: { targetExam: exam, targetCode: program.code },
+  });
+}
+
+/** Hedef kodlarının en son yıldaki programları (yeni yıl yüklenince taban kendiliğinden güncellenir). */
+export async function targetPrograms(targets: { exam: PlacementExamName; code: string }[]) {
+  const rows = targets.length
+    ? await db.placementProgram.findMany({
+        where: { OR: targets.map((t) => ({ exam: t.exam, code: t.code })) },
+        select: { exam: true, code: true, year: true, name: true, institution: true, faculty: true, city: true, district: true, scoreType: true, minScore: true, minRank: true, percentile: true },
+        orderBy: { year: "desc" },
+      })
+    : [];
+  const map = new Map<string, (typeof rows)[number]>();
+  for (const r of rows) if (!map.has(`${r.exam}|${r.code}`)) map.set(`${r.exam}|${r.code}`, r);
+  return map;
 }

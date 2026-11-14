@@ -33,9 +33,10 @@ export async function LockedFeature({ feature, className, compact }: { feature: 
 export function CoachPlanCompare({ freeStudents, freeMinutes, freeAi, freeHours }: { freeStudents: number; freeMinutes: number; freeAi: number; freeHours?: number }) {
   const free = [
     `${freeStudents} öğrenciye kadar, süresiz`,
-    "Haftalık program, kaynak ve soru takibi",
+    "Haftalık program, kaynak ve soru takibi; 3 hazır program şablonu",
     "Görüşme notları ve elle deneme girişi, net grafiği",
-    "Haftalık veli raporu (elle gönderim, Pi Koç imzalı)",
+    "Haftalık veli raporu (elle gönderim; ayda bir otomatik), Pi Koç imzalı",
+    "LGS ve YKS tercih robotunda arama",
     `Görüntülü görüşme: görüşme başına ${freeMinutes} dk${freeHours ? `, ayda toplam ${freeHours} saat` : ""}`,
     freeAi ? `Ayda ${freeAi} yapay zekâ taslağı` : null,
   ].filter((x): x is string => Boolean(x));

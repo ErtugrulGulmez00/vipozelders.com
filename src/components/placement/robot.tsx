@@ -1,6 +1,7 @@
 import { Info, Search } from "lucide-react";
 import Link from "next/link";
-import { AddToListButton, ListItemControls, PlacementNoteForm, PrintButton } from "@/components/placement/placement-forms";
+import { LockedFeature } from "@/components/koc/locked-feature";
+import { AddToListButton, ListItemControls, PlacementNoteForm, PrintButton, TargetButton } from "@/components/placement/placement-forms";
 import { buttonClasses } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/form";
 import { Badge, Card, CardBody, CardHeader, EmptyState, PageHeader, Table, Td, Th } from "@/components/ui/primitives";
@@ -26,8 +27,12 @@ type SP = Record<string, string | string[] | undefined>;
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? "";
 const many = (v: string | string[] | undefined) => (Array.isArray(v) ? v : v ? [v] : []);
 
-/** LGS / YKS tercih robotu: kurum panelinde ve Pi Koç'ta aynı sayfa. */
-export async function PlacementRobot({ exam, centerId, sp, basePath }: { exam: PlacementExamName; centerId: string; sp: SP; basePath: string }) {
+/**
+ * LGS / YKS tercih robotu: kurum panelinde ve Pi Koç'ta aynı sayfa.
+ * listLocked: Pi Koç ücretsiz paketi (arama açık; öğrenci listesi, not ve yazdırma kilitli).
+ * targets: listedeki programı öğrencinin hedefi yapma (Pi Koç hedef kartında görünür).
+ */
+export async function PlacementRobot({ exam, centerId, sp, basePath, listLocked = false, targets = false }: { exam: PlacementExamName; centerId: string; sp: SP; basePath: string; listLocked?: boolean; targets?: boolean }) {
   const meta = PLACEMENT_EXAMS[exam];
   const year = await latestYear(exam);
   const header = (
@@ -49,12 +54,14 @@ export async function PlacementRobot({ exam, centerId, sp, basePath }: { exam: P
     );
   }
 
-  const studentId = one(sp.ogrenci);
-  const [students, facets, list] = await Promise.all([
-    db.centerStudent.findMany({ where: { centerId, status: "ACTIVE" }, select: { id: true, firstName: true, lastName: true, gradeName: true }, orderBy: [{ firstName: "asc" }, { lastName: "asc" }] }),
+  const studentId = listLocked ? "" : one(sp.ogrenci);
+  const [students, facets, list, goals] = await Promise.all([
+    listLocked ? Promise.resolve([]) : db.centerStudent.findMany({ where: { centerId, status: "ACTIVE" }, select: { id: true, firstName: true, lastName: true, gradeName: true }, orderBy: [{ firstName: "asc" }, { lastName: "asc" }] }),
     programFacets(exam, year),
     studentId ? placementList(centerId, studentId, exam) : Promise.resolve(null),
+    targets && studentId ? db.centerStudentGoal.findMany({ where: { studentId, targetExam: exam }, select: { targetCode: true } }) : Promise.resolve([]),
   ]);
+  const targetCodes = new Set(goals.map((g) => g.targetCode));
   const student = students.find((s) => s.id === studentId) ?? null;
 
   // Puan bilgisi: adresten; yoksa öğrencinin listesine son kaydedilenden
@@ -102,6 +109,7 @@ export async function PlacementRobot({ exam, centerId, sp, basePath }: { exam: P
           <Card>
             <CardBody>
               <form action={basePath} method="get" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {listLocked ? null : (
                 <Field label="Öğrenci (listeye eklemek için)" className="sm:col-span-2">
                   <Select name="ogrenci" defaultValue={studentId}>
                     <option value="">Öğrenci seçmeden ara</option>
@@ -113,6 +121,7 @@ export async function PlacementRobot({ exam, centerId, sp, basePath }: { exam: P
                     ))}
                   </Select>
                 </Field>
+                )}
                 {exam === "YKS" ? (
                   <Field label="Puan türü">
                     <Select name="tur" defaultValue={scoreType}>
@@ -187,7 +196,11 @@ export async function PlacementRobot({ exam, centerId, sp, basePath }: { exam: P
           </Card>
 
           {!search ? (
-            <EmptyState icon={<Search />} title={exam === "LGS" ? "LGS puanı ya da yüzdelik dilim girin" : "Puan ya da başarı sırası girin"} description="Öğrenci seçerseniz son girilen puanı hatırlanır ve bulduğunuz okulları tercih listesine ekleyebilirsiniz." />
+            <EmptyState
+              icon={<Search />}
+              title={exam === "LGS" ? "LGS puanı ya da yüzdelik dilim girin" : "Puan ya da başarı sırası girin"}
+              description={listLocked ? "Sonuçlar güvenli, uygun ve riskli diye ayrılır. Öğrenciye tercih listesi hazırlamak ücretli pakette." : "Öğrenci seçerseniz son girilen puanı hatırlanır ve bulduğunuz okulları tercih listesine ekleyebilirsiniz."}
+            />
           ) : (
             <Card>
               <CardHeader
@@ -278,6 +291,11 @@ export async function PlacementRobot({ exam, centerId, sp, basePath }: { exam: P
           )}
         </div>
 
+        {listLocked ? (
+          <div className="xl:sticky xl:top-20">
+            <LockedFeature feature={exam === "LGS" ? "lgsRobot" : "yksRobot"} />
+          </div>
+        ) : (
         <Card className="xl:sticky xl:top-20">
           <CardHeader
             title={student ? `${student.firstName} ${student.lastName} · tercih listesi` : "Tercih listesi"}
@@ -298,11 +316,10 @@ export async function PlacementRobot({ exam, centerId, sp, basePath }: { exam: P
                           <p className="text-xs text-slate-500">
                             {[exam === "YKS" ? p.institution : p.district, p.city, exam === "LGS" ? formatPercentile(p.percentile) : p.minRank ? `${p.minRank.toLocaleString("tr-TR")}. sıra` : null].filter(Boolean).join(" · ")}
                           </p>
-                          {chance ? (
-                            <Badge tone={CHANCE_TONE[chance]} className="mt-1">
-                              {CHANCE_LABEL[chance]}
-                            </Badge>
-                          ) : null}
+                          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                            {chance ? <Badge tone={CHANCE_TONE[chance]}>{CHANCE_LABEL[chance]}</Badge> : null}
+                            {targets ? <TargetButton exam={exam} studentId={student.id} programId={p.id} active={targetCodes.has(p.code)} /> : null}
+                          </div>
                         </div>
                         <ListItemControls exam={exam} studentId={student.id} programId={p.id} first={i === 0} last={i === list.programs.length - 1} />
                       </li>
@@ -318,6 +335,7 @@ export async function PlacementRobot({ exam, centerId, sp, basePath }: { exam: P
             </CardBody>
           ) : null}
         </Card>
+        )}
       </div>
     </>
   );

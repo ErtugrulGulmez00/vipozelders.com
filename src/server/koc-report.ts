@@ -32,7 +32,7 @@ export async function weeklyReportData(centerId: string, studentId: string, week
   const [student, logs, prevLogs, plan, sessions, results, goals, study] = await Promise.all([
     db.centerStudent.findFirstOrThrow({
       where: { id: studentId, centerId },
-      select: { firstName: true, lastName: true, gradeName: true, targetExam: true, coachWeekday: true, coachMinute: true, center: { select: { name: true, phone: true } } },
+      select: { firstName: true, lastName: true, gradeName: true, targetExam: true, coachWeekday: true, coachMinute: true, center: { select: { name: true, phone: true, logoKey: true } } },
     }),
     db.centerQuestionLog.findMany({ where: { studentId, date: range(weekStart, weekEnd) }, select: { date: true, subject: true, solved: true, correct: true, wrong: true } }),
     db.centerQuestionLog.aggregate({ where: { studentId, date: range(prevStart, weekStart) }, _sum: { solved: true } }),
@@ -160,9 +160,15 @@ export async function sendReport(ctx: ReportCenter, studentId: string, weekStart
   return { counts, token: report.token };
 }
 
+/** Ücretsiz pakette otomatik rapor ayda bir gider: ayın ilk pazarı */
+export function freeAutoReportDay(today: string): boolean {
+  return Number(today.slice(8, 10)) <= 7;
+}
+
 /**
- * Otomatik haftalık veli raporu (ücretli Pi Koç, ayar açık): pazar 18:00'den sonra haftada bir kez, o haftada
- * kaydı olan ve velisine e-postayla ulaşılabilen her aktif öğrencinin raporu koçun yazdığı notla gönderilir.
+ * Otomatik haftalık veli raporu (ayar açık): pazar 18:00'den sonra haftada bir kez, o haftada kaydı olan ve velisine
+ * e-postayla ulaşılabilen her aktif öğrencinin raporu koçun yazdığı notla gönderilir. Ücretli pakette her hafta,
+ * ücretsiz pakette ayın ilk pazarı.
  */
 export async function sendCoachAutoReports(now = new Date()): Promise<number> {
   const today = toLocalDateString(now);
@@ -178,7 +184,7 @@ export async function sendCoachAutoReports(now = new Date()): Promise<number> {
   for (const center of centers) {
     // Önce işaretle: hata olsa da aynı hafta ikinci kez gitmez
     await db.center.update({ where: { id: center.id }, data: { coachAutoReportWeek: week } });
-    if (!coachPlan(center, 0, now).paid) continue;
+    if (!coachPlan(center, 0, now).paid && !freeAutoReportDay(today)) continue;
     const students = await db.centerStudent.findMany({
       where: {
         centerId: center.id,

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { RateBar } from "@/components/center/center-ui";
-import { AutoReportForm, KocSettingsForm } from "@/components/koc/koc-forms";
+import { AutoReportForm, KocSettingsForm, LogoForm } from "@/components/koc/koc-forms";
 import { LockedFeature } from "@/components/koc/locked-feature";
 import { PasswordForm } from "@/components/panel/password-form";
 import { Badge, Card, CardBody, CardHeader, DescriptionList, PageHeader } from "@/components/ui/primitives";
@@ -11,6 +11,7 @@ import { requireCenter } from "@/server/center/context";
 import { coachFeatureOpen, coachPlanLabel, formatHours } from "@/lib/pi-koc";
 import { coachMeetingStatus } from "@/server/koc-meeting-usage";
 import { db } from "@/server/db";
+import { uploadUrl } from "@/server/storage";
 
 export const metadata: Metadata = { title: "Hesap ve abonelik" };
 
@@ -22,6 +23,7 @@ export default async function KocAccountPage() {
     db.center.findUniqueOrThrow({ where: { id: ctx.center.id }, select: { coachAutoReport: true } }),
   ]);
   const autoOpen = coachFeatureOpen(ctx.coach, "autoReport");
+  const brandOpen = coachFeatureOpen(ctx.coach, "branding");
   const meetingRatio = meetings.usedMinutes / Math.max(meetings.policy.poolMinutes, 1);
   const access = CENTER_ACCESS_LABEL[ctx.access.state];
   return (
@@ -66,15 +68,34 @@ export default async function KocAccountPage() {
             <KocSettingsForm values={{ name: ctx.center.name, phone: ctx.center.phone, email: ctx.center.email }} />
           </CardBody>
         </Card>
-        {autoOpen ? (
+        <Card>
+          <CardHeader
+            title="Otomatik veli raporu"
+            description={autoOpen ? "Her pazar akşamı gider; rapor sizin adınızla çıkar, Pi Koç imzası olmaz." : "Ücretsiz pakette ayda bir (ayın ilk pazarı) gider. Ücretli pakette her hafta ve sizin markanızla."}
+          />
+          <CardBody>
+            <AutoReportForm enabled={center.coachAutoReport} weekly={autoOpen} />
+          </CardBody>
+        </Card>
+        {brandOpen ? (
           <Card>
-            <CardHeader title="Otomatik veli raporu" description="Rapor sizin adınızla gider; Pi Koç imzası olmaz." />
+            <CardHeader title="Raporlarda logonuz" description="Veli raporunun başında adınızla birlikte logonuz görünür." />
             <CardBody>
-              <AutoReportForm enabled={center.coachAutoReport} />
+              <LogoForm logoUrl={uploadUrl(ctx.center.logoKey)} />
             </CardBody>
           </Card>
         ) : (
-          <LockedFeature feature="autoReport" />
+          <LockedFeature feature="branding" />
+        )}
+        {coachFeatureOpen(ctx.coach, "reminders") ? (
+          <Card>
+            <CardHeader title="Otomatik hatırlatmalar" action={<Badge tone="green">Açık</Badge>} />
+            <CardBody>
+              <p className="text-sm text-slate-600">İki gündür soru, çalışma ya da program işareti girmeyen öğrenciye akşam hatırlatma gider (en fazla üç günde bir); size de kimlerin geride kaldığı tek bildirimle söylenir. Öğrencinin kendi hesabıyla giriş yapmış olması gerekir.</p>
+            </CardBody>
+          </Card>
+        ) : (
+          <LockedFeature feature="reminders" />
         )}
         <Card>
           <CardHeader title="Şifre değiştir" />

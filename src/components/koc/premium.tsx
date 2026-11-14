@@ -1,4 +1,4 @@
-import { Award, Compass, Crown, FileUp, GraduationCap, Landmark, Map as MapIcon, PencilLine, School, Send, Sparkles, Star, University, Video, Wallet, type LucideIcon } from "lucide-react";
+import { Award, BellRing, Compass, Crown, FileUp, GraduationCap, Landmark, LayoutTemplate, Map as MapIcon, PencilLine, School, Send, Sparkles, Stamp, Star, Target, University, Video, Wallet, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 import { COACH_FEATURES, COACH_FREE_NAME, type CoachFeature, type CoachTier } from "@/lib/pi-koc";
@@ -24,7 +24,20 @@ export function TierIcon({ students, className }: { students: number; className?
   );
 }
 
-export const FEATURE_ICONS: Record<CoachFeature, LucideIcon> = { pdfImport: FileUp, topicAnalysis: MapIcon, ai: Sparkles, lgsRobot: School, yksRobot: University, autoReport: Send, fees: Wallet, featured: Star };
+export const FEATURE_ICONS: Record<CoachFeature, LucideIcon> = {
+  pdfImport: FileUp,
+  topicAnalysis: MapIcon,
+  ai: Sparkles,
+  targetSchool: Target,
+  lgsRobot: School,
+  yksRobot: University,
+  autoReport: Send,
+  branding: Stamp,
+  reminders: BellRing,
+  templates: LayoutTemplate,
+  fees: Wallet,
+  featured: Star,
+};
 
 /** Ücretli pakette açılan özellikler; görüntülü derste süre sınırının kalkması da eklenir. */
 export function premiumFeatures() {

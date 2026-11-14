@@ -1,6 +1,7 @@
 import "server-only";
 import type { Prisma } from "@/generated/prisma/client";
 import { BUILTIN_TEMPLATES, cleanTemplateItems, type TemplateItem } from "@/lib/koc-templates";
+import { coachFeatureOpen, coachPlan } from "@/lib/pi-koc";
 import { addDaysToDateString, dateStringToDbDate, dbDateToString, isoWeekday, minutesToTime, toLocalDateString, toLocalMinutes } from "@/lib/dates";
 import type { CenterContext } from "./center/context";
 import { CenterError } from "./center/errors";
@@ -77,8 +78,8 @@ export async function addTopicToPlan(ctx: CenterContext, studentId: string, inpu
 export async function planTemplates(centerId: string) {
   const own = await db.centerPlanTemplate.findMany({ where: { centerId }, orderBy: { createdAt: "desc" } });
   return [
-    ...own.map((t) => ({ id: t.id, name: t.name, description: `${cleanTemplateItems(t.items).length} görev · sizin şablonunuz`, items: cleanTemplateItems(t.items), own: true })),
-    ...BUILTIN_TEMPLATES.map((t) => ({ ...t, own: false })),
+    ...own.map((t) => ({ id: t.id, name: t.name, description: `${cleanTemplateItems(t.items).length} görev · sizin şablonunuz`, items: cleanTemplateItems(t.items), premium: false, own: true })),
+    ...BUILTIN_TEMPLATES.map((t) => ({ ...t, premium: Boolean(t.premium), own: false })),
   ];
 }
 
@@ -102,6 +103,7 @@ export async function applyTemplate(ctx: CenterContext, studentId: string, templ
   await kocStudentOrThrow(ctx, studentId);
   const template = (await planTemplates(ctx.center.id)).find((t) => t.id === templateId);
   if (!template) throw new CenterError("Şablon bulunamadı.");
+  if (template.premium && !coachFeatureOpen(ctx.coach, "templates")) throw new CenterError("Bu şablon hazır program kütüphanesinde; ücretli pakette açılır.");
   const start = weekStartOf(weekStart);
   const existing = await db.centerStudyPlanItem.findMany({ where: { studentId, date: { gte: dateStringToDbDate(start), lt: dateStringToDbDate(addDaysToDateString(start, 7)) } }, select: { date: true, subject: true, topic: true } });
   const key = (date: string, subject: string, topic: string | null) => `${date}|${subject}|${topic ?? ""}`;
@@ -174,6 +176,59 @@ export async function sendPlanNudges(now = new Date()): Promise<number> {
     await db.centerStudent.update({ where: { id: s.id }, data: { planNudgedWeek: dateStringToDbDate(weekStart) } });
     for (const g of s.guardians) {
       await notify({ userId: g.userId!, type: "center.koc_plan", title: "Haftalık programın geride", body: `${s.firstName}, bu hafta ${total} görevin ${done} tanesini işaretledin. Kalan günlerde yetişebilirsin; yaptıklarını işaretlemeyi unutma.`, link: `/kocum/${g.id}` });
+      sent++;
+    }
+  }
+  return sent;
+}
+
+/** İki günlük kayıt boşluğu: bu süredir soru, çalışma süresi ya da program işareti yoksa hatırlatılır. */
+export const INACTIVE_DAYS = 2;
+
+/**
+ * Otomatik hatırlatma (ücretli Pi Koç): iki gündür kayıt girmeyen öğrenciye akşam (18:00-21:00) hatırlatma gider,
+ * koça da kimlerin geride kaldığı tek bildirimle söylenir. Aynı öğrenciye en fazla üç günde bir.
+ */
+export async function sendInactivityNudges(now = new Date()): Promise<number> {
+  const minutes = toLocalMinutes(now);
+  if (minutes < 18 * 60 || minutes > 21 * 60) return 0;
+  const today = toLocalDateString(now);
+  const since = dateStringToDbDate(addDaysToDateString(today, -(INACTIVE_DAYS - 1)));
+  const sinceTime = new Date(now.getTime() - INACTIVE_DAYS * 86_400_000);
+  const centers = await db.center.findMany({
+    where: { kind: "COACH", status: { not: "SUSPENDED" } },
+    select: { id: true, status: true, trialEndsAt: true, paidUntil: true, studentLimit: true, promoUntil: true, promoStudents: true, members: { where: { isActive: true, role: "OWNER" }, select: { userId: true } } },
+    take: 1000,
+  });
+  let sent = 0;
+  for (const center of centers) {
+    if (!coachPlan(center, 0, now).paid) continue;
+    const students = await db.centerStudent.findMany({
+      where: {
+        centerId: center.id,
+        status: "ACTIVE",
+        // Yeni eklenen öğrenciye hemen hatırlatma gitmez
+        createdAt: { lt: new Date(now.getTime() - (INACTIVE_DAYS + 1) * 86_400_000) },
+        OR: [{ inactiveNudgedAt: null }, { inactiveNudgedAt: { lt: new Date(now.getTime() - 3 * 86_400_000 + 3_600_000) } }],
+        guardians: { some: { isStudentAccount: true, userId: { not: null } } },
+        questionLogs: { none: { date: { gte: since } } },
+        studySessions: { none: { date: { gte: since } } },
+        studyPlan: { none: { doneAt: { gte: sinceTime } } },
+      },
+      select: { id: true, firstName: true, lastName: true, guardians: { where: { isStudentAccount: true, userId: { not: null } }, select: { id: true, userId: true } } },
+      take: 200,
+    });
+    if (!students.length) continue;
+    for (const s of students) {
+      await db.centerStudent.update({ where: { id: s.id }, data: { inactiveNudgedAt: now } });
+      for (const g of s.guardians) {
+        await notify({ userId: g.userId!, type: "center.koc_inactive", title: "İki gündür kayıt yok", body: `${s.firstName}, iki gündür soru ya da çalışma girmedin. Bugün çözdüklerini eklemeyi unutma; koçun gelişimini buradan izliyor.`, link: `/kocum/${g.id}` });
+        sent++;
+      }
+    }
+    const names = students.map((s) => `${s.firstName} ${s.lastName}`).join(", ");
+    for (const m of center.members) {
+      await notify({ userId: m.userId, type: "center.koc_inactive_digest", title: `${students.length} öğrenciniz ${INACTIVE_DAYS} gündür kayıt girmedi`, body: `${names}. Öğrencilere hatırlatma gönderildi.`, link: "/koc/ogrenciler" });
       sent++;
     }
   }

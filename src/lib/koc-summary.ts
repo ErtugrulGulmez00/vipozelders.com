@@ -12,7 +12,7 @@ export type SummaryInput = {
   subjects: { subject: string; solved: number; accuracy: number | null }[];
   plan: { done: number; total: number };
   exam: { kindLabel: string; net: number; change: number | null; inWeek: boolean } | null;
-  goal: { kindLabel: string; targetNet: number; gap: number | null } | null;
+  goal: { kindLabel: string; targetNet: number; gap: number | null; target?: { minScore: number | null; last: number | null; gap: number | null } | null } | null;
   priorityTopics?: string[];
 };
 
@@ -58,6 +58,9 @@ export function ruleBasedSummary(d: SummaryInput): string {
     if (d.exam.change !== null && d.exam.change !== 0) s += `, bir önceki denemeye göre ${net(Math.abs(d.exam.change))} net ${d.exam.change > 0 ? "artış" : "düşüş"}`;
     out.push(`${s}.`);
   }
+  if (d.goal?.target && d.goal.target.last !== null && d.goal.target.gap !== null) {
+    out.push(d.goal.target.gap > 0 ? `Hedef okulun tabanına ${net(d.goal.target.gap)} puan kaldı.` : "Son deneme puanı hedef okulun geçen yılki tabanının üstünde.");
+  }
   if (d.goal && d.goal.gap !== null) {
     out.push(d.goal.gap === 0 ? `${d.goal.kindLabel} hedefi olan ${net(d.goal.targetNet)} nete ulaştı.` : `${d.goal.kindLabel} hedefine (${net(d.goal.targetNet)} net) ${net(d.goal.gap)} net kaldı.`);
   }
@@ -76,7 +79,9 @@ export function summaryFacts(d: SummaryInput, gradeName: string | null): string 
   if (d.plan.total) lines.push(`Program: ${d.plan.total} görevden ${d.plan.done} tamamlandı`);
   lines.push(`Çalışma süresi: ${d.studyMinutes ? formatMinutes(d.studyMinutes) : "girilmedi"}, aktif gün: ${d.activeDays}/7`);
   if (d.exam) lines.push(`${d.exam.inWeek ? "Bu haftaki" : "Son"} ${d.exam.kindLabel} denemesi: ${net(d.exam.net)} net${d.exam.change !== null ? ` (bir öncekine göre ${d.exam.change > 0 ? "+" : ""}${net(d.exam.change)})` : ""}`);
-  if (d.goal) lines.push(`Hedef: ${d.goal.kindLabel} ${net(d.goal.targetNet)} net${d.goal.gap !== null ? `, kalan ${net(d.goal.gap)} net` : ""}`);
+  if (d.goal && d.goal.targetNet > 0) lines.push(`Hedef: ${d.goal.kindLabel} ${net(d.goal.targetNet)} net${d.goal.gap !== null ? `, kalan ${net(d.goal.gap)} net` : ""}`);
+  const t = d.goal?.target;
+  if (t && t.minScore !== null) lines.push(`Hedef okulun geçen yılki taban puanı: ${net(t.minScore)}${t.last !== null ? `; son deneme puanı ${net(t.last)} (${t.gap !== null && t.gap > 0 ? `tabana ${net(t.gap)} puan kaldı` : "tabanın üstünde"})` : "; deneme puanı girilmemiş"}`);
   if (d.priorityTopics?.length) lines.push(`Koçun belirlediği öncelikli konular: ${d.priorityTopics.slice(0, 6).join(", ")}`);
   return lines.join("\n");
 }

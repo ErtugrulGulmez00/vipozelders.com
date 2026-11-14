@@ -87,3 +87,22 @@ describe("Tercih robotu: yerleşme şansı", () => {
     expect(list.map((p) => p.minRank)).toEqual([1_000, 400_000, null]);
   });
 });
+
+describe("Tercih robotu: hedef okul", () => {
+  it("programın deneme türü puan türünden gelir", async () => {
+    const { goalKindForProgram } = await import("@/lib/placement");
+    expect(goalKindForProgram("LGS", "Fen Lisesi")).toBe("LGS");
+    expect(goalKindForProgram("YKS", "SAY")).toBe("AYT_SAY");
+    expect(goalKindForProgram("YKS", "SÖZ")).toBe("AYT_SOZ");
+    expect(goalKindForProgram("YKS", "DİL")).toBe("YDT");
+    expect(goalKindForProgram("YKS", "TYT")).toBe("TYT");
+  });
+
+  it("tabana kalan puan, şans ve gidişat", async () => {
+    const { targetProgress } = await import("@/lib/placement");
+    const p = { minScore: 400, minRank: 50_000, percentile: null };
+    expect(targetProgress("YKS", p, [])).toEqual({ last: null, gap: null, chance: null, trend: null });
+    expect(targetProgress("YKS", p, [360, 380, 395])).toEqual({ last: 395, gap: 5, chance: "low", trend: 35 });
+    expect(targetProgress("YKS", p, [420])).toMatchObject({ gap: -20, chance: "high", trend: null });
+  });
+});

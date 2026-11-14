@@ -16,6 +16,7 @@ import { appUrl } from "@/server/email";
 import { freeAiLeft, getReport, reportWeek, weeklyReportData } from "@/server/koc-report";
 import { LockedFeature } from "@/components/koc/locked-feature";
 import { coachFeatureOpen } from "@/lib/pi-koc";
+import { uploadUrl } from "@/server/storage";
 import { toWhatsAppNumber } from "@/server/whatsapp";
 
 export const metadata: Metadata = { title: "Haftalık rapor" };
@@ -63,7 +64,7 @@ export default async function KocReportPage({ params, searchParams }: PageProps<
             )}
           </div>
         </div>
-        <WeeklyReport data={data} note={report?.note ?? null} branded={!paid} />
+        <WeeklyReport data={data} note={report?.note ?? null} branded={!paid} logoUrl={paid ? uploadUrl(data.student.center.logoKey) : null} />
       </div>
 
       <aside className="space-y-4 lg:sticky lg:top-24 print:hidden">

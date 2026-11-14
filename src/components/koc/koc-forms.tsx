@@ -34,7 +34,9 @@ import {
   kocRecordPaymentAction,
   kocDeletePaymentAction,
   kocSaveAutoReportAction,
+  kocSaveLogoAction,
 } from "@/actions/koc";
+import { FileInput } from "@/components/ui/file-input";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
 import { PhoneInput } from "@/components/ui/phone-input";
@@ -308,10 +310,29 @@ export function KocSettingsForm({ values }: { values: { name: string; phone: str
 }
 
 /** Ücretli paket: haftalık veli raporunun pazar akşamı kendiliğinden gönderilmesi. */
-export function AutoReportForm({ enabled }: { enabled: boolean }) {
+export function LogoForm({ logoUrl }: { logoUrl: string | null }) {
+  return (
+    <ActionForm action={kocSaveLogoAction} className="space-y-3">
+      {logoUrl ? (
+        <div className="flex items-center gap-3">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={logoUrl} alt="Logonuz" className="size-14 rounded-xl border border-slate-200 bg-white object-contain" />
+          <Checkbox name="removeLogo" label="Logoyu kaldır" />
+        </div>
+      ) : null}
+      <Field label="Logo (PNG, JPG ya da WebP, en fazla 2 MB)" htmlFor="koc-logo">
+        <FileInput id="koc-logo" name="logo" accept="image/png,image/jpeg,image/webp" />
+        <FieldError name="logo" />
+      </Field>
+      <SubmitButton variant="outline">Kaydet</SubmitButton>
+    </ActionForm>
+  );
+}
+
+export function AutoReportForm({ enabled, weekly = true }: { enabled: boolean; weekly?: boolean }) {
   return (
     <ActionForm action={kocSaveAutoReportAction} className="space-y-3">
-      <Checkbox name="autoReport" defaultChecked={enabled} label="Haftalık raporu her pazar 18:00'den sonra velilere kendiliğinden gönder" />
+      <Checkbox name="autoReport" defaultChecked={enabled} label={weekly ? "Haftalık raporu her pazar 18:00'den sonra velilere kendiliğinden gönder" : "Raporu ayın ilk pazarı 18:00'den sonra velilere kendiliğinden gönder"} />
       <p className="text-xs text-slate-500">O hafta kaydı olan ve velisinin e-postası kayıtlı öğrencilere gider; yazdığınız değerlendirme de rapora eklenir. Daha önce elle gönderdiğiniz rapor yeniden gönderilmez.</p>
       <SubmitButton variant="outline">Kaydet</SubmitButton>
     </ActionForm>
@@ -440,8 +461,8 @@ export function AddTopicToPlanForm({ studentId, subject, topic, resourceId, days
   );
 }
 
-export function ApplyTemplateForm({ studentId, weekStart, templates }: { studentId: string; weekStart: string; templates: { id: string; name: string; description: string }[] }) {
-  const [id, setId] = useState(templates[0]?.id ?? "");
+export function ApplyTemplateForm({ studentId, weekStart, templates }: { studentId: string; weekStart: string; templates: { id: string; name: string; description: string; locked?: boolean }[] }) {
+  const [id, setId] = useState(templates.find((t) => !t.locked)?.id ?? "");
   const chosen = templates.find((t) => t.id === id);
   return (
     <ActionForm action={kocApplyTemplateAction} className="space-y-2">
@@ -452,12 +473,22 @@ export function ApplyTemplateForm({ studentId, weekStart, templates }: { student
           {templates.map((t) => (
             <option key={t.id} value={t.id}>
               {t.name}
+              {t.locked ? " · ücretli pakette" : ""}
             </option>
           ))}
         </Select>
       </Field>
       {chosen ? <p className="text-xs text-slate-500">{chosen.description}</p> : null}
-      <SubmitButton size="sm">Bu haftaya uygula</SubmitButton>
+      {chosen?.locked ? (
+        <p className="text-xs font-semibold text-brand-700">
+          Hazır program kütüphanesi ücretli pakette.{" "}
+          <a href="/koc/abonelik" className="underline">
+            Paketleri gör
+          </a>
+        </p>
+      ) : (
+        <SubmitButton size="sm">Bu haftaya uygula</SubmitButton>
+      )}
     </ActionForm>
   );
 }

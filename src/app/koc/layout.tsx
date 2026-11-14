@@ -33,8 +33,9 @@ export default async function KocLayout({ children }: { children: React.ReactNod
   const nextTier = freePlan ? (parseCoachTiers((await getSiteSettings()).piKocTiers)[0] ?? null) : null;
   // Açık özellikler menüde; kilitli olanların hepsi altta tek grupta (ücretsiz pakette tıklayınca tanıtım/paketler)
   const tools: PanelNavItem[] = [
-    { href: "/koc/lgs-tercih", label: "LGS tercih robotu", icon: <School />, locked: !coachFeatureOpen(ctx.coach, "lgsRobot") },
-    { href: "/koc/yks-tercih", label: "YKS tercih robotu", icon: <University />, locked: !coachFeatureOpen(ctx.coach, "yksRobot") },
+    // Tercih robotu ücretsiz pakette de açık (arama); öğrenci listesi ücretli
+    { href: "/koc/lgs-tercih", label: "LGS tercih robotu", icon: <School /> },
+    { href: "/koc/yks-tercih", label: "YKS tercih robotu", icon: <University /> },
     { href: "/koc/tahsilat", label: "Tahsilat", icon: <Wallet />, locked: !coachFeatureOpen(ctx.coach, "fees") },
   ];
   const locked: PanelNavItem[] = [
@@ -44,7 +45,7 @@ export default async function KocLayout({ children }: { children: React.ReactNod
           { href: "/koc/abonelik#pdf", label: "PDF'ten deneme", icon: <FileUp />, locked: true },
           { href: "/koc/abonelik#konu", label: "Konu eksik haritası", icon: <MapIcon />, locked: true },
           { href: "/koc/abonelik#yz", label: "Yapay zekâ asistanı", icon: <Sparkles />, locked: true },
-          { href: "/koc/abonelik#rapor", label: "Otomatik veli raporu", icon: <Send />, locked: true },
+          { href: "/koc/abonelik#rapor", label: "Markalı veli raporu", icon: <Send />, locked: true },
         ]
       : []),
   ];

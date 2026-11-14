@@ -108,7 +108,7 @@ export default async function KocStudentPage({ params, searchParams }: PageProps
       <CenterFlash code={sp.durum} />
       <Tabs tabs={tabs} active={tab} />
       {tab === "program" ? (
-        <ProgramTab centerId={centerId} studentId={id} week={typeof sp.hafta === "string" ? sp.hafta : undefined} topicLocked={!coachFeatureOpen(ctx.coach, "topicAnalysis")} />
+        <ProgramTab centerId={centerId} studentId={id} week={typeof sp.hafta === "string" ? sp.hafta : undefined} topicLocked={!coachFeatureOpen(ctx.coach, "topicAnalysis")} templatesLocked={!coachFeatureOpen(ctx.coach, "templates")} />
       ) : tab === "gorusmeler" ? (
         <>
           <MeetingHistory studentId={id} />
@@ -333,7 +333,7 @@ function EmptyLine({ text, href }: { text: string; href: string }) {
   );
 }
 
-async function ProgramTab({ centerId, studentId, week, topicLocked }: { centerId: string; studentId: string; week?: string; topicLocked: boolean }) {
+async function ProgramTab({ centerId, studentId, week, topicLocked, templatesLocked }: { centerId: string; studentId: string; week?: string; topicLocked: boolean; templatesLocked: boolean }) {
   const today = toLocalDateString(new Date());
   const weekStart = weekStartOf(week && isDateString(week) ? week : today);
   const [library, assigned, templates] = await Promise.all([
@@ -350,7 +350,7 @@ async function ProgramTab({ centerId, studentId, week, topicLocked }: { centerId
       <Card>
         <CardHeader title="Hazır program" description={`${weekStart.slice(8)}.${weekStart.slice(5, 7)} haftasına şablon uygulayın ya da bu haftayı şablon yapın.`} />
         <CardBody className="space-y-5">
-          <ApplyTemplateForm studentId={studentId} weekStart={weekStart} templates={templates.map((t) => ({ id: t.id, name: t.name, description: t.description }))} />
+          <ApplyTemplateForm studentId={studentId} weekStart={weekStart} templates={templates.map((t) => ({ id: t.id, name: t.name, description: t.description, locked: templatesLocked && t.premium }))} />
           <SaveTemplateForm studentId={studentId} weekStart={weekStart} />
           {templates.some((t) => t.own) ? (
             <ul className="space-y-1 border-t border-slate-100 pt-3 text-sm">
