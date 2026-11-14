@@ -106,3 +106,25 @@ describe("Tercih robotu: hedef okul", () => {
     expect(targetProgress("YKS", p, [420])).toMatchObject({ gap: -20, chance: "high", trend: null });
   });
 });
+
+describe("Tercih robotu: ÖSYM en küçük / en büyük puan tablosu", () => {
+  it("il sütunu yoksa ili üniversite adından okur; tekrar eden başlıkta ilk (genel kontenjan) sütunu alır", async () => {
+    const { parseProgramTable, cityFromInstitution } = await import("@/lib/placement");
+    const k = ["", "", "", "", "", "", "", "Genel Kontenjan", "Genel Kontenjan", "Genel Kontenjan", "Genel Kontenjan", "Okul Birincisi Kontenjanı", "Okul Birincisi Kontenjanı", "Okul Birincisi Kontenjanı", "Okul Birincisi Kontenjanı"];
+    const head = ["", "Program Kodu", "Üniversite Türü", "Üniversite Adı", "Fakülte/Yüksekokul Adı", "Program Adı", "Puan Türü", "Kontenjan", "Yerleşen", "En Küçük Puan", "En Büyük Puan", "Kontenjan", "Yerleşen", "En Küçük Puan", "En Büyük Puan"];
+    const r = parseProgramTable("YKS", [
+      ["", "TABLO-4 2026 Yılı Merkezi Yerleştirme İle Öğrenci Alan Yükseköğretim Lisans Programları"],
+      k,
+      head,
+      ["", "106510077", "DEVLET", "ABDULLAH GÜL ÜNİVERSİTESİ (KAYSERİ)", "MÜHENDİSLİK FAKÜLTESİ", "Bilgisayar Mühendisliği (İngilizce)", "SAY", "80", "80", "443.22731", "492.64166", "2", "2", "395.22742", "406.12834"],
+      ["", "110351308", "DEVLET", "ZONGULDAK BÜLENT ECEVİT ÜNİVERSİTESİ", "ZONGULDAK MESLEK YÜKSEKOKULU (Kilimli)", "Turizm ve Otel İşletmeciliği", "TYT", "1", "0", "--", "--", "--", "--", "--", "--"],
+    ]);
+    expect(r.missing).toEqual([]);
+    expect(r.headerRow).toBe(2);
+    expect(r.rows[0]).toMatchObject({ code: "106510077", city: "KAYSERİ", kind: "Devlet", quota: 80, minScore: 443.22731, maxScore: 492.64166 });
+    expect(r.rows[1]).toMatchObject({ city: "ZONGULDAK", district: "Kilimli", minScore: null });
+    expect(cityFromInstitution("GİRNE AMERİKAN ÜNİVERSİTESİ (KKTC-GİRNE)")).toBe("GİRNE");
+    expect(cityFromInstitution("AZERBAYCAN DEVLET İKTİSAT ÜNİVERSİTESİ (BAKÜ-AZERBAYCAN)")).toBe("BAKÜ");
+    expect(cityFromInstitution("GEBZE TEKNİK ÜNİVERSİTESİ")).toBe("KOCAELİ");
+  });
+});

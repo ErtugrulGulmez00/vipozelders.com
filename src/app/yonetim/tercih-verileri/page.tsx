@@ -29,7 +29,10 @@ export default async function PlacementDataPage() {
           <CardHeader title="Tanınan sütunlar" />
           <CardBody className="space-y-3 text-sm text-slate-600">
             <p>
-              <strong className="text-ink-900">YKS</strong> (YÖK Atlas “Tercih Sihirbazı” Excel çıktısı olduğu gibi yüklenebilir): Program Kodu, Üniversite Adı, Fakülte, Program Adı, İl, Puan Türü, Üniversite Türü, Burs / Öğretim Türü, Kontenjan, Yerleşen, Taban Puan,
+              <strong className="text-ink-900">YKS · önerilen kaynak</strong>: ÖSYM → YKS → Sayısal Bilgiler → “En Küçük ve En Büyük Puanlar” Excel dosyaları (TABLO-3 ön lisans, TABLO-4 lisans). İkisini aynı yılla sırayla yükleyin; il, üniversite adından okunur. Bu tablolarda başarı sırası yoktur, robot puana göre hesaplar.
+            </p>
+            <p>
+              <strong className="text-ink-900">YKS · diğer tablolar</strong>: Program Kodu, Üniversite Adı, Fakülte, Program Adı, İl, Puan Türü, Üniversite Türü, Burs / Öğretim Türü, Kontenjan, Yerleşen, Taban Puan,
               Taban Başarı Sırası, Tavan Puan.
             </p>
             <p>

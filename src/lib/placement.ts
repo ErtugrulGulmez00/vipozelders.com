@@ -50,7 +50,7 @@ function alias(field: Field, ...names: string[]) {
 }
 alias("code", "Program Kodu", "Kod", "Kurum Kodu", "Okul Kodu", "Program Kod", "Kodu");
 alias("institution", "Üniversite", "Üniversite Adı", "Yükseköğretim Kurumu", "Kurum Adı (Üniversite)");
-alias("faculty", "Fakülte", "Fakülte / Yüksekokul", "Fakülte/Yüksekokul", "Fakülte Adı", "Birim");
+alias("faculty", "Fakülte", "Fakülte / Yüksekokul", "Fakülte/Yüksekokul", "Fakülte/Yüksekokul Adı", "Fakülte Adı", "Birim");
 alias("name", "Program Adı", "Program", "Bölüm", "Bölüm Adı", "Okul Adı", "Okul", "Lise", "Kurum Adı", "Lise Adı");
 alias("city", "İl", "Şehir", "İl Adı", "Ili");
 alias("district", "İlçe", "İlçe Adı");
@@ -91,6 +91,39 @@ export function normalizeScoreType(exam: PlacementExamName, raw: string): string
   return v.toLocaleUpperCase("tr-TR");
 }
 
+const PROVINCES =
+  "ADANA,ADIYAMAN,AFYONKARAHİSAR,AĞRI,AMASYA,ANKARA,ANTALYA,ARTVİN,AYDIN,BALIKESİR,BİLECİK,BİNGÖL,BİTLİS,BOLU,BURDUR,BURSA,ÇANAKKALE,ÇANKIRI,ÇORUM,DENİZLİ,DİYARBAKIR,EDİRNE,ELAZIĞ,ERZİNCAN,ERZURUM,ESKİŞEHİR,GAZİANTEP,GİRESUN,GÜMÜŞHANE,HAKKARİ,HATAY,ISPARTA,MERSİN,İSTANBUL,İZMİR,KARS,KASTAMONU,KAYSERİ,KIRKLARELİ,KIRŞEHİR,KOCAELİ,KONYA,KÜTAHYA,MALATYA,MANİSA,KAHRAMANMARAŞ,MARDİN,MUĞLA,MUŞ,NEVŞEHİR,NİĞDE,ORDU,RİZE,SAKARYA,SAMSUN,SİİRT,SİNOP,SİVAS,TEKİRDAĞ,TOKAT,TRABZON,TUNCELİ,ŞANLIURFA,UŞAK,VAN,YOZGAT,ZONGULDAK,AKSARAY,BAYBURT,KARAMAN,KIRIKKALE,BATMAN,ŞIRNAK,BARTIN,ARDAHAN,IĞDIR,YALOVA,KARABÜK,KİLİS,OSMANİYE,DÜZCE".split(",");
+/** Adında il geçmeyen ve ÖSYM tablosunda parantezle il yazılmayan üniversiteler */
+const UNIVERSITY_CITY: Record<string, string> = { "GEBZE TEKNİK ÜNİVERSİTESİ": "KOCAELİ", "TÜRK-JAPON BİLİM VE TEKNOLOJİ ÜNİVERSİTESİ": "İSTANBUL" };
+
+/**
+ * İl sütunu olmayan ÖSYM tablosu (en küçük ve en büyük puanlar): il üniversite adından çıkarılır.
+ * "ABDULLAH GÜL ÜNİVERSİTESİ (KAYSERİ)" → KAYSERİ · "(KKTC-GİRNE)" → GİRNE · "(BAKÜ-AZERBAYCAN)" → BAKÜ · "ZONGULDAK BÜLENT ECEVİT ÜNİVERSİTESİ" → ZONGULDAK
+ */
+export function cityFromInstitution(institution: string): string | null {
+  const name = institution.trim().replace(/\s+/g, " ").toLocaleUpperCase("tr-TR");
+  if (!name) return null;
+  const paren = name.match(/\(([^)]+)\)\s*$/)?.[1];
+  if (paren) {
+    const parts = paren.split("-").map((p) => p.trim()).filter(Boolean);
+    return (parts[0] === "KKTC" ? parts[1] : parts[0]) ?? null;
+  }
+  if (UNIVERSITY_CITY[name]) return UNIVERSITY_CITY[name];
+  const words = name.split(/[\s-]+/);
+  return PROVINCES.find((p) => words.includes(p)) ?? null;
+}
+
+/** "DEVLET" → "Devlet", "YURTDISI KAMU" → "Yurt dışı devlet" */
+function normalizeKind(raw: string): string {
+  const k = headerKey(raw);
+  if (k === "devlet") return "Devlet";
+  if (k === "vakif") return "Vakıf";
+  if (k === "kktc") return "KKTC";
+  if (k === "yurtdisivakif") return "Yurt dışı vakıf";
+  if (k === "yurtdisikamu" || k === "yurtdisidevlet") return "Yurt dışı devlet";
+  return raw.trim();
+}
+
 function titleCity(v: string): string {
   const s = v.trim().replace(/\s+/g, " ");
   return s ? s.toLocaleUpperCase("tr-TR") : s;
@@ -117,7 +150,8 @@ export function parseProgramTable(exam: PlacementExamName, table: string[][]): P
   let map: (Field | null)[] = [];
   for (let i = 0; i < Math.min(table.length, 15); i++) {
     const m = table[i].map((h) => HEADERS[headerKey(h)] ?? null);
-    if (m.filter(Boolean).length >= 3) {
+    // En az üç farklı alan (ÖSYM tablosunda üst satırda dört kez "Genel Kontenjan" yazar)
+    if (new Set(m.filter(Boolean)).size >= 3) {
       headerRow = i;
       map = m;
       break;
@@ -126,7 +160,9 @@ export function parseProgramTable(exam: PlacementExamName, table: string[][]): P
   const has = (f: Field) => map.includes(f);
   const missing: string[] = [];
   if (!has("name")) missing.push(exam === "LGS" ? "Okul adı" : "Program adı");
-  if (!has("city")) missing.push("İl");
+  // ÖSYM tablosunda il sütunu yok: üniversite adından çıkarılır
+  const cityFromName = !has("city") && exam === "YKS" && has("institution");
+  if (!has("city") && !cityFromName) missing.push("İl");
   if (exam === "YKS" && !has("scoreType")) missing.push("Puan türü");
   if (exam === "LGS" && !has("minScore") && !has("percentile")) missing.push("Taban puan ya da yüzdelik dilim");
   if (exam === "YKS" && !has("minScore") && !has("minRank")) missing.push("Taban puan ya da başarı sırası");
@@ -143,7 +179,9 @@ export function parseProgramTable(exam: PlacementExamName, table: string[][]): P
     };
     const details = map.map((f, i) => (f === "detail" ? (cells[i] ?? "").trim() : "")).filter((v) => v && v !== "-" && v !== "—");
     const name = get("name").replace(/\s+/g, " ");
-    const city = titleCity(get("city"));
+    const city = cityFromName ? (cityFromInstitution(get("institution")) ?? "") : titleCity(get("city"));
+    // ÖSYM: yüksekokulun ilçesi parantezde ("MESLEK YÜKSEKOKULU (Devrek)")
+    const district = get("district") || (cityFromName ? (get("faculty").match(/\(([^)]+)\)\s*$/)?.[1] ?? "") : "");
     const scoreType = normalizeScoreType(exam, get("scoreType")) || (exam === "LGS" ? "Lise" : "");
     if (!name || !city || !scoreType) {
       skipped++;
@@ -151,7 +189,7 @@ export function parseProgramTable(exam: PlacementExamName, table: string[][]): P
     }
     const institution = get("institution") || null;
     let code = get("code").replace(/\s+/g, "");
-    if (!code) code = fallbackCode([name, institution ?? "", city, get("district"), scoreType, details.join(" ")]);
+    if (!code) code = fallbackCode([name, institution ?? "", city, district, scoreType, details.join(" ")]);
     if (seen.has(code)) {
       skipped++;
       continue;
@@ -164,9 +202,9 @@ export function parseProgramTable(exam: PlacementExamName, table: string[][]): P
       institution: institution?.slice(0, 200) ?? null,
       faculty: get("faculty").slice(0, 200) || null,
       city: city.slice(0, 60),
-      district: get("district").slice(0, 60) || null,
+      district: district.slice(0, 60) || null,
       scoreType: scoreType.slice(0, 60),
-      kind: get("kind").slice(0, 40) || null,
+      kind: normalizeKind(get("kind")).slice(0, 40) || null,
       details: details.join(" · ").slice(0, 300) || null,
       quota: parseNumber(get("quota"), true),
       placed: parseNumber(get("placed"), true),
