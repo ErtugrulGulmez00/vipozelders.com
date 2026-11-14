@@ -20,6 +20,7 @@ export async function aiText({
   timeoutMs = 45_000,
   maxTokens = 3000,
   modelList,
+  privateData = false,
 }: {
   system: string;
   prompt: string;
@@ -27,6 +28,8 @@ export async function aiText({
   maxTokens?: number;
   /** Verilmezse OPENROUTER_MODELS ya da varsayılan liste */
   modelList?: string[];
+  /** Kişisel veri (öğrenci adı) içeriyor: yalnızca veriyi eğitimde kullanmayan sağlayıcılara gider */
+  privateData?: boolean;
 }): Promise<string | null> {
   const key = process.env.OPENROUTER_API_KEY;
   if (!key) return null;
@@ -37,9 +40,9 @@ export async function aiText({
       body: JSON.stringify({
         models: (modelList?.length ? modelList : models()).slice(0, 3),
         max_tokens: maxTokens,
-        // Ücretli modele geçilince OPENROUTER_DENY_TRAINING=1: veriyi eğitimde kullanan sağlayıcılar dışlanır.
-        // Ücretsiz modeller bu şartla çalışmaz; onlara yalnızca isimsiz sayılar gider.
-        ...(process.env.OPENROUTER_DENY_TRAINING === "1" ? { provider: { data_collection: "deny" } } : {}),
+        // Kişisel veri içeren istek (deneme PDF'i) veriyi eğitimde kullanan sağlayıcılara gitmez. Diğer isteklere
+        // (rapor taslağı, asistan) yalnızca isimsiz sayılar gider; onlar ücretsiz modellerle çalışmaya devam eder.
+        ...(privateData ? { provider: { data_collection: "deny" } } : {}),
         messages: [
           { role: "system", content: system },
           { role: "user", content: prompt },

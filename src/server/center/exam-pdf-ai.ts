@@ -25,7 +25,7 @@ function pdfModels(): string[] | undefined {
 
 async function readPart(text: string, index: number, total: number): Promise<AiExam[] | null> {
   for (let attempt = 0; attempt < 2; attempt++) {
-    const raw = await aiText({ system: AI_SYSTEM, prompt: aiPrompt(text, { index, total }), maxTokens: 12_000, timeoutMs: 120_000, modelList: pdfModels() });
+    const raw = await aiText({ system: AI_SYSTEM, prompt: aiPrompt(text, { index, total }), maxTokens: 12_000, timeoutMs: 120_000, modelList: pdfModels(), privateData: process.env.OPENROUTER_DENY_TRAINING === "1" });
     const parsed = raw ? parseAiResponse(raw) : null;
     if (parsed) return parsed;
   }
