@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { RedeemPromoForm } from "@/components/koc/promo-forms";
 import { OVER_LIMIT_GRACE_DAYS } from "@/server/koc-promo";
 import { RateBar } from "@/components/center/center-ui";
-import { PackageCard, TierCards, whatsappLink } from "@/components/center/pricing";
+import { PackageCard, PI_KOC_CONSENT, TierCards, whatsappLink } from "@/components/center/pricing";
 import { toWhatsAppNumber } from "@/server/whatsapp";
 import { MessageCircle } from "lucide-react";
 import { Badge, Card, CardBody, CardHeader, DescriptionList, PageHeader, Table, Td, Th } from "@/components/ui/primitives";
@@ -139,7 +139,7 @@ export default async function SubscriptionPage() {
                   <p className={cn("text-xs", popular ? "text-ink-200" : "text-slate-500")}>KDV dahil</p>
                   {whatsapp && !current ? (
                     <a
-                      href={whatsappLink(whatsapp, `Merhaba, Pi Koç ${t.name} paketini (${t.students} öğrenci, aylık ${formatMoney(t.priceTl * 100)}) almak istiyorum. Hesabım: ${ctx.center.name}`)}
+                      href={whatsappLink(whatsapp, `Merhaba, Pi Koç ${t.name} paketini (${t.students} öğrenci, aylık ${formatMoney(t.priceTl * 100)}) almak istiyorum. Hesabım: ${ctx.center.name}. ${PI_KOC_CONSENT}`)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className={cn("mt-4 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl text-sm font-bold", popular ? "bg-gold-400 text-ink-950 hover:bg-gold-300" : "border border-emerald-300 text-emerald-800 hover:bg-emerald-50")}

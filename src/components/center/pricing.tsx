@@ -52,6 +52,14 @@ export function PackageCard({ current, cta, fromPrice }: { current?: boolean; ct
   );
 }
 
+/**
+ * WhatsApp'tan satın almada yazılı onay: hazır mesaj sözleşme bağlantılarını ve onay cümlesini içerir, mesaj geçmişi
+ * kanıt olarak kalır. Pi Koç (tüketici olabilir): ön bilgilendirme + mesafeli satış + anında ifa onayı (cayma istisnası).
+ */
+export const PI_KOC_CONSENT =
+  "Ön Bilgilendirme Formu'nu (pikampus.com/sayfa/on-bilgilendirme-formu) ve Mesafeli Satış Sözleşmesi'ni (pikampus.com/sayfa/mesafeli-satis-sozlesmesi) okudum, onaylıyorum. Paketin ödemem kaydedilince hemen açılmasını istiyorum; bu nedenle cayma hakkımın olmayacağını biliyorum.";
+export const CENTER_CONSENT = "Kurum Hizmet Sözleşmesi'ni (pikampus.com/sayfa/kurum-hizmet-sozlesmesi) okudum, kabul ediyorum.";
+
 /** WhatsApp'tan satın alma / teklif mesajı (sitedeki iletişim numarasına). */
 export function whatsappLink(number: string, text: string) {
   return `https://wa.me/${number}?text=${encodeURIComponent(text)}`;
@@ -68,7 +76,7 @@ export function TierCards({ plans, current, cta, whatsapp }: { plans: CenterPlan
           const yearlySaving = plan.yearlyPriceTl ? plan.priceTl * 12 - plan.yearlyPriceTl : 0;
           const message = plan.quote
             ? `Merhaba, ${plan.name.toLocaleLowerCase("tr-TR")} olan kurumumuz için Pi Kampüs kurum paneli teklifi almak istiyoruz.`
-            : `Merhaba, Pi Kampüs kurum paneli ${plan.name.toLocaleLowerCase("tr-TR")} paketini${plan.yearlyPriceTl ? ` yıllık (${formatMoney(plan.yearlyPriceTl * 100)} + KDV)` : ` aylık (${formatMoney(plan.priceTl * 100)} + KDV)`} almak istiyorum.`;
+            : `Merhaba, Pi Kampüs kurum paneli ${plan.name.toLocaleLowerCase("tr-TR")} paketini${plan.yearlyPriceTl ? ` yıllık (${formatMoney(plan.yearlyPriceTl * 100)} + KDV)` : ` aylık (${formatMoney(plan.priceTl * 100)} + KDV)`} almak istiyorum. ${CENTER_CONSENT}`;
           return (
             <div key={plan.plan} className={cn("relative flex flex-col rounded-2xl border bg-white p-5", isCurrent || featured ? "border-brand-500 ring-2 ring-brand-200" : "border-slate-200")}>
               {isCurrent ? (
@@ -129,7 +137,13 @@ export function TierCards({ plans, current, cta, whatsapp }: { plans: CenterPlan
           );
         })}
       </div>
-      <p className="mt-3 text-xs text-slate-500">Fiyatlara KDV eklenir.</p>
+      <p className="mt-3 text-xs text-slate-500">
+        Fiyatlara KDV eklenir. Satın alırken{" "}
+        <Link href="/sayfa/kurum-hizmet-sozlesmesi" target="_blank" className="underline">
+          Kurum Hizmet Sözleşmesi
+        </Link>
+        &apos;ni kabul edersiniz.
+      </p>
     </div>
   );
 }

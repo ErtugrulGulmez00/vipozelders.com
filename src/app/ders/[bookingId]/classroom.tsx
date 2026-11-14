@@ -232,6 +232,8 @@ function Stage({
           <p className="text-xs text-slate-400">
             {state === ConnectionState.Connected ? (lastMinute ? `Görüşme ${Math.max(0, Math.ceil((endsAt - now) / 1000))} saniye sonra kapanacak` : minutesLeft > 0 ? `Dersin bitmesine ${minutesLeft} dakika` : "Ders süresi doldu") : state === ConnectionState.Reconnecting ? "Yeniden bağlanılıyor…" : "Bağlanılıyor…"}
           </p>
+          {/* Teftiş izleme bilgilendirmesi: her görüşmede görünür (yasal metinlerdeki madde) */}
+          {observer ? null : <p className="text-[11px] text-slate-500">Görüşme kayda alınmaz; güvenlik amacıyla yöneticilerce canlı izlenebilir.</p>}
         </div>
         <StartAudio label="Sesi aç" className="rounded-lg bg-gold-400 px-3 py-1.5 text-xs font-semibold text-ink-900" />
       </header>

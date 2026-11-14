@@ -1,5 +1,6 @@
 // Yasal sayfa şablonları. {süslü} ifadeler sayfa gösterilirken site ayarlarıyla doldurulur.
 // Metinler genel şablondur; şirketin durumuna göre bir avukata kontrol ettirilmesi önerilir (Yönetim → Sayfalar'dan düzenlenir).
+// 2026-11-14: LiveKit yeri, yapay zekâ, tercih robotu, KDV, sözleşme sonu ve WhatsApp'tan yazılı onay eklendi.
 // 2026-11-13: ödemeye aracılık edilmeyen modele göre yeniden yazıldı (özel ders ücreti öğretmenle veli arasında;
 // sitede satılan hizmet Pi Koç ve kurum paneli aboneliği).
 
@@ -124,7 +125,7 @@ Veri sorumlusu: {companyName} · {companyAddress} · {companyTaxInfo} · {contac
 Sözleşmenin kurulması ve ifası, hukuki yükümlülük, meşru menfaat ve gerektiğinde açık rızanız (KVKK m.5). WhatsApp bildirimleri ve pazarlama iletileri yalnızca açık rızanıza dayanır.
 
 ## Görüntülü derslerin izlenmesi
-Görüntülü dersler ve görüşmeler kayda alınmaz. Ancak kalite ve çocuk güvenliği amacıyla {siteName} yöneticileri görüşmeleri, katılımcılara ayrıca bildirim yapmadan canlı olarak izleyebilir (teftiş izleme). İzleme sırasında uygunsuz bir davranış görülürse ilgili hesap süresiz olarak askıya alınabilir. İzleme yalnızca canlı olarak yapılır; görüntü ve ses saklanmaz, yalnızca hangi yöneticinin hangi görüşmeyi ne zaman izlediği işlem kayıtlarında tutulur. Hukuki sebep: hizmetin güvenliğinin ve çocukların korunmasının sağlanmasına yönelik meşru menfaat (KVKK m.5/2-f).
+Görüntülü dersler ve görüşmeler kayda alınmaz. Ancak kalite ve çocuk güvenliği amacıyla {siteName} yöneticileri görüşmeleri canlı olarak izleyebilir (teftiş izleme). Bu bilgi her görüşmenin ekranında yazılıdır; izleme başladığında ayrıca bildirim yapılmaz. İzleme sırasında uygunsuz bir davranış görülürse ilgili hesap süresiz olarak askıya alınabilir. İzleme yalnızca canlı olarak yapılır; görüntü ve ses saklanmaz, yalnızca hangi yöneticinin hangi görüşmeyi ne zaman izlediği işlem kayıtlarında tutulur. Hukuki sebep: hizmetin güvenliğinin ve çocukların korunmasının sağlanmasına yönelik meşru menfaat (KVKK m.5/2-f).
 
 ## Ders talebinde paylaşım
 Ders talebi gönderdiğinizde talebiniz seçtiğiniz öğretmene iletilir. Adınız ve telefon numaranız öğretmene yalnızca talebinizi kabul ederse gösterilir. Kabul eden öğretmen öğrenciyi Pi Koç takibine ekler; bu andan itibaren takip kayıtları için veri sorumlusu öğretmendir.
@@ -132,16 +133,16 @@ Ders talebi gönderdiğinizde talebiniz seçtiğiniz öğretmene iletilir. Adın
 ## Aktarım
 Kişisel verileriniz yalnızca hizmetin gerektirdiği ölçüde aşağıdaki taraflarla paylaşılır:
 - Ders talebini kabul eden öğretmen: talep bilgileri ve telefon numarası
-- Barındırma ve e-posta hizmet sağlayıcıları: sitenin çalışması ve bildirim e-postaları
-- LiveKit: görüntülü derslerde görüntü ve sesin anlık iletilmesi
+- Barındırma (Türkiye'deki sunucumuz) ve e-posta hizmet sağlayıcıları: sitenin çalışması ve bildirim e-postaları
+- Görüntülü ders altyapısı (LiveKit): Türkiye'deki kendi sunucumuzda çalışır; görüntü ve ses yalnızca anlık iletilir, yurt dışına aktarılmaz ve kaydedilmez
 - Google (Firebase Cloud Messaging, Google Drive): mobil uygulama bildirimleri ve şifrelenmiş yedekler
-- OpenRouter ve aracılık ettiği yapay zekâ model sağlayıcıları: kurum ve koçların yüklediği deneme sonuç dosyalarının okunması ve koç raporu taslağı (rapor taslağına öğrenci adı gönderilmez)
+- OpenRouter ve aracılık ettiği yapay zekâ model sağlayıcıları (ör. Anthropic, Google): kurum ve koçların yüklediği deneme sonuç dosyalarının okunması; öğretmene öneri yazan yapay zekâ asistanı ve veli raporu taslağı. Deneme dosyasındaki, kurumda kayıtlı öğrenci adları gönderilmeden önce kodlanır ve bu dosyalar yalnızca veriyi model eğitiminde kullanmayan sağlayıcılara gönderilir. Asistan ve rapor taslağına öğrenci adı gönderilmez; yalnızca soru, doğruluk, çalışma ve net gibi sayısal veriler gider.
 - Meta Platforms (WhatsApp): yalnızca WhatsApp bildirimi alıyorsanız telefon numaranız ve mesaj içeriği
 - Telegram: site yöneticilerine giden iç bildirimler (ad ve işlem özeti)
 - Bankalar: abonelik bedellerinin havale/EFT ile alınması
 - Yetkili kamu kurumları: yasal zorunluluk hâlinde
 
-LiveKit, Google, OpenRouter ve yapay zekâ model sağlayıcıları, Meta ve Telegram sunucuları yurt dışında bulunabilir. Yurt dışına aktarım KVKK m.9 kapsamındaki şartlara uygun yapılır.
+Google, OpenRouter ve yapay zekâ model sağlayıcıları, Meta ve Telegram sunucuları yurt dışında bulunabilir. Google Drive'a giden yedekler şifrelenmiş olarak gönderilir; şifre anahtarı yalnızca bizdedir. Yurt dışına aktarım KVKK m.9 kapsamındaki şartlara uygun yapılır.
 
 ## WhatsApp bildirimleri
 WhatsApp bildirimleri isteğe bağlıdır ve yalnızca izninizle gönderilir. İzninizi kayıt sırasında ya da Hesap ayarlarından verebilir, aynı yerden geri alabilir ya da WhatsApp’tan DUR yazarak bildirimleri durdurabilirsiniz. Bu durum e-posta ve site bildirimlerini etkilemez. Kurum öğrencilerinin velilerine giden WhatsApp bildirimleri için izni kurum alır.
@@ -235,13 +236,13 @@ Pi Koç; koçların ve öğretmenlerin öğrencilerini program, ödev, soru ve d
 {siteName} üzerinden öğretmenlerle kurulan özel ders ilişkisi bu sözleşmenin konusu değildir: {siteName} özel ders hizmetinin satıcısı ya da ödemesinin aracısı değildir; ders ücreti öğretmen ile veli arasında belirlenir ve doğrudan öğretmene ödenir.
 
 ## 3. Bedel ve ödeme
-Paket bedeli tüm vergiler dahil olarak Pi Koç sayfasında ve panelin Abonelik sayfasında gösterilir. Ödeme havale / EFT ile yapılır; ödeme açıklamasına hesap adı ve paket yazılır. Sitede kart bilgisi alınmaz.
+Paket bedeli tüm vergiler dahil olarak Pi Koç sayfasında ve panelin Abonelik sayfasında gösterilir. Satın alma talebi WhatsApp ya da e-posta ile iletilir. Ödeme havale / EFT ile yapılır; ödeme açıklamasına hesap adı ve paket yazılır. Sitede kart bilgisi alınmaz.
 
 ## 4. Hizmetin ifası
 Ödeme kaydedildiğinde seçilen paket alıcının Pi Koç hesabında açılır ve ödenen süre boyunca geçerli olur. Hizmet elektronik ortamda sunulur; kargo ile teslimat yoktur. Süre bitip yenilenmezse hesap ücretsiz pakete döner; kayıtlar silinmez.
 
 ## 5. Cayma hakkı
-Paket, alıcının onayıyla ödemenin kaydedildiği anda elektronik ortamda anında ifa edilmeye başlanır. Mesafeli Sözleşmeler Yönetmeliği'nin 15. maddesinin (ğ) bendi uyarınca bu hizmette cayma hakkı kullanılamaz. Paket açılmadan önce yapılan ödemenin iadesi istenebilir.
+Alıcı, satın alma talebinde paketin ödemesi kaydedilir kaydedilmez açılmasını açıkça onaylar; paket bu onayla ödemenin kaydedildiği anda elektronik ortamda anında ifa edilmeye başlanır. Mesafeli Sözleşmeler Yönetmeliği'nin 15. maddesinin (ğ) bendi uyarınca bu hizmette cayma hakkı kullanılamaz. Paket açılmadan önce yapılan ödemenin iadesi istenebilir.
 
 ## 6. İade
 Hatalı ya da fazla yapılan ödemeler, alıcının bildirdiği hesaba en geç 14 gün içinde iade edilir. Dönem içinde paket bırakılırsa paket dönem sonuna kadar açık kalır.
@@ -250,7 +251,7 @@ Hatalı ya da fazla yapılan ödemeler, alıcının bildirdiği hesaba en geç 1
 Uyuşmazlıklarda Ticaret Bakanlığınca her yıl ilan edilen parasal sınırlar dahilinde alıcının yerleşim yerindeki tüketici hakem heyetleri, bu sınırları aşan durumlarda tüketici mahkemeleri yetkilidir.
 
 ## 8. Yürürlük
-Alıcı, ödemeyi yapmadan önce bu sözleşmeyi ve Ön Bilgilendirme Formu'nu okuyup onaylamış sayılır; sözleşme ödemenin kaydedilmesiyle kurulur.`,
+Alıcı, satın alma talebini iletirken bu sözleşmeyi ve Ön Bilgilendirme Formu'nu okuduğunu ve paketin hemen açılmasını onayladığını yazılı olarak (WhatsApp ya da e-posta mesajıyla) bildirir. Bu yazışma onayın kaydı olarak saklanır. Sözleşme ödemenin kaydedilmesiyle kurulur.`,
   },
   {
     slug: "on-bilgilendirme-formu",
@@ -270,7 +271,7 @@ Pi Koç yazılım aboneliği: koçların ve öğretmenlerin öğrencilerini prog
 Tüm vergiler dahil paket bedeli Pi Koç sayfasında gösterilir. Ek ücret alınmaz.
 
 ## Ödeme
-Havale / EFT. Sitede kart bilgisi alınmaz.
+Satın alma talebi WhatsApp ya da e-posta ile iletilir; talep mesajında bu formu ve Mesafeli Satış Sözleşmesi'ni okuduğunuzu ve paketin hemen açılmasını onayladığınızı belirtirsiniz. Ödeme havale / EFT ile yapılır; sitede kart bilgisi alınmaz.
 
 ## Teslimat
 Ödeme kaydedildiğinde paket Pi Koç hesabınızda elektronik ortamda açılır; kargo gönderimi yoktur.
@@ -349,7 +350,12 @@ Kurum paneli, başvurunuz onaylanınca açılır; giriş bilgileri e-postanıza 
 Derslerde ve mesajlarda saygılı bir dil kullanılır; çocuk güvenliğini tehlikeye atan her türlü davranış hesabın kapatılması ve yetkili makamlara bildirim sebebidir.
 
 ## Görüntülü derslerin izlenmesi
-Görüntülü dersler ve görüşmeler kayda alınmaz. Ancak kalite ve çocuk güvenliği amacıyla {siteName} yöneticileri görüşmeleri, katılımcılara ayrıca bildirim yapmadan canlı olarak izleyebilir (teftiş izleme). İzleme sırasında uygunsuz bir davranış görülürse ilgili hesap süresiz olarak askıya alınabilir.
+Görüntülü dersler ve görüşmeler kayda alınmaz. Ancak kalite ve çocuk güvenliği amacıyla {siteName} yöneticileri görüşmeleri canlı olarak izleyebilir (teftiş izleme). Bu bilgi her görüşmenin ekranında yazılıdır; izleme başladığında ayrıca bildirim yapılmaz. İzleme sırasında uygunsuz bir davranış görülürse ilgili hesap süresiz olarak askıya alınabilir.
+
+## Tercih robotu ve yapay zekâ önerileri
+- Tercih robotu sonuçları, önceki yılın taban puanı, başarı sırası ve yüzdelik dilim verilerine göre yapılan tahmindir; yerleşme garantisi değildir. Veriler ÖSYM, MEB ve kamuya açık kaynaklardan derlenir ve hata içerebilir. Kesin bilgi için ÖSYM ve MEB'in resmî kılavuzları ve sonuçları esas alınır.
+- Yapay zekâ asistanının ve rapor taslağının yazdıkları öneridir; kontrol etmek ve karar vermek öğretmene ya da kuruma aittir.
+- {siteName}, bu tahmin ve önerilere dayanılarak verilen tercih ve eğitim kararlarından sorumlu tutulamaz.
 
 ## Değerlendirmeler
 Yorumlar gerçek ders deneyimine dayanmalıdır; öğretmenle sitemizde görüntülü ders yapmış veliler ve öğrenciler yorum yazabilir. Hakaret, kişisel veri veya reklam içeren yorumlar yayından kaldırılır.
@@ -394,7 +400,7 @@ Tüketici işlemlerinde tüketici hakem heyetleri ve tüketici mahkemeleri yetki
 Öğretmen; devlet okulunda kadrolu olarak çalışmadığını veya ücretli özel ders vermesine mevzuatın izin verdiğini, aksi halde doğacak sorumluluğun kendisine ait olduğunu beyan eder.
 
 ## Görüntülü derslerin izlenmesi
-Görüntülü dersler ve görüşmeler kayda alınmaz. Ancak kalite ve çocuk güvenliği amacıyla {siteName} yöneticileri görüşmeleri, katılımcılara ayrıca bildirim yapmadan canlı olarak izleyebilir (teftiş izleme). İzleme sırasında uygunsuz bir davranış görülürse ilgili hesap süresiz olarak askıya alınabilir.
+Görüntülü dersler ve görüşmeler kayda alınmaz. Ancak kalite ve çocuk güvenliği amacıyla {siteName} yöneticileri görüşmeleri canlı olarak izleyebilir (teftiş izleme). Bu bilgi her görüşmenin ekranında yazılıdır; izleme başladığında ayrıca bildirim yapılmaz. İzleme sırasında uygunsuz bir davranış görülürse ilgili hesap süresiz olarak askıya alınabilir.
 
 ## Hesabın askıya alınması
 Bu sözleşmeye, yasalara ya da davranış kurallarına aykırılıkta profil yayından kaldırılabilir ve hesap kapatılabilir.`,
@@ -416,12 +422,13 @@ Telefon: {contactPhone} · E-posta: {contactEmail}
 {siteName}, Kurum'a seçtiği pakete göre öğrenci, yoklama, etüt, ödev, deneme, çalışma programı, görüntülü görüşme, veli iletişimi ve tahsilat takibi için web ve mobil yazılım sunar. Paket özellikleri ve fiyatlar Kurumlar İçin ve Pi Koç sayfalarında yer alır.
 
 ## Pi Koç ücretsiz paketi
-- Pi Koç {piKocFreeStudents} öğrenciye kadar süresiz ücretsizdir. Ücretsiz pakette görüntülü görüşme başına {piKocFreeMeetingMinutes} dakika ve aylık toplam süre sınırı uygulanır; bazı özellikler (ör. PDF'ten deneme aktarımı, konu eksik haritası, otomatik veli raporu, tahsilat takibi) ücretli pakette açılır.
+- Pi Koç {piKocFreeStudents} öğrenciye kadar süresiz ücretsizdir. Ücretsiz pakette görüntülü görüşme başına {piKocFreeMeetingMinutes} dakika ve aylık toplam süre sınırı uygulanır; ücretsiz pakette otomatik veli raporu ayda bir gönderilir, tercih robotunda arama yapılabilir. Ücretli pakette açılan özellikler (ör. PDF'ten deneme aktarımı, konu eksik haritası, hedef okul takibi, öğrenci tercih listesi, her hafta otomatik veli raporu, logolu rapor, otomatik hatırlatmalar, hazır program kütüphanesi, tahsilat takibi) Pi Koç sayfasında listelenir.
 - Ücretli paket süresi biterse hesap ücretsiz pakete döner; kayıtlar silinmez.
 
 ## Deneme süresi ve abonelik
 - Kurum paneli deneme süresi için kart bilgisi istenmez; süre sonunda otomatik ücret alınmaz.
-- Abonelik seçilen paket, öğrenci sayısı ve dönem için geçerlidir. Bedel havale / EFT ile ödenir; ödeme kaydedilince süre uzar.
+- Abonelik seçilen paket, öğrenci sayısı ve dönem için geçerlidir. Kurum paneli fiyatlarına KDV eklenir; Pi Koç fiyatları KDV dahildir.
+- Satın alma talebi WhatsApp ya da e-posta ile iletilir; Kurum talep mesajında bu sözleşmeyi kabul ettiğini yazılı olarak bildirir. Bedel havale / EFT ile ödenir; ödeme kaydedilince süre uzar.
 - Kurum paneli aboneliği sona erer ve yenilenmezse panel salt okunur olur. Kayıtlar silinmez; abonelik başlatıldığında kaldığınız yerden devam edilir.
 - Dönem bitmeden ayrılma ve iade koşulları abonelik sırasında yazılı olarak belirlenir.
 
@@ -433,7 +440,8 @@ Telefon: {contactPhone} · E-posta: {contactEmail}
 
 ## Kişisel veriler
 - Panele girilen öğrenci ve veli verileri için veri sorumlusu Kurum'dur; {siteName} bu verileri Kurum adına ve talimatları doğrultusunda, veri işleyen olarak işler. Kurum; aydınlatma yükümlülüğünü yerine getirmekten ve gerekli izinleri almaktan sorumludur.
-- {siteName} hizmeti sunmak için barındırma, e-posta, görüntülü görüşme (LiveKit) ve yapay zekâ (OpenRouter aracılığıyla model sağlayıcıları; deneme dosyalarının okunması ve rapor taslağı) hizmet sağlayıcılarından yararlanır. Rapor taslağına öğrenci adı gönderilmez.
+- {siteName} hizmeti sunmak için barındırma (Türkiye), e-posta, görüntülü görüşme (Türkiye'deki kendi sunucumuzda LiveKit) ve yapay zekâ (OpenRouter aracılığıyla model sağlayıcıları; deneme dosyalarının okunması, yapay zekâ asistanı ve rapor taslağı) hizmet sağlayıcılarından yararlanır. Deneme dosyasındaki kayıtlı öğrenci adları kodlanarak ve yalnızca veriyi model eğitiminde kullanmayan sağlayıcılara gönderilir; asistan ve rapor taslağına öğrenci adı gönderilmez.
+- Veriler her gece şifrelenerek yedeklenir; yedekler en fazla 30 gün saklanır.
 - {siteName} bu verileri kendi pazarlaması için kullanmaz, gerekli güvenlik önlemlerini alır ve Kurum istediğinde verileri dışa aktarma imkânı sunar.
 
 ## Mesajlar ve WhatsApp
@@ -442,12 +450,26 @@ Telefon: {contactPhone} · E-posta: {contactEmail}
 - WhatsApp bildirimleri açıldığında kurum başına aylık mesaj sınırı uygulanır; sınır dolduğunda bildirimler e-postayla gider.
 
 ## Görüntülü görüşmelerin izlenmesi
-Görüntülü dersler ve görüşmeler kayda alınmaz. Ancak kalite ve çocuk güvenliği amacıyla {siteName} yöneticileri görüşmeleri, katılımcılara ayrıca bildirim yapmadan canlı olarak izleyebilir (teftiş izleme). İzleme sırasında uygunsuz bir davranış görülürse ilgili hesap süresiz olarak askıya alınabilir.
+Görüntülü dersler ve görüşmeler kayda alınmaz. Ancak kalite ve çocuk güvenliği amacıyla {siteName} yöneticileri görüşmeleri canlı olarak izleyebilir (teftiş izleme). Bu bilgi her görüşmenin ekranında yazılıdır; izleme başladığında ayrıca bildirim yapılmaz. İzleme sırasında uygunsuz bir davranış görülürse ilgili hesap süresiz olarak askıya alınabilir.
+
+## Tercih robotu ve yapay zekâ önerileri
+Tercih robotu sonuçları önceki yılın verilerine göre tahmindir ve yerleşme garantisi değildir; veriler ÖSYM, MEB ve kamuya açık kaynaklardan derlenir ve hata içerebilir. Yapay zekâ asistanının ve rapor taslağının yazdıkları öneridir. Öğrenci ve velilere yapılan yönlendirmeden Kurum sorumludur.
 
 ## Hizmetin askıya alınması
 Bu sözleşmeye ya da yasalara aykırı kullanımda, özellikle başkalarının verilerinin izinsiz işlenmesinde ve istenmeyen mesaj gönderiminde hesap askıya alınabilir.
 
+## Sözleşmenin sona ermesi ve verilerin silinmesi
+- Kurum aboneliğini yenilemeyerek ya da {contactEmail} adresine yazarak sözleşmeyi sona erdirebilir.
+- Abonelik yenilenmezse kayıtlar silinmez; Kurum istediği zaman verilerini dışa aktarabilir.
+- Kurum hesabının kapatılmasını yazılı olarak istediğinde, öğrenci ve veli verileri 30 gün içinde silinir; yedeklerden de en geç 30 gün sonra kalkar. Ödeme ve fatura kayıtları vergi mevzuatının öngördüğü süre boyunca saklanır.
+
+## Hizmet sürekliliği ve sorumluluk
+- {siteName} hizmetin kesintisiz ve güvenli çalışması için makul özeni gösterir; bakım, güncelleme ve elde olmayan nedenlerle kısa süreli kesintiler olabilir.
+- {siteName}'in bu sözleşmeden doğan sorumluluğu, kasıt ve ağır kusur hâlleri dışında, Kurum'un son 12 ayda ödediği abonelik bedeliyle sınırlıdır. Dolaylı zararlardan ve kâr kaybından sorumluluk kabul edilmez.
+
 ## Değişiklikler ve uyuşmazlık
-Sözleşme güncellenebilir; güncel metin bu sayfada yayımlanır. Sorularınız için {contactEmail} adresine yazabilirsiniz.`,
+- Sözleşme güncellenebilir; güncel metin bu sayfada yayımlanır ve önemli değişiklikler Kurum'a bildirilir.
+- Bu sözleşmeden doğan uyuşmazlıklarda Tekirdağ mahkemeleri ve icra daireleri yetkilidir. Kurum'un tüketici sayıldığı durumlarda tüketici mevzuatındaki yetki kuralları saklıdır.
+- Sorularınız için {contactEmail} adresine yazabilirsiniz.`,
   },
 ];

@@ -10,7 +10,7 @@ import { formatMoney } from "@/lib/money";
 import { COACH_FREE_NAME, parseCoachTiers } from "@/lib/pi-koc";
 import { getSiteSettings } from "@/server/site";
 import { toWhatsAppNumber } from "@/server/whatsapp";
-import { whatsappLink } from "@/components/center/pricing";
+import { PI_KOC_CONSENT, whatsappLink } from "@/components/center/pricing";
 import { KocSignupForm } from "@/components/koc/signup-form";
 import { CoachPlanCompare } from "@/components/koc/locked-feature";
 
@@ -121,7 +121,7 @@ export default async function PiKocPage() {
                 </Link>
                 {whatsapp ? (
                   <a
-                    href={whatsappLink(whatsapp, `Merhaba, Pi Koç ${tier.name} paketini (${tier.students} öğrenci, aylık ${formatMoney(tier.priceTl * 100)}) almak istiyorum.`)}
+                    href={whatsappLink(whatsapp, `Merhaba, Pi Koç ${tier.name} paketini (${tier.students} öğrenci, aylık ${formatMoney(tier.priceTl * 100)}) almak istiyorum. ${PI_KOC_CONSENT}`)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="mt-2 text-center text-sm font-bold text-emerald-700 hover:underline"
@@ -133,7 +133,16 @@ export default async function PiKocPage() {
             ))}
           </div>
           {freeStudents > 0 ? <CoachPlanCompare freeStudents={freeStudents} freeMinutes={settings.piKocFreeMeetingMinutes} freeAi={settings.piKocFreeAiPerMonth} freeHours={freeStudents * settings.piKocHoursPerStudent} /> : null}
-          <p className="mt-5 text-sm text-ink-500">Ücretli paket ödemesini şimdilik havale ya da EFT ile alıyoruz; ödemeniz kaydedilene kadar ücretsiz paketle çalışırsınız. Ücretli paketin süresi biterse kayıtlarınız silinmez.</p>
+          <p className="mt-5 text-sm text-ink-500">Ücretli paket ödemesini şimdilik havale ya da EFT ile alıyoruz; ödemeniz kaydedilene kadar ücretsiz paketle çalışırsınız. Ücretli paketin süresi biterse kayıtlarınız silinmez. Satın alırken{" "}
+            <Link href="/sayfa/on-bilgilendirme-formu" target="_blank" className="underline">
+              Ön Bilgilendirme Formu
+            </Link>{" "}
+            ve{" "}
+            <Link href="/sayfa/mesafeli-satis-sozlesmesi" target="_blank" className="underline">
+              Mesafeli Satış Sözleşmesi
+            </Link>
+            &apos;ni kabul edersiniz.
+          </p>
         </div>
       </section>
 
