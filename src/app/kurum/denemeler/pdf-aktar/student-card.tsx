@@ -123,7 +123,9 @@ export function StudentCardDialog({ examName, row, onClose }: { examName: string
         </div>
         <p className="mt-1 text-xs text-slate-400">Çubuktaki çizgi bu PDF&apos;teki öğrencilerin ortalama netini gösterir.</p>
 
-        <h3 className="mt-6 text-sm font-bold text-ink-900">Eksik konular</h3>
+        <h3 className="mt-6 text-sm font-bold text-ink-900">
+          Eksik konular{card.weakTopics.length ? <span className="font-normal text-slate-500"> · {card.weakTopics.length} konu, en çok soru kaçırılan önce</span> : null}
+        </h3>
         {card.weakTopics.length ? (
           <ul className="mt-2 divide-y divide-slate-100 rounded-2xl border border-slate-200">
             {card.weakTopics.map((t) => (

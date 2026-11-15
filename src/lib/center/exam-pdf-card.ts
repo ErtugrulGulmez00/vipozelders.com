@@ -14,7 +14,7 @@ export type StudentCard = {
   score: number | null;
   ranks: { label: string; rank: number; of: number | null }[];
   sections: CardSection[];
-  /** Cevap anahtarı ve kazanım varsa en çok kaçırılan konular (en fazla 12) */
+  /** Cevap anahtarı ve kazanım varsa yanlış ya da boş bırakılan tüm konular, en çok kaçırılan önce */
   weakTopics: CardTopic[];
 };
 
@@ -50,7 +50,8 @@ export function buildStudentCards(exam: PdfExam): StudentCard[] {
         }
       }
     });
-    weak.sort((a, b) => (b.wrong + b.blank) / b.questions - (a.wrong + a.blank) / a.questions || b.wrong - a.wrong);
+    // Önce en çok soru kaçırılan konu (13 sorudan 11 boş, 1 sorudan 1 yanlıştan önce gelir)
+    weak.sort((a, b) => b.wrong + b.blank - (a.wrong + a.blank) || (b.wrong + b.blank) / b.questions - (a.wrong + a.blank) / a.questions || b.wrong - a.wrong);
     return {
       totalNet: totals[idx],
       avgTotalNet: avgTotal,
@@ -59,7 +60,7 @@ export function buildStudentCards(exam: PdfExam): StudentCard[] {
       score: st.score,
       ranks: st.ranks,
       sections,
-      weakTopics: weak.slice(0, 12),
+      weakTopics: weak,
     };
   });
 }
