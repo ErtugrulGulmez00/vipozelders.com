@@ -2,6 +2,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { computeNet } from "@/lib/center/exams";
 import { aliasKey, matchStudents, type MatchCandidate, type StudentMatch } from "@/lib/center/exam-match";
 import { parseResultPdf, type PdfExam } from "@/lib/center/exam-pdf";
+import { collapseAggregateSections } from "@/lib/center/exam-pdf-aggregate";
 import { dateStringToDbDate } from "@/lib/dates";
 import { normalizeSearch } from "@/lib/text";
 import { db } from "../db";
@@ -69,6 +70,8 @@ export async function createPdfImport(ctx: CenterContext, file: File | null): Pr
       throw new CenterError("Bu PDF'in biçimi henüz tanınmıyor. Dosyanız bize ulaştı; birkaç gün içinde okunur hâle getireceğiz. Acilse sonuçları Excel ile aktarabilirsiniz.");
     }
   }
+  // Yayınevinin toplam sütunları (TYT Sosyal, TYT Matematik…) ayrı ders sayılmaz
+  exams = exams.map(collapseAggregateSections);
   const data: PdfImportData = {
     exams: exams.map((e) => ({ ...e, sections: e.sections.map((s) => ({ ...s, topics: s.topics.map(cleanTopic) })) })),
   };
