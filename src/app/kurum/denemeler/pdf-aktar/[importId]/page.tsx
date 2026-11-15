@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Alert, PageHeader } from "@/components/ui/primitives";
+import { buildStudentCards } from "@/lib/center/exam-pdf-card";
 import { EXAM_PRESETS, penaltyLabel } from "@/lib/center/exams";
 import { toLocalDateString } from "@/lib/dates";
 import { requireCenter } from "@/server/center/context";
@@ -26,6 +27,7 @@ export default async function ExamPdfMatchPage({ params }: PageProps<"/kurum/den
   const exams: MatchExam[] = data.exams.map(({ exam, matches, existing }) => {
     const keyed = exam.sections.filter((s) => s.answerKey).length;
     const withTopics = exam.sections.filter((s) => s.topics.some(Boolean)).length;
+    const cards = buildStudentCards(exam);
     return {
       name: exam.name,
       kindLabel: EXAM_PRESETS[exam.kind].label,
@@ -50,6 +52,7 @@ export default async function ExamPdfMatchPage({ params }: PageProps<"/kurum/den
         confidence: matches[i].confidence,
         suggestions: matches[i].suggestions.map((s) => s.id),
         warnings: st.warnings ?? [],
+        card: cards[i],
       })),
     };
   });

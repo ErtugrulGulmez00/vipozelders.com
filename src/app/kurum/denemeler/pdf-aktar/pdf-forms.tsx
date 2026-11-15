@@ -8,6 +8,8 @@ import { FileInput } from "@/components/ui/file-input";
 import { Checkbox, Field, Input } from "@/components/ui/form";
 import { Badge, type Tone } from "@/components/ui/primitives";
 import type { MatchConfidence } from "@/lib/center/exam-match";
+import type { StudentCard } from "@/lib/center/exam-pdf-card";
+import { StudentCardDialog } from "./student-card";
 
 export function PdfUploadForm() {
   return (
@@ -31,6 +33,8 @@ export type MatchRow = {
   suggestions: string[];
   /** Tutarlılık denetiminde takılan noktalar (yapay zekâyla okunan PDF) */
   warnings: string[];
+  /** Öğrencinin PDF'ten anlık karnesi (sisteme kayıtlı olmasa da) */
+  card: StudentCard;
 };
 
 export type MatchExam = {
@@ -59,6 +63,7 @@ export function PdfMatchForm({ draftId, exams, candidates, today, coach = false 
   const [use, setUse] = useState(() => exams.map(() => true));
   const [picks, setPicks] = useState(() => exams.map((e) => e.rows.map((r) => r.studentId ?? "")));
   const [onlyCheck, setOnlyCheck] = useState(false);
+  const [cardOf, setCardOf] = useState<{ e: number; i: number } | null>(null);
   const labels = useMemo(() => new Map(candidates.map((c) => [c.id, c.label])), [candidates]);
 
   return (
@@ -132,7 +137,7 @@ export function PdfMatchForm({ draftId, exams, candidates, today, coach = false 
                 <table className="w-full min-w-[640px] text-sm">
                   <thead>
                     <tr className="bg-slate-50 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      <th className="px-3 py-2">PDF’teki öğrenci</th>
+                      <th className="px-3 py-2">PDF’teki öğrenci <span className="font-normal normal-case tracking-normal text-slate-400">(karnesi için adına tıklayın)</span></th>
                       <th className="px-3 py-2 text-right">Net</th>
                       <th className="px-3 py-2">Kurumdaki öğrenci</th>
                     </tr>
@@ -147,7 +152,9 @@ export function PdfMatchForm({ draftId, exams, candidates, today, coach = false 
                       return (
                         <tr key={i} className={dup || flagged ? "bg-rose-50" : onlyCheck && sure ? "hidden" : undefined}>
                           <td className="px-3 py-2">
-                            <p className="font-medium text-slate-900">{row.name || "Adsız form"}</p>
+                            <button type="button" onClick={() => setCardOf({ e, i })} className="text-left font-medium text-slate-900 underline decoration-slate-300 underline-offset-4 hover:text-brand-700 hover:decoration-brand-400" title="Karnesini gör">
+                              {row.name || "Adsız form"}
+                            </button>
                             <p className="text-xs text-slate-500">
                               No {row.number || "—"} · {row.className || "sınıf yok"}
                               {row.score ? ` · ${row.score.toLocaleString("tr-TR")} puan` : ""}
@@ -199,6 +206,7 @@ export function PdfMatchForm({ draftId, exams, candidates, today, coach = false 
           </section>
         );
       })}
+      {cardOf ? <StudentCardDialog examName={exams[cardOf.e].name} row={exams[cardOf.e].rows[cardOf.i]} onClose={() => setCardOf(null)} /> : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="text-xs text-slate-500">Eşleştirmeler hatırlanır; aynı öğrenci sonraki PDF’lerde otomatik bulunur. {coach ? "Sonuçlar öğrencinin sayfasına ve öğrenci ekranına hemen düşer." : "Sonuçlar siz yayınlayana kadar velilere görünmez."}</p>
         <SubmitButton size="lg" pendingText="Aktarılıyor…">
