@@ -1,5 +1,6 @@
 import "server-only";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { PANEL_SIDE_HEADER } from "@/lib/auth-constants";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { moduleEnabled, sectionAllowed, type CenterModuleKey } from "@/lib/center/modules";
@@ -101,7 +102,14 @@ export const resolveCenter = cache(async (): Promise<Resolution> => {
 
   const selectedId = (await cookies()).get(CENTER_COOKIE)?.value;
   const usable = memberships.filter((m) => m.center.status !== "SUSPENDED");
-  const member = usable.find((m) => m.centerId === selectedId) ?? usable[0];
+  const selected = usable.find((m) => m.centerId === selectedId) ?? usable[0];
+  // Adres kurum paneliyse kurum hesabı, Pi Koç paneliyse Pi Koç hesabı açılır (son seçilen hesap diğer taraftaysa)
+  const side = (await headers()).get(PANEL_SIDE_HEADER);
+  const wantsCoach = side === "koc" ? true : side === "kurum" ? false : null;
+  const member =
+    wantsCoach === null || !selected || (selected.center.kind === "COACH") === wantsCoach
+      ? selected
+      : (usable.find((m) => (m.center.kind === "COACH") === wantsCoach) ?? selected);
   if (!member) return { kind: "suspended", user, centerName: memberships[0].center.name };
 
   let center = member.center as CenterSummary;

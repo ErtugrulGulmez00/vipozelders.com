@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { publicUrl } from "@/lib/public-url";
-import { PROTECTED_PREFIXES, SESSION_COOKIE } from "@/lib/auth-constants";
+import { PANEL_SIDE_HEADER, PROTECTED_PREFIXES, SESSION_COOKIE } from "@/lib/auth-constants";
 import { isAdminSession, maintenanceHtml, maintenanceState } from "@/server/maintenance";
 
 /** Bakım modunda kapanan vitrin sayfaları. Paneller, sanal sınıf, giriş ve ödeme dönüşleri açık kalır. */
@@ -61,7 +61,14 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  return withSecurityHeaders(NextResponse.next());
+  // Panelin hangi tarafı olduğu (kurum / Pi Koç) sunucuya iletilir: kurum ve Pi Koç hesabı olan kişide son açılan
+  // hesap ne olursa olsun /kurum kurum hesabını, /koc Pi Koç hesabını açar (yönlendirme yok; sayfa içi geçişte beyaz ekran olmaz)
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.delete(PANEL_SIDE_HEADER);
+  const inside = (p: string) => pathname === p || pathname.startsWith(`${p}/`);
+  const side = inside("/koc") ? "koc" : inside("/kurum") ? "kurum" : null;
+  if (side) requestHeaders.set(PANEL_SIDE_HEADER, side);
+  return withSecurityHeaders(NextResponse.next({ request: { headers: requestHeaders } }));
 }
 
 export const config = {

@@ -37,3 +37,6 @@ export function safeNextPath(next: string | null | undefined): string | null {
   }
   return next;
 }
+
+/** proxy → sunucu: istenen panel tarafı ("kurum" | "koc"); bkz. resolveCenter */
+export const PANEL_SIDE_HEADER = "x-pk-panel";
