@@ -20,11 +20,74 @@ import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
 import { cn } from "@/lib/cn";
 import { normalizeSearch } from "@/lib/text";
+import type { CurriculumPreset } from "@/lib/curriculum-presets";
 
 type ResourceValues = { id: string; name: string; subject: string; publisher: string | null; topics: string[]; isActive: boolean };
 
+/**
+ * Hazır konu listesi: MEB Maarif Modeli içerik çerçevesi (5-12. sınıf) ve TYT/AYT/LGS konuları. Liste büyük olduğu için
+ * bölüm açılınca yüklenir; seçilen liste konular kutusuna yazılır, koç dilediği gibi düzenler.
+ */
+function TopicPresetPicker({ onPick }: { onPick: (preset: CurriculumPreset) => void }) {
+  const [presets, setPresets] = useState<CurriculumPreset[] | null>(null);
+  const [chosen, setChosen] = useState("");
+  const load = () => {
+    if (!presets) void import("@/lib/curriculum-presets").then((m) => setPresets(m.CURRICULUM_PRESETS));
+  };
+  const groups = useMemo(() => {
+    const map = new Map<string, CurriculumPreset[]>();
+    for (const p of presets ?? []) map.set(p.group, [...(map.get(p.group) ?? []), p]);
+    return [...map.entries()];
+  }, [presets]);
+  const selected = presets?.find((p) => p.id === chosen) ?? null;
+  return (
+    <details className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2" onToggle={(e) => (e.currentTarget.open ? load() : undefined)}>
+      <summary className="cursor-pointer text-sm font-semibold text-brand-700">Hazır listeden doldur (MEB Maarif konuları, TYT · AYT · LGS)</summary>
+      <div className="mt-2 space-y-2">
+        {presets ? (
+          <>
+            <Select value={chosen} onChange={(e) => setChosen(e.target.value)} aria-label="Hazır konu listesi">
+              <option value="">Sınıf ya da sınav ve ders seçin</option>
+              {groups.map(([group, items]) => (
+                <optgroup key={group} label={group}>
+                  {items.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.label} · {p.topics.length} konu
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </Select>
+            {selected ? (
+              <p className="text-xs text-slate-600">
+                {selected.exam
+                  ? "Yaygın sınav konu listesi (ÖSYM resmi konu listesi yayımlamaz). Kitabınızın sırasına göre düzenleyin."
+                  : selected.active
+                    ? "MEB Türkiye Yüzyılı Maarif Modeli öğretim programındaki içerik çerçevesi; bu yıl okutulan program."
+                    : `MEB Maarif Modeli programı; ${selected.grade}. sınıfta 2027-2028'de başlar. Bu yıl okutulan program farklı olabilir, kontrol edin.`}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              disabled={!selected}
+              onClick={() => (selected ? onPick(selected) : undefined)}
+              className="rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-brand-700 ring-1 ring-brand-200 hover:bg-brand-50 disabled:opacity-50"
+            >
+              Konuları kutuya yaz
+            </button>
+          </>
+        ) : (
+          <p className="text-sm text-slate-500">Yükleniyor…</p>
+        )}
+      </div>
+    </details>
+  );
+}
+
 /** Kaynak (kitap / soru bankası) ekleme ve düzenleme. Konular satır satır yazılır. */
 export function ResourceForm({ initial }: { initial?: ResourceValues }) {
+  const [topics, setTopics] = useState(initial?.topics.join("\n") ?? "");
+  const [subject, setSubject] = useState(initial?.subject ?? "");
   return (
     <ActionForm action={initial ? updateResourceAction : createResourceAction} className="space-y-3">
       {initial ? <input type="hidden" name="resourceId" value={initial.id} /> : null}
@@ -34,15 +97,21 @@ export function ResourceForm({ initial }: { initial?: ResourceValues }) {
       </Field>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Ders">
-          <Input name="subject" defaultValue={initial?.subject} placeholder="Matematik" required />
+          <Input name="subject" value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="Matematik" required />
           <FieldError name="subject" />
         </Field>
         <Field label="Yayınevi (isteğe bağlı)">
           <Input name="publisher" defaultValue={initial?.publisher ?? ""} />
         </Field>
       </div>
+      <TopicPresetPicker
+        onPick={(preset) => {
+          setTopics(preset.topics.join("\n"));
+          if (!subject.trim()) setSubject(preset.subject);
+        }}
+      />
       <Field label="Konular / üniteler" hint="Her satıra bir konu ya da test yazın. Öğrenci ilerlemesi bu konulara göre tutulur.">
-        <Textarea name="topics" rows={8} defaultValue={initial?.topics.join("\n")} placeholder={"Çarpanlar ve Katlar\nÜslü İfadeler\nKareköklü İfadeler"} required />
+        <Textarea name="topics" rows={8} value={topics} onChange={(e) => setTopics(e.target.value)} placeholder={"Çarpanlar ve Katlar\nÜslü İfadeler\nKareköklü İfadeler"} required />
         <FieldError name="topics" />
       </Field>
       {initial ? <Checkbox name="archived" defaultChecked={!initial.isActive} label="Arşivle (yeni atamalarda listelenmez)" /> : null}

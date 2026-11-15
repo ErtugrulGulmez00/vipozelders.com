@@ -1,3 +1,5 @@
+import { NetProgressTable } from "@/components/center/net-progress-table";
+import { studentNetProgress } from "@/server/center/net-progress";
 import { ExternalLink, Pencil, Receipt } from "lucide-react";
 import { moduleEnabled } from "@/lib/center/modules";
 import { StudentAssistant } from "@/components/center/student-assistant";
@@ -393,9 +395,10 @@ async function ExamsTab({ centerId, studentId }: { centerId: string; studentId: 
     return <EmptyState title="Henüz deneme sonucu yok" description="Deneme sonuçları girildikçe net gelişimi ve eksik konular burada görünür." action={<LinkButton href="/kurum/denemeler">Denemeler</LinkButton>} />;
   }
   const kinds = [...new Set(results.map((r) => r.exam.kind))] as ExamKindName[];
-  const [trends, weak] = await Promise.all([Promise.all(kinds.map((kind) => studentNetTrend(centerId, studentId, kind))), studentWeakTopics(centerId, studentId)]);
+  const [trends, weak, progress] = await Promise.all([Promise.all(kinds.map((kind) => studentNetTrend(centerId, studentId, kind))), studentWeakTopics(centerId, studentId), studentNetProgress(centerId, studentId)]);
   return (
     <div className="space-y-6">
+      <NetProgressTable items={progress} />
       {kinds.map((kind, i) =>
         trends[i].length >= 2 ? (
           <Card key={kind}>

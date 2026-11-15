@@ -1152,6 +1152,7 @@ model Center {
   planTemplates        CenterPlanTemplate[]
   studySessions        CenterStudySession[]
   coachPayments        CenterCoachPayment[]
+  readingBooks         CenterReadingBook[]
 
   @@index([status])
 }
@@ -1259,6 +1260,7 @@ model CenterStudent {
   goals          CenterStudentGoal[]
   studySessions  CenterStudySession[]
   coachPayments  CenterCoachPayment[]
+  readingBooks   CenterReadingBook[]
 
   @@unique([centerId, studentNumber])
   @@index([centerId, status])
@@ -2887,4 +2889,25 @@ model ContentReport {
 
   @@index([status, createdAt])
   @@index([targetUserId])
+}
+
+// Kitap okuma takibi (Pi Koç): koç ya da öğrenci girer; veli raporunda görünür
+model CenterReadingBook {
+  id             String        @id @default(cuid())
+  centerId       String
+  center         Center        @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  studentId      String
+  student        CenterStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  title          String
+  author         String?
+  totalPages     Int?
+  pagesRead      Int           @default(0)
+  startedOn      DateTime?     @db.Date
+  finishedOn     DateTime?     @db.Date
+  addedByStudent Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([studentId])
+  @@index([centerId])
 }

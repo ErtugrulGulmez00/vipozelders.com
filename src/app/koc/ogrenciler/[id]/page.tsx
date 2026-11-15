@@ -1,3 +1,7 @@
+import { ReadingCard } from "@/components/koc/reading-card";
+import { readingBooks, readingSummary } from "@/server/koc-reading";
+import { NetProgressTable } from "@/components/center/net-progress-table";
+import { studentNetProgress } from "@/server/center/net-progress";
 import { CalendarClock, ChevronLeft, FileText, Phone, School, Video } from "lucide-react";
 import { MeetingHistory } from "@/components/koc/meeting-history";
 import type { Metadata } from "next";
@@ -57,6 +61,7 @@ export default async function KocStudentPage({ params, searchParams }: PageProps
     { key: "gorusmeler", label: "Görüşmeler", href: `${base}?sekme=gorusmeler` },
     { key: "sorular", label: "Soru ve çalışma", href: `${base}?sekme=sorular` },
     { key: "denemeler", label: "Denemeler", href: `${base}?sekme=denemeler` },
+    { key: "kitaplar", label: "Kitap okuma", href: `${base}?sekme=kitaplar` },
     { key: "asistan", label: "Yapay zekâ asistanı", href: `${base}?sekme=asistan` },
     { key: "bilgiler", label: "Bilgiler", href: `${base}?sekme=bilgiler` },
   ];
@@ -120,6 +125,8 @@ export default async function KocStudentPage({ params, searchParams }: PageProps
         <QuestionsTab centerId={centerId} studentId={id} today={today} />
       ) : tab === "denemeler" ? (
         <ExamsTab centerId={centerId} studentId={id} today={today} />
+      ) : tab === "kitaplar" ? (
+        <ReadingTab centerId={centerId} studentId={id} canWrite={ctx.access.writable} />
       ) : tab === "asistan" ? (
         <StudentAssistant studentId={id} aiEnabled={aiConfigured()} freeLeft={await freeAiLeft(ctx)} />
       ) : tab === "bilgiler" ? (
@@ -388,6 +395,18 @@ async function ProgramTab({ centerId, studentId, week, topicLocked, templatesLoc
   );
 }
 
+async function ReadingTab({ centerId, studentId, canWrite }: { centerId: string; studentId: string; canWrite: boolean }) {
+  const books = await readingBooks(centerId, studentId);
+  return (
+    <Card className="max-w-3xl">
+      <CardHeader title="Kitap okuma" description="Öğrencinin okuduğu kitaplar; öğrenci de kendi ekranından ekleyip sayfasını günceller. Veli raporunda görünür." />
+      <CardBody>
+        <ReadingCard studentId={studentId} books={books} summary={readingSummary(books)} mode="coach" canWrite={canWrite} />
+      </CardBody>
+    </Card>
+  );
+}
+
 async function QuestionsTab({ centerId, studentId, today }: { centerId: string; studentId: string; today: string }) {
   const [logs, stats, study, sessions] = await Promise.all([
     db.centerQuestionLog.findMany({ where: { centerId, studentId, date: { gte: dateStringToDbDate(addDaysToDateString(today, -60)) } }, orderBy: [{ date: "desc" }, { createdAt: "desc" }], take: 30 }),
@@ -465,7 +484,7 @@ async function QuestionsTab({ centerId, studentId, today }: { centerId: string; 
 }
 
 async function ExamsTab({ centerId, studentId, today }: { centerId: string; studentId: string; today: string }) {
-  const exams = await studentExams(centerId, studentId);
+  const [exams, progress] = await Promise.all([studentExams(centerId, studentId), studentNetProgress(centerId, studentId)]);
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr] lg:items-start">
       <Card>
@@ -476,6 +495,7 @@ async function ExamsTab({ centerId, studentId, today }: { centerId: string; stud
       </Card>
       {exams.length ? (
         <div className="space-y-3">
+          <NetProgressTable items={progress} />
           {exams.map((e) => (
             <Card key={e.examId}>
               <div className="flex items-start justify-between gap-3 px-5 pt-4">

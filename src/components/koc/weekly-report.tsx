@@ -6,6 +6,7 @@ import type { WeeklyReportData } from "@/server/koc-report";
 import { formatMinutes } from "@/lib/koc-format";
 import { BarChart, HBarList, Ring } from "./charts";
 import { TargetBlock } from "./goal-card";
+import { NetProgressTable } from "@/components/center/net-progress-table";
 
 const dmy = (d: string) => d.split("-").reverse().join(".");
 const pct = (v: number | null) => (v === null ? "—" : `%${Math.round(v * 100)}`);
@@ -128,6 +129,31 @@ export function WeeklyReport({ data, note, branded = true, logoUrl = null }: { d
             ) : (
               <p className="text-sm text-slate-500">Henüz deneme sonucu yok.</p>
             )}
+            {data.reading.current.length || data.reading.finishedThisWeek.length ? (
+              <div className="mt-4 rounded-2xl border border-slate-200 p-4 print:break-inside-avoid">
+                <h2 className="mb-2 text-sm font-bold text-ink-900">Kitap okuma · toplam {data.reading.totalFinished} kitap bitti</h2>
+                <ul className="space-y-1 text-sm text-slate-700">
+                  {data.reading.finishedThisWeek.map((b) => (
+                    <li key={b.id}>
+                      <b className="text-emerald-700">Bu hafta bitti:</b> {b.title}
+                      {b.author ? ` · ${b.author}` : ""}
+                    </li>
+                  ))}
+                  {data.reading.current.map((b) => (
+                    <li key={b.id}>
+                      Okuyor: {b.title}
+                      {b.totalPages ? ` · ${b.pagesRead}/${b.totalPages} sayfa` : ""}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {data.netProgress.length ? (
+              <div className="mt-4 print:break-inside-avoid">
+                <h2 className="mb-2 text-sm font-bold text-ink-900">Başlangıçtan bugüne net değişimi</h2>
+                <NetProgressTable items={data.netProgress} />
+              </div>
+            ) : null}
             {data.goal?.target ? <TargetBlock target={data.goal.target} kindLabel={data.goal.kindLabel} className="mt-4 print:break-inside-avoid" /> : null}
             {data.goal && data.goal.targetNet > 0 ? (
               <p className="mt-4 rounded-2xl bg-ink-50 px-3 py-2 text-sm text-ink-900">

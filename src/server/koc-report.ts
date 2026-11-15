@@ -11,6 +11,8 @@ import { CenterError } from "./center/errors";
 import { messageGuardians } from "./center/messages";
 import { weekStartOf } from "./center/resources";
 import { db } from "./db";
+import { studentNetProgress } from "./center/net-progress";
+import { readingBooks } from "./koc-reading";
 import { kocStudentOrThrow, studentGoals } from "./koc";
 import { monthStartOf } from "./koc-meeting-usage";
 import { loadSettings } from "./settings";
@@ -103,6 +105,14 @@ export async function weeklyReportData(centerId: string, studentId: string, week
     plan: { done: plan.filter((p) => p.doneAt).length, total: plan.length, bySubject: [...planBySubject.entries()].map(([subject, s]) => ({ subject, ...s })) },
     sessions: sessions.map((s) => ({ date: dbDateToString(s.date), held: s.held, notes: s.visibleToParent ? s.notes : null, nextGoal: s.nextGoal, priorityTopics: s.priorityTopics })),
     exam,
+    // Başlangıç–son net karşılaştırması (en az iki denemesi olan türler)
+    netProgress: await studentNetProgress(centerId, studentId),
+    // Kitap okuma: şu an okunanlar ve bu hafta bitenler
+    reading: await (async () => {
+      const books = await readingBooks(centerId, studentId);
+      const end = addDaysToDateString(weekStart, 6);
+      return { current: books.filter((b) => !b.finishedOn).slice(0, 3), finishedThisWeek: books.filter((b) => b.finishedOn && b.finishedOn >= weekStart && b.finishedOn <= end), totalFinished: books.filter((b) => b.finishedOn).length };
+    })(),
     // Son denemenin türündeki hedef (yoksa ilk hedef)
     goal: (latest ? goals.find((g) => g.kind === latest.exam.kind) : null) ?? goals[0] ?? null,
     meeting: student.coachWeekday ? `her ${WEEKDAY_NAMES[student.coachWeekday - 1]}${student.coachMinute !== null ? ` ${minutesToTime(student.coachMinute)}` : ""}` : null,

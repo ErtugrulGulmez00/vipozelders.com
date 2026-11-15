@@ -1,3 +1,5 @@
+import { ReadingCard } from "@/components/koc/reading-card";
+import { readingBooks, readingSummary } from "@/server/koc-reading";
 import { CalendarClock, CheckCircle2, Flame, Target, Timer, Video } from "lucide-react";
 import Link from "next/link";
 import { Tabs } from "@/components/center/center-ui";
@@ -35,6 +37,7 @@ export async function KocStudentPortal({ student, base, tab: requested, isStuden
     { key: "sorular", label: "Soru takibi", href: `${base}?sekme=sorular` },
     { key: "calisma", label: "Çalışma", href: `${base}?sekme=calisma` },
     { key: "denemeler", label: "Denemeler", href: `${base}?sekme=denemeler` },
+    { key: "kitaplar", label: "Kitap okuma", href: `${base}?sekme=kitaplar` },
     { key: "notlar", label: "Koç notları", href: `${base}?sekme=notlar` },
   ];
   const tab = tabs.some((t) => t.key === requested) ? requested : "bugun";
@@ -94,6 +97,8 @@ export async function KocStudentPortal({ student, base, tab: requested, isStuden
         <StudyTab student={student} today={today} isStudent={isStudent} stats={study} />
       ) : tab === "denemeler" ? (
         <ExamsTab student={student} isStudent={isStudent} />
+      ) : tab === "kitaplar" ? (
+        <PortalReading student={student} isStudent={isStudent} />
       ) : tab === "notlar" ? (
         <CoachingView centerId={student.centerId} studentId={student.id} mode="portal" canWrite={false} />
       ) : (
@@ -329,5 +334,17 @@ async function StudyTab({ student, today, isStudent, stats }: { student: Student
         )}
       </Card>
     </div>
+  );
+}
+
+async function PortalReading({ student, isStudent }: { student: Student; isStudent: boolean }) {
+  const books = await readingBooks(student.centerId, student.id);
+  return (
+    <Card className="max-w-3xl">
+      <CardHeader title="Kitap okuma" description={isStudent ? "Okuduğun kitapları ekle, sayfanı güncelle; bitirince işaretle. Koçun ve velin görür." : "Öğrencinin okuduğu kitaplar"} />
+      <CardBody>
+        <ReadingCard studentId={student.id} books={books} summary={readingSummary(books)} mode="portal" canWrite={isStudent} />
+      </CardBody>
+    </Card>
   );
 }
