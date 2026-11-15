@@ -124,7 +124,7 @@ test("yönetici koç hesabı açar; koç yalnızca takip bölümlerini görür",
   expect(center.disabledModules).toContain("etutler");
 
   await login(page, username, password);
-  await expect(page).toHaveURL(/\/sifre-degistir$/);
+  await expect(page).toHaveURL(/\/sifre-degistir(\?kapi=\w+)?$/);
   await page.getByLabel("Geçici şifre").fill(password);
   await page.getByLabel("Yeni şifre", { exact: true }).fill("KocSifre123");
   await page.getByLabel("Yeni şifre (tekrar)").fill("KocSifre123");
@@ -210,7 +210,7 @@ test("yönetici koç hesabı açar; koç yalnızca takip bölümlerini görür",
   await page.getByLabel("E-posta veya kullanıcı adı").fill(studentUsername);
   await page.getByLabel("Şifre", { exact: true }).fill(studentPassword);
   await page.getByRole("button", { name: "Giriş yap" }).click();
-  await expect(page).toHaveURL(/\/sifre-degistir$/);
+  await expect(page).toHaveURL(/\/sifre-degistir(\?kapi=\w+)?$/);
   await page.getByLabel("Geçici şifre").fill(studentPassword);
   await page.getByLabel("Yeni şifre", { exact: true }).fill("OgrenciSifre123");
   await page.getByLabel("Yeni şifre (tekrar)").fill("OgrenciSifre123");

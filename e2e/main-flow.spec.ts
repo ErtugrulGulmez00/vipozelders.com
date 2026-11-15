@@ -62,7 +62,7 @@ test("öğretmen ekleme → yayın → rezervasyon ve ödeme → onay → tamaml
 
   // 2) Öğretmen geçici şifreyle girer, şifre değiştirmeye zorlanır
   await login(page, username, temporaryPassword);
-  await expect(page).toHaveURL(/\/sifre-degistir$/);
+  await expect(page).toHaveURL(/\/sifre-degistir(\?kapi=\w+)?$/);
   await page.getByLabel("Geçici şifre").fill(temporaryPassword);
   await page.getByLabel("Yeni şifre", { exact: true }).fill("YeniSifre123");
   await page.getByLabel("Yeni şifre (tekrar)").fill("YeniSifre123");

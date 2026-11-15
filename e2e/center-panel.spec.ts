@@ -78,7 +78,7 @@ test("kurum başvurusu → kurum paneli → yoklama, deneme, makbuz → veli por
 
   // 3) Kurum sahibi geçici şifreyle girer, kendi şifresini belirler, panele düşer
   await login(page, username, password);
-  await expect(page).toHaveURL(/\/sifre-degistir$/);
+  await expect(page).toHaveURL(/\/sifre-degistir(\?kapi=\w+)?$/);
   await page.getByLabel("Geçici şifre").fill(password);
   await page.getByLabel("Yeni şifre", { exact: true }).fill("KurumSifre123");
   await page.getByLabel("Yeni şifre (tekrar)").fill("KurumSifre123");
@@ -274,7 +274,7 @@ test("öğrenci hesabı → fotoğrafla soru → öğretmen çözümü; yanlış
 
     // Öğrenci özel ders girişinden girse de kurum tarafına düşer; şifresini belirler, soru gönderir
     await login(page, username, password);
-    await expect(page).toHaveURL(/\/sifre-degistir$/);
+    await expect(page).toHaveURL(/\/sifre-degistir(\?kapi=\w+)?$/);
     await page.getByLabel("Geçici şifre").fill(password);
     await page.getByLabel("Yeni şifre", { exact: true }).fill("OgrenciSifre123");
     await page.getByLabel("Yeni şifre (tekrar)").fill("OgrenciSifre123");

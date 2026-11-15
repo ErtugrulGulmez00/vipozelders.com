@@ -350,12 +350,39 @@ export async function createStudentAccount(ctx: CenterContext, studentId: string
   return { kind: "created", username, temporaryPassword };
 }
 
+/**
+ * Öğrencinin kendi açtığı (sitede kayıtlı, sonradan bağlanan) hesap: kurum/koç şifresini sıfırlayamaz, hesabı kapatamaz.
+ * Kurumun açtığı hesap bağlantıyla aynı anda oluşturulur; daha eski hesap öğrencinindir.
+ */
+export function isSelfOwnedAccount(link: { createdAt: Date }, user: { createdAt: Date }) {
+  return user.createdAt.getTime() < link.createdAt.getTime() - 60_000;
+}
+
+/** Öğrenciye bağlı, sitede kayıtlı öğrenci hesapları (ör. ders talebinden veli olarak bağlanan): öğrenci hesabı yapılabilir */
+export async function linkableStudentAccounts(ctx: CenterContext, studentId: string) {
+  await getStudentOrThrow(ctx, studentId);
+  if (await db.centerGuardian.findFirst({ where: { studentId, isStudentAccount: true }, select: { id: true } })) return [];
+  const rows = await db.centerGuardian.findMany({
+    where: { studentId, isStudentAccount: false, userId: { not: null }, user: { role: "STUDENT", status: "ACTIVE" } },
+    select: { id: true, fullName: true, user: { select: { email: true, username: true, studentProfile: { select: { accountType: true } } } } },
+  });
+  return rows.map((g) => ({ guardianId: g.id, name: g.fullName, login: g.user?.email ?? g.user?.username ?? "", studentType: g.user?.studentProfile?.accountType === "STUDENT" }));
+}
+
+/** Bağlı site hesabını öğrencinin kendi giriş hesabı yapar (yeni hesap açılmaz). */
+export async function promoteGuardianToStudentAccount(ctx: CenterContext, studentId: string, guardianId: string) {
+  const options = await linkableStudentAccounts(ctx, studentId);
+  if (!options.some((o) => o.guardianId === guardianId)) throw new CenterError("Bu hesap öğrenci hesabı yapılamaz; öğrencinin zaten bir giriş hesabı olabilir.");
+  await db.centerGuardian.update({ where: { id: guardianId }, data: { isStudentAccount: true, relation: "Öğrenci", linkedAt: new Date() } });
+}
+
 export async function resetStudentAccountPassword(ctx: CenterContext, studentId: string) {
   await getStudentOrThrow(ctx, studentId);
   const link = await db.centerGuardian.findFirst({ where: { studentId, isStudentAccount: true, userId: { not: null } }, include: { user: true } });
   if (!link?.user) throw new CenterError("Öğrencinin giriş hesabı yok.");
   const others = await db.centerGuardian.count({ where: { userId: link.user.id, studentId: { not: studentId } } });
   if (others || link.user.role !== "STUDENT") throw new CenterError("Bu hesap başka kayıtlarda da kullanılıyor; şifresini öğrenci “Şifremi unuttum” ile yenilemeli.");
+  if (isSelfOwnedAccount(link, link.user)) throw new CenterError("Bu, öğrencinin sitede kendi açtığı hesap; şifresini öğrenci “Şifremi unuttum” ile kendisi yeniler.");
   const temporaryPassword = generateTemporaryPassword();
   await db.user.update({ where: { id: link.user.id }, data: { passwordHash: await hashPassword(temporaryPassword), mustChangePassword: true } });
   await db.session.deleteMany({ where: { userId: link.user.id } });
@@ -365,10 +392,11 @@ export async function resetStudentAccountPassword(ctx: CenterContext, studentId:
 /** Öğrencinin giriş hesabını kuruma bağlantısından ayırır ve hesabı kapatır. */
 export async function removeStudentAccount(ctx: CenterContext, studentId: string) {
   await getStudentOrThrow(ctx, studentId);
-  const link = await db.centerGuardian.findFirst({ where: { studentId, isStudentAccount: true }, include: { user: { select: { id: true, role: true } } } });
+  const link = await db.centerGuardian.findFirst({ where: { studentId, isStudentAccount: true }, include: { user: { select: { id: true, role: true, createdAt: true } } } });
   if (!link) throw new CenterError("Öğrencinin giriş hesabı yok.");
   await db.centerGuardian.delete({ where: { id: link.id } });
-  if (link.user && link.user.role === "STUDENT") {
+  // Öğrencinin kendi hesabı yalnızca bağlantıdan ayrılır; kapatılmaz
+  if (link.user && link.user.role === "STUDENT" && !isSelfOwnedAccount(link, link.user)) {
     const [otherLinks, bookings] = await Promise.all([
       db.centerGuardian.count({ where: { userId: link.user.id } }),
       db.booking.count({ where: { studentId: link.user.id } }),

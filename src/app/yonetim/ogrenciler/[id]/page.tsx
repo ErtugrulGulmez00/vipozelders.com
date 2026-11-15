@@ -10,6 +10,7 @@ import { fullName } from "@/lib/text";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { UserStatusForm } from "../../ogretmenler/[id]/admin-forms";
+import { MergeAccountForm } from "./merge-form";
 
 export const metadata: Metadata = { title: "Öğrenci" };
 
@@ -59,6 +60,14 @@ export default async function AdminStudentPage({ params }: PageProps<"/yonetim/o
           </CardBody>
         </Card>
         <div className="space-y-6">
+        {user.status === "ACTIVE" ? (
+          <Card>
+            <CardHeader title="Çift hesap birleştir" />
+            <CardBody>
+              <MergeAccountForm userId={user.id} />
+            </CardBody>
+          </Card>
+        ) : null}
         <Card>
           <CardHeader title="Ders talepleri" />
           <CardBody className="space-y-2">

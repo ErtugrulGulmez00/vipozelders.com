@@ -97,7 +97,7 @@ test("öğretmen başvurusu → hesap açılır → belge yüklenir ve onaylanı
 
   // 3) Öğretmen girer, şifresini değiştirir ve kimlik belgesi yükler
   await login(page, username, password);
-  await expect(page).toHaveURL(/\/sifre-degistir$/);
+  await expect(page).toHaveURL(/\/sifre-degistir(\?kapi=\w+)?$/);
   await page.getByLabel("Geçici şifre").fill(password);
   await page.getByLabel("Yeni şifre", { exact: true }).fill("YeniSifre123");
   await page.getByLabel("Yeni şifre (tekrar)").fill("YeniSifre123");

@@ -43,7 +43,7 @@ function privateHome(f: SideFacts): string | null {
 
 /**
  * Giriş kapısının açacağı sayfa; kişinin o tarafı yoksa null (giriş yapılmaz, doğru kapı söylenir).
- * Özel ders tarafı: öğretmen ve kendi kayıt olan veli/öğrenci; kurumun ya da koçun açtığı öğrenci hesabında
+ * Özel ders tarafı: öğretmen, kendi kayıt olan veli/öğrenci ve Pi Koç'un açtığı öğrenci; kurumun açtığı öğrenci hesabında
  * (özel derste işlemi yoksa) özel ders tarafı yoktur. Yönetici her kapıdan yönetime girer.
  */
 export function gateHome(f: SideFacts, side: Side): string | null {

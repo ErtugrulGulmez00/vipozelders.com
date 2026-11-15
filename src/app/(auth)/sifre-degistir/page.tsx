@@ -8,8 +8,9 @@ import { requireUser } from "@/server/auth/current-user";
 export const metadata: Metadata = { title: "Şifre değiştir" };
 export const instant = false;
 
-export default async function ChangePasswordPage() {
+export default async function ChangePasswordPage({ searchParams }: PageProps<"/sifre-degistir">) {
   const user = await requireUser({ allowPendingPasswordChange: true });
+  const { kapi } = await searchParams;
   return (
     <Card className="p-6 sm:p-8">
       <h1 className="text-2xl font-bold text-slate-900">{user.mustChangePassword ? "Kendi şifrenizi belirleyin" : "Şifre değiştir"}</h1>
@@ -19,6 +20,7 @@ export default async function ChangePasswordPage() {
         </Alert>
       ) : null}
       <ActionForm action={changePasswordAction} className="mt-6 space-y-4">
+        {kapi === "koc" || kapi === "kurum" ? <input type="hidden" name="kapi" value={kapi} /> : null}
         <Field label={user.mustChangePassword ? "Geçici şifre" : "Mevcut şifre"} htmlFor="current">
           <Input id="current" name="current" type="password" autoComplete="current-password" required />
         </Field>

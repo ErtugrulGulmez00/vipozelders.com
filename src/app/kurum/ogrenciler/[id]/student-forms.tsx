@@ -15,7 +15,7 @@ import {
   saveGuardianAction,
   setStudentStatusAction,
 } from "@/actions/center/students";
-import { createStudentAccountAction, removeStudentAccountAction, resetStudentAccountAction } from "@/actions/center/questions";
+import { createStudentAccountAction, promoteStudentAccountAction, removeStudentAccountAction, resetStudentAccountAction } from "@/actions/center/questions";
 import { CredentialsBox, InviteLinkBox } from "@/components/center/center-client";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
 import { WhatsAppCheckbox, useWhatsAppActive } from "@/components/notification-channel";
@@ -333,10 +333,13 @@ export function CancelPlanForm({ planId }: { planId: string }) {
   );
 }
 
-type StudentAccountInfo = { username: string | null; email: string | null; lastLoginAt: string | null } | { pendingEmail: string } | null;
+type StudentAccountInfo = { username: string | null; email: string | null; lastLoginAt: string | null; selfOwned?: boolean } | { pendingEmail: string } | null;
+
+/** Öğrenciye bağlı, sitede kayıtlı hesap (öğrenci hesabı yapılabilir) */
+export type LinkableAccount = { guardianId: string; name: string; login: string; studentType: boolean };
 
 /** intro: hesap yokken gösterilen açıklama (Pi Koç kendi metnini verir) */
-export function StudentAccountCard({ studentId, account, defaultEmail, intro, gateLabel = "Kurum girişi" }: { studentId: string; account: StudentAccountInfo; defaultEmail: string | null; intro?: string; gateLabel?: string }) {
+export function StudentAccountCard({ studentId, account, defaultEmail, intro, gateLabel = "Kurum girişi", linkable = [] }: { studentId: string; account: StudentAccountInfo; defaultEmail: string | null; intro?: string; gateLabel?: string; linkable?: LinkableAccount[] }) {
   return (
     <div className="space-y-3">
       {account && "pendingEmail" in account ? (
@@ -359,6 +362,10 @@ export function StudentAccountCard({ studentId, account, defaultEmail, intro, ga
             {account.email ? <span className="block text-slate-600">E-posta: {account.email}</span> : null}
             <span className="block text-xs text-slate-500">{account.lastLoginAt ? `Son giriş ${account.lastLoginAt}` : "Henüz giriş yapmadı"} · Giriş adresi: “{gateLabel}” sayfası</span>
           </p>
+          {account.selfOwned ? (
+            <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">Bu, öğrencinin sitede kendi açtığı hesap: aynı hesapla özel ders tarafını da kullanır. Şifresini “Şifremi unuttum” ile kendisi yeniler.</p>
+          ) : null}
+          {account.selfOwned ? null : (
           <ActionForm action={resetStudentAccountAction} className="space-y-2">
             <CredentialsBox who="Öğrenci" />
             <input type="hidden" name="studentId" value={studentId} />
@@ -368,14 +375,29 @@ export function StudentAccountCard({ studentId, account, defaultEmail, intro, ga
               </SubmitButton>
             </div>
           </ActionForm>
+          )}
           <ActionForm action={removeStudentAccountAction}>
             <input type="hidden" name="studentId" value={studentId} />
-            <SubmitButton size="sm" variant="ghost" className="text-rose-600" pendingText="…" confirmMessage="Öğrencinin giriş hesabı kaldırılsın mı?">
-              Hesabı kaldır
+            <SubmitButton size="sm" variant="ghost" className="text-rose-600" pendingText="…" confirmMessage={account.selfOwned ? "Hesabın bu öğrenci kaydıyla bağlantısı kaldırılsın mı? Öğrencinin hesabı kapanmaz." : "Öğrencinin giriş hesabı kaldırılsın mı?"}>
+              {account.selfOwned ? "Bağlantıyı kaldır" : "Hesabı kaldır"}
             </SubmitButton>
           </ActionForm>
         </>
       ) : (
+        <>
+        {linkable.map((l) => (
+          <ActionForm key={l.guardianId} action={promoteStudentAccountAction} className="space-y-2 rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+            <input type="hidden" name="studentId" value={studentId} />
+            <input type="hidden" name="guardianId" value={l.guardianId} />
+            <p className="text-sm text-emerald-900">
+              <b>{l.name}</b> sitede kayıtlı bir hesapla bu öğrenciye bağlı{l.login ? ` (${l.login})` : ""}.{" "}
+              {l.studentType ? "Hesap öğrenci olarak açılmış; büyük ihtimalle öğrencinin kendisi." : "Öğrencinin kendi hesabıysa yeni hesap açmayın."}
+            </p>
+            <SubmitButton size="sm" variant="secondary" pendingText="Bağlanıyor…">
+              Bu hesabı öğrenci hesabı yap
+            </SubmitButton>
+          </ActionForm>
+        ))}
         <ActionForm action={createStudentAccountAction} className="space-y-2">
           <CredentialsBox who="Öğrenci" />
           <p className="text-sm text-slate-600">{intro ?? "Öğrenci kendi hesabıyla devamsızlığını, ödevlerini, deneme sonuçlarını görür ve öğretmene fotoğrafla soru gönderir. Bildirimler bu e-postaya gider."}</p>
@@ -388,6 +410,7 @@ export function StudentAccountCard({ studentId, account, defaultEmail, intro, ga
             Öğrenci giriş hesabı aç
           </SubmitButton>
         </ActionForm>
+        </>
       )}
     </div>
   );

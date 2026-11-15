@@ -19,6 +19,7 @@ import { StudyView } from "@/components/center/study-view";
 import { CoachingView } from "@/components/center/coaching-view";
 import { studentHallDays } from "@/server/center/study-hall";
 import { requireCenter } from "@/server/center/context";
+import { isSelfOwnedAccount } from "@/server/center/students";
 import { marketplaceLink, studentNetTrend, studentWeakTopics } from "@/server/center/exams";
 import { studentBalance } from "@/server/center/finance";
 import { decryptText, maskIdentityNumber } from "@/server/crypto";
@@ -152,7 +153,7 @@ async function GeneralTab({
   memberId: string;
   isManager: boolean;
 }) {
-  const account = await db.centerGuardian.findFirst({ where: { studentId: student.id, isStudentAccount: true }, include: { user: { select: { username: true, email: true, lastLoginAt: true } } } });
+  const account = await db.centerGuardian.findFirst({ where: { studentId: student.id, isStudentAccount: true }, include: { user: { select: { username: true, email: true, lastLoginAt: true, createdAt: true } } } });
   const notes = await db.centerNote.findMany({
     where: { studentId: student.id },
     orderBy: { createdAt: "desc" },
@@ -230,7 +231,7 @@ async function GeneralTab({
                 defaultEmail={student.email}
                 account={
                   account?.user
-                    ? { username: account.user.username, email: account.user.email, lastLoginAt: account.user.lastLoginAt ? formatCompact(account.user.lastLoginAt) : null }
+                    ? { username: account.user.username, email: account.user.email, lastLoginAt: account.user.lastLoginAt ? formatCompact(account.user.lastLoginAt) : null, selfOwned: isSelfOwnedAccount(account, account.user) }
                     : account?.email
                       ? { pendingEmail: account.email }
                       : null

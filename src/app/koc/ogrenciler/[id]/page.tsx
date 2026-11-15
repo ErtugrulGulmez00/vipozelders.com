@@ -16,6 +16,7 @@ import { EXAM_PRESETS, formatNet, type ExamKindName } from "@/lib/center/exams";
 import { cn } from "@/lib/cn";
 import { addDaysToDateString, dateStringToDbDate, dbDateToString, formatCompact, isDateString, minutesToTime, toLocalDateString } from "@/lib/dates";
 import { StudentAccountCard } from "@/app/kurum/ogrenciler/[id]/student-forms";
+import { isSelfOwnedAccount, linkableStudentAccounts } from "@/server/center/students";
 import { requireCenter } from "@/server/center/context";
 import { resourceSummary, weekStartOf } from "@/server/center/resources";
 import { db } from "@/server/db";
@@ -44,7 +45,7 @@ export default async function KocStudentPage({ params, searchParams }: PageProps
   const centerId = ctx.center.id;
   const student = await db.centerStudent.findFirst({
     where: { id, centerId },
-    include: { guardians: { orderBy: { isPrimary: "desc" }, include: { user: { select: { username: true, email: true, lastLoginAt: true } } } } },
+    include: { guardians: { orderBy: { isPrimary: "desc" }, include: { user: { select: { username: true, email: true, lastLoginAt: true, createdAt: true } } } } },
   });
   if (!student) notFound();
   const tab = typeof sp.sekme === "string" ? sp.sekme : "genel";
@@ -64,6 +65,7 @@ export default async function KocStudentPage({ params, searchParams }: PageProps
   // Veliler ve öğrencinin kendi giriş hesabı aynı tabloda tutulur
   const parents = student.guardians.filter((g) => !g.isStudentAccount);
   const account = student.guardians.find((g) => g.isStudentAccount);
+  const linkable = account ? [] : await linkableStudentAccounts(ctx, student.id);
   const guardian = parents[0];
 
   return (
@@ -151,7 +153,8 @@ export default async function KocStudentPage({ params, searchParams }: PageProps
                   defaultEmail={student.email}
                   gateLabel="Pi Koç girişi"
                   intro="Hesap açınca öğrenci “Pi Koç girişi”nden (pikampus.com/koc-giris) girer: bugünkü görevlerini işaretler, çözdüğü soruyu ders ders girer, haftalık programını, deneme netlerini ve sizin paylaştığınız görüşme notlarını görür. Giriş bilgileri bu e-postaya da gider."
-                  account={account?.user ? { username: account.user.username, email: account.user.email, lastLoginAt: account.user.lastLoginAt ? formatCompact(account.user.lastLoginAt) : null } : account?.email ? { pendingEmail: account.email } : null}
+                  account={account?.user ? { username: account.user.username, email: account.user.email, lastLoginAt: account.user.lastLoginAt ? formatCompact(account.user.lastLoginAt) : null, selfOwned: isSelfOwnedAccount(account, account.user) } : account?.email ? { pendingEmail: account.email } : null}
+                  linkable={linkable}
                 />
               </CardBody>
             </Card>

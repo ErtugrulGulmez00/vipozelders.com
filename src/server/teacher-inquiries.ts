@@ -160,6 +160,12 @@ export async function addInquiryToCoach(teacherId: string, inquiryId: string): P
   const [firstName, lastName] = splitName(inquiry.studentName, inquiry.name);
   const notes = [`Vitrinden ders talebi${inquiry.lessonName ? `: ${inquiry.lessonName}` : ""}`, inquiry.preferredTimes ? `Uygun saatler: ${inquiry.preferredTimes}` : null, inquiry.note].filter(Boolean).join("\n");
 
+  // Talebi öğrencinin kendisi (öğrenci hesabıyla) gönderdiyse hesap öğrencinin kendi giriş hesabı olarak bağlanır;
+  // öğretmen ikinci bir hesap açmaz. Veli hesabıysa veli olarak bağlanır.
+  const requesterIsStudent = inquiry.requesterId
+    ? (await db.studentProfile.findUnique({ where: { userId: inquiry.requesterId }, select: { accountType: true } }))?.accountType === "STUDENT"
+    : false;
+
   const result = await db.$transaction(async (tx) => {
     // Aynı anda iki kabul sınırı aşmasın
     await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtext(${`koc-capacity:${center.id}`}))`;
@@ -175,7 +181,19 @@ export async function addInquiryToCoach(teacherId: string, inquiryId: string): P
         notes,
         coachId,
         guardians: {
-          create: { centerId: center.id, fullName: inquiry.name, relation: "Veli", phone: inquiry.phone, email: inquiry.email, userId: inquiry.requesterId, isPrimary: true, notifyEmail: Boolean(inquiry.email), notifyWhatsapp: false },
+          create: {
+            centerId: center.id,
+            fullName: inquiry.name,
+            relation: requesterIsStudent ? "Öğrenci" : "Veli",
+            phone: inquiry.phone,
+            email: inquiry.email,
+            userId: inquiry.requesterId,
+            isPrimary: true,
+            isStudentAccount: requesterIsStudent,
+            linkedAt: inquiry.requesterId ? new Date() : null,
+            notifyEmail: Boolean(inquiry.email),
+            notifyWhatsapp: false,
+          },
         },
       },
     });

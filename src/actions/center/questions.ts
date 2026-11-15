@@ -6,7 +6,7 @@ import { centerAction, centerAudit } from "@/server/center/context";
 import { CenterError } from "@/server/center/errors";
 import { email, guard, opt, str } from "@/server/center/form";
 import { answerQuestion } from "@/server/center/questions";
-import { createStudentAccount, removeStudentAccount, resetStudentAccountPassword } from "@/server/center/students";
+import { createStudentAccount, promoteGuardianToStudentAccount, removeStudentAccount, resetStudentAccountPassword } from "@/server/center/students";
 
 const fileOf = (formData: FormData, key: string) => {
   const value = formData.get(key);
@@ -59,5 +59,17 @@ export async function removeStudentAccountAction(_: ActionState, formData: FormD
     await centerAudit(auth.ctx, "student.account_remove", "CenterStudent", str(formData, "studentId"));
     refresh();
     return success("Öğrenci giriş hesabı kaldırıldı.");
+  });
+}
+
+/** Öğrenciye bağlı site hesabını (ör. ders talebini gönderen) öğrencinin kendi giriş hesabı yapar */
+export async function promoteStudentAccountAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const auth = await centerAction("students.edit");
+  if (!auth.ok) return auth.state;
+  return guard(async () => {
+    await promoteGuardianToStudentAccount(auth.ctx, str(formData, "studentId"), str(formData, "guardianId"));
+    await centerAudit(auth.ctx, "student.account_promote", "CenterStudent", str(formData, "studentId"));
+    refresh();
+    return success("Bu hesap öğrencinin giriş hesabı oldu; öğrenci kendi şifresiyle girer, yeni hesap açılmadı.");
   });
 }

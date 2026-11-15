@@ -200,7 +200,7 @@ test("kurum personeli aynı e-postayla öğretmen başvurusu yapar; onayda kurum
   await page.getByLabel("E-posta veya kullanıcı adı").fill(username);
   await page.getByLabel("Şifre", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Giriş yap" }).click();
-  await expect(page).toHaveURL(/\/sifre-degistir$/);
+  await expect(page).toHaveURL(/\/sifre-degistir(\?kapi=\w+)?$/);
   await page.getByLabel("Geçici şifre").fill(password);
   await page.getByLabel("Yeni şifre", { exact: true }).fill("HocaSifre123");
   await page.getByLabel("Yeni şifre (tekrar)").fill("HocaSifre123");

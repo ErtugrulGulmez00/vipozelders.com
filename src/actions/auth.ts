@@ -62,7 +62,8 @@ export async function loginAction(_: ActionState, formData: FormData): Promise<A
   await createSession(user.id);
   await db.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
 
-  if (user.mustChangePassword) redirect("/sifre-degistir");
+  // Geçici şifreyle giren, şifresini belirleyince girdiği kapının tarafına döner
+  if (user.mustChangePassword) redirect(gate === "ozel" ? "/sifre-degistir" : `/sifre-degistir?kapi=${gate}`);
   redirect(next ?? home ?? sideHome(facts, gate));
 }
 
@@ -206,7 +207,9 @@ export async function changePasswordAction(_: ActionState, formData: FormData): 
   await db.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(password), mustChangePassword: false } });
   await revokeOtherSessions(user.id);
 
-  if (record.mustChangePassword) redirect(await landingFor(user, "ozel"));
+  const kapi = text(formData, "kapi");
+  const side: Side = kapi === "koc" || kapi === "kurum" ? kapi : "ozel";
+  if (record.mustChangePassword) redirect(await landingFor(user, side));
   return success("Şifreniz değiştirildi. Diğer cihazlardaki oturumlarınız kapatıldı.");
 }
 

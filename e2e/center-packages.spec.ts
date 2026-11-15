@@ -62,7 +62,7 @@ test("yeni kurum bütün bölümleri görür; ödemeyle kademe yükselir", async
 
   // 2) Kurum sahibi geçici şifreyle girer, şifresini belirler; bütün bölümleri görür
   await login(page, username, password);
-  await expect(page).toHaveURL(/\/sifre-degistir$/);
+  await expect(page).toHaveURL(/\/sifre-degistir(\?kapi=\w+)?$/);
   await page.getByLabel("Geçici şifre").fill(password);
   await page.getByLabel("Yeni şifre", { exact: true }).fill("PaketSifre123");
   await page.getByLabel("Yeni şifre (tekrar)").fill("PaketSifre123");

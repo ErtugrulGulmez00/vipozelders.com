@@ -25,8 +25,9 @@ export const sideFacts = cache(async (userId: string, role: AppRole): Promise<Si
     role === "STUDENT" ? db.centerGuardian.findMany({ where: { userId }, select: { isStudentAccount: true, student: { select: { center: { select: { kind: true } } } } } }) : Promise.resolve([]),
   ]);
   const privateActivity = role === "STUDENT" ? await hasPrivateActivity(userId) : role === "TEACHER";
-  // Kurumun (ya da koçun) açtığı öğrenci hesabında özel ders tarafı, öğrenci orada bir işlem yapana kadar kapalı
-  const studentAccount = links.some((l) => l.isStudentAccount);
+  // Kurumun açtığı öğrenci hesabında özel ders tarafı, öğrenci orada bir işlem yapana kadar kapalı.
+  // Pi Koç'un açtığı hesap özel derste de geçerlidir (tek hesap: öğrenci öğretmen arayıp talep gönderebilir).
+  const studentAccount = links.some((l) => l.isStudentAccount && l.student.center.kind !== "COACH");
   const privateSide = role === "TEACHER" || (role === "STUDENT" && (!studentAccount || privateActivity));
   // Pi Koç ayrı kapıdır: koç üyeliği ve koç öğrencisi bağlantısı kurum tarafına sayılmaz
   const isCoach = (kind: string) => kind === "COACH";
