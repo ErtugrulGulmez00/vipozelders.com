@@ -2,6 +2,7 @@
 
 import { Printer, X } from "lucide-react";
 import { useEffect } from "react";
+import { AnswerDonut, Legend, PotentialBar, RankBars, TopicWaffle } from "./card-charts";
 import type { MatchRow } from "./pdf-forms";
 
 const fmt = (n: number) => n.toLocaleString("tr-TR", { maximumFractionDigits: 2 });
@@ -22,7 +23,7 @@ export function StudentCardDialog({ examName, row, onClose }: { examName: string
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink-900/50 p-0 sm:items-center sm:p-4" onClick={onClose}>
       {/* Yazdırırken yalnızca karne basılır */}
-      <style>{`@media print { body * { visibility: hidden !important; } #pdf-karne, #pdf-karne * { visibility: visible !important; } #pdf-karne { position: absolute; inset: 0; max-height: none !important; overflow: visible !important; box-shadow: none !important; } .karne-no-print { display: none !important; } }`}</style>
+      <style>{`@media print { body * { visibility: hidden !important; } #pdf-karne, #pdf-karne * { visibility: visible !important; } #pdf-karne { -webkit-print-color-adjust: exact; print-color-adjust: exact; position: absolute; inset: 0; max-height: none !important; overflow: visible !important; box-shadow: none !important; } .karne-no-print { display: none !important; } }`}</style>
       <div
         id="pdf-karne"
         role="dialog"
@@ -72,16 +73,16 @@ export function StudentCardDialog({ examName, row, onClose }: { examName: string
           ) : null}
         </div>
 
-        {card.ranks.length ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {card.ranks.map((r) => (
-              <span key={r.label} className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900 ring-1 ring-amber-200">
-                {/sıra/i.test(r.label) ? r.label : `${r.label} sırası`}: {r.rank}
-                {r.of ? `/${r.of}` : ""}
-              </span>
-            ))}
+        <div className="mt-5 grid gap-5 rounded-2xl border border-slate-200 p-4 sm:grid-cols-2">
+          <div>
+            <h3 className="mb-3 text-sm font-bold text-ink-900">Soru dağılımı</h3>
+            <AnswerDonut card={card} />
           </div>
-        ) : null}
+          <div>
+            <h3 className="mb-3 text-sm font-bold text-ink-900">Sıralamadaki yeri</h3>
+            <RankBars card={card} />
+          </div>
+        </div>
 
         <h3 className="mt-6 text-sm font-bold text-ink-900">Ders ders sonuçlar</h3>
         <div className="mt-2 overflow-x-auto">
@@ -122,6 +123,21 @@ export function StudentCardDialog({ examName, row, onClose }: { examName: string
           </table>
         </div>
         <p className="mt-1 text-xs text-slate-400">Çubuktaki çizgi bu PDF&apos;teki öğrencilerin ortalama netini gösterir.</p>
+
+        <PotentialBar card={card} />
+
+        {card.topics.length ? (
+          <>
+            <div className="mt-6 flex flex-wrap items-baseline justify-between gap-2">
+              <h3 className="text-sm font-bold text-ink-900">Konu haritası</h3>
+              <Legend />
+            </div>
+            <p className="mt-0.5 text-xs text-slate-500">Her kare bir soru; kareler konulara göre gruplu. Üzerine gelince konu adı görünür.</p>
+            <div className="mt-3 rounded-2xl border border-slate-200 p-4">
+              <TopicWaffle topics={card.topics} />
+            </div>
+          </>
+        ) : null}
 
         <h3 className="mt-6 text-sm font-bold text-ink-900">
           Eksik konular{card.weakTopics.length ? <span className="font-normal text-slate-500"> · {card.weakTopics.length} konu, en çok soru kaçırılan önce</span> : null}

@@ -4,7 +4,7 @@ import { competitionRanks, gradeAnswers, round2, topicBreakdown } from "./exams"
 // PDF'ten okunan bir öğrencinin anlık karnesi: sisteme kayıtlı olmasa da eşleştirme ekranında gösterilir.
 
 export type CardSection = { name: string; questions: number; correct: number; wrong: number; blank: number; net: number; avgNet: number };
-export type CardTopic = { section: string; topic: string; questions: number; wrong: number; blank: number };
+export type CardTopic = { section: string; topic: string; questions: number; correct: number; wrong: number; blank: number };
 export type StudentCard = {
   totalNet: number;
   avgTotalNet: number;
@@ -16,6 +16,10 @@ export type StudentCard = {
   sections: CardSection[];
   /** Cevap anahtarı ve kazanım varsa yanlış ya da boş bırakılan tüm konular, en çok kaçırılan önce */
   weakTopics: CardTopic[];
+  /** Konu haritası için tüm konular, ders sırasıyla */
+  topics: CardTopic[];
+  /** En çok kaçırılan 5 konu toparlanırsa kazanılacak net (yanlış götürme dahil) */
+  potentialNet: number;
 };
 
 export function buildStudentCards(exam: PdfExam): StudentCard[] {
@@ -27,6 +31,7 @@ export function buildStudentCards(exam: PdfExam): StudentCard[] {
   return exam.students.map((st, idx) => {
     const sections: CardSection[] = [];
     const weak: CardTopic[] = [];
+    const all: CardTopic[] = [];
     exam.sections.forEach((section, i) => {
       const s = st.sections[i];
       if (!s) return;
@@ -43,7 +48,9 @@ export function buildStudentCards(exam: PdfExam): StudentCard[] {
         try {
           const { outcomes } = gradeAnswers(section.answerKey, s.answers);
           for (const t of topicBreakdown(section.topics, [outcomes])) {
-            if (t.wrong + t.blank > 0) weak.push({ section: section.name, topic: t.topic, questions: t.questions, wrong: t.wrong, blank: t.blank });
+            const item = { section: section.name, topic: t.topic, questions: t.questions, correct: t.correct, wrong: t.wrong, blank: t.blank };
+            all.push(item);
+            if (t.wrong + t.blank > 0) weak.push(item);
           }
         } catch {
           // Cevap dizisi anahtarla uyuşmuyorsa konu analizi atlanır
@@ -61,6 +68,8 @@ export function buildStudentCards(exam: PdfExam): StudentCard[] {
       ranks: st.ranks,
       sections,
       weakTopics: weak,
+      topics: all,
+      potentialNet: round2(weak.slice(0, 5).reduce((t, w) => t + w.wrong * (1 + exam.wrongPenalty) + w.blank, 0)),
     };
   });
 }

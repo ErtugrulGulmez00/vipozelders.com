@@ -36,8 +36,14 @@ describe("buildStudentCards", () => {
   });
 
   it("eksik konular cevap anahtarı ve kazanımdan çıkar", () => {
-    expect(ali.weakTopics).toEqual([{ section: "Matematik", topic: "Kök", questions: 2, wrong: 1, blank: 1 }]);
+    expect(ali.weakTopics).toEqual([{ section: "Matematik", topic: "Kök", questions: 2, correct: 0, wrong: 1, blank: 1 }]);
     expect(ayse.weakTopics).toEqual([]);
+    // Konu haritası tüm konuları içerir; hedef: 1 yanlış × 1,25 + 1 boş
+    expect(ali.topics.map((t) => [t.topic, t.correct])).toEqual([
+      ["Kök", 0],
+      ["Üslü", 2],
+    ]);
+    expect(ali.potentialNet).toBe(2.25);
     expect(ali.ranks[0]).toEqual({ label: "İl", rank: 12, of: 900 });
   });
 });
