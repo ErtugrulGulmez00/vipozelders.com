@@ -69,40 +69,45 @@ model User {
   // WhatsApp için açık rıza zamanı; boşsa kişinin kendi hesabına WhatsApp gitmez
   whatsappConsentAt  DateTime?
 
-  sessions          Session[]
-  tokens            UserToken[]
-  teacherProfile    TeacherProfile?
-  studentProfile    StudentProfile?
-  notifications     Notification[]
-  bookingsAsStudent Booking[]          @relation("StudentBookings")
-  reviews           Review[]
-  favorites         Favorite[]
-  auditLogs         AuditLog[]
-  bookingEvents     BookingEvent[]
-  attendance        LessonAttendance[]
-  emails            EmailMessage[]
-  payoutsCreated    Payout[]           @relation("PayoutCreatedBy")
-  devices           Device[]
-  centerMemberships CenterMember[]
-  guardianLinks     CenterGuardian[]   @relation("GuardianAccounts")
-  bookingMessages   BookingMessage[]
-  creditPurchases   CreditPurchase[]
-  creditEntries     CreditLedger[]
-  poolQuestions     PoolQuestion[]
+  sessions              Session[]
+  tokens                UserToken[]
+  teacherProfile        TeacherProfile?
+  studentProfile        StudentProfile?
+  notifications         Notification[]
+  bookingsAsStudent     Booking[]              @relation("StudentBookings")
+  reviews               Review[]
+  favorites             Favorite[]
+  auditLogs             AuditLog[]
+  bookingEvents         BookingEvent[]
+  attendance            LessonAttendance[]
+  emails                EmailMessage[]
+  payoutsCreated        Payout[]               @relation("PayoutCreatedBy")
+  devices               Device[]
+  centerMemberships     CenterMember[]
+  guardianLinks         CenterGuardian[]       @relation("GuardianAccounts")
+  bookingMessages       BookingMessage[]
+  creditPurchases       CreditPurchase[]
+  creditEntries         CreditLedger[]
+  poolQuestions         PoolQuestion[]
   questionSubscriptions QuestionSubscription[]
-  groupEnrollments  GroupEnrollment[]
-  lessonRequests    LessonRequest[]
-  teacherInquiries  TeacherInquiry[] @relation("InquiryTeacher")
-  sentInquiries     TeacherInquiry[] @relation("InquiryRequester")
-  promoRedemptions  CoachPromoCode[] @relation("PromoRedeemer")
-  referrals         User[]             @relation("Referrals")
-  couponRedemptions CouponRedemption[]
-  lessonPackages    LessonPackage[]
-  whatsappMessages  WhatsAppMessage[]
-  classroomReports  ClassroomReport[]
-  threadsAsStudent  MessageThread[]    @relation("ThreadStudent")
-  threadsAsTeacher  MessageThread[]    @relation("ThreadTeacher")
-  directMessages    DirectMessage[]
+  groupEnrollments      GroupEnrollment[]
+  lessonRequests        LessonRequest[]
+  teacherInquiries      TeacherInquiry[]       @relation("InquiryTeacher")
+  sentInquiries         TeacherInquiry[]       @relation("InquiryRequester")
+  promoRedemptions      CoachPromoCode[]       @relation("PromoRedeemer")
+  referrals             User[]                 @relation("Referrals")
+  couponRedemptions     CouponRedemption[]
+  lessonPackages        LessonPackage[]
+  whatsappMessages      WhatsAppMessage[]
+  classroomReports      ClassroomReport[]
+  threadsAsStudent      MessageThread[]        @relation("ThreadStudent")
+  threadsAsTeacher      MessageThread[]        @relation("ThreadTeacher")
+  directMessages        DirectMessage[]
+  // Güvenlik: engelleme ve içerik bildirimi
+  blocksMade            UserBlock[]            @relation("BlocksMade")
+  blocksReceived        UserBlock[]            @relation("BlocksReceived")
+  reportsMade           ContentReport[]        @relation("ReportsMade")
+  reportsReceived       ContentReport[]        @relation("ReportsReceived")
 }
 
 // Mobil uygulama push bildirim kayıtları (Firebase Cloud Messaging).
@@ -306,7 +311,7 @@ model TeacherProfile {
   user                    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   slug                    String             @unique
   // Paket indirimleri: "ders sayısı:yüzde" virgülle (ör. "5:5,10:10"); boşsa paket satılmaz
-  packageDiscounts        String                @default("")
+  packageDiscounts        String             @default("")
   headline                String?
   bio                     String?
   photoKey                String?
@@ -385,25 +390,25 @@ model TeacherServiceDistrict {
 }
 
 model TeacherOffering {
-  id            String         @id @default(cuid())
-  teacherId     String
-  teacher       TeacherProfile @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+  id             String          @id @default(cuid())
+  teacherId      String
+  teacher        TeacherProfile  @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
   lessonPackages LessonPackage[]
-  serviceTypeId Int
-  serviceType   ServiceType    @relation(fields: [serviceTypeId], references: [id])
-  levelId       Int
-  level         Level          @relation(fields: [levelId], references: [id])
-  subjectId     Int
-  subject       Subject        @relation(fields: [subjectId], references: [id])
+  serviceTypeId  Int
+  serviceType    ServiceType     @relation(fields: [serviceTypeId], references: [id])
+  levelId        Int
+  level          Level           @relation(fields: [levelId], references: [id])
+  subjectId      Int
+  subject        Subject         @relation(fields: [subjectId], references: [id])
   // Öğrencinin ödeyeceği 60 dakikalık ücret (KDV dahil, kuruş).
-  hourlyPrice   Int
-  durations     Int[]
+  hourlyPrice    Int
+  durations      Int[]
   // Soru çözüm hizmetinde fotoğrafla soru başına ücret (kuruş); boşsa fotoğrafla soru kabul edilmez.
-  questionPrice Int?
-  isActive      Boolean        @default(true)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  bookings      Booking[]
+  questionPrice  Int?
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  bookings       Booking[]
 
   @@unique([teacherId, serviceTypeId, levelId, subjectId])
   @@index([levelId, subjectId])
@@ -537,92 +542,92 @@ enum BookingStatus {
 }
 
 model Booking {
-  id                 String           @id @default(cuid())
-  code               String           @unique
-  studentId          String
-  student            User             @relation("StudentBookings", fields: [studentId], references: [id])
-  teacherId          String
-  teacher            TeacherProfile   @relation(fields: [teacherId], references: [userId])
-  offeringId         String?
-  offering           TeacherOffering? @relation(fields: [offeringId], references: [id], onDelete: SetNull)
-  learnerId          String?
-  learner            Learner?         @relation(fields: [learnerId], references: [id], onDelete: SetNull)
-  serviceTypeId      Int
-  serviceType        ServiceType      @relation(fields: [serviceTypeId], references: [id])
-  levelId            Int
-  level              Level            @relation(fields: [levelId], references: [id])
-  subjectId          Int
-  subject            Subject          @relation(fields: [subjectId], references: [id])
+  id                      String           @id @default(cuid())
+  code                    String           @unique
+  studentId               String
+  student                 User             @relation("StudentBookings", fields: [studentId], references: [id])
+  teacherId               String
+  teacher                 TeacherProfile   @relation(fields: [teacherId], references: [userId])
+  offeringId              String?
+  offering                TeacherOffering? @relation(fields: [offeringId], references: [id], onDelete: SetNull)
+  learnerId               String?
+  learner                 Learner?         @relation(fields: [learnerId], references: [id], onDelete: SetNull)
+  serviceTypeId           Int
+  serviceType             ServiceType      @relation(fields: [serviceTypeId], references: [id])
+  levelId                 Int
+  level                   Level            @relation(fields: [levelId], references: [id])
+  subjectId               Int
+  subject                 Subject          @relation(fields: [subjectId], references: [id])
   // Randevu anındaki adların kopyası (katalog sonradan değişse de kayıt bozulmaz)
-  serviceName        String
-  levelName          String
-  subjectName        String
-  learnerName        String
-  learnerGrade       String?
-  mode               LessonMode
-  inPersonPlace      InPersonPlace?
-  cityId             Int?
-  city               City?            @relation(fields: [cityId], references: [id])
-  districtId         Int?
-  district           District?        @relation(fields: [districtId], references: [id])
-  address            String?
-  studentNote        String?
-  startAt            DateTime
-  endAt              DateTime
+  serviceName             String
+  levelName               String
+  subjectName             String
+  learnerName             String
+  learnerGrade            String?
+  mode                    LessonMode
+  inPersonPlace           InPersonPlace?
+  cityId                  Int?
+  city                    City?            @relation(fields: [cityId], references: [id])
+  districtId              Int?
+  district                District?        @relation(fields: [districtId], references: [id])
+  address                 String?
+  studentNote             String?
+  startAt                 DateTime
+  endAt                   DateTime
   // Dersin bitişi + öğretmenin tampon süresi; çakışma kontrolü bu aralıkla yapılır.
-  blockEndAt         DateTime
-  durationMinutes    Int
-  price              Int
-  commissionRateBps  Int
-  commissionAmount   Int
-  teacherAmount      Int
+  blockEndAt              DateTime
+  durationMinutes         Int
+  price                   Int
+  commissionRateBps       Int
+  commissionAmount        Int
+  teacherAmount           Int
   // İndirim (kupon ya da davet); fiyat indirimli tutardır, indirim platformun hizmet bedelinden düşülür
-  discountAmount     Int                @default(0)
-  couponCode         String?
+  discountAmount          Int              @default(0)
+  couponCode              String?
   // Paketten alınan ders (ödeme paketin ödemesidir)
-  packageId          String?
-  package            LessonPackage?     @relation(fields: [packageId], references: [id], onDelete: SetNull)
-  rescheduleCount    Int                @default(0)
-  refundedAmount     Int              @default(0)
-  status             BookingStatus    @default(PENDING_PAYMENT)
-  holdExpiresAt      DateTime?
-  paidAt             DateTime?
-  approvalDeadline   DateTime?
-  confirmedAt        DateTime?
-  respondedAt        DateTime?
-  completedAt        DateTime?
-  cancelledAt        DateTime?
-  cancelReason       String?
-  rejectionReason    String?
-  disputeReason      String?
-  disputedAt         DateTime?
-  reminder24hSentAt  DateTime?
-  reminder1hSentAt   DateTime?
-  earningsReleaseAt  DateTime?
-  earningsReleasedAt DateTime?
-  videoRoomName      String?          @unique
+  packageId               String?
+  package                 LessonPackage?   @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  rescheduleCount         Int              @default(0)
+  refundedAmount          Int              @default(0)
+  status                  BookingStatus    @default(PENDING_PAYMENT)
+  holdExpiresAt           DateTime?
+  paidAt                  DateTime?
+  approvalDeadline        DateTime?
+  confirmedAt             DateTime?
+  respondedAt             DateTime?
+  completedAt             DateTime?
+  cancelledAt             DateTime?
+  cancelReason            String?
+  rejectionReason         String?
+  disputeReason           String?
+  disputedAt              DateTime?
+  reminder24hSentAt       DateTime?
+  reminder1hSentAt        DateTime?
+  earningsReleaseAt       DateTime?
+  earningsReleasedAt      DateTime?
+  videoRoomName           String?          @unique
   // Ödemesiz ders: yöneticinin deneme dersi ya da öğretmenin ders bağlantısı (lessonLink); yorum, puan, hakediş ve ciroya sayılmaz.
-  isTest             Boolean          @default(false)
+  isTest                  Boolean          @default(false)
   // Ücretsiz tanışma görüşmesi (15 dk, online, ödemesiz); hakediş, yorum ve ders sayısına girmez.
-  isIntro            Boolean          @default(false)
+  isIntro                 Boolean          @default(false)
   // Ders alındığı anda öğretmen 30 dk ücretsiz soru çözümü taahhüt ediyordu (sonradan kapatsa da bu dersin hakkı durur)
-  questionSessionPromised Boolean     @default(false)
+  questionSessionPromised Boolean          @default(false)
   // Fotoğrafla soruda çözümün gönderildiği an
-  answeredAt         DateTime?
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
+  answeredAt              DateTime?
+  createdAt               DateTime         @default(now())
+  updatedAt               DateTime         @updatedAt
 
-  messages      BookingMessage[]
-  events        BookingEvent[]
-  payments      Payment[]
-  attendance    LessonAttendance[]
-  review        Review?
-  ledgerEntries LedgerEntry[]
+  messages           BookingMessage[]
+  events             BookingEvent[]
+  payments           Payment[]
+  attendance         LessonAttendance[]
+  review             Review?
+  ledgerEntries      LedgerEntry[]
   rescheduleRequests RescheduleRequest[]
-  reports       ClassroomReport[]
+  reports            ClassroomReport[]
   // Bu ders bir ders bağlantısıyla açıldıysa o bağlantı; makeupLinks bu (ücretli) dersin telafi bağlantıları
-  lessonLink    LessonLink?        @relation("LessonLinkBooking")
-  makeupLinks   LessonLink[]       @relation("LessonLinkSource")
+  lessonLink         LessonLink?         @relation("LessonLinkBooking")
+  makeupLinks        LessonLink[]        @relation("LessonLinkSource")
 
   @@index([teacherId, startAt])
   @@index([studentId, startAt])
@@ -633,29 +638,29 @@ model Booking {
 // derse kaydolur (ders o an oluşur). Serbest yetkisi olmayan öğretmen yalnızca ücreti ödenmiş bir dersin telafisi için ve
 // gerekçe yazarak açabilir; bu bağlantıyı yalnızca o dersin öğrencisi kullanır, her ücretli derse tek telafi.
 model LessonLink {
-  id              String         @id @default(cuid())
-  token           String         @unique
-  teacherId       String
-  teacher         TeacherProfile @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
-  startAt         DateTime
-  endAt           DateTime
-  durationMinutes Int
+  id                String         @id @default(cuid())
+  token             String         @unique
+  teacherId         String
+  teacher           TeacherProfile @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+  startAt           DateTime
+  endAt             DateTime
+  durationMinutes   Int
   // Açılacak dersin katalog bilgisi (telafide kaynak dersten kopyalanır)
-  serviceTypeId   Int
-  levelId         Int
-  subjectId       Int
-  serviceName     String
-  levelName       String
-  subjectName     String
-  note            String?
+  serviceTypeId     Int
+  levelId           Int
+  subjectId         Int
+  serviceName       String
+  levelName         String
+  subjectName       String
+  note              String?
   // true: tamamlanan dersin ardından açılan 30 dk ücretsiz soru çözüm dersi (telafi değil; kaynak dersin sınıfını kapatmaz)
-  isQuestionSession Boolean      @default(false)
-  sourceBookingId String?
-  sourceBooking   Booking?       @relation("LessonLinkSource", fields: [sourceBookingId], references: [id], onDelete: SetNull)
-  bookingId       String?        @unique
-  booking         Booking?       @relation("LessonLinkBooking", fields: [bookingId], references: [id], onDelete: SetNull)
-  cancelledAt     DateTime?
-  createdAt       DateTime       @default(now())
+  isQuestionSession Boolean        @default(false)
+  sourceBookingId   String?
+  sourceBooking     Booking?       @relation("LessonLinkSource", fields: [sourceBookingId], references: [id], onDelete: SetNull)
+  bookingId         String?        @unique
+  booking           Booking?       @relation("LessonLinkBooking", fields: [bookingId], references: [id], onDelete: SetNull)
+  cancelledAt       DateTime?
+  createdAt         DateTime       @default(now())
 
   @@index([teacherId, startAt])
   @@index([sourceBookingId])
@@ -700,29 +705,29 @@ enum PaymentStatus {
 }
 
 model Payment {
-  id                String          @id @default(cuid())
+  id                String                @id @default(cuid())
   // Ders ödemesi (bookingId) ya da soru kredisi satın alma (creditPurchaseId)
   bookingId         String?
-  booking           Booking?        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  booking           Booking?              @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   creditPurchaseId  String?
-  creditPurchase    CreditPurchase? @relation(fields: [creditPurchaseId], references: [id], onDelete: Cascade)
+  creditPurchase    CreditPurchase?       @relation(fields: [creditPurchaseId], references: [id], onDelete: Cascade)
   subscriptionId    String?
   subscription      QuestionSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   groupEnrollmentId String?
-  groupEnrollment   GroupEnrollment? @relation(fields: [groupEnrollmentId], references: [id], onDelete: Cascade)
+  groupEnrollment   GroupEnrollment?      @relation(fields: [groupEnrollmentId], references: [id], onDelete: Cascade)
   packageId         String?
-  package           LessonPackage? @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  package           LessonPackage?        @relation(fields: [packageId], references: [id], onDelete: Cascade)
   provider          String
-  providerToken     String?         @unique
+  providerToken     String?               @unique
   providerPaymentId String?
   providerItemId    String?
   amount            Int
-  refundedAmount    Int             @default(0)
-  status            PaymentStatus   @default(INITIATED)
+  refundedAmount    Int                   @default(0)
+  status            PaymentStatus         @default(INITIATED)
   failureReason     String?
   raw               Json?
-  createdAt         DateTime        @default(now())
-  updatedAt         DateTime        @updatedAt
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
   refunds           Refund[]
 
   @@index([bookingId])
@@ -762,23 +767,23 @@ enum LedgerBucket {
 
 // Öğretmen hakediş defteri. Bir kovanın bakiyesi = o kovadaki tutarların toplamı.
 model LedgerEntry {
-  id             String         @id @default(cuid())
-  teacherId      String
-  teacher        TeacherProfile @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
-  bookingId      String?
-  booking        Booking?       @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  poolQuestionId String?
-  poolQuestion   PoolQuestion?  @relation(fields: [poolQuestionId], references: [id], onDelete: SetNull)
-  subscriptionId String?
-  subscription   QuestionSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  id                String                @id @default(cuid())
+  teacherId         String
+  teacher           TeacherProfile        @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+  bookingId         String?
+  booking           Booking?              @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  poolQuestionId    String?
+  poolQuestion      PoolQuestion?         @relation(fields: [poolQuestionId], references: [id], onDelete: SetNull)
+  subscriptionId    String?
+  subscription      QuestionSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
   groupEnrollmentId String?
-  groupEnrollment   GroupEnrollment? @relation(fields: [groupEnrollmentId], references: [id], onDelete: SetNull)
-  payoutId       String?
-  payout         Payout?        @relation(fields: [payoutId], references: [id], onDelete: SetNull)
-  bucket         LedgerBucket
-  amount         Int
-  description    String
-  createdAt      DateTime       @default(now())
+  groupEnrollment   GroupEnrollment?      @relation(fields: [groupEnrollmentId], references: [id], onDelete: SetNull)
+  payoutId          String?
+  payout            Payout?               @relation(fields: [payoutId], references: [id], onDelete: SetNull)
+  bucket            LedgerBucket
+  amount            Int
+  description       String
+  createdAt         DateTime              @default(now())
 
   @@index([teacherId, bucket])
 }
@@ -823,24 +828,24 @@ enum ReviewStatus {
 }
 
 model Review {
-  id               String         @id @default(cuid())
+  id               String          @id @default(cuid())
   // Eski model: tamamlanan randevu; yeni model: kabul edilen ders talebi (biri dolu olur)
-  bookingId        String?        @unique
-  booking          Booking?       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  inquiryId        String?        @unique
+  bookingId        String?         @unique
+  booking          Booking?        @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  inquiryId        String?         @unique
   inquiry          TeacherInquiry? @relation(fields: [inquiryId], references: [id], onDelete: SetNull)
   teacherId        String
-  teacher          TeacherProfile @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
+  teacher          TeacherProfile  @relation(fields: [teacherId], references: [userId], onDelete: Cascade)
   studentId        String
-  student          User           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student          User            @relation(fields: [studentId], references: [id], onDelete: Cascade)
   rating           Int
   comment          String?
   teacherReply     String?
   teacherRepliedAt DateTime?
-  status           ReviewStatus   @default(PUBLISHED)
+  status           ReviewStatus    @default(PUBLISHED)
   hiddenReason     String?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 
   @@unique([teacherId, studentId])
   @@index([teacherId, status])
@@ -857,19 +862,19 @@ model Favorite {
 }
 
 model Notification {
-  id        String    @id @default(cuid())
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type      String
-  title     String
-  body      String
-  link      String?
-  readAt    DateTime?
+  id             String    @id @default(cuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           String
+  title          String
+  body           String
+  link           String?
+  readAt         DateTime?
   // Mobil cihazlara push gönderildiği an (gönderim kuyruğu).
-  pushedAt  DateTime?
+  pushedAt       DateTime?
   // Yönetici bildiriminin Telegram'a gönderildiği an (TELEGRAM_BOT_TOKEN).
   telegramSentAt DateTime?
-  createdAt DateTime  @default(now())
+  createdAt      DateTime  @default(now())
 
   @@index([userId, readAt])
 }
@@ -1069,54 +1074,54 @@ enum LeadStatus {
 }
 
 model Center {
-  id                     String       @id @default(cuid())
+  id                     String           @id @default(cuid())
   name                   String
-  slug                   String       @unique
-  kind                   CenterKind   @default(ETUT)
-  status                 CenterStatus @default(TRIAL)
-  plan                   CenterPlan   @default(STARTER)
-  edition                CenterEdition @default(ETUT)
-  studentLimit           Int          @default(100)
+  slug                   String           @unique
+  kind                   CenterKind       @default(ETUT)
+  status                 CenterStatus     @default(TRIAL)
+  plan                   CenterPlan       @default(STARTER)
+  edition                CenterEdition    @default(ETUT)
+  studentLimit           Int              @default(100)
   trialEndsAt            DateTime?
   paidUntil              DateTime?
   phone                  String?
   email                  String?
   address                String?
   cityId                 Int?
-  city                   City?        @relation(fields: [cityId], references: [id])
+  city                   City?            @relation(fields: [cityId], references: [id])
   districtId             Int?
-  district               District?    @relation(fields: [districtId], references: [id])
+  district               District?        @relation(fields: [districtId], references: [id])
   taxOffice              String?
   taxNumber              String?
   logoKey                String?
   description            String?
   // Herkese açık vitrin sayfası (/kurumlar/slug) ve ön kayıt formu
-  isPublic               Boolean      @default(false)
-  academicYear           String       @default("2026-2027")
-  notifyAbsence          Boolean      @default(true)
-  remindPayments         Boolean      @default(true)
-  reminderDaysBefore     Int          @default(3)
+  isPublic               Boolean          @default(false)
+  academicYear           String           @default("2026-2027")
+  notifyAbsence          Boolean          @default(true)
+  remindPayments         Boolean          @default(true)
+  reminderDaysBefore     Int              @default(3)
   // Veli portalında eksik konular için Pi Kampüs özel ders öğretmeni önerileri
-  showTeacherSuggestions Boolean      @default(false)
+  showTeacherSuggestions Boolean          @default(false)
   // Kurumun kapattığı modüller (menüde görünmez): ör. calisma-salonu, kocluk, kaynaklar
-  disabledModules        String[]     @default([])
+  disabledModules        String[]         @default([])
   // Pi Koç (ücretli paket): haftalık veli raporu pazar akşamı kendiliğinden gönderilir
-  coachAutoReport        Boolean      @default(false)
+  coachAutoReport        Boolean          @default(false)
   // Otomatik raporun en son gönderildiği haftanın pazartesisi (haftada bir kez)
-  coachAutoReportWeek    DateTime?    @db.Date
+  coachAutoReportWeek    DateTime?        @db.Date
   // Abonelik bitiş hatırlatması: en son gönderilen eşik (7, 3, 1, 0 gün); süre uzayınca sıfırlanır
   expiryNoticeDays       Int?
-  nextReceiptNo          Int          @default(1)
+  nextReceiptNo          Int              @default(1)
   // Pi Koç: koça "bugünkü görüşmeleriniz" sabah özeti en son hangi gün gitti
-  coachDigestOn          DateTime?    @db.Date
+  coachDigestOn          DateTime?        @db.Date
   // Pi Koç deneme kodu: bu tarihe kadar ücretli paket (promoStudents öğrenci) açık
   promoUntil             DateTime?
   promoStudents          Int?
   // Pi Koç: ücretsiz paketin öğrenci sınırı ne zamandan beri aşılıyor (7 gün sonra fazlalar arşive alınır)
   overLimitSince         DateTime?
   promoCodes             CoachPromoCode[]
-  createdAt              DateTime     @default(now())
-  updatedAt              DateTime     @updatedAt
+  createdAt              DateTime         @default(now())
+  updatedAt              DateTime         @updatedAt
 
   members              CenterMember[]
   subscriptionPayments CenterSubscriptionPayment[]
@@ -1231,29 +1236,29 @@ model CenterStudent {
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
 
-  guardians    CenterGuardian[]
-  groups       CenterGroupStudent[]
-  attendance   CenterAttendance[]
-  etuds        CenterEtudStudent[]
-  examResults  CenterExamResult[]
-  noteEntries  CenterNote[]
-  feePlans     CenterFeePlan[]
-  installments CenterInstallment[]
-  payments     CenterPayment[]
-  homeworks    CenterHomeworkStudent[]
-  questions    CenterQuestion[]
-  resources    CenterStudentResource[]
-  studyPlan    CenterStudyPlanItem[]
-  coaching     CenterCoachingSession[]
-  halls        CenterHallStudent[]
-  hallDays     CenterHallDay[]
-  examAliases  CenterExamAlias[]
-  questionLogs CenterQuestionLog[]
-  weeklyReports CenterWeeklyReport[]
+  guardians      CenterGuardian[]
+  groups         CenterGroupStudent[]
+  attendance     CenterAttendance[]
+  etuds          CenterEtudStudent[]
+  examResults    CenterExamResult[]
+  noteEntries    CenterNote[]
+  feePlans       CenterFeePlan[]
+  installments   CenterInstallment[]
+  payments       CenterPayment[]
+  homeworks      CenterHomeworkStudent[]
+  questions      CenterQuestion[]
+  resources      CenterStudentResource[]
+  studyPlan      CenterStudyPlanItem[]
+  coaching       CenterCoachingSession[]
+  halls          CenterHallStudent[]
+  hallDays       CenterHallDay[]
+  examAliases    CenterExamAlias[]
+  questionLogs   CenterQuestionLog[]
+  weeklyReports  CenterWeeklyReport[]
   placementLists CenterPlacementList[]
-  goals        CenterStudentGoal[]
-  studySessions CenterStudySession[]
-  coachPayments CenterCoachPayment[]
+  goals          CenterStudentGoal[]
+  studySessions  CenterStudySession[]
+  coachPayments  CenterCoachPayment[]
 
   @@unique([centerId, studentNumber])
   @@index([centerId, status])
@@ -1426,20 +1431,20 @@ model CenterEtudStudent {
 }
 
 model CenterExam {
-  id           String   @id @default(cuid())
-  centerId     String
-  center       Center   @relation(fields: [centerId], references: [id], onDelete: Cascade)
-  name         String
-  kind         ExamKind
-  date         DateTime @db.Date
-  publisher    String?
+  id               String   @id @default(cuid())
+  centerId         String
+  center           Center   @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  name             String
+  kind             ExamKind
+  date             DateTime @db.Date
+  publisher        String?
   // Yanlış başına götürülen doğru: LGS 1/3, YKS 1/4, 0 = götürmez
-  wrongPenalty Float
+  wrongPenalty     Float
   // Veliler sonucu portalda görebilir
-  isPublished  Boolean  @default(false)
+  isPublished      Boolean  @default(false)
   // Pi Koç: öğrenci kendi hesabından girdi
-  enteredByStudent Boolean @default(false)
-  createdAt    DateTime @default(now())
+  enteredByStudent Boolean  @default(false)
+  createdAt        DateTime @default(now())
 
   sections CenterExamSection[]
   results  CenterExamResult[]
@@ -1465,21 +1470,21 @@ model CenterExamSection {
 }
 
 model CenterExamResult {
-  id        String        @id @default(cuid())
-  examId    String
-  exam      CenterExam    @relation(fields: [examId], references: [id], onDelete: Cascade)
-  studentId String
-  student   CenterStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  correct   Int
-  wrong     Int
-  blank     Int
-  net       Float
+  id            String        @id @default(cuid())
+  examId        String
+  exam          CenterExam    @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentId     String
+  student       CenterStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  correct       Int
+  wrong         Int
+  blank         Int
+  net           Float
   // Yayınevinin bildirdiği puan (varsa)
-  score     Float?
-  rank      Int?
+  score         Float?
+  rank          Int?
   // Yayınevi PDF'inden gelen sıralamalar: [{ label: "İl", rank: 12, of: 62 }]
   externalRanks Json?
-  createdAt DateTime      @default(now())
+  createdAt     DateTime      @default(now())
 
   sections CenterExamSectionResult[]
 
@@ -1613,18 +1618,18 @@ model CenterExpense {
 }
 
 model CenterAnnouncement {
-  id          String       @id @default(cuid())
-  centerId    String
-  center      Center       @relation(fields: [centerId], references: [id], onDelete: Cascade)
-  title       String
-  body        String
+  id           String       @id @default(cuid())
+  centerId     String
+  center       Center       @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  title        String
+  body         String
   // Boşsa tüm kurum
-  groupId     String?
-  group       CenterGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
+  groupId      String?
+  group        CenterGroup? @relation(fields: [groupId], references: [id], onDelete: SetNull)
   sendEmail    Boolean      @default(false)
   sendWhatsapp Boolean      @default(false)
-  createdById String?
-  createdAt   DateTime     @default(now())
+  createdById  String?
+  createdAt    DateTime     @default(now())
 
   @@index([centerId, createdAt])
 }
@@ -1973,8 +1978,8 @@ model CreditPurchase {
   // Satın alma anındaki tek soru fiyatı (kısmi iadede kullanılan kredi bu fiyattan düşülür)
   singlePrice    Int
   // İndirim (kupon ya da davet); fiyat indirimli tutardır, indirim platformun hizmet bedelinden düşülür
-  discountAmount     Int                @default(0)
-  couponCode         String?
+  discountAmount Int                  @default(0)
+  couponCode     String?
   status         CreditPurchaseStatus @default(PENDING_PAYMENT)
   paidAt         DateTime?
   expiresAt      DateTime?
@@ -2029,28 +2034,28 @@ enum PoolQuestionStatus {
 
 // Havuza düşen soru: kademe + derse uygun öğretmenler görür, biri üstlenip çözer.
 model PoolQuestion {
-  id                 String             @id @default(cuid())
-  code               String             @unique
+  id                 String                @id @default(cuid())
+  code               String                @unique
   studentId          String
-  student            User               @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student            User                  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   // Havuz sorusu krediden (purchaseId), abonelik sorusu abonelikten (subscriptionId) gelir; biri dolu olur.
   purchaseId         String?
-  purchase           CreditPurchase?    @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  purchase           CreditPurchase?       @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
   subscriptionId     String?
   subscription       QuestionSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   levelId            Int
-  level              Level              @relation(fields: [levelId], references: [id])
+  level              Level                 @relation(fields: [levelId], references: [id])
   subjectId          Int
-  subject            Subject            @relation(fields: [subjectId], references: [id])
+  subject            Subject               @relation(fields: [subjectId], references: [id])
   levelName          String
   subjectName        String
   note               String?
   imageKey           String
-  status             PoolQuestionStatus @default(OPEN)
+  status             PoolQuestionStatus    @default(OPEN)
   // Bu saate kadar çözülmezse kredi iade edilir
   expiresAt          DateTime
   claimedById        String?
-  claimedBy          TeacherProfile?    @relation(fields: [claimedById], references: [userId], onDelete: SetNull)
+  claimedBy          TeacherProfile?       @relation(fields: [claimedById], references: [userId], onDelete: SetNull)
   claimedAt          DateTime?
   claimExpiresAt     DateTime?
   answerText         String?
@@ -2075,8 +2080,8 @@ model PoolQuestion {
   // Hakedişin serbest kalacağı an (itiraz süresi ve ödeme kuruluşu aktarım süresi dolunca)
   releaseAt          DateTime?
   releasedAt         DateTime?
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
 
   creditEntries CreditLedger[]
   ledgerEntries LedgerEntry[]
@@ -2245,19 +2250,19 @@ model MessageThread {
 }
 
 model DirectMessage {
-  id        String        @id @default(cuid())
-  threadId  String
-  thread    MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
-  authorId  String
-  author    User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  body      String
+  id           String        @id @default(cuid())
+  threadId     String
+  thread       MessageThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  authorId     String
+  author       User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  body         String
   // Gizlenen iletişim bilgisi varsa (yönetici incelemesi için işaret)
   masked       Boolean       @default(false)
   // Platform dışına yönlendirme şüphesi (ör. "whatsapp", "elden", "IBAN"); boşsa temiz
   flagReason   String?
   // Gizleme yapıldıysa mesajın aslı: yalnızca yönetici denetiminde görünür (kanıt)
   originalBody String?
-  createdAt DateTime      @default(now())
+  createdAt    DateTime      @default(now())
 
   @@index([threadId, createdAt])
 }
@@ -2382,27 +2387,27 @@ enum GroupEnrollmentStatus {
 }
 
 model GroupEnrollment {
-  id                String                @id @default(cuid())
-  code              String                @unique
-  courseId          String
-  course            GroupCourse           @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  studentId         String
-  student           User                  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  learnerName       String?
-  status            GroupEnrollmentStatus
-  price             Int
-  commissionAmount  Int
-  teacherAmount     Int
+  id               String                @id @default(cuid())
+  code             String                @unique
+  courseId         String
+  course           GroupCourse           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  studentId        String
+  student          User                  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  learnerName      String?
+  status           GroupEnrollmentStatus
+  price            Int
+  commissionAmount Int
+  teacherAmount    Int
   // İndirim (kupon ya da davet); fiyat indirimli tutardır, indirim platformun hizmet bedelinden düşülür
-  discountAmount     Int                @default(0)
-  couponCode         String?
-  holdExpiresAt     DateTime?
-  paidAt            DateTime?
-  refundedAmount    Int                   @default(0)
-  invitedAt         DateTime?
-  cancelledAt       DateTime?
-  createdAt         DateTime              @default(now())
-  updatedAt         DateTime              @updatedAt
+  discountAmount   Int                   @default(0)
+  couponCode       String?
+  holdExpiresAt    DateTime?
+  paidAt           DateTime?
+  refundedAmount   Int                   @default(0)
+  invitedAt        DateTime?
+  cancelledAt      DateTime?
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
 
   payments      Payment[]
   ledgerEntries LedgerEntry[]
@@ -2424,30 +2429,30 @@ enum TeacherInquiryStatus {
 }
 
 model TeacherInquiry {
-  id             String               @id @default(cuid())
-  teacherId      String
-  teacher        User                 @relation("InquiryTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
-  requesterId    String?
-  requester      User?                @relation("InquiryRequester", fields: [requesterId], references: [id], onDelete: SetNull)
-  name           String
-  phone          String
-  email          String?
-  studentName    String?
-  gradeName      String?
-  offeringId     String?
-  lessonName     String?
+  id              String               @id @default(cuid())
+  teacherId       String
+  teacher         User                 @relation("InquiryTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  requesterId     String?
+  requester       User?                @relation("InquiryRequester", fields: [requesterId], references: [id], onDelete: SetNull)
+  name            String
+  phone           String
+  email           String?
+  studentName     String?
+  gradeName       String?
+  offeringId      String?
+  lessonName      String?
   // online | yuz-yuze | farketmez
-  mode           String
-  preferredTimes String?
-  note           String?
-  status         TeacherInquiryStatus @default(PENDING)
-  respondedAt    DateTime?
+  mode            String
+  preferredTimes  String?
+  note            String?
+  status          TeacherInquiryStatus @default(PENDING)
+  respondedAt     DateTime?
   // Kabul edilince öğretmenin Pi Koç'una eklenen öğrenci (adım 5)
   centerStudentId String?
-  ipAddress      String?
-  review         Review?
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
+  ipAddress       String?
+  review          Review?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
 
   @@index([teacherId, status, createdAt])
   @@index([requesterId, createdAt])
@@ -2516,8 +2521,8 @@ enum CouponKind {
 }
 
 model Coupon {
-  id             String             @id @default(cuid())
-  code           String             @unique
+  id             String     @id @default(cuid())
+  code           String     @unique
   description    String?
   kind           CouponKind
   // PERCENT: yüzde (1–100); AMOUNT: kuruş
@@ -2529,12 +2534,12 @@ model Coupon {
   // Geçerli satış türleri: booking | credits | subscription | group (boşsa hepsi)
   targets        String[]
   maxUses        Int?
-  perUserLimit   Int                @default(1)
-  firstOrderOnly Boolean            @default(false)
+  perUserLimit   Int        @default(1)
+  firstOrderOnly Boolean    @default(false)
   startsAt       DateTime?
   endsAt         DateTime?
-  isActive       Boolean            @default(true)
-  createdAt      DateTime           @default(now())
+  isActive       Boolean    @default(true)
+  createdAt      DateTime   @default(now())
 
   redemptions CouponRedemption[]
 }
@@ -2700,19 +2705,19 @@ model CenterWeeklyReport {
 
 // Pi Koç: öğrencinin sınav türüne göre hedefi (ör. "İTÜ Bilgisayar", TYT'de ders ders hedef net)
 model CenterStudentGoal {
-  id         String        @id @default(cuid())
-  studentId  String
-  student    CenterStudent @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  kind       ExamKind
+  id          String         @id @default(cuid())
+  studentId   String
+  student     CenterStudent  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  kind        ExamKind
   // Hedef bölüm / okul / puan (serbest metin)
-  label      String?
+  label       String?
   // Bölüm adı → hedef net: { "Türkçe": 32, "Temel Matematik": 28 }
   sectionNets Json
   /// Hedef okul / program (tercih robotundan): sınav + YÖK/MEB kodu; gösterimde en son yılın tabanı kullanılır
   targetExam  PlacementExam?
   targetCode  String?
-  updatedAt  DateTime      @updatedAt
-  createdAt  DateTime      @default(now())
+  updatedAt   DateTime       @updatedAt
+  createdAt   DateTime       @default(now())
 
   @@unique([studentId, kind])
 }
@@ -2848,4 +2853,38 @@ model CenterPlacementList {
 
   @@unique([studentId, exam])
   @@index([centerId])
+}
+
+// Kullanıcı engelleme: engellenen kişi engelleyene mesaj ve ders talebi gönderemez (iki yönde de yazışma kapanır)
+model UserBlock {
+  id        String   @id @default(cuid())
+  blockerId String
+  blocker   User     @relation("BlocksMade", fields: [blockerId], references: [id], onDelete: Cascade)
+  blockedId String
+  blocked   User     @relation("BlocksReceived", fields: [blockedId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([blockerId, blockedId])
+  @@index([blockedId])
+}
+
+// Kullanıcının bildirdiği içerik (mesaj, ders talebi ya da kişi); yönetim inceler
+model ContentReport {
+  id           String    @id @default(cuid())
+  reporterId   String
+  reporter     User      @relation("ReportsMade", fields: [reporterId], references: [id], onDelete: Cascade)
+  targetUserId String
+  target       User      @relation("ReportsReceived", fields: [targetUserId], references: [id], onDelete: Cascade)
+  // message | thread | inquiry | user
+  kind         String
+  refId        String?
+  reason       String
+  note         String?
+  // OPEN | RESOLVED
+  status       String    @default("OPEN")
+  resolvedAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([status, createdAt])
+  @@index([targetUserId])
 }

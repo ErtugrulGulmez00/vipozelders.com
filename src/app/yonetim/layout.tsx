@@ -1,4 +1,4 @@
-import { BarChart3, Eye, HeartHandshake, MessageCircle, Inbox, PhoneCall, Newspaper, Bell, Bug, Building2, CreditCard, CalendarDays, FileText, FolderTree, GraduationCap, History, LayoutDashboard, Mail, MessageCircleWarning, MessageSquareQuote, Settings, ShieldAlert, ShieldCheck, UserPlus, Users, Wallet, School } from "lucide-react";
+import { BarChart3, Eye, HeartHandshake, MessageCircle, Inbox, PhoneCall, Newspaper, Bell, Bug, Building2, CreditCard, CalendarDays, FileText, FolderTree, GraduationCap, History, LayoutDashboard, Mail, MessageCircleWarning, MessageSquareQuote, Settings, ShieldAlert, ShieldCheck, Flag, UserPlus, Users, Wallet, School } from "lucide-react";
 import { PanelShell } from "@/components/panel/panel-shell";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
@@ -9,7 +9,7 @@ export const instant = false;
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const user = await requireRole("ADMIN");
-  const [disputes, drafts, unread, applications, documents, centerApplications, openErrors, openReports, messagesToReview, lessonRequests, pendingInquiries, settings, liveMeetings, legacy] = await Promise.all([
+  const [disputes, drafts, unread, applications, documents, centerApplications, openErrors, openReports, messagesToReview, lessonRequests, pendingInquiries, settings, liveMeetings, legacy, userReports] = await Promise.all([
     db.booking.count({ where: { status: "DISPUTED" } }),
     db.teacherProfile.count({ where: { status: "DRAFT" } }),
     db.notification.count({ where: { userId: user.id, readAt: null } }),
@@ -24,6 +24,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     loadSettings(),
     db.coachMeeting.count({ where: { endedAt: null } }),
     adminLegacyUsage(),
+    db.contentReport.count({ where: { status: "OPEN" } }),
   ]);
   // Randevu ve ödeme kapalıyken eski modelin bölümleri yalnızca içinde kayıt varsa görünür
   const open = settings.lessonBookingEnabled;
@@ -45,6 +46,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         { href: "/yonetim/canli-gorusmeler", label: "Canlı görüşmeler", icon: <Eye />, badge: liveMeetings || undefined },
         ...(show(legacy.bookings > 0) ? [{ href: "/yonetim/randevular", label: "Randevular", icon: <CalendarDays />, badge: disputes || undefined }] : []),
         { href: "/yonetim/mesajlar", label: "Mesaj denetimi", icon: <MessageCircleWarning />, badge: messagesToReview || undefined },
+        { href: "/yonetim/sikayetler", label: "Kullanıcı bildirimleri", icon: <Flag />, badge: userReports || undefined },
         ...(show(legacy.reports > 0) ? [{ href: "/yonetim/ders-bildirimleri", label: "Ders bildirimleri", icon: <ShieldAlert />, badge: openReports || undefined }] : []),
         ...((open && settings.groupsEnabled) || legacy.groups > 0 ? [{ href: "/yonetim/grup-dersleri", label: "Grup dersleri", icon: <Users /> }] : []),
         ...(show(legacy.ledger > 0) ? [{ href: "/yonetim/finans", label: "Finans", icon: <Wallet /> }] : []),

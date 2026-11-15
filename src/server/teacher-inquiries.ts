@@ -9,6 +9,7 @@ import { coachPlan } from "@/lib/pi-koc";
 import { nextStudentNumber } from "./center/students";
 import { addCoachToUser } from "./koc-signup";
 import { coachSeatProblem } from "./koc-seats";
+import { isBlockedBetween } from "./safety";
 
 // Vitrinden öğretmene doğrudan ders talebi (2026-11-12 modeli): platform ödemeye aracılık etmez. Veli talebi
 // gönderir; öğretmen kabul edince velinin telefonunu görür ve ücret, saat gibi ayrıntıları veliyle kendisi konuşur.
@@ -55,6 +56,7 @@ export async function submitInquiry(input: InquiryInput, requester: { id: string
   });
   if (!teacher || teacher.status !== "PUBLISHED" || teacher.user.status !== "ACTIVE") throw new InquiryError("Bu öğretmen şu an talep kabul etmiyor.");
   if (teacher.userId === requester.id) throw new InquiryError("Kendinize talep gönderemezsiniz.");
+  if (await isBlockedBetween(requester.id, teacher.userId)) throw new InquiryError("Bu öğretmene talep gönderilemiyor.");
   if ((await countRecentAttempts(`inquiry:${requester.id}`, 86_400_000)) >= DAILY_LIMIT) {
     throw new InquiryError("Bugün çok fazla talep gönderdiniz. Öğretmenlerin dönüşünü bekleyin ya da yarın tekrar deneyin.");
   }

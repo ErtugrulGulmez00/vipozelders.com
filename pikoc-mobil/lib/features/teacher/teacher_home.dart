@@ -66,13 +66,15 @@ class _InquiriesScreenState extends State<InquiriesScreen> {
     await next.catchError((_) => <String, dynamic>{});
   }
 
-  Future<void> _act(String id, String action) async {
+  Future<void> _act(String id, String action, [Map<String, Object?> extra = const {}]) async {
     if (action == 'decline' && !await confirm(context, 'Talep geri çevrilsin mi? Veliye nazikçe haber verilir.', ok: 'Geri çevir')) return;
+    if (!mounted) return;
+    if (action == 'block' && !await confirm(context, 'Bu veli engellensin mi? Size artık mesaj ve ders talebi gönderemez; engeli istediğiniz zaman kaldırabilirsiniz.', ok: 'Engelle')) return;
     if (!mounted) return;
     setState(() => _busy = id);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      final res = await SessionScope.read(context).api.post('/ogretmen/ders-talepleri/$id', {'action': action});
+      final res = await SessionScope.read(context).api.post('/ogretmen/ders-talepleri/$id', {'action': action, ...extra});
       messenger.showSnackBar(SnackBar(content: Text(res.str('message'))));
       await _reload();
     } catch (e) {
@@ -80,6 +82,13 @@ class _InquiriesScreenState extends State<InquiriesScreen> {
     } finally {
       if (mounted) setState(() => _busy = null);
     }
+  }
+
+  /// Bildir: neden seçilir, isterse kısa açıklama yazılır; Pi Kampüs ekibine gider.
+  Future<void> _report(String id) async {
+    final result = await showModalBottomSheet<(String, String)>(context: context, isScrollControlled: true, showDragHandle: true, builder: (_) => const _ReportSheet());
+    if (result == null) return;
+    await _act(id, 'report', {'reason': result.$1, if (result.$2.isNotEmpty) 'note': result.$2});
   }
 
   @override
@@ -102,7 +111,7 @@ class _InquiriesScreenState extends State<InquiriesScreen> {
               if (items.isEmpty)
                 const Padding(padding: EdgeInsets.only(top: 40), child: EmptyNote('Henüz ders talebi yok. Veliler profilinizden talep gönderdiğinde burada görünür.'))
               else
-                for (final q in items) _InquiryCard(q: q, busy: _busy == q.str('id'), onAct: (a) => _act(q.str('id'), a), onKoc: hasCoach ? () => session.switchView(AppView.coach) : null),
+                for (final q in items) _InquiryCard(q: q, busy: _busy == q.str('id'), onAct: (a) => a == 'report' ? _report(q.str('id')) : _act(q.str('id'), a), onKoc: hasCoach ? () => session.switchView(AppView.coach) : null),
             ],
           ),
         );
@@ -177,7 +186,22 @@ class _InquiryCard extends StatelessWidget {
           Row(children: [
             Expanded(child: Text(q.strOrNull('lessonName') ?? 'Ders belirtilmedi', style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800))),
             Pill(label, tone: tone),
+            if (q.flag('canReport'))
+              PopupMenuButton<String>(
+                key: Key('inquiry-menu-${q.str('id')}'),
+                tooltip: 'Bildir ya da engelle',
+                icon: const Icon(Icons.more_vert_rounded),
+                onSelected: onAct,
+                itemBuilder: (_) => [
+                  const PopupMenuItem(value: 'report', child: ListTile(leading: Icon(Icons.flag_outlined), title: Text('Bildir'), contentPadding: EdgeInsets.zero)),
+                  PopupMenuItem(
+                    value: q.flag('blocked') ? 'unblock' : 'block',
+                    child: ListTile(leading: const Icon(Icons.block_rounded), title: Text(q.flag('blocked') ? 'Engeli kaldır' : 'Engelle'), contentPadding: EdgeInsets.zero),
+                  ),
+                ],
+              ),
           ]),
+          if (q.flag('blocked')) const Padding(padding: EdgeInsets.only(top: 4), child: Text('Bu veliyi engellediniz.', style: TextStyle(fontSize: 12, color: Brand.ink500))),
           if (who.isNotEmpty) Text(who, style: theme.textTheme.bodyMedium),
           Text([created.length >= 10 ? dayMonth(created.substring(0, 10)) : null, q.strOrNull('modeLabel')].whereType<String>().join(' · '), style: theme.textTheme.bodySmall),
           if (q.strOrNull('preferredTimes') != null) ...[const SizedBox(height: 8), Text('Uygun saatler: ${q.str('preferredTimes')}')],
@@ -212,6 +236,56 @@ class _InquiryCard extends StatelessWidget {
             else
               TextButton(onPressed: busy ? null : () => onAct('koc'), style: TextButton.styleFrom(padding: EdgeInsets.zero), child: const Text("Pi Koç'a ekle")),
           ],
+        ]),
+      ),
+    );
+  }
+}
+
+/// Bildirim nedeni seçimi (sitedeki "Bildir" ile aynı nedenler)
+class _ReportSheet extends StatefulWidget {
+  const _ReportSheet();
+
+  @override
+  State<_ReportSheet> createState() => _ReportSheetState();
+}
+
+class _ReportSheetState extends State<_ReportSheet> {
+  static const _reasons = [
+    ('taciz', 'Taciz, hakaret ya da tehdit'),
+    ('uygunsuz', 'Uygunsuz ya da müstehcen içerik'),
+    ('dolandiricilik', 'Dolandırıcılık ya da sahte hesap'),
+    ('platform-disi', 'Platform dışına yönlendirme / ödeme isteme'),
+    ('spam', 'İstenmeyen mesaj (spam)'),
+    ('diger', 'Diğer'),
+  ];
+  String? _reason;
+  final _note = TextEditingController();
+
+  @override
+  void dispose() {
+    _note.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(20, 0, 20, 20 + MediaQuery.viewInsetsOf(context).bottom),
+      child: SingleChildScrollView(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, mainAxisSize: MainAxisSize.min, children: [
+          Text('Pi Kampüs ekibine bildir', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 4),
+          const Text('Bildiriminizi ekibimiz inceler; veliye kimin bildirdiği söylenmez.', style: TextStyle(color: Brand.ink500)),
+          const SizedBox(height: 8),
+          RadioGroup<String>(
+            groupValue: _reason,
+            onChanged: (v) => setState(() => _reason = v),
+            child: Column(children: [for (final (key, label) in _reasons) RadioListTile<String>(value: key, title: Text(label), contentPadding: EdgeInsets.zero)]),
+          ),
+          TextField(controller: _note, maxLength: 1000, maxLines: 2, decoration: const InputDecoration(hintText: 'İsterseniz kısaca anlatın (zorunlu değil)')),
+          const SizedBox(height: 8),
+          FilledButton(onPressed: _reason == null ? null : () => Navigator.of(context).pop((_reason!, _note.text.trim())), child: const Text('Bildirimi gönder')),
         ]),
       ),
     );

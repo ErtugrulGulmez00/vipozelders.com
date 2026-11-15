@@ -1,5 +1,6 @@
 import { maskContacts } from "@/lib/text";
 import { db } from "./db";
+import { hasBlocked, isBlockedBetween } from "./safety";
 import { notify, notifyRole } from "./notifications";
 
 // Veli/öğrenci ile öğretmen arasında mesajlaşma (randevu öncesi soru, ders sonrası takip).
@@ -51,6 +52,7 @@ export async function messageTeacher(studentId: string, teacherId: string, text:
   const teacher = await db.teacherProfile.findUnique({ where: { userId: teacherId }, select: { status: true, user: { select: { status: true } } } });
   if (!teacher || teacher.status !== "PUBLISHED" || teacher.user.status !== "ACTIVE") throw new MessageError("Bu öğretmene şu an mesaj gönderilemiyor.");
   if (teacherId === studentId) throw new MessageError("Kendinize mesaj gönderemezsiniz.");
+  if (await isBlockedBetween(studentId, teacherId)) throw new MessageError("Bu öğretmene mesaj gönderilemiyor.");
   const thread = await getOrCreateThread(studentId, teacherId, now);
   await sendMessage(thread.id, { id: studentId, role: "STUDENT" }, text, now);
   return thread;
@@ -59,6 +61,9 @@ export async function messageTeacher(studentId: string, teacherId: string, text:
 export async function sendMessage(threadId: string, sender: Sender, text: string, now = new Date()) {
   const thread = await db.messageThread.findUnique({ where: { id: threadId } });
   if (!thread || (thread.studentId !== sender.id && thread.teacherId !== sender.id)) throw new MessageError("Konuşma bulunamadı.");
+  if (await isBlockedBetween(thread.studentId, thread.teacherId)) {
+    throw new MessageError((await hasBlocked(sender.id, sender.id === thread.studentId ? thread.teacherId : thread.studentId)) ? "Bu kişiyi engellediniz; yazmak için önce engeli kaldırın." : "Bu kişiye mesaj gönderilemiyor.");
+  }
   const raw = text.trim();
   if (raw.length < 2) throw new MessageError("Mesajınızı yazın.");
   if (raw.length > MAX_LENGTH) throw new MessageError(`Mesaj en fazla ${MAX_LENGTH} karakter olabilir.`);

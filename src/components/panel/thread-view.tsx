@@ -46,11 +46,12 @@ export function ThreadList({ threads, viewer, basePath }: { threads: ThreadRow[]
   );
 }
 
-export function ThreadView({ thread, viewerId, viewer, action }: { thread: Thread; viewerId: string; viewer: "student" | "teacher"; action?: React.ReactNode }) {
+export function ThreadView({ thread, viewerId, viewer, action, safety, closedNote }: { thread: Thread; viewerId: string; viewer: "student" | "teacher"; action?: React.ReactNode; safety?: React.ReactNode; closedNote?: string | null }) {
   return (
     <Card>
       <CardHeader title={threadTitle(thread, viewer)} action={action} />
       <CardBody className="space-y-4">
+        {safety}
         <ol className="space-y-2">
           {thread.messages.map((m) => {
             const mine = m.authorId === viewerId;
@@ -64,7 +65,7 @@ export function ThreadView({ thread, viewerId, viewer, action }: { thread: Threa
             );
           })}
         </ol>
-        <MessageForm threadId={thread.id} />
+        {closedNote ? <p className="rounded-xl bg-slate-100 px-4 py-3 text-sm text-slate-600">{closedNote}</p> : <MessageForm threadId={thread.id} />}
       </CardBody>
     </Card>
   );

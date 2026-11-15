@@ -2,6 +2,8 @@ import { Inbox, MessageCircle, Phone, Video } from "lucide-react";
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { AddToCoachButton, InquiryActions } from "@/components/panel/inquiry-actions";
+import { SafetyMenu } from "@/components/panel/safety-menu";
+import { db } from "@/server/db";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui/primitives";
 import { formatCompact } from "@/lib/dates";
 import { requireRole } from "@/server/auth/current-user";
@@ -21,6 +23,7 @@ export default async function TeacherInquiriesPage() {
   const user = await requireRole("TEACHER");
   await connection();
   const items = await teacherInquiries(user.id);
+  const blocked = new Set((await db.userBlock.findMany({ where: { blockerId: user.id }, select: { blockedId: true } })).map((b) => b.blockedId));
   return (
     <>
       <PageHeader
@@ -87,6 +90,11 @@ export default async function TeacherInquiriesPage() {
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
                     <p className="text-xs text-slate-500">Kabul edince velinin adı ve telefonu görünür, öğrenci Pi Koç&apos;unuza eklenir.</p>
                     <InquiryActions inquiryId={q.id} />
+                  </div>
+                ) : null}
+                {q.requesterId ? (
+                  <div className="mt-3 border-t border-slate-100 pt-2">
+                    <SafetyMenu targetUserId={q.requesterId} targetName={q.status === "ACCEPTED" ? q.name : "Bu veli"} kind="inquiry" refId={q.id} blocked={blocked.has(q.requesterId)} />
                   </div>
                 ) : null}
               </Card>
