@@ -3,6 +3,8 @@ import { computeNet } from "@/lib/center/exams";
 import { aliasKey, matchStudents, type MatchCandidate, type StudentMatch } from "@/lib/center/exam-match";
 import { parseResultPdf, type PdfExam } from "@/lib/center/exam-pdf";
 import { collapseAggregateSections } from "@/lib/center/exam-pdf-aggregate";
+import { parseAkbimPdf } from "@/lib/center/exam-pdf-akbim";
+import { applyExamType, expectedStructure, type PdfExamType } from "@/lib/center/exam-pdf-type";
 import { dateStringToDbDate } from "@/lib/dates";
 import { normalizeSearch } from "@/lib/text";
 import { db } from "../db";
@@ -46,7 +48,7 @@ async function keepUnknownPdf(ctx: CenterContext, file: File) {
   }
 }
 
-export async function createPdfImport(ctx: CenterContext, file: File | null): Promise<string> {
+export async function createPdfImport(ctx: CenterContext, file: File | null, type: PdfExamType | null = null): Promise<string> {
   if (!(file instanceof File) || file.size === 0) throw new CenterError("Sonuç PDF'ini seçin.", { file: "Dosya gerekli." });
   if (file.size > MAX_BYTES) throw new CenterError("PDF en fazla 25 MB olabilir.");
   const bytes = new Uint8Array(await file.arrayBuffer());
@@ -59,19 +61,21 @@ export async function createPdfImport(ctx: CenterContext, file: File | null): Pr
   }
   if (!pages.some((p) => p.length)) throw new CenterError("PDF'te okunabilir yazı yok (taranmış/fotoğraf PDF). Yayınevi sisteminden indirilen orijinal PDF'i yükleyin.");
   let exams = parseResultPdf(pages).exams;
+  // Akbim ODS sonuç belgesi (YÜZ TÖDER vb.): yapay zekâya gerek kalmadan kesin okunur
+  if (!exams.length) exams = parseAkbimPdf(pages);
   if (!exams.length) {
     // Tanınmayan biçim: PDF bize kalır (yeni okuyucu yazmak için), yapay zekâ açıksa hemen okunur
     await keepUnknownPdf(ctx, file);
     if (examPdfAiEnabled()) {
       const students = (await candidatesFor(ctx.center.id)).map((s) => ({ id: s.id, firstName: s.firstName, lastName: s.lastName }));
-      exams = (await readExamPdfWithAi(pages, students)).exams;
+      exams = (await readExamPdfWithAi(pages, students, type ? expectedStructure(type) : null)).exams;
     }
     if (!exams.length) {
       throw new CenterError("Bu PDF'in biçimi henüz tanınmıyor. Dosyanız bize ulaştı; birkaç gün içinde okunur hâle getireceğiz. Acilse sonuçları Excel ile aktarabilirsiniz.");
     }
   }
   // Yayınevinin toplam sütunları (TYT Sosyal, TYT Matematik…) ayrı ders sayılmaz
-  exams = exams.map(collapseAggregateSections);
+  exams = exams.map(collapseAggregateSections).map((e) => applyExamType(e, type));
   const data: PdfImportData = {
     exams: exams.map((e) => ({ ...e, sections: e.sections.map((s) => ({ ...s, topics: s.topics.map(cleanTopic) })) })),
   };

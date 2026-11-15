@@ -1,5 +1,6 @@
 "use server";
 
+import { parsePdfExamType } from "@/lib/center/exam-pdf-type";
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { failure, success, type ActionState } from "@/lib/action-state";
@@ -227,7 +228,9 @@ export async function uploadExamPdfAction(_: ActionState, formData: FormData): P
   if (locked) return locked;
   let draftId = "";
   const result = await guard(async () => {
-    draftId = await createPdfImport(auth.ctx, formData.get("file") as File | null);
+    const type = parsePdfExamType(formData.get("examType"));
+    if (!type) throw new CenterError("Deneme türünü seçin.", { examType: "Seçin." });
+    draftId = await createPdfImport(auth.ctx, formData.get("file") as File | null, type);
     return success();
   });
   if (!result.ok) return result;

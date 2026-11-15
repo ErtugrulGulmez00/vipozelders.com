@@ -1,6 +1,6 @@
 // Deneme sınavı kuralları: hazır şablonlar, net hesabı, cevap anahtarıyla okuma, konu analizi ve sıralama.
 
-export type ExamKindName = "LGS" | "TYT" | "AYT_SAY" | "AYT_EA" | "AYT_SOZ" | "YDT" | "CUSTOM";
+export type ExamKindName = "LGS" | "TYT" | "AYT_SAY" | "AYT_EA" | "AYT_SOZ" | "YDT" | "KPSS" | "CUSTOM";
 
 export type SectionPreset = { name: string; questionCount: number; subjectSlug: string | null };
 
@@ -79,6 +79,20 @@ export const EXAM_PRESETS: Record<ExamKindName, ExamPreset> = {
     wrongPenalty: 0.25,
     levelSlug: "yks",
     sections: [{ name: "Yabancı Dil", questionCount: 80, subjectSlug: "ingilizce" }],
+  },
+  // KPSS Genel Yetenek + Genel Kültür (lisans, ön lisans, ortaöğretim): 120 soru, 4 yanlış 1 doğruyu götürür
+  KPSS: {
+    label: "KPSS (GY-GK)",
+    wrongPenalty: 0.25,
+    levelSlug: null,
+    sections: [
+      { name: "Türkçe", questionCount: 30, subjectSlug: "turkce" },
+      { name: "Matematik", questionCount: 30, subjectSlug: "matematik" },
+      { name: "Tarih", questionCount: 27, subjectSlug: "tarih" },
+      { name: "Coğrafya", questionCount: 18, subjectSlug: "cografya" },
+      { name: "Vatandaşlık", questionCount: 9, subjectSlug: null },
+      { name: "Güncel Bilgiler", questionCount: 6, subjectSlug: null },
+    ],
   },
   CUSTOM: { label: "Serbest deneme / yazılı", wrongPenalty: 0, levelSlug: null, sections: [] },
 };

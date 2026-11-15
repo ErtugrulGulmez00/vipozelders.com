@@ -45,7 +45,7 @@ import { WEEKDAY_NAMES } from "@/lib/dates";
 
 export const GRADES = ["5. sınıf", "6. sınıf", "7. sınıf", "8. sınıf", "9. sınıf", "10. sınıf", "11. sınıf", "12. sınıf", "Mezun"];
 export const TARGETS = ["LGS", "YKS (Sayısal)", "YKS (Eşit Ağırlık)", "YKS (Sözel)", "YKS (Dil)", "Okul başarısı"];
-const KINDS: ExamKindName[] = ["LGS", "TYT", "AYT_SAY", "AYT_EA", "AYT_SOZ", "YDT"];
+const KINDS: ExamKindName[] = ["LGS", "TYT", "AYT_SAY", "AYT_EA", "AYT_SOZ", "YDT", "KPSS"];
 
 export type KocStudentValues = {
   id?: string;

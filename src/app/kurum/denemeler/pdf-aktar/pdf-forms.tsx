@@ -3,9 +3,10 @@
 import { DateInput } from "@/components/ui/date-input";
 import { useMemo, useState } from "react";
 import { confirmExamPdfAction, discardExamPdfAction, uploadExamPdfAction } from "@/actions/center/exams";
-import { ActionForm, SubmitButton } from "@/components/forms/action-form";
+import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
 import { FileInput } from "@/components/ui/file-input";
-import { Checkbox, Field, Input } from "@/components/ui/form";
+import { Checkbox, Field, Input, Select } from "@/components/ui/form";
+import { PDF_EXAM_TYPES } from "@/lib/center/exam-pdf-type";
 import { Badge, type Tone } from "@/components/ui/primitives";
 import type { MatchConfidence } from "@/lib/center/exam-match";
 import type { StudentCard } from "@/lib/center/exam-pdf-card";
@@ -14,6 +15,19 @@ import { StudentCardDialog } from "./student-card";
 export function PdfUploadForm() {
   return (
     <ActionForm action={uploadExamPdfAction} className="space-y-4">
+      <Field label="Deneme türü" hint="Sistem bu türün ders yapısını bekler; tutmayan sonuçları aktarmadan önce işaretler." htmlFor="pdf-exam-type">
+        <Select id="pdf-exam-type" name="examType" required defaultValue="">
+          <option value="" disabled>
+            Seçin
+          </option>
+          {PDF_EXAM_TYPES.map((t) => (
+            <option key={t.value} value={t.value}>
+              {t.label}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      <FieldError name="examType" />
       <FileInput name="file" accept=".pdf,application/pdf" maxMb={25} placeholder="Sonuç PDF’ini seçin" required />
       <SubmitButton size="lg" pendingText="PDF okunuyor (bir dakikayı bulabilir)…">
         PDF’i oku

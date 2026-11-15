@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { foldTurkish } from "@/lib/text";
-import { detectKind, guessSubject, inferPenalty, type PdfExam, type PdfExamSection, type PdfItem, type PdfStudent, type PdfStudentSection } from "./exam-pdf";
-import { computeNet, EXAM_PRESETS } from "./exams";
+import { assignTopics, detectKind, guessSubject, inferPenalty, type PdfExam, type PdfExamSection, type PdfItem, type PdfStudent, type PdfStudentSection } from "./exam-pdf";
+import { computeNet, EXAM_PRESETS, gradeAnswers } from "./exams";
 
 // Tanınmayan sonuç PDF'ini yapay zekâyla okumanın saf kısmı: sayfaları satır metnine çevirme, kurumdaki öğrenci
 // adlarını kodlama (ad yapay zekâya gitmez), yanıtı ayrıştırma, denemeleri birleştirme ve tutarlılık denetimi.
@@ -152,16 +152,20 @@ Kurallar:
 - Öğrencinin girmediği ya da raporda olmayan ders için null yaz; uydurma.
 - Cevap anahtarı ve öğrencinin şıkları metinde varsa ders başına soru sırasıyla tek dize yaz (ör. "ABCDA..."; boş soru "-").
 - Soru soru kazanım/konu listesi varsa ders başına soru sayısı uzunluğunda dizi yaz (konusu yazılmayan soru ""), yoksa [].
+- Kazanımlar soru soru değil de "konu adı · soru sayısı · doğru · yanlış" tablosu olarak verilmişse: derste "topicTable" alanına konuları sırasıyla [{"name":"konu","questionCount":3}] yaz; her öğrencinin o derste "topicResults" alanına aynı sırayla [{"correct":2,"wrong":1}] yaz. Tablo yoksa bu alanları yazma.
+- Raporda alt dersler ve onların toplamı birlikte yazıyorsa (ör. Tarih, Coğrafya, Felsefe, Din ve "TYT Sosyal") toplam sütununu ayrı ders olarak yazma.
 - "score" yalnızca raporda puan (ör. LGS puanı, TYT puanı) yazıyorsa doldurulur; toplam neti puan olarak yazma.
 - Sıralamalar (sınıf, kurum, il, genel) varsa yaz; yoksa boş bırak.
 - Rapor birden çok deneme içeriyorsa her birini ayrı yaz.
 
 Şema:
-{"exams":[{"name":"deneme adı","institution":"kurum/okul adı ya da boş","sections":[{"name":"ders adı","questionCount":20,"answerKey":null,"topics":[]}],"students":[{"name":"OGR1","number":"öğrenci no ya da boş","className":"şube ya da boş","score":null,"ranks":[{"label":"Sınıf","rank":3,"of":40}],"sections":[{"correct":15,"wrong":3,"net":14,"answers":null}]}]}]}`;
+{"exams":[{"name":"deneme adı","institution":"kurum/okul adı ya da boş","sections":[{"name":"ders adı","questionCount":20,"answerKey":null,"topics":[],"topicTable":[]}],"students":[{"name":"OGR1","number":"öğrenci no ya da boş","className":"şube ya da boş","score":null,"ranks":[{"label":"Sınıf","rank":3,"of":40}],"sections":[{"correct":15,"wrong":3,"net":14,"answers":null,"topicResults":[]}]}]}]}`;
 
-export function aiPrompt(text: string, part: { index: number; total: number }): string {
+/** expected: kurumun seçtiği deneme türü ve beklenen ders yapısı (ör. "TYT: Türkçe 40, Sosyal Bilimler 20, ...") */
+export function aiPrompt(text: string, part: { index: number; total: number }, expected?: string | null): string {
   const head = part.total > 1 ? `Bu metin raporun ${part.index}/${part.total}. parçası; yalnızca bu parçadaki öğrencileri yaz, deneme ve ders bilgisini her parçada tekrar yaz.\n\n` : "";
-  return `${head}RAPOR METNİ:\n${text}`;
+  const hint = expected ? `Kurumun bildirdiği deneme türü ve beklenen dersler: ${expected}. Ders adları farklı yazılmış olabilir; raporda ne yazıyorsa onu oku.\n\n` : "";
+  return `${head}${hint}RAPOR METNİ:\n${text}`;
 }
 
 // ——— Yanıt ———
@@ -170,7 +174,8 @@ const num = z.preprocess((v) => (typeof v === "string" ? Number(v.replace(",", "
 const numOrNull = z.preprocess((v) => (v === "" || v === undefined ? null : v), num.nullable());
 const str = z.preprocess((v) => (v === null || v === undefined ? "" : String(v)), z.string());
 
-const aiSection = z.object({ correct: num, wrong: num, net: numOrNull, answers: z.string().nullish() }).nullable();
+const aiTopicResult = z.object({ correct: num, wrong: num });
+const aiSection = z.object({ correct: num, wrong: num, net: numOrNull, answers: z.string().nullish(), topicResults: z.array(aiTopicResult).nullish().catch(null) }).nullable();
 const aiStudent = z.object({
   name: str,
   number: str.optional(),
@@ -182,7 +187,7 @@ const aiStudent = z.object({
 const aiExam = z.object({
   name: str,
   institution: str.optional(),
-  sections: z.array(z.object({ name: str, questionCount: num, answerKey: z.string().nullish(), topics: z.array(str).optional() })).min(1),
+  sections: z.array(z.object({ name: str, questionCount: num, answerKey: z.string().nullish(), topics: z.array(str).optional(), topicTable: z.array(z.object({ name: str, questionCount: num })).nullish().catch(null) })).min(1),
   students: z.array(aiStudent.nullable().catch(null)),
 });
 const aiResponse = z.object({ exams: z.array(aiExam) });
@@ -226,6 +231,8 @@ export function buildExams(parts: AiExam[][], codes: Map<string, string>): PdfEx
     const baseKeys = base.sections.map((s) => key(s.name));
 
     const students: PdfStudent[] = [];
+    // Kazanım tablosu (konu · soru sayısı · doğru · yanlış): öğrenci başına konu sonuçları, sorulara eşlemek için
+    const topicResults: ({ correct: number; wrong: number }[] | null)[][] = [];
     for (const exam of list) {
       const own = exam.sections.map((s) => key(s.name));
       // Parçadaki ders sırası farklıysa adla eşlenir; ad tutmazsa (aynı sayıda ders varsa) sırayla
@@ -244,6 +251,13 @@ export function buildExams(parts: AiExam[][], codes: Map<string, string>): PdfEx
           return { correct: s.correct, wrong: s.wrong, net: round2(net), answers: cleanAnswers(s.answers, Math.round(section.questionCount)) };
         });
         if (!sections.some(Boolean)) continue;
+        topicResults.push(
+          base.sections.map((_, i) => {
+            const j = indexOf(i);
+            const r = j >= 0 ? st.sections[j]?.topicResults : null;
+            return r?.length ? r.map((x) => ({ correct: Math.round(x.correct), wrong: Math.round(x.wrong) })) : null;
+          }),
+        );
         students.push({
           name: decodeName(st.name, codes),
           number: (st.number ?? "").trim(),
@@ -260,12 +274,24 @@ export function buildExams(parts: AiExam[][], codes: Map<string, string>): PdfEx
     const sections: PdfExamSection[] = base.sections.map((s, i) => {
       const questionCount = counts[i];
       const presetSection = kind !== "CUSTOM" ? preset.sections[i] : null;
-      const topics = s.topics?.length === questionCount ? s.topics.map((t) => t.trim()) : [];
+      let topics = s.topics?.length === questionCount ? s.topics.map((t) => t.trim()) : [];
+      const answerKey = cleanAnswers(s.answerKey, questionCount);
+      // Kazanım tablosu: öğrencilerin cevaplarıyla tutarlı soru → konu eşlemesi
+      const table = (s.topicTable ?? []).map((t) => ({ name: t.name.trim(), size: Math.round(t.questionCount) })).filter((t) => t.name && t.size > 0);
+      if (!topics.some(Boolean) && table.length && answerKey && table.reduce((t, x) => t + x.size, 0) === questionCount) {
+        const constraint = students.flatMap((st, si) => {
+          const sec = st.sections[i];
+          const res = topicResults[si]?.[i];
+          const answers = sec ? cleanAnswers(sec.answers, questionCount) : null;
+          return answers && res && res.length === table.length ? [{ outcomes: gradeAnswers(answerKey, answers).outcomes, d: res.map((x) => x.correct), y: res.map((x) => x.wrong) }] : [];
+        });
+        if (constraint.length) topics = assignTopics(questionCount, { names: table.map((t) => t.name), sizes: table.map((t) => t.size), students: constraint }) ?? [];
+      }
       return {
         label: s.name,
         name: presetSection?.name ?? s.name,
         questionCount,
-        answerKey: cleanAnswers(s.answerKey, questionCount),
+        answerKey,
         topics: topics.some(Boolean) ? topics : [],
         subjectSlug: presetSection?.subjectSlug ?? guessSubject(s.name),
       };

@@ -1012,6 +1012,7 @@ enum ExamKind {
   AYT_EA
   AYT_SOZ
   YDT
+  KPSS
   CUSTOM
 }
 

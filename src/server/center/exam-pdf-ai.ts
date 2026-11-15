@@ -23,9 +23,9 @@ function pdfModels(): string[] | undefined {
   return list.length ? list : undefined;
 }
 
-async function readPart(text: string, index: number, total: number): Promise<AiExam[] | null> {
+async function readPart(text: string, index: number, total: number, expected: string | null): Promise<AiExam[] | null> {
   for (let attempt = 0; attempt < 2; attempt++) {
-    const raw = await aiText({ system: AI_SYSTEM, prompt: aiPrompt(text, { index, total }), maxTokens: 12_000, timeoutMs: 120_000, modelList: pdfModels(), privateData: process.env.OPENROUTER_DENY_TRAINING === "1" });
+    const raw = await aiText({ system: AI_SYSTEM, prompt: aiPrompt(text, { index, total }, expected), maxTokens: 12_000, timeoutMs: 120_000, modelList: pdfModels(), privateData: process.env.OPENROUTER_DENY_TRAINING === "1" });
     const parsed = raw ? parseAiResponse(raw) : null;
     if (parsed) return parsed;
   }
@@ -34,7 +34,7 @@ async function readPart(text: string, index: number, total: number): Promise<AiE
 
 export type AiReadResult = { exams: PdfExam[]; failedParts: number; totalParts: number };
 
-export async function readExamPdfWithAi(pages: PdfItem[][], students: KnownStudent[]): Promise<AiReadResult> {
+export async function readExamPdfWithAi(pages: PdfItem[][], students: KnownStudent[], expected: string | null = null): Promise<AiReadResult> {
   const texts = pages.slice(0, MAX_PAGES).map(pageText);
   const codes = new Map<string, string>();
   const coded = texts.map((t) => codeNames(t, students, codes).text);
@@ -45,7 +45,7 @@ export async function readExamPdfWithAi(pages: PdfItem[][], students: KnownStude
     Array.from({ length: Math.min(PARALLEL, chunks.length) }, async () => {
       while (next < chunks.length) {
         const i = next++;
-        results[i] = await readPart(chunks[i], i + 1, chunks.length);
+        results[i] = await readPart(chunks[i], i + 1, chunks.length, expected);
       }
     }),
   );

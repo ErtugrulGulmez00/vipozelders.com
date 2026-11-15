@@ -12,7 +12,7 @@ import { targetPrograms } from "./placement";
 
 // Pi Koç: bireysel koçun öğrenci takibi. Veri kurum tablolarında tutulur (Center türü COACH); ekranlar /koc altındadır.
 
-export const KOC_EXAM_KINDS: ExamKindName[] = ["LGS", "TYT", "AYT_SAY", "AYT_EA", "AYT_SOZ", "YDT"];
+export const KOC_EXAM_KINDS: ExamKindName[] = ["LGS", "TYT", "AYT_SAY", "AYT_EA", "AYT_SOZ", "YDT", "KPSS"];
 
 /** Koçun öğrencisi mi? (yalnızca kendi hesabındaki öğrenci) */
 export async function kocStudentOrThrow(ctx: { center: { id: string } }, studentId: string) {
