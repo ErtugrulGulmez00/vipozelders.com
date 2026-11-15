@@ -1,10 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { addHallStudentsAction, createHallAction, deleteHallAction, saveHallDayAction, updateHallAction, updateHallStudentAction } from "@/actions/center/study-hall";
+import { addHallStudentsAction, createHallAction, deleteHallAction, updateHallAction, updateHallStudentAction } from "@/actions/center/study-hall";
 import { ActionForm, FieldError, SubmitButton } from "@/components/forms/action-form";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/form";
-import { cn } from "@/lib/cn";
 import { normalizeSearch } from "@/lib/text";
 
 const DEFAULT_PERIODS = "09:00-09:45\n10:00-10:45\n11:00-11:45\n13:00-13:45\n14:00-14:45\n15:00-15:45\n16:00-16:45\n18:00-18:45\n19:00-19:45\n20:00-20:45";
@@ -34,82 +33,6 @@ export function DeleteHallButton({ hallId }: { hallId: string }) {
       <SubmitButton size="sm" variant="ghost" className="text-rose-600" pendingText="…" confirmMessage="Salon ve tüm yoklama kayıtları silinsin mi?">
         Salonu sil
       </SubmitButton>
-    </ActionForm>
-  );
-}
-
-type Mark = "G" | "Y" | "-";
-const NEXT: Record<Mark, Mark> = { "-": "G", G: "Y", Y: "-" };
-const STYLE: Record<Mark, string> = { G: "bg-emerald-500 text-white", Y: "bg-rose-500 text-white", "-": "bg-slate-100 text-slate-400" };
-const LABEL: Record<Mark, string> = { G: "Geldi", Y: "Gelmedi", "-": "—" };
-
-/** Periyot tablosu: hücreye tıklayınca — → Geldi → Gelmedi döner; satır/sütun hızlı doldurma. */
-export function HallGrid({ hallId, date, periods, students }: { hallId: string; date: string; periods: string[]; students: { id: string; name: string; deskNo: string | null; marks: string }[] }) {
-  const [marks, setMarks] = useState<Record<string, Mark[]>>(() => Object.fromEntries(students.map((s) => [s.id, periods.map((_, i) => (s.marks[i] as Mark) ?? "-")])));
-  const set = (id: string, i: number, value: Mark) => setMarks((m) => ({ ...m, [id]: m[id].map((v, j) => (j === i ? value : v)) }));
-  const fillColumn = (i: number, value: Mark) => setMarks((m) => Object.fromEntries(Object.entries(m).map(([id, row]) => [id, row.map((v, j) => (j === i ? value : v))])));
-  const fillRow = (id: string, value: Mark) => setMarks((m) => ({ ...m, [id]: m[id].map(() => value) }));
-  return (
-    <ActionForm action={saveHallDayAction} className="space-y-3">
-      <input type="hidden" name="hallId" value={hallId} />
-      <input type="hidden" name="date" value={date} />
-      {students.map((s) => (
-        <span key={s.id}>
-          <input type="hidden" name="studentIds" value={s.id} />
-          <input type="hidden" name={`marks:${s.id}`} value={marks[s.id].join("")} />
-        </span>
-      ))}
-      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-        <table className="w-full text-xs">
-          <thead className="bg-slate-50 text-slate-600">
-            <tr>
-              <th className="sticky left-0 bg-slate-50 px-3 py-2 text-left font-medium">Öğrenci</th>
-              {periods.map((p, i) => (
-                <th key={p} className="px-1 py-2 text-center font-medium">
-                  <p>{i + 1}. periyot</p>
-                  <p className="font-normal text-slate-400">{p}</p>
-                  <button type="button" onClick={() => fillColumn(i, "G")} className="mt-1 rounded bg-white px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700 ring-1 ring-slate-200 hover:bg-emerald-50">
-                    Hepsi geldi
-                  </button>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {students.map((s) => (
-              <tr key={s.id}>
-                <td className="sticky left-0 whitespace-nowrap bg-white px-3 py-1.5">
-                  <p className="font-semibold text-slate-900">{s.name}</p>
-                  <p className="text-[11px] text-slate-500">
-                    {s.deskNo ? `Masa ${s.deskNo} · ` : ""}
-                    <button type="button" className="font-semibold text-emerald-700 hover:underline" onClick={() => fillRow(s.id, "G")}>
-                      gün boyu geldi
-                    </button>
-                    {" · "}
-                    <button type="button" className="font-semibold text-rose-700 hover:underline" onClick={() => fillRow(s.id, "Y")}>
-                      gelmedi
-                    </button>
-                  </p>
-                </td>
-                {periods.map((p, i) => {
-                  const value = marks[s.id][i];
-                  return (
-                    <td key={p} className="px-1 py-1.5 text-center">
-                      <button type="button" onClick={() => set(s.id, i, NEXT[value])} className={cn("h-7 w-16 rounded-md font-semibold", STYLE[value])} aria-label={`${s.name} ${i + 1}. periyot: ${LABEL[value]}`}>
-                        {LABEL[value]}
-                      </button>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Checkbox name="notify" label="Gün boyu hiç gelmeyenlerin velisine bildirim gönder (her gün bir kez)" />
-        <SubmitButton size="lg">Salon yoklamasını kaydet</SubmitButton>
-      </div>
     </ActionForm>
   );
 }

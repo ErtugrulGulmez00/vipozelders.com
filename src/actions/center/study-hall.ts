@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { success, type ActionState } from "@/lib/action-state";
 import { centerAction, centerAudit } from "@/server/center/context";
 import { bool, date, guard, list, opt, requiredText, str } from "@/server/center/form";
-import { addHallStudents, createHall, deleteHall, parsePeriods, saveHallDay, updateHall, updateHallStudent } from "@/server/center/study-hall";
+import { addHallStudents, createHall, quickCreateHall, deleteHall, parsePeriods, saveHallDay, updateHall, updateHallStudent } from "@/server/center/study-hall";
 
 export async function createHallAction(_: ActionState, formData: FormData): Promise<ActionState> {
   const auth = await centerAction("attendance.take", { module: "calisma-salonu" });
@@ -17,6 +17,18 @@ export async function createHallAction(_: ActionState, formData: FormData): Prom
   });
   if (!result.ok) return result;
   redirect(`/kurum/calisma-salonu/${id}?durum=salon-eklendi`);
+}
+
+export async function quickCreateHallAction(_: ActionState, formData: FormData): Promise<ActionState> {
+  const auth = await centerAction("attendance.take", { module: "calisma-salonu" });
+  if (!auth.ok) return auth.state;
+  let id = "";
+  const result = await guard(async () => {
+    id = (await quickCreateHall(auth.ctx, bool(formData, "addAll"))).id;
+    return success();
+  });
+  if (!result.ok) return result;
+  redirect(`/kurum/calisma-salonu/${id}?durum=salon-kuruldu`);
 }
 
 export async function updateHallAction(_: ActionState, formData: FormData): Promise<ActionState> {

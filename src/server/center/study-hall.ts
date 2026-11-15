@@ -41,6 +41,31 @@ export async function getHallOrThrow(ctx: CenterContext, hallId: string) {
   return hall;
 }
 
+export const DEFAULT_HALL_PERIODS = ["09:00-09:45", "10:00-10:45", "11:00-11:45", "13:00-13:45", "14:00-14:45", "15:00-15:45", "16:00-16:45", "18:00-18:45", "19:00-19:45", "20:00-20:45"];
+
+/** Tek tıkla salon: hazır periyotlar, istenirse tüm aktif öğrenciler eklenir; ad yazdırılmaz. */
+export async function quickCreateHall(ctx: CenterContext, addAll: boolean) {
+  const count = await db.centerStudyHall.count({ where: { centerId: ctx.center.id } });
+  const hall = await db.centerStudyHall.create({ data: { centerId: ctx.center.id, name: count ? `Çalışma salonu ${count + 1}` : "Çalışma salonu", periods: DEFAULT_HALL_PERIODS } });
+  if (addAll) {
+    const students = await db.centerStudent.findMany({ where: { centerId: ctx.center.id, status: "ACTIVE" }, select: { id: true } });
+    await db.centerHallStudent.createMany({ data: students.map((s) => ({ hallId: hall.id, studentId: s.id })), skipDuplicates: true });
+  }
+  return hall;
+}
+
+/** Tarih aralığındaki tüm işaretler: öğrenci → tarih → işaret dizisi (haftalık tablo ve gün şeridi). */
+export async function hallMarksBetween(hallId: string, from: string, to: string) {
+  const days = await db.centerHallDay.findMany({ where: { hallId, date: { gte: dateStringToDbDate(from), lte: dateStringToDbDate(to) } }, select: { studentId: true, date: true, marks: true } });
+  const map = new Map<string, Map<string, string>>();
+  for (const d of days) {
+    const row = map.get(d.studentId) ?? new Map<string, string>();
+    row.set(dbDateToString(d.date), d.marks);
+    map.set(d.studentId, row);
+  }
+  return map;
+}
+
 export async function createHall(ctx: CenterContext, input: { name: string; periods: string[] }) {
   return db.centerStudyHall.create({ data: { centerId: ctx.center.id, name: input.name, periods: input.periods } });
 }

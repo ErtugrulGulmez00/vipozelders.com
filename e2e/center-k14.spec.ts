@@ -94,7 +94,10 @@ test("öğrenci arama, koçluk, sınıf defteri, salon ve veli portalı", async 
   await sql(`UPDATE "Center" SET kind = 'ETUT' WHERE slug = 'basari-etut-merkezi'`);
 
   // Çalışma salonu: salon aç, 8-A'yı ekle, Ali 1. periyot geldi
-  await page.goto("/kurum/calisma-salonu");
+  await page.goto("/kurum/calisma-salonu?liste=1");
+  // Hiç salon yoksa elle kurulum formu katlanmış durur
+  const manual = page.getByText("Adını ve periyotlarını kendim yazmak istiyorum");
+  if (await manual.isVisible()) await manual.click();
   await page.getByLabel("Salon adı").fill(`E2e salon ${stamp}`);
   await page.getByLabel("Periyotlar").fill("09:00-09:45\n10:00-10:45");
   await page.getByRole("button", { name: "Salonu ekle" }).click();
@@ -104,8 +107,8 @@ test("öğrenci arama, koçluk, sınıf defteri, salon ve veli portalı", async 
   await page.getByRole("button", { name: "Salona ekle" }).click();
   await expect(page.getByText(/öğrenci salona eklendi/)).toBeVisible();
   await page.getByRole("link", { name: "Günlük yoklama" }).click();
-  await page.getByRole("button", { name: "Ali Demirtaş 1. periyot: —" }).click();
-  await page.getByRole("button", { name: "Salon yoklamasını kaydet" }).click();
+  await page.getByRole("button", { name: "Ali Demirtaş 09:00-09:45: İşaretlenmedi" }).click();
+  await page.getByRole("button", { name: "Yoklamayı kaydet" }).click();
   await expect(page.getByText("salon yoklaması kaydedildi", { exact: false })).toBeVisible();
   const [day] = await sql<{ marks: string }>(`SELECT d.marks FROM "CenterHallDay" d JOIN "CenterStudyHall" h ON h.id = d."hallId" WHERE h.name = $1 AND d."studentId" = $2`, [`E2e salon ${stamp}`, ali.id]);
   expect(day.marks).toBe("G-");
