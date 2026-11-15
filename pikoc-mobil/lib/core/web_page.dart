@@ -6,6 +6,7 @@ import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 
 import 'api.dart';
+import 'file_download.dart';
 import 'remote_config.dart';
 import 'session.dart';
 
@@ -82,7 +83,13 @@ class WebPanelState extends State<WebPanel> {
         onNavigationRequest: (request) {
           final uri = Uri.tryParse(request.url);
           // Site içi sayfalar burada; WhatsApp, telefon, e-posta ve başka siteler dışarıda açılır
-          if (uri != null && (uri.scheme == 'http' || uri.scheme == 'https') && (uri.host == _siteHost || uri.host.endsWith('.$_siteHost'))) {
+          final internal = uri != null && (uri.scheme == 'http' || uri.scheme == 'https') && (uri.host == _siteHost || uri.host.endsWith('.$_siteHost'));
+          // Kurumun paylaştığı dosya: web görünümü indiremez; uygulama oturum anahtarıyla indirip açar
+          if (internal && uri.host == _siteHost && uri.path.startsWith('/api/kurum/dosya/')) {
+            openRemoteFile(context, uri.replace(queryParameters: const {}).toString().replaceFirst(RegExp(r'\?$'), ''));
+            return NavigationDecision.prevent;
+          }
+          if (internal) {
             return NavigationDecision.navigate;
           }
           if (uri != null) launchUrl(uri, mode: LaunchMode.externalApplication);

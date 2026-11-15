@@ -8,6 +8,7 @@ import '../../core/theme.dart';
 import '../../core/widgets.dart';
 import '../account/account_screen.dart';
 import '../meeting/meeting_screen.dart';
+import '../shared/file_list.dart';
 import '../shared/student_views.dart';
 import 'forms.dart';
 import 'study_timer.dart';
@@ -177,6 +178,12 @@ class _TodayTabState extends State<_TodayTab> with _HomeData<_TodayTab> {
             subtitle: items.isEmpty ? null : '${items.where((i) => i.flag('done')).length}/${items.length} tamamlandı',
             child: TodayTasks(items: items, onToggle: toggle),
           ),
+          if (d.list('files').isNotEmpty)
+            SectionCard(
+              title: 'Koçunun paylaştığı dosyalar',
+              subtitle: 'Dokununca indirilir ve açılır.',
+              child: SharedFileList(files: d.list('files')),
+            ),
           if (canWrite) ...[
             SectionCard(
               title: 'Çalışma sayacı',

@@ -88,6 +88,23 @@ class ApiClient {
   Future<Json> patch(String path, Object data) => _send(() => _dio.patch<Object?>(path, data: data));
   Future<Json> delete(String path) => _send(() => _dio.delete<Object?>(path));
 
+  /// Sitedeki bir dosyayı (ör. kurumun paylaştığı PDF) oturum anahtarıyla [savePath]'e indirir; sunucunun verdiği
+  /// dosya adını döndürür. Anahtar yalnızca sitenin kendi adresine gönderilir.
+  Future<String?> download(String url, String savePath) async {
+    if (Uri.parse(url).host != Uri.parse(AppConfig.siteUrl).host) throw const ApiException('INTERNAL', 'Dosya açılamadı.');
+    try {
+      final res = await _dio.download(url, savePath, options: Options(receiveTimeout: const Duration(minutes: 5)));
+      final disposition = res.headers.value('content-disposition') ?? '';
+      final match = RegExp(r"filename\*=UTF-8''([^;]+)").firstMatch(disposition);
+      return match == null ? null : Uri.decodeComponent(match.group(1)!);
+    } on DioException catch (error) {
+      final status = error.response?.statusCode;
+      if (status == 401 || status == 403) throw const ApiException('FORBIDDEN', 'Bu dosyayı indirme yetkiniz yok.');
+      if (status == 404) throw const ApiException('NOT_FOUND', 'Dosya bulunamadı; silinmiş olabilir.');
+      throw _map(error);
+    }
+  }
+
   Future<Json> _send(Future<Response<Object?>> Function() request) async {
     try {
       final response = await request();

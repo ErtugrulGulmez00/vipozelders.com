@@ -8,6 +8,8 @@ import type { CenterContext, CenterSummary } from "../center/context";
 import { studentCoachingHistory } from "../center/coaching";
 import { CenterError } from "../center/errors";
 import { weekStartOf } from "../center/resources";
+import { filesForStudent } from "../center/files";
+import { appUrl } from "../email";
 import { db } from "../db";
 import { KOC_EXAM_KINDS, kocOverview, questionStats, studentExams, studentGoals } from "../koc";
 import { studyStats } from "../koc-extra";
@@ -113,6 +115,8 @@ export async function kocStudentHomeJson(userId: string, linkId: string) {
     meeting: s.coachWeekday ? { weekday: s.coachWeekday, minute: s.coachMinute } : null,
     subjects: KOC_SUBJECTS,
     ...(await studentBundle(s.id, s.centerId)),
+    // Koçun paylaştığı dosyalar; indirme Authorization: Bearer ile
+    files: (await filesForStudent(s.id)).map((f) => ({ id: f.id, title: f.title, subject: f.subject, note: f.note, fileName: f.fileName, size: f.size, createdAt: f.createdAt.toISOString(), downloadUrl: appUrl(`/api/kurum/dosya/${f.id}`) })),
   };
 }
 
