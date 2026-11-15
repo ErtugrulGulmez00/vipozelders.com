@@ -1,5 +1,5 @@
 import type { PdfExam, PdfExamSection, PdfItem, PdfStudent } from "./exam-pdf";
-import { assignTopics, bookletShift, detectKind, guessSubject, inferPenalty } from "./exam-pdf";
+import { answersFromTopics, assignTopics, bookletShift, detectKind, guessSubject, inferPenalty } from "./exam-pdf";
 import { EXAM_PRESETS, gradeAnswers, type QuestionOutcome } from "./exams";
 
 // Akbim ODS "SINAV SONUÇ BELGESİ" (ör. YÜZ TÖDER, birçok yayının ortak sonuç sistemi): öğrenci başına bir sayfa.
@@ -313,7 +313,7 @@ export function parseAkbimPdf(pages: PdfItem[][]): PdfExam[] {
         ...p.student,
         sections: base.sections.map((_, i) => {
           const x = sectionOf(p, i);
-          return x ? { correct: x.correct, wrong: x.wrong, net: x.net, answers: canonicalAnswers(x, sections[i].answerKey) } : null;
+          return x ? { correct: x.correct, wrong: x.wrong, net: x.net, answers: canonicalAnswers(x, sections[i].answerKey) ?? answersFromTopics(sections[i], x) } : null;
         }),
       })),
       notes: sections.some((s) => s.topics.length) ? [] : ["Kazanım tablosu okundu ama sorulara eşlenemedi; konu analizi için cevap anahtarını kontrol edin."],

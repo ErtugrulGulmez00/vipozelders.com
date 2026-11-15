@@ -14,7 +14,7 @@ export type StudentCard = {
   score: number | null;
   ranks: { label: string; rank: number; of: number | null }[];
   sections: CardSection[];
-  /** Cevap anahtarı ve kazanım varsa en çok kaçırılan konular (en fazla 8) */
+  /** Cevap anahtarı ve kazanım varsa en çok kaçırılan konular (en fazla 12) */
   weakTopics: CardTopic[];
 };
 
@@ -59,7 +59,7 @@ export function buildStudentCards(exam: PdfExam): StudentCard[] {
       score: st.score,
       ranks: st.ranks,
       sections,
-      weakTopics: weak.slice(0, 8),
+      weakTopics: weak.slice(0, 12),
     };
   });
 }

@@ -194,11 +194,16 @@ function parseStudentPage(items: PdfItem[]): ParsedPage | null {
       for (let i = 0; i < tail.length - 1 && s < sections.length; i++) {
         const row = tail[i];
         const next = tail[i + 1];
-        if (!norm(rowText(next)).startsWith("CEVAP ANH")) continue;
-        const section = sections[s++];
+        // "Cevap Anh. A" ya da "Cevap Anahtarı B"
+        if (!/^CEVAP AN(H|AHTAR)/.test(norm(rowText(next)))) continue;
+        const label = row.items.filter((it) => it.x < x0 - cw / 2).map((it) => it.str.trim()).join(" ");
+        // Satır adı bir derse uyuyorsa o ders ("TYT Türkçe" → Türkçe, "TYT Sosyal" → TYT Sosyal toplamı); yoksa sırayla
+        const named = sections.find((sec) => !sec.key && sameSection(label, sec.name));
+        const section = named ?? sections.filter((sec) => !sec.key)[0] ?? sections[s];
+        s++;
         const answerItems = row.items.filter((it) => it.x >= x0 - cw / 2);
         const keyItems = next.items.filter((it) => it.x >= x0 - cw / 2);
-        section.label = row.items.filter((it) => it.x < x0 - cw / 2).map((it) => it.str.trim()).join(" ");
+        section.label = label;
         // "Cevap Anh. A": kitapçık türü
         section.booklet = next.items.filter((it) => it.x < x0 - cw / 2 && /^[A-Z]$/.test(it.str.trim())).map((it) => it.str.trim()).join("");
         section.key = placeAnswers(keyItems, x0, cw, section.questionCount, true);
@@ -212,9 +217,9 @@ function parseStudentPage(items: PdfItem[]): ParsedPage | null {
   let current: PageSection | null = null;
   let sdy: { s: number; d: number; y: number } | null = null;
   let pending = "";
-  for (const row of right) {
+  for (let row of right) {
     const text = rowText(row);
-    const bySection = sections.find((s) => s.label && norm(s.label) === norm(text));
+    const bySection = sections.find((s) => (s.label && norm(s.label) === norm(text)) || sameSection(text, s.name));
     if (bySection) {
       current = bySection;
       sdy = null;
@@ -223,9 +228,18 @@ function parseStudentPage(items: PdfItem[]): ParsedPage | null {
     }
     if (has(row, "S") && has(row, "D") && has(row, "Y")) {
       sdy = { s: center(findItem(row, "S")!), d: center(findItem(row, "D")!), y: center(findItem(row, "Y")!) };
+      // Ders adı başlıkla aynı satırda olabilir ("Tarih-1  S D Y B%")
+      const heading = row.items.filter((i) => i.x < findItem(row, "S")!.x - 4).map((i) => i.str.trim()).join(" ").trim();
+      const own = heading ? sections.find((s) => (s.label && norm(s.label) === norm(heading)) || sameSection(heading, s.name)) : null;
+      if (own) {
+        current = own;
+        pending = "";
+      }
       continue;
     }
     if (!current || !sdy) continue;
+    // İki basamaklı sayılar bazen tek parça gelir ("20 17"): konumlarıyla ayrı sayılara bölünür
+    row = { ...row, items: row.items.flatMap((i) => (/^\d+(\s+\d+)+$/.test(i.str.trim()) ? splitNumberItem(i) : [i])) };
     const numberStart = sdy.s - 6;
     const words = row.items.filter((i) => i.x < numberStart || parseNumber(i.str) === null).map((i) => i.str.trim()).join(" ");
     const v = pickColumns(
@@ -246,7 +260,43 @@ function parseStudentPage(items: PdfItem[]): ParsedPage | null {
     if (topic) current.topics.push({ name: topic, s: v.s, d: v.d ?? 0, y: v.y ?? 0 });
   }
 
+  splitAggregateAnswers(sections);
   return { examName, institution, student: { name, number, className, score, ranks, sections: [] }, sections };
+}
+
+/** Ders adı eşleşmesi: "TYT Türkçe" ≈ "Türkçe", "Din Kül. ve Ahl. Bil." ≈ aynısı; harf dışı karakterler ve "TYT/AYT" öneki yok sayılır */
+function sameSection(label: string, name: string): boolean {
+  const k = (s: string) => norm(s).replace(/^(TYT|AYT|LGS)\s+/, "").replace(/[^A-ZÇĞİÖŞÜ0-9]/g, "");
+  return Boolean(k(label)) && k(label) === k(name);
+}
+
+/**
+ * Cevaplar ders toplamı için yazılmışsa (ör. "TYT Sosyal" 20 soru: Tarih-1 5, Coğrafya-1 5, Felsefe 5, Din 5 ya da seçmeli
+ * Felsefe 5) anahtar ve cevaplar sırayla alt derslere bölünür; kazanım tablosu alt ders başına olduğu için konu analizi
+ * ancak böyle yapılır. Seçmeli (alternatif) dersler son dilimi paylaşır: öğrenci hangisini işaretlediyse ona yazılır.
+ */
+function splitAggregateAnswers(sections: PageSection[]) {
+  for (let i = 0; i < sections.length; i++) {
+    const agg = sections[i];
+    if (!agg.key) continue;
+    const run: PageSection[] = [];
+    for (let j = i - 1; j >= 0 && sections[j].questionCount < agg.questionCount && !sections[j].key; j--) run.unshift(sections[j]);
+    if (run.length < 2) continue;
+    const total = run.reduce((t, s) => t + s.questionCount, 0);
+    if (total < agg.questionCount || Math.abs(run.reduce((t, s) => t + s.net, 0) - agg.net) > 0.02) continue;
+    let offset = 0;
+    for (let k = 0; k < run.length && offset < agg.questionCount; k++) {
+      const part = run[k];
+      // Son dilimde alternatif dersler: işaretlenen (doğru+yanlış > 0) alır; ikisi de boşsa ilki
+      const alternatives = run.slice(k).filter((s) => s.questionCount === part.questionCount && offset + s.questionCount === agg.questionCount);
+      const owner = offset + part.questionCount === agg.questionCount && alternatives.length > 1 ? (alternatives.find((s) => s.correct + s.wrong > 0) ?? alternatives[0]) : part;
+      owner.key = agg.key.slice(offset, offset + owner.questionCount);
+      owner.booklet = agg.booklet;
+      owner.answers = agg.answers ? agg.answers.slice(offset, offset + owner.questionCount) : null;
+      offset += owner.questionCount;
+      if (owner !== part) break;
+    }
+  }
 }
 
 function outcomesOf(key: string, answers: string): QuestionOutcome[] {
@@ -467,10 +517,45 @@ export function parseResultPdf(pages: PdfItem[][]): PdfParseResult {
         ...p.student,
         sections: base.sections.map((_, i) => {
           const s = sectionOf(p, i);
-          return s ? { correct: s.correct, wrong: s.wrong, net: s.net, answers: canonicalAnswers(s, i) } : null;
+          // Başka kitapçık (sırası çevrilemeyen): konu sonuçları öğrencinin kendi konu tablosundan kurulur
+          return s ? { correct: s.correct, wrong: s.wrong, net: s.net, answers: canonicalAnswers(s, i) ?? answersFromTopics(sections[i], s) } : null;
         }),
       })),
     });
   }
   return { exams, pages: pages.length, skippedPages: skipped };
+}
+
+/** "20 17" gibi tek parçadaki sayıları, metindeki konumlarına göre ayrı parçalara böler */
+function splitNumberItem(item: PdfItem): PdfItem[] {
+  const out: PdfItem[] = [];
+  const cw = item.w / Math.max(1, item.str.length);
+  for (const m of item.str.matchAll(/\d+/g)) out.push({ x: item.x + (m.index ?? 0) * cw, y: item.y, w: m[0].length * cw, str: m[0] });
+  return out;
+}
+
+/**
+ * Cevapları asıl kitapçık sırasına çevrilemeyen öğrenci (ör. soruları farklı karıştırılmış B kitapçığı): öğrencinin kendi
+ * konu tablosundaki doğru/yanlış sayılarıyla tutarlı bir cevap dizisi kurulur. Her konunun ilk soruları doğru, sonrakiler
+ * yanlış, kalanı boş yazılır; konu ve ders sonuçları birebir doğru olur, soru numarası ise temsilîdir.
+ */
+export function answersFromTopics(section: { answerKey: string | null; topics: string[]; questionCount: number }, student: { topics: { name: string; d: number; y: number }[]; correct: number; wrong: number }): string | null {
+  const key = section.answerKey;
+  if (!key || section.topics.length !== section.questionCount || !student.topics.length) return null;
+  const slots = new Map<string, number[]>();
+  section.topics.forEach((t, q) => slots.set(t, [...(slots.get(t) ?? []), q]));
+  const out = new Array<string>(section.questionCount).fill("-");
+  let d = 0;
+  let y = 0;
+  for (const t of student.topics) {
+    const qs = slots.get(t.name);
+    if (!qs || t.d + t.y > qs.length) return null;
+    qs.forEach((q, k) => {
+      if (k < t.d) out[q] = key[q] === "X" ? "A" : key[q];
+      else if (k < t.d + t.y) out[q] = key[q] === "A" ? "B" : "A";
+    });
+    d += t.d;
+    y += t.y;
+  }
+  return d === student.correct && y === student.wrong ? out.join("") : null;
 }
