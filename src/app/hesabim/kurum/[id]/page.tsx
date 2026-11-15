@@ -1,5 +1,7 @@
 import { ExternalLink } from "lucide-react";
 import { StudyView } from "@/components/center/study-view";
+import { StudentFilesList } from "@/components/center/center-files-list";
+import { filesForStudent } from "@/server/center/files";
 import { CoachingView } from "@/components/center/coaching-view";
 import { studentHallDays } from "@/server/center/study-hall";
 import type { Metadata } from "next";
@@ -51,6 +53,7 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
     ...(on("muhasebe") && !guardian.isStudentAccount ? [{ key: "odemeler", label: "Ödemeler", href: `${base}?sekme=odemeler` }] : []),
     ...(on("odevler") ? [{ key: "odevler", label: "Ödevler", href: `${base}?sekme=odevler` }] : []),
     ...(on("kaynaklar") ? [{ key: "calisma", label: "Çalışma programı", href: `${base}?sekme=calisma` }] : []),
+    ...(on("kaynaklar") ? [{ key: "dosyalar", label: "Dosyalar", href: `${base}?sekme=dosyalar` }] : []),
     ...(on("sorular") ? [{ key: "sorular", label: "Soru sor", href: `${base}?sekme=sorular` }] : []),
     ...(student.center.kind === "DERSHANE" ? [{ key: "program", label: "Ders programı", href: `${base}?sekme=program` }] : []),
   ];
@@ -249,6 +252,8 @@ export default async function GuardianChildPage({ params, searchParams }: PagePr
           <StudyView centerId={student.centerId} studentId={student.id} week={typeof sp.hafta === "string" ? sp.hafta : undefined} baseHref={`${base}?sekme=calisma`} mode="portal" canEdit={false} />
           <CoachingView centerId={student.centerId} studentId={student.id} mode="portal" canWrite={false} />
         </div>
+      ) : tab === "dosyalar" ? (
+        <StudentFilesList files={await filesForStudent(student.id)} emptyText={`${student.center.name} henüz dosya paylaşmadı. Çalışma kâğıdı, konu özeti gibi dosyalar paylaşıldığında burada görünür.`} />
       ) : tab === "odevler" ? (
         <HomeworkList rows={homeworks.map((h) => ({ id: h.homeworkId, subject: h.homework.subject, title: h.homework.title, description: h.homework.description, dueDate: h.homework.dueDate, status: h.status, note: h.note }))} />
       ) : tab === "sorular" ? (

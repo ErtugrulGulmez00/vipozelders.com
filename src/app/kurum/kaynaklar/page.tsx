@@ -2,7 +2,8 @@ import { SectionTabs } from "@/components/center/section-tabs";
 import { BookOpen } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CenterFlash } from "@/components/center/center-ui";
+import { CenterFilesTab } from "@/components/center/center-files-tab";
+import { CenterFlash, Tabs } from "@/components/center/center-ui";
 import { ResourceForm } from "@/components/center/study-forms";
 import { Badge, Card, CardBody, CardHeader, EmptyState, PageHeader, Table, Td, Th } from "@/components/ui/primitives";
 import { requireCenter } from "@/server/center/context";
@@ -13,6 +14,7 @@ export const metadata: Metadata = { title: "Kaynaklar" };
 export default async function ResourcesPage({ searchParams }: PageProps<"/kurum/kaynaklar">) {
   const ctx = await requireCenter("resources.manage");
   const sp = await searchParams;
+  const tab = sp.sekme === "dosyalar" ? "dosyalar" : "kitaplar";
   const resources = await db.centerResource.findMany({
     where: { centerId: ctx.center.id },
     include: { _count: { select: { students: true } } },
@@ -21,8 +23,18 @@ export default async function ResourcesPage({ searchParams }: PageProps<"/kurum/
   return (
     <>
       <SectionTabs ctx={ctx} group="kocluk" active="kaynaklar" />
-      <PageHeader title="Kaynaklar ve kitaplar" description="Soru bankalarını ve kitapları konu listesiyle tanımlayın, öğrencilere atayın; konu konu ilerlemeyi ve başarıyı izleyin. Çalışma programı öğrenci kartındaki “Program ve kaynaklar” sekmesindedir." />
+      <PageHeader title="Kaynaklar ve kitaplar" description="Soru bankalarını ve kitapları konu listesiyle tanımlayın, öğrencilere atayın; konu konu ilerlemeyi ve başarıyı izleyin. Çalışma kâğıdı, konu özeti gibi PDF ve belgeleri “Dosyalar” sekmesinden öğrencilerle paylaşın." />
       <CenterFlash code={sp.durum} />
+      <Tabs
+        active={tab}
+        tabs={[
+          { key: "kitaplar", label: "Kitaplar ve soru bankaları", href: "/kurum/kaynaklar" },
+          { key: "dosyalar", label: "Dosyalar (PDF ve belgeler)", href: "/kurum/kaynaklar?sekme=dosyalar" },
+        ]}
+      />
+      {tab === "dosyalar" ? (
+        <CenterFilesTab ctx={ctx} />
+      ) : (
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr] lg:items-start">
         {resources.length === 0 ? (
           <EmptyState icon={<BookOpen className="size-8" />} title="Henüz kaynak yok" description="Sağdaki formdan ilk kaynağınızı ekleyin." />
@@ -63,6 +75,7 @@ export default async function ResourcesPage({ searchParams }: PageProps<"/kurum/
           </CardBody>
         </Card>
       </div>
+      )}
     </>
   );
 }

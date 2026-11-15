@@ -1,7 +1,8 @@
 import { BookOpen } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CenterFlash } from "@/components/center/center-ui";
+import { CenterFilesTab } from "@/components/center/center-files-tab";
+import { CenterFlash, Tabs } from "@/components/center/center-ui";
 import { ResourceForm } from "@/components/center/study-forms";
 import { Badge, Card, CardBody, CardHeader, EmptyState, PageHeader } from "@/components/ui/primitives";
 import { requireCenter } from "@/server/center/context";
@@ -12,6 +13,7 @@ export const metadata: Metadata = { title: "Kaynak kütüphanesi" };
 export default async function KocResourcesPage({ searchParams }: PageProps<"/koc/kaynaklar">) {
   const ctx = await requireCenter("resources.manage");
   const sp = await searchParams;
+  const tab = sp.sekme === "dosyalar" ? "dosyalar" : "kitaplar";
   const resources = await db.centerResource.findMany({
     where: { centerId: ctx.center.id },
     include: { _count: { select: { students: true } } },
@@ -19,8 +21,18 @@ export default async function KocResourcesPage({ searchParams }: PageProps<"/koc
   });
   return (
     <>
-      <PageHeader title="Kaynak kütüphanesi" description="Kitap ve soru bankalarınızı konu listesiyle bir kez tanımlayın; öğrencilere eklediğinizde konu konu ilerlemesini izlersiniz." />
+      <PageHeader title="Kaynak kütüphanesi" description="Kitap ve soru bankalarınızı konu listesiyle bir kez tanımlayın; öğrencilere eklediğinizde konu konu ilerlemesini izlersiniz. PDF ve belgeleri “Dosyalar” sekmesinden paylaşın." />
       <CenterFlash code={sp.durum} />
+      <Tabs
+        active={tab}
+        tabs={[
+          { key: "kitaplar", label: "Kitaplar ve soru bankaları", href: "/koc/kaynaklar" },
+          { key: "dosyalar", label: "Dosyalar (PDF ve belgeler)", href: "/koc/kaynaklar?sekme=dosyalar" },
+        ]}
+      />
+      {tab === "dosyalar" ? (
+        <CenterFilesTab ctx={ctx} />
+      ) : (
       <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr] lg:items-start">
         {resources.length ? (
           <div className="grid gap-3 sm:grid-cols-2">
@@ -52,6 +64,7 @@ export default async function KocResourcesPage({ searchParams }: PageProps<"/koc
           </CardBody>
         </Card>
       </div>
+      )}
     </>
   );
 }

@@ -1,4 +1,6 @@
 import { ReadingCard } from "@/components/koc/reading-card";
+import { StudentFilesList } from "@/components/center/center-files-list";
+import { filesForStudent } from "@/server/center/files";
 import { readingBooks, readingSummary } from "@/server/koc-reading";
 import { CalendarClock, CheckCircle2, Flame, Target, Timer, Video } from "lucide-react";
 import Link from "next/link";
@@ -38,6 +40,7 @@ export async function KocStudentPortal({ student, base, tab: requested, isStuden
     { key: "calisma", label: "Çalışma", href: `${base}?sekme=calisma` },
     { key: "denemeler", label: "Denemeler", href: `${base}?sekme=denemeler` },
     { key: "kitaplar", label: "Kitap okuma", href: `${base}?sekme=kitaplar` },
+    { key: "dosyalar", label: "Dosyalar", href: `${base}?sekme=dosyalar` },
     { key: "notlar", label: "Koç notları", href: `${base}?sekme=notlar` },
   ];
   const tab = tabs.some((t) => t.key === requested) ? requested : "bugun";
@@ -99,6 +102,8 @@ export async function KocStudentPortal({ student, base, tab: requested, isStuden
         <ExamsTab student={student} isStudent={isStudent} />
       ) : tab === "kitaplar" ? (
         <PortalReading student={student} isStudent={isStudent} />
+      ) : tab === "dosyalar" ? (
+        <StudentFilesList files={await filesForStudent(student.id)} emptyText="Koçunuz henüz dosya paylaşmadı. Paylaştığı çalışma kâğıtları ve belgeler burada görünür." />
       ) : tab === "notlar" ? (
         <CoachingView centerId={student.centerId} studentId={student.id} mode="portal" canWrite={false} />
       ) : (

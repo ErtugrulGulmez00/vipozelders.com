@@ -1140,6 +1140,7 @@ model Center {
   homeworks            CenterHomework[]
   questions            CenterQuestion[]
   resources            CenterResource[]
+  files                CenterFile[]
   studyPlanItems       CenterStudyPlanItem[]
   coachingSessions     CenterCoachingSession[]
   coachMeetings        CoachMeeting[]
@@ -1250,6 +1251,7 @@ model CenterStudent {
   homeworks      CenterHomeworkStudent[]
   questions      CenterQuestion[]
   resources      CenterStudentResource[]
+  files          CenterFile[]
   studyPlan      CenterStudyPlanItem[]
   coaching       CenterCoachingSession[]
   halls          CenterHallStudent[]
@@ -1315,6 +1317,7 @@ model CenterGroup {
   sessions      CenterAttendanceSession[]
   announcements CenterAnnouncement[]
   homeworks     CenterHomework[]
+  files         CenterFile[]
 
   @@unique([centerId, name])
 }
@@ -1753,6 +1756,28 @@ model CenterResource {
   planItems CenterStudyPlanItem[]
 
   @@index([centerId])
+}
+
+// Kurumun/koçun öğrencilere paylaştığı dosyalar (PDF, Word, Excel, PowerPoint, görsel).
+// Sınıf ve öğrenci boşsa kurumdaki tüm öğrenciler görür; sınıf seçiliyse o sınıf, öğrenci seçiliyse yalnızca o öğrenci.
+model CenterFile {
+  id        String         @id @default(cuid())
+  centerId  String
+  center    Center         @relation(fields: [centerId], references: [id], onDelete: Cascade)
+  groupId   String?
+  group     CenterGroup?   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  studentId String?
+  student   CenterStudent? @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  title     String
+  subject   String?
+  note      String?
+  fileKey   String
+  fileName  String
+  size      Int
+  downloads Int            @default(0)
+  createdAt DateTime       @default(now())
+
+  @@index([centerId, createdAt])
 }
 
 // Öğrenciye atanan kaynak ve konu konu ilerlemesi

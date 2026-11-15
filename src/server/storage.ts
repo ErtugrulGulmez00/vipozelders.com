@@ -16,7 +16,7 @@ function storagePath(key: string): string {
   return path.join(/*turbopackIgnore: true*/ ROOT, key);
 }
 
-const KEY_PATTERN = /^(public|private)\/[a-z0-9-]+\/[0-9a-f-]{36}\.(jpg|png|webp|pdf|mp4|webm|mov)$/;
+const KEY_PATTERN = /^(public|private)\/[a-z0-9-]+\/[0-9a-f-]{36}\.(jpg|png|webp|pdf|mp4|webm|mov|docx|xlsx|pptx)$/;
 
 const CONTENT_TYPES: Record<string, string> = {
   jpg: "image/jpeg",
@@ -26,7 +26,13 @@ const CONTENT_TYPES: Record<string, string> = {
   mp4: "video/mp4",
   webm: "video/webm",
   mov: "video/quicktime",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 };
+
+// Office belgeleri ZIP kabıdır (PK..); türü dosya adındaki uzantıdan alınır
+const OFFICE = new Set(["docx", "xlsx", "pptx"]);
 
 const VIDEO = new Set(["mp4", "webm", "mov"]);
 
@@ -74,7 +80,7 @@ const tooBig = (bytes: number) => new UploadError(`Dosya en fazla ${Math.round(b
 
 export async function saveUpload(
   file: File,
-  options: { visibility: "public" | "private"; folder: string; maxBytes: number; kinds: ("image" | "pdf" | "video")[]; maxSide?: number },
+  options: { visibility: "public" | "private"; folder: string; maxBytes: number; kinds: ("image" | "pdf" | "video" | "office")[]; maxSide?: number },
 ): Promise<string> {
   if (file.size === 0) throw new UploadError("Dosya boş.");
   const shrinkable = options.kinds.includes("image");
@@ -82,21 +88,28 @@ export async function saveUpload(
   if (file.size > rawLimit) throw tooBig(rawLimit);
   let bytes: Uint8Array = new Uint8Array(await file.arrayBuffer());
   let extension = sniffExtension(bytes);
+  if (extension === null && options.kinds.includes("office") && bytes[0] === 0x50 && bytes[1] === 0x4b && bytes[2] === 0x03 && bytes[3] === 0x04) {
+    const named = file.name.split(".").pop()?.toLowerCase() ?? "";
+    if (OFFICE.has(named)) extension = named;
+  }
   const allowed =
     extension !== null &&
+    (OFFICE.has(extension) ? options.kinds.includes("office") :
     ((extension === "pdf" && options.kinds.includes("pdf")) ||
       (VIDEO.has(extension) && options.kinds.includes("video")) ||
-      (extension !== "pdf" && !VIDEO.has(extension) && options.kinds.includes("image")));
+      (extension !== "pdf" && !VIDEO.has(extension) && options.kinds.includes("image"))));
   if (!allowed) {
     throw new UploadError(
-      options.kinds.includes("video")
+      options.kinds.includes("office")
+        ? "Yalnızca PDF, Word (DOCX), Excel (XLSX), PowerPoint (PPTX), JPG veya PNG yükleyebilirsiniz."
+        : options.kinds.includes("video")
         ? "Yalnızca MP4, MOV veya WEBM video yükleyebilirsiniz."
         : options.kinds.includes("pdf")
           ? "Yalnızca JPG, PNG, WEBP veya PDF yükleyebilirsiniz."
           : "Yalnızca JPG, PNG veya WEBP yükleyebilirsiniz.",
     );
   }
-  if (shrinkable && extension && extension !== "pdf" && !VIDEO.has(extension) && bytes.length > SHRINK_ABOVE) {
+  if (shrinkable && extension && extension !== "pdf" && !VIDEO.has(extension) && !OFFICE.has(extension) && bytes.length > SHRINK_ABOVE) {
     const small = await shrinkImage(bytes, options.maxSide ?? MAX_SIDE);
     if (small && small.bytes.length < bytes.length) ({ bytes, extension } = small);
   }

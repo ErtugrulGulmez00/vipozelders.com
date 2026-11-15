@@ -1,4 +1,5 @@
 import { addDaysToDateString, dateStringToDbDate, dbDateToString, isDateString, toLocalDateString } from "@/lib/dates";
+import { filesForStudent } from "@/server/center/files";
 import { installmentState } from "@/lib/center/finance";
 import { type CenterModuleKey, moduleEnabled } from "@/lib/center/modules";
 import { studentCoachingHistory } from "../center/coaching";
@@ -40,6 +41,7 @@ export async function childDetailJson(userId: string, guardianId: string) {
   const { guardian, student, attendance, etuds, results, installments, payments, announcements, notes, weakTopics, balance, today, trend, homeworks, questions } = data;
   const hallDays = await studentHallDays(student.id);
   const on = (key: CenterModuleKey) => moduleEnabled(student.center, key);
+  const files = on("kaynaklar") ? await filesForStudent(student.id) : [];
   return {
     id: guardianId,
     isStudentAccount: guardian.isStudentAccount,
@@ -103,6 +105,8 @@ export async function childDetailJson(userId: string, guardianId: string) {
       state: installmentState({ dueDate: dbDateToString(i.dueDate), amount: i.amount, paidAmount: i.paidAmount }, today),
     })),
     payments: payments.map((p) => ({ receiptNo: p.receiptNo, amount: p.amount, method: p.method, paidAt: p.paidAt.toISOString() })),
+    // Kurumun paylaştığı dosyalar; indirme Authorization: Bearer ile
+    files: files.map((f) => ({ id: f.id, title: f.title, subject: f.subject, note: f.note, fileName: f.fileName, size: f.size, createdAt: f.createdAt.toISOString(), downloadUrl: appUrl(`/api/kurum/dosya/${f.id}`) })),
     announcements: announcements.map((a) => ({ id: a.id, title: a.title, body: a.body, group: a.group?.name ?? null, createdAt: a.createdAt.toISOString() })),
     notes: notes.map((n) => ({ kind: n.kind, text: n.text, author: n.author ? `${n.author.user.firstName} ${n.author.user.lastName}` : null, createdAt: n.createdAt.toISOString() })),
     homeworks: homeworks.map((h) => ({ id: h.homeworkId, subject: h.homework.subject, title: h.homework.title, description: h.homework.description, assignedOn: dbDateToString(h.homework.assignedOn), dueDate: dbDateToString(h.homework.dueDate), status: h.status, note: h.note })),
