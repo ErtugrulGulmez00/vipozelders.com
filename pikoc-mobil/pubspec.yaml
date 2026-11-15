@@ -2,7 +2,7 @@ name: pikoc
 description: "Pi Kampüs: Pi Koç öğrenci takibi, özel ders ve kurum paneli tek uygulamada."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.0+2
 
 environment:
   sdk: ^3.11.5
