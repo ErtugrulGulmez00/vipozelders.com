@@ -69,7 +69,7 @@ flutter:
         - asset: assets/fonts/BricolageGrotesque-ExtraBold.ttf
           weight: 800
 
-# Simgeler: dart run flutter_launcher_icons (kaynak: assets/branding, Pi Koç markası)
+# Simgeler: dart run flutter_launcher_icons (kaynak: assets/branding, Pi Kampüs simgesi, sitedeki icon.svg)
 flutter_launcher_icons:
   android: "ic_launcher"
   ios: true
@@ -82,9 +82,9 @@ flutter_launcher_icons:
 
 # Açılış ekranı: dart run flutter_native_splash:create
 flutter_native_splash:
-  color: "#1B1F3B"
+  color: "#FFFFFF"
   image: assets/branding/splash_logo.png
   android_12:
     image: assets/branding/splash_android12.png
-    color: "#1B1F3B"
+    color: "#FFFFFF"
   web: false
