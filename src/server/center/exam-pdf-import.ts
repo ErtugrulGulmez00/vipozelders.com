@@ -4,6 +4,8 @@ import { aliasKey, matchStudents, type MatchCandidate, type StudentMatch } from 
 import { parseResultPdf, type PdfExam } from "@/lib/center/exam-pdf";
 import { collapseAggregateSections } from "@/lib/center/exam-pdf-aggregate";
 import { parseAkbimPdf } from "@/lib/center/exam-pdf-akbim";
+import { parseK14Pdf } from "@/lib/center/exam-pdf-k14";
+import { parseNetList } from "@/lib/center/exam-pdf-netlist";
 import { applyExamType, expectedStructure, type PdfExamType } from "@/lib/center/exam-pdf-type";
 import { dateStringToDbDate } from "@/lib/dates";
 import { normalizeSearch } from "@/lib/text";
@@ -63,6 +65,9 @@ export async function createPdfImport(ctx: CenterContext, file: File | null, typ
   let exams = parseResultPdf(pages).exams;
   // Akbim ODS sonuç belgesi (YÜZ TÖDER vb.): yapay zekâya gerek kalmadan kesin okunur
   if (!exams.length) exams = parseAkbimPdf(pages);
+  // K14 (k14net) kurum yazılımının analizli karnesi / sıralı listesi ve "okul net listesi" tabloları
+  if (!exams.length) exams = parseK14Pdf(pages);
+  if (!exams.length) exams = parseNetList(pages);
   if (!exams.length) {
     // Tanınmayan biçim: PDF bize kalır (yeni okuyucu yazmak için), yapay zekâ açıksa hemen okunur
     await keepUnknownPdf(ctx, file);
@@ -76,6 +81,8 @@ export async function createPdfImport(ctx: CenterContext, file: File | null, typ
   }
   // Yayınevinin toplam sütunları (TYT Sosyal, TYT Matematik…) ayrı ders sayılmaz
   exams = exams.map(collapseAggregateSections).map((e) => applyExamType(e, type));
+  // Bazı sonuç sistemleri adın sonuna işaret koyar ("ALİ KAYA *"); eşleştirmeyi bozmasın
+  exams = exams.map((e) => ({ ...e, students: e.students.map((st) => ({ ...st, name: st.name.replace(/\s*\*+\s*$/, "").trim() })) }));
   const data: PdfImportData = {
     exams: exams.map((e) => ({ ...e, sections: e.sections.map((s) => ({ ...s, topics: s.topics.map(cleanTopic) })) })),
   };

@@ -1,6 +1,6 @@
 // Deneme sınavı kuralları: hazır şablonlar, net hesabı, cevap anahtarıyla okuma, konu analizi ve sıralama.
 
-export type ExamKindName = "LGS" | "TYT" | "AYT_SAY" | "AYT_EA" | "AYT_SOZ" | "YDT" | "KPSS" | "CUSTOM";
+export type ExamKindName = "LGS" | "TYT" | "AYT" | "AYT_SAY" | "AYT_EA" | "AYT_SOZ" | "YDT" | "KPSS" | "CUSTOM";
 
 export type SectionPreset = { name: string; questionCount: number; subjectSlug: string | null };
 
@@ -36,6 +36,25 @@ export const EXAM_PRESETS: Record<ExamKindName, ExamPreset> = {
       { name: "Sosyal Bilimler", questionCount: 20, subjectSlug: null },
       { name: "Temel Matematik", questionCount: 40, subjectSlug: "matematik" },
       { name: "Fen Bilimleri", questionCount: 20, subjectSlug: null },
+    ],
+  },
+  // Tüm AYT testleri: yayınevi sonuç PDF'lerinde her alandan öğrenci bir arada; öğrencinin girmediği test boş kalır
+  AYT: {
+    label: "AYT (tüm testler)",
+    wrongPenalty: 0.25,
+    levelSlug: "yks",
+    sections: [
+      { name: "Türk Dili ve Edebiyatı", questionCount: 24, subjectSlug: "edebiyat" },
+      { name: "Tarih-1", questionCount: 10, subjectSlug: "tarih" },
+      { name: "Coğrafya-1", questionCount: 6, subjectSlug: "cografya" },
+      { name: "Tarih-2", questionCount: 11, subjectSlug: "tarih" },
+      { name: "Coğrafya-2", questionCount: 11, subjectSlug: "cografya" },
+      { name: "Felsefe Grubu", questionCount: 12, subjectSlug: "felsefe" },
+      { name: "Din Kültürü ve Ahlak Bilgisi", questionCount: 6, subjectSlug: null },
+      { name: "Matematik", questionCount: 40, subjectSlug: "matematik" },
+      { name: "Fizik", questionCount: 14, subjectSlug: "fizik" },
+      { name: "Kimya", questionCount: 13, subjectSlug: "kimya" },
+      { name: "Biyoloji", questionCount: 13, subjectSlug: "biyoloji" },
     ],
   },
   AYT_SAY: {

@@ -101,7 +101,7 @@ function placeAnswers(items: PdfItem[], x0: number, cw: number, length: number, 
   return chars.join("");
 }
 
-function parseStudentPage(items: PdfItem[]): ParsedPage | null {
+export function parseStudentPage(items: PdfItem[]): ParsedPage | null {
   const titleItem = items.find((i) => norm(i.str) === "SONUÇ BELGESİ");
   if (!titleItem) return null;
   const mid = Math.max(titleItem.x + titleItem.w + 20, 290);
@@ -198,7 +198,8 @@ function parseStudentPage(items: PdfItem[]): ParsedPage | null {
         if (!/^CEVAP AN(H|AHTAR)/.test(norm(rowText(next)))) continue;
         const label = row.items.filter((it) => it.x < x0 - cw / 2).map((it) => it.str.trim()).join(" ");
         // Satır adı bir derse uyuyorsa o ders ("TYT Türkçe" → Türkçe, "TYT Sosyal" → TYT Sosyal toplamı); yoksa sırayla
-        const named = sections.find((sec) => !sec.key && sameSection(label, sec.name));
+        // Önce birebir ad: AYT belgesindeki "Matematik" satırı "TYT Matematik"e değil "Matematik"e yazılır
+        const named = sections.find((sec) => !sec.key && norm(label) === norm(sec.name)) ?? sections.find((sec) => !sec.key && sameSection(label, sec.name));
         const section = named ?? sections.filter((sec) => !sec.key)[0] ?? sections[s];
         s++;
         const answerItems = row.items.filter((it) => it.x >= x0 - cw / 2);
@@ -219,7 +220,7 @@ function parseStudentPage(items: PdfItem[]): ParsedPage | null {
   let pending = "";
   for (let row of right) {
     const text = rowText(row);
-    const bySection = sections.find((s) => (s.label && norm(s.label) === norm(text)) || sameSection(text, s.name));
+    const bySection = sectionByHeading(sections, text);
     if (bySection) {
       current = bySection;
       sdy = null;
@@ -230,7 +231,7 @@ function parseStudentPage(items: PdfItem[]): ParsedPage | null {
       sdy = { s: center(findItem(row, "S")!), d: center(findItem(row, "D")!), y: center(findItem(row, "Y")!) };
       // Ders adı başlıkla aynı satırda olabilir ("Tarih-1  S D Y B%")
       const heading = row.items.filter((i) => i.x < findItem(row, "S")!.x - 4).map((i) => i.str.trim()).join(" ").trim();
-      const own = heading ? sections.find((s) => (s.label && norm(s.label) === norm(heading)) || sameSection(heading, s.name)) : null;
+      const own = heading ? sectionByHeading(sections, heading) : null;
       if (own) {
         current = own;
         pending = "";
@@ -264,6 +265,14 @@ function parseStudentPage(items: PdfItem[]): ParsedPage | null {
   return { examName, institution, student: { name, number, className, score, ranks, sections: [] }, sections };
 }
 
+/** Kazanım tablosundaki ders başlığının dersi: önce birebir ad/etiket (AYT'de "Türkçe" → "TYT Türkçe" değil "Türkçe"), sonra benzer ad */
+function sectionByHeading(sections: PageSection[], heading: string): PageSection | undefined {
+  return (
+    sections.find((s) => (s.label && norm(s.label) === norm(heading)) || norm(s.name) === norm(heading)) ??
+    sections.find((s) => sameSection(heading, s.name))
+  );
+}
+
 /** Ders adı eşleşmesi: "TYT Türkçe" ≈ "Türkçe", "Din Kül. ve Ahl. Bil." ≈ aynısı; harf dışı karakterler ve "TYT/AYT" öneki yok sayılır */
 function sameSection(label: string, name: string): boolean {
   const k = (s: string) => norm(s).replace(/^(TYT|AYT|LGS)\s+/, "").replace(/[^A-ZÇĞİÖŞÜ0-9]/g, "");
@@ -280,7 +289,10 @@ function splitAggregateAnswers(sections: PageSection[]) {
     const agg = sections[i];
     if (!agg.key) continue;
     const run: PageSection[] = [];
-    for (let j = i - 1; j >= 0 && sections[j].questionCount < agg.questionCount && !sections[j].key; j--) run.unshift(sections[j]);
+    // Alt derslerin bir kısmının kendi anahtarı olabilir (AYT'de Türkçe/Edebiyat); anahtarlı büyük ders (önceki toplam) sınırdır
+    // AYT belgesindeki TYT özet sütunları ("TYT Fen") AYT toplamının alt dersi değildir
+    const tytAgg = /^TYT\s/i.test(agg.name);
+    for (let j = i - 1; j >= 0 && sections[j].questionCount < agg.questionCount && !(sections[j].key && sections[j].questionCount >= 20) && (tytAgg || !/^TYT\s/i.test(sections[j].name)); j--) run.unshift(sections[j]);
     if (run.length < 2) continue;
     const total = run.reduce((t, s) => t + s.questionCount, 0);
     if (total < agg.questionCount || Math.abs(run.reduce((t, s) => t + s.net, 0) - agg.net) > 0.02) continue;
@@ -290,9 +302,12 @@ function splitAggregateAnswers(sections: PageSection[]) {
       // Son dilimde alternatif dersler: işaretlenen (doğru+yanlış > 0) alır; ikisi de boşsa ilki
       const alternatives = run.slice(k).filter((s) => s.questionCount === part.questionCount && offset + s.questionCount === agg.questionCount);
       const owner = offset + part.questionCount === agg.questionCount && alternatives.length > 1 ? (alternatives.find((s) => s.correct + s.wrong > 0) ?? alternatives[0]) : part;
-      owner.key = agg.key.slice(offset, offset + owner.questionCount);
-      owner.booklet = agg.booklet;
-      owner.answers = agg.answers ? agg.answers.slice(offset, offset + owner.questionCount) : null;
+      // Kendi anahtarı olan alt ders olduğu gibi kalır
+      if (!owner.key) {
+        owner.key = agg.key.slice(offset, offset + owner.questionCount);
+        owner.booklet = agg.booklet;
+        owner.answers = agg.answers ? agg.answers.slice(offset, offset + owner.questionCount) : null;
+      }
       offset += owner.questionCount;
       if (owner !== part) break;
     }
@@ -394,6 +409,39 @@ export function guessSubject(name: string): string | null {
   return SUBJECT_GUESS.find(([re]) => re.test(n))?.[1] ?? null;
 }
 
+/**
+ * Alt dersler şablonun derslerine sırayla toplanıyor mu: TYT'de Türkçe 40 | Tarih 5 + Coğrafya 5 + Felsefe 5 + Din 5 = 20 |
+ * Matematik 30 + Geometri 10 = 40 | Fizik 7 + Kimya 7 + Biyoloji 6 = 20. Uyuyorsa her şablon dersinin alt ders sayısı döner.
+ */
+export function groupedFit(counts: number[], presetCounts: number[]): number[] | null {
+  const groups: number[] = [];
+  let i = 0;
+  for (const target of presetCounts) {
+    let sum = 0;
+    let n = 0;
+    while (i < counts.length && sum < target) {
+      sum += counts[i++];
+      n++;
+    }
+    if (sum !== target) return null;
+    groups.push(n);
+  }
+  return i === counts.length ? groups : null;
+}
+
+/**
+ * Okunan derslere şablondaki ad ve konu: birebir eşleşen yapıda hepsi, alt derslere bölünmüşte yalnızca tek başına bir
+ * şablon dersine denk gelenler (AYT'de Matematik 30 + Geometri 10 bölünse de Tarih-2, Coğrafya-2 adlarını alır).
+ */
+export function presetSectionsFor(kind: ExamKindName, counts: number[]): ({ name: string; subjectSlug: string | null } | null)[] {
+  const preset = EXAM_PRESETS[kind].sections;
+  if (kind === "CUSTOM") return counts.map(() => null);
+  if (preset.length === counts.length) return preset.map((s) => ({ name: s.name, subjectSlug: s.subjectSlug ?? null }));
+  const groups = groupedFit(counts, preset.map((s) => s.questionCount));
+  if (!groups) return counts.map(() => null);
+  return groups.flatMap((n, g) => (n === 1 ? [{ name: preset[g].name, subjectSlug: preset[g].subjectSlug ?? null }] : Array.from({ length: n }, () => null)));
+}
+
 /** Ders sayıları bir hazır şablona (LGS, TYT…) uyuyorsa o tür; 5-7. sınıf denemeleri serbest deneme sayılır. */
 export function detectKind(name: string, counts: number[]): ExamKindName {
   const lowerGrade = /\b[5-7]\s*\.?\s*SINIF/.test(norm(name));
@@ -401,6 +449,12 @@ export function detectKind(name: string, counts: number[]): ExamKindName {
     const preset = EXAM_PRESETS[kind];
     if (kind === "CUSTOM" || preset.sections.length !== counts.length) continue;
     if (preset.sections.every((s, i) => s.questionCount === counts[i])) return kind === "LGS" && lowerGrade ? "CUSTOM" : kind;
+  }
+  // Alt derslere bölünmüş TYT/AYT (adında TYT/AYT geçiyorsa; rastgele 10'lu denemeler yanlışlıkla eşleşmesin)
+  for (const kind of ["TYT", "AYT"] as const) {
+    // MSÜ denemesi TYT biçimindedir
+    const token = kind === "TYT" ? "(TYT|MSÜ)" : kind;
+    if (new RegExp(`(^|[^A-ZÇĞİÖŞÜ0-9])${token}([^A-ZÇĞİÖŞÜ0-9]|$)`).test(norm(name)) && groupedFit(counts, EXAM_PRESETS[kind].sections.map((s) => s.questionCount))) return kind;
   }
   return "CUSTOM";
 }
@@ -453,10 +507,58 @@ export function parseResultPdf(pages: PdfItem[][]): PdfParseResult {
   }
 
   const exams: PdfExam[] = [];
-  for (const [name, list] of groups) {
-    // Dersler: en sık görülen ders dizisi (bir dersi boş bırakan öğrencinin sayfasında o ders hiç yazmaz).
-    const shape = mostCommon(list.map((p) => p.sections.map((s) => `${s.name}#${s.questionCount}`).join("|")))!;
-    const base = list.find((p) => p.sections.map((s) => `${s.name}#${s.questionCount}`).join("|") === shape)!;
+  for (const [name, rawList] of groups) {
+    // AYT sonuç belgesi öğrencinin TYT netlerini de yazar ("TYT Türkçe"…); AYT denemesine katılmaz
+    const isAyt = /(^|[^A-ZÇĞİÖŞÜ])AYT([^A-ZÇĞİÖŞÜ]|$)/.test(norm(name));
+    // TYT kırılımı da yazılabilir (Türkçe 40, Tarih-1 5 … Matematik-1, Fizik 7); AYT'de bu soru sayıları yoktur
+    const tytPart = (s: PageSection, prev: PageSection | undefined) =>
+      /^TYT\s/i.test(s.name) ||
+      (/^TÜRKÇE$/.test(norm(s.name)) && s.questionCount === 40) ||
+      // AYT'de Türkçe 5 ya da 6 soru olabilir (Edebiyat 19/18); 5 soruluk TYT alt dersleri Tarih, Coğrafya, Felsefe, Din
+      (s.questionCount === 5 && !/^TÜRKÇE$/.test(norm(s.name))) ||
+      s.questionCount === 7 ||
+      (/^BİYOLOJİ$/.test(norm(s.name)) && s.questionCount === 6) ||
+      /^MATEMATİK-1$/.test(norm(s.name)) ||
+      (/^GEOMETRİ$/.test(norm(s.name)) && prev !== undefined && /^MATEMATİK-1$/.test(norm(prev.name)));
+    // Sayfa sayfa: TYT alt dersleri ve hemen ardından gelen TYT toplamı (sözelcinin "Matematik 40"ı TYT'dir) atılır
+    const dropTyt = (sections: PageSection[]) => {
+      const out: PageSection[] = [];
+      let inTyt = false;
+      sections.forEach((sec, i) => {
+        if (tytPart(sec, sections[i - 1])) inTyt = true;
+        else if (inTyt && (sec.questionCount === 40 || sec.questionCount === 20)) inTyt = true;
+        else {
+          inTyt = false;
+          out.push(sec);
+        }
+      });
+      return out;
+    };
+    const list = isAyt ? rawList.map((p) => ({ ...p, sections: dropTyt(p.sections) })).filter((p) => p.sections.length) : rawList;
+    // Dersler: sayfalardaki ders dizilerinin birleşimi, en sık dizinin sırasıyla. Öğrencinin girmediği ders sayfasında hiç
+    // yazmaz (AYT'de sayısalcının sayfasında Edebiyat yok); tek sayfada görülen ders, çok sayfalı PDF'te okuma hatası sayılır.
+    const sig = (s: PageSection) => `${s.name}#${s.questionCount}`;
+    const shapeTally = new Map<string, { n: number; page: ParsedPage }>();
+    for (const p of list) {
+      const k = p.sections.map(sig).join("|");
+      const e = shapeTally.get(k) ?? { n: 0, page: p };
+      e.n++;
+      shapeTally.set(k, e);
+    }
+    const seen = new Map<string, number>();
+    list.forEach((p) => new Set(p.sections.map(sig)).forEach((k) => seen.set(k, (seen.get(k) ?? 0) + 1)));
+    const union: PageSection[] = [];
+    for (const { page } of [...shapeTally.values()].sort((a, b) => b.n - a.n)) {
+      let at = -1;
+      for (const s of page.sections) {
+        const idx = union.findIndex((u) => sig(u) === sig(s));
+        if (idx >= 0) at = idx;
+        else if (list.length <= 5 || (seen.get(sig(s)) ?? 0) >= 2) union.splice(++at, 0, s);
+      }
+    }
+    const ownSections = union;
+    const commonPage = [...shapeTally.values()].sort((a, b) => b.n - a.n)[0].page;
+    const base = { institution: commonPage.institution, sections: ownSections };
     const counts = base.sections.map((s) => s.questionCount);
     const kind = detectKind(name, counts);
     const preset = EXAM_PRESETS[kind];
@@ -496,7 +598,8 @@ export function parseResultPdf(pages: PdfItem[][]): PdfParseResult {
           topics = assignTopics(s.questionCount, { names: sample.topics.map((t) => t.name), sizes: sample.topics.map((t) => t.s), students }) ?? [];
         }
       }
-      const presetSection = kind !== "CUSTOM" ? preset.sections[i] : null;
+      // Alt derslere bölünmüş TYT/AYT'de şablon dersi tek tek eşleşmez; ad PDF'teki gibi kalır
+      const presetSection = kind !== "CUSTOM" && preset.sections.length === base.sections.length ? preset.sections[i] : null;
       return {
         label: s.label || s.name,
         name: presetSection?.name ?? s.name,

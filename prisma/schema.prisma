@@ -1008,6 +1008,7 @@ enum EtudStatus {
 enum ExamKind {
   LGS
   TYT
+  AYT
   AYT_SAY
   AYT_EA
   AYT_SOZ

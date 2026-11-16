@@ -273,7 +273,8 @@ export function buildExams(parts: AiExam[][], codes: Map<string, string>): PdfEx
     const penalty = inferPenalty(students.flatMap((s) => s.sections.filter((x): x is PdfStudentSection => Boolean(x)))) ?? preset.wrongPenalty;
     const sections: PdfExamSection[] = base.sections.map((s, i) => {
       const questionCount = counts[i];
-      const presetSection = kind !== "CUSTOM" ? preset.sections[i] : null;
+      // Alt derslere bölünmüş TYT/AYT'de şablon dersi tek tek eşleşmez; ad PDF'teki gibi kalır
+      const presetSection = kind !== "CUSTOM" && preset.sections.length === base.sections.length ? preset.sections[i] : null;
       let topics = s.topics?.length === questionCount ? s.topics.map((t) => t.trim()) : [];
       const answerKey = cleanAnswers(s.answerKey, questionCount);
       // Kazanım tablosu: öğrencilerin cevaplarıyla tutarlı soru → konu eşlemesi

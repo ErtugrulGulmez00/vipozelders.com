@@ -297,7 +297,8 @@ export function parseAkbimPdf(pages: PdfItem[][]): PdfExam[] {
           : [];
         topics = (students.length ? assignTopics(s.questionCount, { names: sample.topics.map((t) => t.name), sizes: sample.topics.map((t) => t.s), students }) : null) ?? [];
       }
-      const presetSection = kind !== "CUSTOM" ? preset.sections[i] : null;
+      // Alt derslere bölünmüş TYT/AYT'de şablon dersi tek tek eşleşmez; ad PDF'teki gibi kalır
+      const presetSection = kind !== "CUSTOM" && preset.sections.length === base.sections.length ? preset.sections[i] : null;
       const nice = NICE[s.col] ?? s.col;
       return { label: nice, name: presetSection?.name ?? nice, questionCount: s.questionCount, answerKey, topics, subjectSlug: presetSection?.subjectSlug ?? guessSubject(nice) };
     });
