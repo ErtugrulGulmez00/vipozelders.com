@@ -26,7 +26,7 @@ import { expirePackages } from "./packages";
 import { expireRescheduleRequests } from "./reschedule";
 import { sendCoachDigests, sendInactivityNudges, sendPlanNudges } from "./koc-plan";
 import { enforceCoachMeetings } from "./koc-meeting-usage";
-import { processCoachOverLimit } from "./koc-promo";
+import { processCoachOverLimit, sendCoachLimitMails } from "./koc-promo";
 import { sendCoachAutoReports } from "./koc-report";
 
 const HOLDER = `${hostname()}-${process.pid}-${randomUUID().slice(0, 8)}`;
@@ -76,6 +76,8 @@ const TASKS = {
   kocMeetings: enforceCoachMeetings,
   // Pi Koç: paketi (deneme kodu ya da ücretli) biten hesapta sınırın üstündeki öğrenciler 7 gün sonra arşive
   kocOverLimit: processCoachOverLimit,
+  // Pi Koç: öğrenci sınırı dolunca üst paketler yalnızca e-postayla (uygulamada satış yok)
+  kocLimitMails: sendCoachLimitMails,
   // Pi Koç ücretli paket: pazar akşamı otomatik veli raporu
   kocAutoReports: sendCoachAutoReports,
   centerMessages: () => processCenterMessages(),

@@ -2,20 +2,23 @@ import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { connection } from "next/server";
-import { GeneratePromoForm, RevokePromoForm } from "@/components/koc/promo-forms";
+import { GeneratePackageForm, GeneratePromoForm, RevokePromoForm } from "@/components/koc/promo-forms";
 import { Badge, Card, CardBody, CardHeader, EmptyState, PageHeader, Table, Td, Th } from "@/components/ui/primitives";
 import { formatCompact, formatDate } from "@/lib/dates";
-import { coachTierName } from "@/lib/pi-koc";
+import { formatMoney } from "@/lib/money";
+import { coachTierName, parseCoachTiers } from "@/lib/pi-koc";
+import { loadSettings } from "@/server/settings";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 
-export const metadata: Metadata = { title: "Deneme kodları" };
+export const metadata: Metadata = { title: "Deneme ve paket kodları" };
 
 /** Pi Koç deneme kodları: üret, kim kullandı, iptal et. */
 export default async function PromoCodesPage() {
   await requireRole("ADMIN");
   await connection();
   const now = new Date();
+  const tiers = parseCoachTiers((await loadSettings()).piKocTiers);
   const codes = await db.coachPromoCode.findMany({
     orderBy: { createdAt: "desc" },
     take: 200,
@@ -23,6 +26,7 @@ export default async function PromoCodesPage() {
   });
   const status = (c: (typeof codes)[number]) => {
     if (c.revokedAt) return { label: "İptal", tone: "slate" as const };
+    if (c.kind === "PACKAGE" && c.redeemedAt) return { label: "Kullanıldı", tone: "green" as const };
     if (c.redeemedAt) return c.center?.promoUntil && c.center.promoUntil > now ? { label: "Kullanımda", tone: "green" as const } : { label: "Süresi bitti", tone: "slate" as const };
     if (c.expiresAt && c.expiresAt < now) return { label: "Kullanılmadan doldu", tone: "slate" as const };
     return { label: "Kullanılmadı", tone: "amber" as const };
@@ -33,16 +37,22 @@ export default async function PromoCodesPage() {
         <ArrowLeft className="size-4" aria-hidden /> Pi Koç hesapları
       </Link>
       <PageHeader
-        title="Deneme kodları"
-        description={`Öğretmen ya da koç kodu Pi Koç → Paketler sayfasında girer; süresince ${coachTierName(5)} paketi (5 öğrenci, bütün ücretli özellikler) açılır. Her kod tek kullanımlık; bir hesap yalnızca bir kod kullanabilir, ücretli paketi olan kullanamaz. Süre bitince öğrenci sayısını 3'e indirmeyen hesabın en son eklenen öğrencileri 7 gün sonra arşive alınır.`}
+        title="Deneme ve paket kodları"
+        description={`Öğretmen ya da koç kodu Pi Koç → Paketler sayfasında girer; süresince ${coachTierName(5)} paketi (5 öğrenci, bütün ücretli özellikler) açılır. Her kod tek kullanımlık; bir hesap yalnızca bir kod kullanabilir, ücretli paketi olan kullanamaz. Süre bitince öğrenci sayısını 3'e indirmeyen hesabın en son eklenen öğrencileri 7 gün sonra arşive alınır. Paket kodu: havale ya da WhatsApp'tan satın alana verilir; girilince ödeme kaydı oluşur ve paket kodun süresi kadar açılır/uzar (mobil uygulamada satış olmadığı için uygulamadaki koç paketi kodla açar).`}
       />
       <div className="grid gap-6 lg:grid-cols-[1fr_1.6fr] lg:items-start">
-        <Card>
-          <CardHeader title="Kod üret" />
-          <CardBody>
-            <GeneratePromoForm />
-          </CardBody>
-        </Card>
+        <div className="space-y-6">
+          <Card>
+            <CardHeader title="Paket kodu üret" description="Satılan paket için: kodu koça WhatsApp'tan gönderin." />
+            <CardBody>{tiers.length ? <GeneratePackageForm tiers={tiers} /> : <p className="text-sm text-slate-500">Önce Ayarlar&apos;da Pi Koç kademelerini girin.</p>}</CardBody>
+          </Card>
+          <Card>
+            <CardHeader title="Deneme kodu üret" />
+            <CardBody>
+              <GeneratePromoForm />
+            </CardBody>
+          </Card>
+        </div>
         {codes.length ? (
           <Card className="overflow-x-auto">
             <Table>
@@ -63,7 +73,7 @@ export default async function PromoCodesPage() {
                       <Td className="whitespace-nowrap font-mono text-sm font-semibold">
                         {c.code}
                         <div className="font-sans text-xs font-normal text-slate-500">
-                          {c.days} gün · {formatCompact(c.createdAt)}
+                          {c.kind === "PACKAGE" ? `Paket: ${coachTierName(c.students)} · ${c.months ?? 1} ay · ${formatMoney(c.amount ?? 0)}` : `Deneme: ${c.days} gün`} · {formatCompact(c.createdAt)}
                           {c.expiresAt ? ` · son ${formatDate(c.expiresAt)}` : ""}
                         </div>
                       </Td>
@@ -76,12 +86,12 @@ export default async function PromoCodesPage() {
                         ) : (
                           "—"
                         )}
-                        {c.redeemedAt ? <div className="text-xs text-slate-500">{formatCompact(c.redeemedAt)}{c.center?.promoUntil ? ` → ${formatDate(c.center.promoUntil)}` : ""}</div> : null}
+                        {c.redeemedAt ? <div className="text-xs text-slate-500">{formatCompact(c.redeemedAt)}{c.kind === "TRIAL" && c.center?.promoUntil ? ` → ${formatDate(c.center.promoUntil)}` : ""}</div> : null}
                       </Td>
                       <Td>
                         <Badge tone={s.tone}>{s.label}</Badge>
                       </Td>
-                      <Td>{!c.revokedAt && s.label !== "Süresi bitti" ? <RevokePromoForm codeId={c.id} redeemed={Boolean(c.redeemedAt)} /> : null}</Td>
+                      <Td>{!c.revokedAt && s.label !== "Süresi bitti" && !(c.kind === "PACKAGE" && c.redeemedAt) ? <RevokePromoForm codeId={c.id} redeemed={Boolean(c.redeemedAt)} /> : null}</Td>
                     </tr>
                   );
                 })}

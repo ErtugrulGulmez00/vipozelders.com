@@ -172,7 +172,7 @@ class _CoachHomeState extends State<CoachHome> {
           onMeet: (s) => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => MeetingScreen(studentId: s.str('id')))),
         ),
         if (!center.flag('writable'))
-          const _Banner(text: 'Abonelik süresi doldu: panel salt okunur. Kayıtlarınız duruyor; aboneliği sitede yenileyebilirsiniz.')
+          const _Banner(text: 'Abonelik süresi doldu: panel salt okunur. Kayıtlarınız duruyor; paket kodunuz varsa Hesap → Paketler bölümünden girebilirsiniz.')
         else if (center.str('status') == 'TRIAL' && center.strOrNull('trialEndsAt') != null)
           _Banner(text: 'Ücretsiz deneme ${dayMonth(center.str('trialEndsAt').substring(0, 10))} tarihine kadar.', soft: true),
         const SizedBox(height: 18),

@@ -10,6 +10,8 @@ import { formatMoney } from "@/lib/money";
 import { COACH_FREE_NAME, coachTierName, parseCoachTiers, type CoachFeature, type CoachPlan } from "@/lib/pi-koc";
 
 // Pi Koç abonelik sayfası: üstte paket durumu, ortada paketler, altta gruplu özellikler ve ödeme bilgisi.
+// Mobil uygulamada (inApp) yalnızca paket durumu, kod kutusu ve ödeme geçmişi görünür: fiyat, "satın al" ve havale bilgisi
+// gösterilmez (Google Play ödeme politikası; paket sitede ya da WhatsApp'tan alınır, uygulamada kodla açılır).
 
 /** Özelliklerin tek satırlık açıklamaları (abonelik sayfası) */
 const GROUPS: { title: string; Icon: typeof Users; items: { key: CoachFeature | "video"; anchor?: string; title: string; text: string }[] }[] = [
@@ -56,6 +58,7 @@ export function CoachSubscription({
   settings,
   whatsapp,
   payments,
+  inApp = false,
 }: {
   plan: CoachPlan;
   centerName: string;
@@ -65,6 +68,7 @@ export function CoachSubscription({
   settings: { piKocTiers: string; piKocFreeStudents: number; piKocFreeMeetingMinutes: number; piKocFreeAiPerMonth: number; centerBankInfo: string; contactEmail: string; contactPhone: string };
   whatsapp: string | null;
   payments: Payment[];
+  inApp?: boolean;
 }) {
   const tiers = parseCoachTiers(settings.piKocTiers);
   const usage = activeStudents / Math.max(studentLimit, 1);
@@ -99,21 +103,36 @@ export function CoachSubscription({
         </div>
         {plan.state === "promo" ? (
           <p className="mt-4 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-900">
-            Deneme kodunuzla bütün ücretli özellikler açık. Süre bitince ücretsiz pakete dönersiniz; devam etmek için aşağıdan bir paket seçebilirsiniz.
+            Deneme kodunuzla bütün ücretli özellikler açık. Süre bitince ücretsiz pakete dönersiniz{inApp ? "." : "; devam etmek için aşağıdan bir paket seçebilirsiniz."}
           </p>
         ) : null}
-        {free && !promoUntil ? (
+        {inApp ? (
+          <div id="kod" className="mt-4 border-t border-slate-100 pt-4" data-testid="app-code-box">
+            <p className="text-sm font-semibold text-ink-900">Paket kodunuz var mı?</p>
+            <p className="mt-1 text-sm text-slate-500">Daha fazla öğrenci ve özellik için size verilen kodu girin.</p>
+            <div className="mt-3 max-w-xl">
+              <RedeemPromoForm label="Kod" />
+            </div>
+          </div>
+        ) : (
           <details id="kod" className="group mt-4 scroll-mt-24 border-t border-slate-100 pt-3">
             <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-sm font-semibold text-brand-700 hover:underline [&::-webkit-details-marker]:hidden">
-              Deneme kodunuz var mı? <ChevronDown className="size-4 transition group-open:rotate-180" aria-hidden />
+              {free && !promoUntil ? "Deneme ya da paket kodunuz var mı?" : "Paket kodunuz var mı?"} <ChevronDown className="size-4 transition group-open:rotate-180" aria-hidden />
             </summary>
-            <p className="mt-2 text-sm text-slate-500">Size verilen kodu girin; süresince Rehber paketi (5 öğrenci, bütün ücretli özellikler) açılır. Kod hesap başına bir kez kullanılır.</p>
+            <p className="mt-2 text-sm text-slate-500">
+              {free && !promoUntil
+                ? "Size verilen kodu girin. Deneme kodu süresince Rehber paketini (5 öğrenci, bütün ücretli özellikler) açar ve hesap başına bir kez kullanılır; paket kodu satın aldığınız paketi açar."
+                : "Satın aldığınız paketin kodunu girin; paketiniz kodun süresi kadar açılır ya da uzar."}
+            </p>
             <div className="mt-3 max-w-xl">
-              <RedeemPromoForm />
+              <RedeemPromoForm label="Kod" />
             </div>
           </details>
-        ) : null}
+        )}
       </section>
+
+      {inApp ? null : (
+      <>
 
       {/* Paketler */}
       <section>
@@ -214,8 +233,12 @@ export function CoachSubscription({
         </div>
       </section>
 
+      </>
+      )}
+
       {/* Ödeme bilgisi ve geçmişi */}
-      <section className={cn("grid gap-4", payments.length ? "lg:grid-cols-[1fr_1.2fr]" : "")}>
+      <section className={cn("grid gap-4", payments.length && !inApp ? "lg:grid-cols-[1fr_1.2fr]" : "")}>
+        {inApp ? null : (
         <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-700">
           <p className="font-bold text-ink-900">Ödeme</p>
           <p className="mt-2">Paketin tutarını havale / EFT ile gönderin; açıklamaya adınızı ve paketi yazın (ör. &quot;{centerName} · Mentor&quot;). Ödemeniz kaydedilince paketiniz açılır. Süre bitip yenilenmezse ücretsiz pakete dönersiniz; kayıtlarınız silinmez.</p>
@@ -225,6 +248,7 @@ export function CoachSubscription({
             {settings.contactPhone ? ` · ${settings.contactPhone}` : ""}
           </p>
         </div>
+        )}
         {payments.length ? (
         <div className="rounded-3xl border border-slate-200 bg-white p-5">
           <p className="font-bold text-ink-900">Ödemeleriniz</p>

@@ -17,6 +17,7 @@ import { coachMeetingStatus, monthStartOf } from "@/server/koc-meeting-usage";
 import { requireRole } from "@/server/auth/current-user";
 import { db } from "@/server/db";
 import { teacherBalances } from "@/server/ledger";
+import { isAppRequest } from "@/server/app-client";
 import { loadSettings } from "@/server/settings";
 import { pendingInquiryCount } from "@/server/teacher-inquiries";
 import { profileChecklist } from "@/server/teachers";
@@ -138,7 +139,7 @@ export default async function TeacherDashboard() {
       {plan && meeting ? (
         <CoachPlanOverview
           plan={plan}
-          next={tiers[0] ?? null}
+          next={(await isAppRequest()) ? null : (tiers[0] ?? null)}
           usage={{
             students: coachStudents,
             studentLimit: plan.studentLimit,

@@ -65,7 +65,7 @@ export default async function AdminCoachAccountsPage({ searchParams }: PageProps
               Kurumlar
             </Link>
             <Link href="/yonetim/pi-koc/kodlar" className={buttonClasses("outline", "sm")}>
-              Deneme kodları
+              Deneme ve paket kodları
             </Link>
           </div>
         }

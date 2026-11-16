@@ -3,13 +3,16 @@ import Link from "next/link";
 import { buttonClasses } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import { COACH_FEATURES, parseCoachTiers, type CoachFeature } from "@/lib/pi-koc";
+import { isAppRequest } from "@/server/app-client";
 import { getSiteSettings } from "@/server/site";
 
 /** Ücretsiz pakette kilitli özellik: gizlenmez, ne işe yaradığı ve hangi pakette açıldığı gösterilir. */
 export async function LockedFeature({ feature, className, compact }: { feature: CoachFeature; className?: string; compact?: boolean }) {
   const tier = parseCoachTiers((await getSiteSettings()).piKocTiers)[0];
   const info = COACH_FEATURES[feature];
-  const unlock = tier ? `${tier.name} paketinde açılır (${tier.students} öğrenci) · ayda ${tier.priceTl.toLocaleString("tr-TR")} ₺` : "Ücretli pakette açılır";
+  // Mobil uygulamada fiyat gösterilmez (Google Play ödeme politikası)
+  const inApp = await isAppRequest();
+  const unlock = tier ? `${tier.name} paketinde açılır (${tier.students} öğrenci)${inApp ? "" : ` · ayda ${tier.priceTl.toLocaleString("tr-TR")} ₺`}` : "Ücretli pakette açılır";
   return (
     <div className={cn("rounded-3xl border border-dashed border-ink-200 bg-slate-50/70 p-5", className)} data-locked={feature}>
       <div className="flex items-start gap-3">
@@ -23,7 +26,7 @@ export async function LockedFeature({ feature, className, compact }: { feature: 
         </div>
       </div>
       <Link href="/koc/abonelik" className={buttonClasses("outline", "sm", "mt-4 w-full sm:w-auto")}>
-        Paketleri gör
+        {inApp ? "Paket kodu gir" : "Paketleri gör"}
       </Link>
     </div>
   );

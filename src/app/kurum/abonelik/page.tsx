@@ -13,6 +13,7 @@ import { formatMoney } from "@/lib/money";
 import { COACH_FREE_NAME, coachPlanLabel, parseCoachTiers } from "@/lib/pi-koc";
 import { premiumFeatures, TierIcon } from "@/components/koc/premium";
 import { Crown } from "lucide-react";
+import { isAppRequest } from "@/server/app-client";
 import { requireCenter } from "@/server/center/context";
 import { centerPlans, subscriptionLabel } from "@/server/center/plans";
 import { db } from "@/server/db";
@@ -27,11 +28,13 @@ export const metadata: Metadata = { title: "Abonelik" };
 
 export default async function SubscriptionPage() {
   const ctx = await requireCenter("subscription.view");
-  const [settings, activeStudents, staff, payments] = await Promise.all([
+  const [settings, activeStudents, staff, payments, inApp] = await Promise.all([
     getSiteSettings(),
     db.centerStudent.count({ where: { centerId: ctx.center.id, status: "ACTIVE" } }),
     db.centerMember.count({ where: { centerId: ctx.center.id, isActive: true } }),
     db.centerSubscriptionPayment.findMany({ where: { centerId: ctx.center.id }, orderBy: { createdAt: "desc" } }),
+    // Mobil uygulamada fiyat, satın alma ve havale bilgisi gösterilmez (Google Play ödeme politikası)
+    isAppRequest(),
   ]);
   const access = CENTER_ACCESS_LABEL[ctx.access.state];
   const plans = centerPlans(settings);
@@ -52,6 +55,7 @@ export default async function SubscriptionPage() {
           settings={settings}
           whatsapp={whatsapp}
           payments={payments}
+          inApp={inApp}
         />
       </>
     );
@@ -84,7 +88,7 @@ export default async function SubscriptionPage() {
             </div>
           </CardBody>
         </Card>
-        {coach && ctx.coach?.state === "free" && !ctx.center.promoUntil ? (
+        {coach && ctx.coach?.state === "free" && !ctx.center.promoUntil && !inApp ? (
           <Card id="kod" className="scroll-mt-24 border-gold-300 bg-gold-50/60 lg:col-span-2">
             <CardHeader title="Deneme kodunuz var mı?" description="Size verilen kodu girin; süresince Rehber paketi (5 öğrenci, bütün ücretli özellikler) açılır. Kod hesap başına bir kez kullanılır." />
             <CardBody>
@@ -100,6 +104,7 @@ export default async function SubscriptionPage() {
             />
           </Card>
         ) : null}
+        {inApp ? null : (
         <Card>
           <CardHeader title="Ödeme / yenileme" />
           <CardBody className="space-y-3 text-sm text-slate-700">
@@ -117,8 +122,9 @@ export default async function SubscriptionPage() {
             </p>
           </CardBody>
         </Card>
+        )}
       </div>
-      {coach ? (
+      {inApp ? null : coach ? (
         <>
           <h2 className="mb-1 mt-8 text-2xl font-extrabold tracking-tight text-slate-900">Pi Koç paketleri</h2>
           <p className="mb-5 text-sm text-slate-500">Paket almak ya da değiştirmek için WhatsApp’tan yazın ya da ödeme açıklamasına yeni paketin adını yazın. Ücretli paketin süresi biterse hesabınız ücretsiz pakete döner; kayıtlarınız silinmez.</p>

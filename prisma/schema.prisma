@@ -1121,6 +1121,8 @@ model Center {
   promoStudents          Int?
   // Pi Koç: ücretsiz paketin öğrenci sınırı ne zamandan beri aşılıyor (7 gün sonra fazlalar arşive alınır)
   overLimitSince         DateTime?
+  // Pi Koç: öğrenci sınırı doldu e-postası en son ne zaman gitti (paket bilgisi yalnızca e-postayla; uygulamada satış yok)
+  limitMailAt            DateTime?
   promoCodes             CoachPromoCode[]
   createdAt              DateTime         @default(now())
   updatedAt              DateTime         @updatedAt
@@ -2800,12 +2802,23 @@ model CenterCoachPayment {
 }
 
 // Pi Koç deneme kodu: yönetim üretir, öğretmen/koç bir kez kullanır; süre boyunca ücretli paket açılır
+// TRIAL: deneme kodu (hesap başına bir kez, süreli). PACKAGE: satılan paket kodu (havale/WhatsApp ile alınır; girilince
+// ödeme kaydı oluşur, ücretli paket `months` ay uzar). Uygulamada satış olmadığından koç paketi kodla açar.
+enum PromoCodeKind {
+  TRIAL
+  PACKAGE
+}
+
 model CoachPromoCode {
-  id               String    @id @default(cuid())
-  code             String    @unique
+  id               String        @id @default(cuid())
+  code             String        @unique
+  kind             PromoCodeKind @default(TRIAL)
   note             String?
-  days             Int       @default(30)
-  students         Int       @default(5)
+  days             Int           @default(30)
+  students         Int           @default(5)
+  // Paket kodu: kaç ay ve ödeme kaydına yazılacak tutar (kuruş)
+  months           Int?
+  amount           Int?
   // Bu tarihten sonra kullanılamaz (boşsa süresiz)
   expiresAt        DateTime?
   createdById      String?
