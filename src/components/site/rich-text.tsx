@@ -20,9 +20,24 @@ export function fillPlaceholders(content: string, settings: SiteSettings): strin
   });
 }
 
+/** Metindeki https:// adreslerini bağlantı yapar (yalnızca https; HTML yorumlanmaz). */
+function linkify(text: string): ReactNode {
+  const parts = text.split(/(https:\/\/[^\s<>"]+[^\s<>".,;:!?)])/);
+  if (parts.length === 1) return text;
+  return parts.map((part, i) =>
+    i % 2 ? (
+      <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="break-all font-semibold text-brand-700 hover:underline">
+        {part}
+      </a>
+    ) : (
+      part
+    ),
+  );
+}
+
 /**
  * Basit ve güvenli metin biçimi: "## Başlık", "- madde", "> uyarı", boş satırla paragraf.
- * HTML yorumlanmaz; içerik her zaman düz metin olarak basılır.
+ * HTML yorumlanmaz; içerik her zaman düz metin olarak basılır. https:// adresleri bağlantı olur.
  */
 export function RichText({ content }: { content: string }) {
   const blocks: ReactNode[] = [];
@@ -38,7 +53,7 @@ export function RichText({ content }: { content: string }) {
           {lines.map((line, i) => (
             <Fragment key={i}>
               {i > 0 ? <br /> : null}
-              {line}
+              {linkify(line)}
             </Fragment>
           ))}
         </p>,
@@ -51,7 +66,7 @@ export function RichText({ content }: { content: string }) {
       blocks.push(
         <ul key={`u${blocks.length}`}>
           {list.map((item, i) => (
-            <li key={i}>{item}</li>
+            <li key={i}>{linkify(item)}</li>
           ))}
         </ul>,
       );

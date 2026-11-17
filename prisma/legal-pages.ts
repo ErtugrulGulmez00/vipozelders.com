@@ -80,7 +80,11 @@ Kamera ve mikrofonu olan bir bilgisayar, tablet ya da telefon ve güncel bir tar
 Öğretmen listesinin altındaki "Aradığınız öğretmeni bulamadınız mı?" formunu doldurun; uygun öğretmeni bulup size dönelim.
 
 ## Öğretmen olmak istiyorum, ne ödemem gerekir?
-Profil açmak ve ders talebi almak ücretsizdir; {siteName} ders ücretinizden komisyon almaz. Öğrencilerinizi takip ettiğiniz Pi Koç {piKocFreeStudents} öğrenciye kadar ücretsizdir; daha fazla öğrenci için aylık paket alırsınız. Başvuru için "Öğretmen ol" sayfasını kullanın.`,
+Profil açmak ve ders talebi almak ücretsizdir; {siteName} ders ücretinizden komisyon almaz. Öğrencilerinizi takip ettiğiniz Pi Koç {piKocFreeStudents} öğrenciye kadar ücretsizdir; daha fazla öğrenci için aylık paket alırsınız. Başvuru için "Öğretmen ol" sayfasını kullanın.
+
+## Mobil uygulama var mı?
+Evet. {siteName} Android uygulamasını Google Play'den indirebilirsiniz; sitedeki hesabınızla girersiniz:
+https://play.google.com/store/apps/details?id=com.pikampus.app`,
   },
   {
     slug: "iletisim",
