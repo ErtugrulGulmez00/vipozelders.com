@@ -29,6 +29,8 @@ async function Content() {
   return (
     <Card className="p-6 sm:p-10">
       <h1 className="text-3xl font-bold tracking-tight text-slate-900">Hesap silme</h1>
+      {/* Google Play: sayfada mağazadaki uygulama ya da geliştirici adı geçmeli */}
+      <p className="mt-2 text-sm text-slate-500">Uygulama: {settings.siteName} · Geliştirici: Negentropy Studios</p>
       <p className="mt-3 text-slate-600">
         {settings.siteName} hesabınızın ve hesabınıza bağlı kişisel verilerinizin silinmesini istediğiniz zaman talep edebilirsiniz. Bu sayfa web sitesi ve {settings.siteName} mobil uygulaması (Android ve iOS) için geçerlidir; ikisi aynı hesabı kullanır.
       </p>
