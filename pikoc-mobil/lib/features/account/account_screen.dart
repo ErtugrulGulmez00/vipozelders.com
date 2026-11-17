@@ -31,7 +31,9 @@ class AccountScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final session = SessionScope.of(context);
-    final me = session.me!;
+    final me = session.me;
+    // Çıkış anında ekran kapanana kadar boş kalır (kök ekran giriş ekranına döner)
+    if (me == null) return const Scaffold();
     final config = ConfigScope.of(context);
     final view = session.view;
     final coach = view == AppView.coach;

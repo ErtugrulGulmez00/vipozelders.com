@@ -103,7 +103,13 @@ class _RootState extends State<_Root> {
     if (!session.ready) return const Scaffold(backgroundColor: Brand.ink900, body: Center(child: CircularProgressIndicator(color: Colors.white)));
     WidgetsBinding.instance.addPostFrameCallback((_) => _offerUpdate());
     final me = session.me;
-    if (me == null) return const LoginScreen();
+    if (me == null) {
+      // Çıkışta ya da oturum düşünce üstte açık kalan ekranlar (Hesabım vb.) kapanır; giriş ekranı görünür
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+      });
+      return const LoginScreen();
+    }
     if (me.mustChangePassword) return const PasswordScreen(firstLogin: true);
     // Seçili taraf: Pi Koç uygulamanın kendi ekranları; özel ders öğretmeni karma; veli ve kurum sitenin paneli
     final view = session.view;
