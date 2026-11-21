@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -16,10 +17,13 @@ const appUserAgentMarker = 'PiKampusApp/1.0';
 /// Sitenin bir sayfası (uygulamanın içinde). [authPath] verilirse (ör. "/koc/abonelik", "/kurum") önce tek kullanımlık
 /// web oturumu bağlantısı alınır; kullanıcı yeniden giriş yapmaz. Site dışı bağlantılar telefonun tarayıcısında açılır.
 class WebPanel extends StatefulWidget {
-  const WebPanel({super.key, this.url, this.authPath}) : assert(url != null || authPath != null);
+  const WebPanel({super.key, this.url, this.authPath, this.loadUrl}) : assert(url != null || authPath != null || loadUrl != null);
 
   final String? url;
   final String? authPath;
+
+  /// Bağlantıyı uygulama kendisi alır (ör. görüşme tahtası için ayrı API ucu)
+  final Future<String?> Function()? loadUrl;
 
   @override
   State<WebPanel> createState() => WebPanelState();
@@ -56,7 +60,9 @@ class WebPanelState extends State<WebPanel> {
     setState(() => _error = null);
     try {
       var url = widget.url;
-      if (widget.authPath != null) {
+      if (widget.loadUrl != null) {
+        url = await widget.loadUrl!();
+      } else if (widget.authPath != null) {
         final res = await SessionScope.read(context).api.post('/web-oturum', {'path': widget.authPath});
         url = res['url'] as String?;
       }
@@ -102,12 +108,31 @@ class WebPanelState extends State<WebPanel> {
       // Geliştirmede Chrome'dan (chrome://inspect) incelenebilsin
       if (kDebugMode) await AndroidWebViewController.enableDebugging(true);
       await AndroidWebViewCookieManager(const PlatformWebViewCookieManagerCreationParams()).setAcceptThirdPartyCookies(platform, true);
+      // Sayfadaki dosya seçme düğmeleri (tahtaya PDF/fotoğraf, kurum dosyaları): Android web görünümü bunu kendisi açmaz
+      await platform.setOnShowFileSelector(_pickFiles);
     }
     try {
       final agent = await controller.getUserAgent();
       if (agent != null && !agent.contains('PiKampusApp')) await controller.setUserAgent('$agent $appUserAgentMarker');
     } catch (_) {}
     return controller;
+  }
+
+  /// Sistemin dosya seçicisi (izin gerekmez); seçilen dosyalar uygulamanın geçici klasörüne kopyalanıp sayfaya verilir.
+  Future<List<String>> _pickFiles(FileSelectorParams params) async {
+    final accept = params.acceptTypes.join(',').toLowerCase();
+    final imagesOnly = accept.isNotEmpty && accept.split(',').every((t) => t.trim().startsWith('image/') || t.trim().isEmpty);
+    final type = imagesOnly ? FileType.image : FileType.any;
+    try {
+      if (params.mode == FileSelectorMode.openMultiple) {
+        final files = await FilePicker.pickFiles(type: type);
+        return [for (final f in files) f.uri.toString()];
+      }
+      final file = await FilePicker.pickFile(type: type);
+      return file == null ? const [] : [file.uri.toString()];
+    } catch (_) {
+      return const [];
+    }
   }
 
   @override

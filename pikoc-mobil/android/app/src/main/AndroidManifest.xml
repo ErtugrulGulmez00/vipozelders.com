@@ -14,9 +14,12 @@
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <!-- Ekran paylaşımı: MediaProjection ön plan hizmeti -->
+    <!-- Ekran paylaşımı: MediaProjection ön plan hizmeti. Paylaşım sırasında başka uygulamaya geçilince kamera ve
+         mikrofon da kesilmesin diye hizmet camera ve microphone türleriyle de çalışır (Android arka planda bunları keser). -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <application
@@ -49,7 +52,7 @@
             android:name="de.julianassmann.flutter_background.IsolateHolderService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="mediaProjection" />
+            android:foregroundServiceType="mediaProjection|camera|microphone" />
         <!-- Firebase Cloud Messaging: varsayılan bildirim kanalı, simgesi ve rengi -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"

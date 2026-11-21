@@ -143,6 +143,8 @@ const WEB_LOGIN_TARGETS = [
   /^\/odeme\/(garanti|paytr|test)\/[a-z0-9]+$/i,
   /^\/odeme\/sonuc\/[a-z0-9]+$/i,
   /^\/grup-ders\/[a-z0-9]+$/i,
+  // Koç görüşmesinin beyaz tahtası (uygulamadaki görüşme ekranının tahta paneli)
+  /^\/gorusme\/[a-z0-9]+\/tahta$/i,
   ...TEACHER_PANEL_TARGETS.map((path) => new RegExp(`^${path}$`)),
 ];
 

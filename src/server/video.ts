@@ -61,24 +61,26 @@ export async function createRoomToken(
   user: { id: string; firstName: string; lastName: string },
   now = new Date(),
   // inspector: yönetimin teftiş izlemesi (görünmez, yayın yapmaz, görüşme süresine sayılmaz)
-  options: { observer?: boolean; inspector?: boolean } = {},
+  // board: mobil uygulamanın beyaz tahta penceresi (görünmez, yalnızca tahta verisi gönderir, süreye sayılmaz)
+  options: { observer?: boolean; inspector?: boolean; board?: boolean } = {},
 ): Promise<{ token: string; serverUrl: string }> {
   if (!videoConfigured()) throw new Error("Sanal sınıf yapılandırılmamış.");
   const inspector = Boolean(options.inspector);
+  const board = Boolean(options.board) && !inspector;
   const observer = inspector || (Boolean(options.observer) && access.role === "student");
   const ttlSeconds = Math.max(60, Math.round((access.closesAt.getTime() - now.getTime()) / 1000));
   const token = new AccessToken(process.env.LIVEKIT_API_KEY, process.env.LIVEKIT_API_SECRET, {
-    identity: inspector ? `${user.id}:teftis:${randomUUID().slice(0, 8)}` : observer ? `${user.id}:izleyici:${randomUUID().slice(0, 8)}` : user.id,
-    name: inspector ? "Teftiş" : observer ? "Veli (izleyici)" : access.role === "teacher" ? `${user.firstName} ${user.lastName} (Öğretmen)` : `${user.firstName} ${user.lastName.charAt(0)}.`,
+    identity: inspector ? `${user.id}:teftis:${randomUUID().slice(0, 8)}` : board ? `${user.id}:tahta:${randomUUID().slice(0, 8)}` : observer ? `${user.id}:izleyici:${randomUUID().slice(0, 8)}` : user.id,
+    name: inspector ? "Teftiş" : board ? "Beyaz tahta" : observer ? "Veli (izleyici)" : access.role === "teacher" ? `${user.firstName} ${user.lastName} (Öğretmen)` : `${user.firstName} ${user.lastName.charAt(0)}.`,
     ttl: ttlSeconds,
   });
   token.addGrant({
     roomJoin: true,
     room: access.room,
-    canPublish: !observer,
+    canPublish: !observer && !board,
     canSubscribe: true,
     canPublishData: !observer,
-    hidden: observer,
+    hidden: observer || board,
   });
   return { token: await token.toJwt(), serverUrl: process.env.LIVEKIT_URL! };
 }

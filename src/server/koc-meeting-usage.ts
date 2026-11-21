@@ -73,10 +73,10 @@ export async function coachMeetingAllowance(studentId: string, now = new Date())
   return { ...allowance, minutes: Math.min(allowance.minutes, left) };
 }
 
-/** LiveKit katılım olayı (koc-<öğrenci> odası). Veli izleyici ve yönetimin teftiş izlemesi sayılmaz. */
+/** LiveKit katılım olayı (koc-<öğrenci> odası). Veli izleyici, yönetimin teftiş izlemesi ve uygulamanın tahta penceresi sayılmaz. */
 export async function handleCoachRoomEvent(roomName: string, identity: string, event: string | undefined, now = new Date()) {
   const studentId = STUDENT_ROOM.exec(roomName)?.[1];
-  if (!studentId || identity.includes(":izleyici:") || identity.includes(":teftis:")) return;
+  if (!studentId || identity.includes(":izleyici:") || identity.includes(":teftis:") || identity.includes(":tahta:")) return;
   if (event !== "participant_joined" && event !== "participant_left") return;
   const started = await db.$transaction(async (tx) => {
     await tx.$queryRaw`SELECT 1 FROM pg_advisory_xact_lock(hashtext(${`koc-meeting:${roomName}`}))`;

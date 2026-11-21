@@ -4,7 +4,8 @@ import "@excalidraw/excalidraw/index.css";
 import { CaptureUpdateAction, convertToExcalidrawElements, Excalidraw, reconcileElements } from "@excalidraw/excalidraw";
 import type { FileId, OrderedExcalidrawElement } from "@excalidraw/excalidraw/element/types";
 import type { BinaryFileData, ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
-import { useRoomContext } from "@livekit/components-react";
+import { useConnectionState, useRoomContext } from "@livekit/components-react";
+import { ConnectionState } from "livekit-client";
 import { FileUp, Loader2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { blobToDataUrl, boardImages, fetchBoardImage, MAX_PDF_PAGES, uploadBoardImage } from "./board-files";
@@ -39,6 +40,7 @@ type Message =
  */
 export function Whiteboard({ open, onRemoteOpen }: { open: boolean; onRemoteOpen: () => void }) {
   const room = useRoomContext();
+  const connected = useConnectionState() === ConnectionState.Connected;
   const apiRef = useRef<ExcalidrawImperativeAPI | null>(null);
   const knownVersions = useRef(new Map<string, number>());
   const queued = useRef<OrderedExcalidrawElement[][]>([]);
@@ -110,14 +112,21 @@ export function Whiteboard({ open, onRemoteOpen }: { open: boolean; onRemoteOpen
     return () => room.unregisterTextStreamHandler(TOPIC);
   }, [room, applyRemote, onRemoteOpen, send]);
 
-  // Tahtayı ilk açan taraf karşı tarafın tahtasını da açtırır.
+  // Tahtayı ilk açan taraf karşı tarafın tahtasını da açtırır. Bağlantı kurulmadan gönderilen mesaj düşer; tahta açık
+  // başlarsa (uygulamanın tahta penceresi) bağlanınca duyurulur.
   useEffect(() => {
+    if (!connected) return;
     if (open && !announcedOpen.current) {
       announcedOpen.current = true;
       send({ type: "open" });
     }
     if (!open) announcedOpen.current = false;
-  }, [open, send]);
+  }, [open, send, connected]);
+
+  // Bağlantı (yeniden) kurulunca karşı taraftan güncel çizimler istenir (tahta bağlantıdan önce hazırlandıysa)
+  useEffect(() => {
+    if (connected && apiRef.current) send({ type: "sync-request" });
+  }, [connected, send]);
 
   const broadcastChanges = useCallback((elements: readonly OrderedExcalidrawElement[]) => {
     // Görünür çizim sayısı (testler ve hata ayıklama için).

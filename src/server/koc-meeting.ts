@@ -50,6 +50,13 @@ export async function meetingToken(studentId: string, role: "teacher" | "student
   return { token, serverUrl, endsAt: closesAt.getTime() };
 }
 
+/** Uygulamanın beyaz tahta penceresi için anahtar: görünmez katılımcı, yalnızca tahta verisi (görüşme süresine sayılmaz). */
+export async function meetingBoardToken(studentId: string, role: "teacher" | "student", user: { id: string; firstName: string; lastName: string }, minutes = MEETING_MINUTES) {
+  const closesAt = new Date(Date.now() + minutes * 60_000);
+  const { token, serverUrl } = await createRoomToken({ room: meetingRoomName(studentId), role, closesAt }, user, new Date(), { board: true });
+  return { token, serverUrl };
+}
+
 /** Koç görüşmeyi başlattı mı: odada süren görüşme var mı (öğrenci yalnızca koç başlatınca girebilir). */
 export async function meetingLive(studentId: string): Promise<boolean> {
   return Boolean(await db.coachMeeting.findFirst({ where: { roomName: meetingRoomName(studentId), endedAt: null }, select: { id: true } }));

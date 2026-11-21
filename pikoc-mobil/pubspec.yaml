@@ -2,7 +2,7 @@ name: pikoc
 description: "Pi Kampüs: Pi Koç öğrenci takibi, özel ders ve kurum paneli tek uygulamada."
 publish_to: 'none'
 
-version: 1.0.1+5
+version: 1.0.2+6
 
 environment:
   sdk: ^3.11.5
@@ -37,6 +37,7 @@ dependencies:
   flutter_local_notifications: ^22.3.2
   path_provider: ^2.1.6
   open_filex: ^5.0.0
+  file_picker: ^13.4.0
 
 dev_dependencies:
   flutter_test:
